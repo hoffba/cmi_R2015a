@@ -1,0 +1,120 @@
+// ********** Image Types
+
+(FixedInternalImagePixelType "float")
+(FixedImageDimension 3)
+(MovingInternalImagePixelType "float")
+(MovingImageDimension 3)
+(UseDirectionCosines "false")
+(ResultImageFormat "mhd")
+
+
+// ********** Components
+
+(Registration "MultiMetricMultiResolutionRegistration")
+(FixedImagePyramid "FixedSmoothingImagePyramid")
+(MovingImagePyramid "MovingSmoothingImagePyramid")
+(Interpolator "BSplineInterpolator")
+(Metric "AdvancedMattesMutualInformation" "TransformBendingEnergyPenalty")
+//(Optimizer "StandardGradientDescent")
+(Optimizer "AdaptiveStochasticGradientDescent")
+(ResampleInterpolator "FinalBSplineInterpolator")
+(Resampler "DefaultResampler")
+(Transform "BSplineTransform")
+
+
+// ********** Pyramid
+
+// Total number of resolutions
+(NumberOfResolutions 4)
+(ImagePyramidSchedule 16 16 16 8 8 8 4 4 4 1 1 1)
+
+// ********** Transform
+
+(AutomaticTransformInitialization "false")
+(AutomaticTransformInitializationMethod "GeometricalCenter")
+(AutomaticScalesEstimation "true")
+(FinalGridSpacingInVoxels 10 10 10)
+(GridSpacingSchedule 8 4 2 1)
+(HowToCombineTransforms "Compose")
+(BSplineTransformSplineOrder 3)
+(UseCyclicTransform "false")
+
+// ********* AdaptiveStochasticGradientDescent
+
+(NumberOfSamplesForSelfHessian 100000)
+(SigmoidInitialTime 0)
+(MaxBandCovSize 192)
+(NumberOfBandStructureSamples 10)
+(SigmoidMax 1)
+(SigmoidMin -0.8)
+(SigmoidScale 1e-05)
+(MaximumStepLength 20 10 10 10)
+(NumberOfGradientMeasurements 0)
+(NumberOfJacobianMeasurements 2700)
+(NumberOfSamplesForExactGradient 100000)
+(SigmoidScaleFactor 0.1)
+
+// ********** Optimizer
+
+// Maximum number of iterations in each resolution level:
+(MaximumNumberOfIterations 1000 1000 1000 2000)
+(MaximumNumberOfSamplingAttempts 0)
+(AutomaticParameterEstimation "true")
+(UseAdaptiveStepSizes "true")
+
+//SP: Param_a in each resolution level. a_k = a/(A+k+1)^alpha
+//Not used when AutomaticParameterEstimation is on
+(SP_a 200 200 50 20)
+(SP_alpha 0.602)
+(SP_A 50.0)
+
+
+// ********** Metric
+
+//Number of grey level bins in each resolution level:
+(UseFastAndLowMemoryVersion "false")
+(UseJacobianPreconditioning "true")
+(FiniteDifferenceDerivative "false")
+(NumberOfFixedHistogramBins 32)
+(NumberOfMovingHistogramBins 32)
+(NumberOfHistogramBins 32)
+(FixedLimitRangeRatio 0.0)
+(MovingLimitRangeRatio 0.0)
+(FixedKernelBSplineOrder 1)
+(MovingKernelBSplineOrder 3)
+(UseRelativeWeights "false")
+(Metric0Weight 1) // MI
+(Metric1Weight 0.1) // BE
+
+// ********** Several
+
+(WriteTransformParametersEachIteration "false")
+(WriteTransformParametersEachResolution "false")
+(WriteResultImageAfterEachResolution "true")
+(WriteResultImage "true")
+(ShowExactMetricValue "false")
+(ErodeFixedMask "false")
+//(ErodeMask "false")
+
+
+// ********** ImageSampler
+
+//Number of spatial samples used to compute the mutual information in each resolution level:
+(CheckNumberOfSamples "true")
+(ImageSampler "RandomSparseMask")
+(NumberOfSpatialSamples 2000)
+(NewSamplesEveryIteration "true")
+(UseRandomSampleRegion "false")
+
+
+// ********** Interpolator and Resampler
+
+//Order of B-Spline interpolation used in each resolution level:
+(BSplineInterpolationOrder 1)
+
+//Order of B-Spline interpolation used for applying the final deformation:
+(FinalBSplineInterpolationOrder 3)
+
+//Default pixel value for pixels that come from outside the picture:
+(DefaultPixelValue -1000)
+
