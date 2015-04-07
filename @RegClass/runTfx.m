@@ -19,7 +19,8 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
     elxObj.loadTx(self.Tfx.par);
     % If running on your local iMac, need to adjust filenames for DIPL-run
     % coregistrations:
-    if isfield(elxObj.Tx0,'InitialTransformParametersFileName')
+    if isfield(elxObj.Tx0,'InitialTransformParametersFileName') ...
+            && ~strcmp(elxObj.Tx0.InitialTransformParametersFileName,'NoInitialTransform')
         ffname = elxObj.Tx0.InitialTransformParametersFileName;
         if ismac && strncmp(ffname,'/mnt/cmi/',9)
             ffname = ['/Volumes/',ffname(10:end)];
@@ -61,6 +62,12 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
         ' -e ''',strcat(str{:}),'csh''&'];
     if ismac
         estr = ['/opt/X11/bin/',estr];
+    end
+    % Save command to file for trouble-shooting:
+    fid = fopen(fullfile(self.odir,'transformixCMD.txt'),'w');
+    if fid>2
+        fprintf(fid,'%s',estr);
+        fclose(fid);
     end
     system(estr);
     

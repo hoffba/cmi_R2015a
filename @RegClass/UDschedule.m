@@ -140,6 +140,8 @@ if ishandle(hObject)
                         i = 3*(edata.Indices(2)-1)+edata.Indices(1);
                     case 'MovingImagePyramidSchedule'
                         i = 3*(edata.Indices(2)-1)+edata.Indices(1)-3;
+                    case 'GridSpacingSchedule'
+                        i = 3*(edata.Indices(2)-1)+edata.Indices(1)-10;
                     otherwise
                         i = edata.Indices(2);
                 end

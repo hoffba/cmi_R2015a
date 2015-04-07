@@ -41,15 +41,21 @@ if (~any(~isnumeric([vdim mdim mind]) | ...
     if (vdim ~= self.orient)
         self.setView(vdim);
     end
-    % Determine image location on figure:
+%     % Determine image location on figure:
+%     set(self.haxes,'Units','pixels');
+%     pos = get(self.haxes,'Position');
+%     set(self.haxes,'Units','normalized');
+%     % Accounting for plotting aspect ratio:
+%     aspn = pbaspect(self.haxes);
+%     aspn = aspn(1:2)/(max(aspn(1:2)));
+%     npos(3:4) = aspn.*pos(3:4);
+%     npos(1:2) = pos(1:2) + (pos(3:4) - npos(3:4))/2;
+    currunits = get(self.haxes,'Units');
     set(self.haxes,'Units','pixels');
-    pos = get(self.haxes,'Position');
-    set(self.haxes,'Units','normalized');
-    % Accounting for plotting aspect ratio:
-    aspn = pbaspect(self.haxes);
-    aspn = aspn(1:2)/(max(aspn(1:2)));
-    npos(3:4) = aspn.*pos(3:4);
-    npos(1:2) = pos(1:2) + (pos(3:4) - npos(3:4))/2;
+    npos = plotboxpos(self.haxes);
+    set(self.haxes,'Units',currunits);
+    npos(1:2) = npos(1:2)+1;
+    npos(3:4) = npos(3:4)-2;
     for i = 1:length(mind)
         % Change to next slice/vec
         if (mdim == 4)
