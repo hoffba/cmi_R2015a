@@ -22,7 +22,7 @@ classdef RegClass < handle
                          %       (2) Homologous Image
         points = cell(1,2); % {1 x 2}[n x 3] control points in spatial coordinates
         hpts = nan(1,2); % handles to point plots
-        defVal = 0;      % Default image value for the OneShot
+        T0defVal = 0;      % Default image value for the OneShot
         
         % Pre-processing Options:
         clamp = [ -inf , inf ; -inf , inf ];
