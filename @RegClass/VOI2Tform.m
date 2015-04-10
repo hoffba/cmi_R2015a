@@ -28,7 +28,7 @@ if self.cmiObj(1).img.mask.check && self.cmiObj(2).img.mask.check
     x(10:12) =   [ (sum(v1x)-sum(v0x)*x(1))/2 ,...
                       (sum(v1y)-sum(v0y)*x(5))/2 ,...
                       (sum(v1z)-sum(v0z)*x(9))/2 ];
-    self.elxObj.setTx0(x,voxsz1,d1,'DefaultPixelValue',self.defVal);
+    self.elxObj.setTx0(x,voxsz1,d1,'DefaultPixelValue',self.T0defVal);
     self.setTchk(true);
     
     M = [reshape(x,[3,4]) ; 0 0 0 1];

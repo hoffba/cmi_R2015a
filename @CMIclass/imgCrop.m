@@ -14,8 +14,8 @@ if self.img.check
             dx = 0.9*dx;
             shft = [ 0.05*dx , 0 ];
         case 2
-            dy = 0.9*dy;
-            shft = [ 0 , 0.05*dy ];
+            dx = 0.9*dx;
+            shft = [ 0.05*dx , 0 ];
         case 3
             dt = min(dx,dy);
             dx = dt*0.9; dy = dt*0.9;

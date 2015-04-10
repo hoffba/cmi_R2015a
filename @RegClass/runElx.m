@@ -9,7 +9,7 @@ hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
 elxC = {'threads',1};
 
 % Check for initial transform
-if stat && (self.h.popup_Transforms.Value~=1) ...
+if stat && ~any(cellfun(@isempty,self.points)) && (self.h.popup_Transforms.Value~=1) ...
         && ~get(self.h.checkbox_useExistingT,'Value')
     if self.h.popup_Transforms.Value == 6
         M = reshape(self.points{2}',1,[]);

@@ -38,6 +38,7 @@ end
 
 dcmdata = struct('SeriesInstanceUID',{},... % for sorting multiple images
                  'img',{},...
+                 'AcqN',{},...
                  'SlcLoc',{},...
                  'SlcThk',{},...
                  'PixelSpacing',{},...
@@ -66,8 +67,11 @@ for ifn = 1:nf
     tinfo = dicominfo(fullfile(path,fnames{ifn}));
     
     % Check if Series already exists in structure:
-    j = find(strcmp(tinfo.SeriesInstanceUID,{dcmdata(:).SeriesInstanceUID}),1);
-    
+    j = strcmp(tinfo.SeriesInstanceUID,{dcmdata(:).SeriesInstanceUID});
+    if isfield(tinfo,'AcquisitionNumber') && ~isempty(dcmdata)
+        j = j & (tinfo.AcquisitionNumber==[dcmdata(:).AcqN]);
+    end
+    j = find(j,1);
     if isempty(j)
         % Initialize new series in structure:
         j = length(dcmdata)+1;
@@ -76,6 +80,11 @@ for ifn = 1:nf
             val = tinfo.SeriesInstanceUID;
         end
         dcmdata(j).SeriesInstanceUID = val;
+        if isfield(tinfo,'AcquisitionNumber')
+            dcmdata(j).AcqN = tinfo.AcquisitionNumber;
+        else
+            dcmdata(j).AcqN = 1;
+        end
         val = [1,1];
         if isfield(tinfo,'PixelSpacing')
             val = tinfo.PixelSpacing;
@@ -100,25 +109,21 @@ for ifn = 1:nf
         else val = tinfo.Modality;
         end
         dcmdata(j).Label = {val};
-        dcmdata(j).SlcLoc = nan(nf,1);
+        dcmdata(j).SlcLoc = [];
         val = '';
         if isfield(tinfo,'PatientID')
             val = tinfo.PatientID;
         end
         dcmdata(j).PatientID = val;
+        dcmdata(j).img = [];
     end
-    if isfield(tinfo,'InstanceNumber')
-        k = tinfo.InstanceNumber;
-    else
-        k = length(tinfo.SlcLoc)+1;
-    end
-    val = k;
+    k = length(dcmdata(j).SlcLoc)+1;
     if isfield(tinfo,'SliceLocation')
         val = tinfo.SliceLocation;
     elseif isfield(tinfo,'ImagePositionPatient')
         val = tinfo.ImagePositionPatient;
     end
-    dcmdata(j).SlcLoc(k) = val(end);
+    dcmdata(j).SlcLoc(k,1) = val(end);
     if isfield(tinfo,'EchoTime')
         if ~isempty(tinfo.EchoTime)
             dcmdata(j).TE(k) = tinfo.EchoTime;
@@ -143,6 +148,11 @@ for ifn = 1:nf
     dcmdata(j).img(:,:,k) = timg;
 end
 delete(hp);
+% Sort by slice location
+for i = 1:length(dcmdata)
+    [dcmdata(i).SlcLoc,ix] = sort(dcmdata(i).SlcLoc);
+    dcmdata(i).img = dcmdata(i).img(:,:,ix);
+end
 
 % If multiple series, user selects which to load:
 if length(dcmdata)>1
@@ -191,12 +201,12 @@ if (n4d>1) && (d(3)==(n4d*nnz(uind==1)))
     % Determine labeling:
     dcmdata.Label = cell(1,n4d);
     ind = ix(1:ns:d(3));
-    if length(unique(dcmdata.TR))>1
+    if isfield(dcmdata,'TR') && length(unique(dcmdata.TR))>1
         dcmdata.Label = strcat(dcmdata.Label,'TR=',...
             cellfun(@num2str,num2cell(dcmdata.TR(ind)),...
                     'UniformOutput',false),'; ');
     end
-    if length(unique(dcmdata.TE))>1
+    if isfield(dcmdata,'TE') && length(unique(dcmdata.TE))>1
         dcmdata.Label = strcat(dcmdata.Label,'TE=',...
             cellfun(@num2str,num2cell(dcmdata.TE(ind)),...
                     'UniformOutput',false),'; ');
@@ -247,186 +257,3 @@ elseif ~isempty(dcmdata.SlcThk)
     fov(3) = d(3) * dcmdata.SlcThk;
 end
 label = dcmdata.Label;
-
-% % Read first DICOM for header info
-% info = dicominfo(fullfile(path,fnames{1}));
-% % Needed header fields:
-% nfields = {'Rows','Columns','PixelSpacing','Modality'};
-% if all(isfield(info,nfields))
-%     nd = [info.Rows,info.Columns];
-%     if isfield(info,'PixelSpacing')
-%         voxsz = info.PixelSpacing(:)';
-% %     elseif isfield(info,
-%     else
-%         voxsz = [1,1];
-%     end
-%     if all(isfield(info,{'NumberOfTemporalPositions',...
-%                          'TemporalPositionIdentifier'}))
-%         nv = info.NumberOfTemporalPositions;
-%     else
-%         nv = 1;
-%     end
-%     if isfield(info,'NumberOfFrames')
-%         nz = info.NumberOfFrames;
-%     else
-%         nz = nf;
-%     end
-%     if isempty(d) || all([nd,nz] == d)
-%         chk3D = false;
-%         img = zeros([nd,nz]);
-%         slclocs = zeros(1,nf);
-%         acqn = zeros(1,nf);
-%         ithk = zeros(1,nf);
-%         itpos = zeros(1,nf);
-%         hp = waitbar(0,'','WindowStyle','modal',...
-%             'CreateCancelBtn','setappdata(gcbf,''canceling'',1)'); % Option to cancel load midway
-%         setappdata(hp,'canceling',0)
-%         for ifn = 1:nf
-%         % Check for Cancel button press
-%             if getappdata(hp,'canceling')
-%                 img = []; label = {}; fov = [];
-%                 break
-%             end
-%             waitbar((ifn-1)/nf,hp,fnames{ifn});
-%             info = dicominfo(fullfile(path,fnames{ifn}));
-%         % Check for rescale slope and intercept:
-%             tslp = 1; tint = 0; % Defaults if fields not found
-%             if isfield(info,'RescaleSlope')
-%                 tslp = info.RescaleSlope;
-%             end
-%             if isfield(info,'RescaleIntercept')
-%                 tint = info.RescaleIntercept;
-%             end
-%             if isfield(info,'ImagePositionPatient')
-%                 slclocs(ifn) = info.ImagePositionPatient(3);
-%             elseif isfield(info,'SliceLocation')
-%                 slclocs(ifn) = info.SliceLocation;
-%             elseif isfield(info,'InstanceNumber')
-%                 slclocs(ifn) = info.InstanceNumber;
-%             else
-%                 slclocs(ifn) = ifn;
-%             end
-%             if isfield(info,'AcquisitionNumber') && ~isempty(info.AcquisitionNumber)
-%                 acqn(ifn) = info.AcquisitionNumber;
-%             end
-%             if isfield(info,'SliceThickness') && ~isempty(info.SliceThickness)
-%                 ithk(ifn) = info.SliceThickness;
-%             elseif isfield(info,'SpacingBetweenSlices')
-%                 ithk(ifn) = info.SpacingBetweenSlices;
-%             end
-%             if isfield(info,'TemporalPositionIdentifier')
-%                 itpos(ifn) = info.TemporalPositionIdentifier;
-%             end
-%             if isfield(info,'NumberOfFrames') % 3D image
-%                 tframe = 1:info.NumberOfFrames;
-%                 chk3D = true;
-%             else
-%                 tframe = ifn;
-%             end
-% 
-%         % Read the file
-%             if (info.Rows==nd(1)) && (info.Columns==nd(2))
-%                 timg = double(dicomread(info));
-%                 img(:,:,tframe) = tslp * squeeze(timg) + tint;
-%             end
-%         end
-%         delete(hp);
-%     else
-%         disp('Image dimensions do not match')
-%     end
-%     if ~isempty(img)
-%         if chk3D
-%             
-%         else
-%             % Some DICOMs list each slice as a separate acquisition ...
-%             if (length(unique(acqn(:)))==length(acqn(:))) ...
-%                     && (length(unique(slclocs(:)))==length(slclocs(:)))
-%                 acqn(:) = acqn(1);
-%             end
-%             
-%             % Remove redundant slice locations and sort
-%             A = [acqn(:),slclocs(:),itpos(:)];
-%             [~,ia,~] = unique(A,'rows');
-%             if (nf>length(ia)) && ~mod(nf,length(ia))
-%                 % Added 2014-08-14 by BAH
-%                 % MR Solutions .dcm arrayed image data lacks acq # ident
-%                 nv = nf/length(ia);
-%                 uacqn = unique(acqn);
-%                 inacq = zeros(1,length(uacqn));
-%                 for ii = 1:length(uacqn)
-%                     inacq(ii) = sum(acqn==uacqn(ii));
-%                 end
-%                 if all(inacq==inacq(1))
-%                     for ii = 1:length(ia)
-%                         ind = ismember(A,A(ia(ii),:),'rows');
-%                         A(ind,1) = 1:sum(ind);
-%                     end
-%                     [~,ia] = sortrows(A);
-%                 else % Found some redundant images in Van Poznak's data
-%                     nv = 1;
-%                 end
-%             end
-%             img = img(:,:,ia);
-%             slclocs = slclocs(ia);
-%             acqn = acqn(ia);
-%             ithk = ithk(ia);
-%             nf = length(ia);
-%             
-%             % Reshape to 4D if necessary
-%             if nf>1
-%                 ns = nf/nv;
-%                 if round(ns)==ns % only if correct # of files loaded
-%                     img = reshape(img,[nd,ns,nv]);
-%                 else
-%                     warning('Slices may be off!');
-%                 end
-%             end
-%         end
-%         
-%         % Choose which acquisition to load:
-%         acqID = unique(acqn); nacq = length(acqID);
-%         if nacq>1
-%             hf = figure;
-%             disp(num2str(slclocs(:)));
-%             imin = min(img(:)); imax = max(img(:));
-%             imshow((squeeze(img(round(size(img,1)/2),:,:,1))-imin)/(imax-imin));
-%             ns = zeros(1,nacq);
-%             for i = 1:nacq
-%                 ns(i) = sum(acqID(i)==acqn);
-%             end
-%             opts = [{'All (concatenated)'},...
-%                     cellfun(@strcat,cellfun(@num2str,num2cell(acqID),'UniformOutput',0),...
-%                                     repmat({':'},1,nacq),...
-%                                     cellfun(@num2str,num2cell(ns),'UniformOutput',0),...
-%                                     repmat({' slices'},1,nacq),'UniformOutput',0)];
-%             answer = listdlg('ListString',opts,'Name','Multiple Acquisitions') - 1;
-%             close(hf);
-%         else
-%             answer = 1;
-%         end
-%         % Remove unwanted slices:
-%         if ~isempty(answer) && all(answer>0)
-%             ind = ~ismember(acqn,acqID(answer));
-%             img(:,:,ind,:) = [];
-%             slclocs(ind) = [];
-%             ithk(ind) = [];
-%         end
-%         if isfield(info,'SeriesDescription') && ~isempty(info.SeriesDescription)
-%             label = repmat({info.SeriesDescription},1,nv);
-%         else
-%             label = repmat({info.Modality},1,nv);
-%         end
-%         if numel(slclocs)>1
-%             fovz = length(slclocs) * abs(diff(slclocs(1:2)));
-%         elseif ~isempty(ithk) && (ithk(1)>0)
-%             thk = ithk(1);
-%             fovz = nz*thk;
-%         else
-%             fovz = nz;
-%         end
-%         fov = [double(fliplr(nd)).*voxsz fovz];
-%         info.SliceVec = slclocs;
-%     end
-% end
-
-
