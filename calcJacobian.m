@@ -4,6 +4,7 @@ function calcJacobian(cmiObj)
 % useful features for identifying methods and properties
 % >>methods ImageClass
 % >>properties ImageClass
+%GOD SAVE THE QUEEN
 
 tic;
 
