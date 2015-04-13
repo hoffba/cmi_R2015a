@@ -175,7 +175,7 @@ if stat
     
     % Start Elastix in new xterm window:
     cmdstr = ['xterm -geometry 170x50 -T "',namestr,'"',...
-                    ' -e ''',elxstr,strcat(tfxC{:}),custr,'csh''&'];
+                    ' -e ''',elxstr,strcat(tfxC{:}),custr,'csh;''&'];
     if ismac
         cmdstr = ['/opt/X11/bin/',cmdstr];
     end
