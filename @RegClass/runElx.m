@@ -171,13 +171,18 @@ if stat
     namestr = ['Elastix Registration: ',self.cmiObj(2).img.name,...
                                 ' --> ',self.cmiObj(1).img.name];
     % Clean-up after Elastix/Transformix calls:
-    custr = ['find ',self.odir,' -name "elxtemp-*" -exec rm -f {} \;'];
+    custr = ['find ',self.odir,' -name "elxtemp-*" -exec rm -f {} \; ;'];
+        % DO NOT REMOVE the extra ' ;' at the end of this string!
     
     % Start Elastix in new xterm window:
     cmdstr = ['xterm -geometry 170x50 -T "',namestr,'"',...
-                    ' -e ''',elxstr,strcat(tfxC{:}),custr,'csh;''&'];
+                    ' -e ''',elxstr,strcat(tfxC{:}),custr,'csh;'''];
+%     waitstr = '';
+%     if self.h.checkbox_wait.Value
+        waitstr = '&';
+%     end
     if ismac
-        cmdstr = ['/opt/X11/bin/',cmdstr];
+        cmdstr = ['/opt/X11/bin/',cmdstr,waitstr];
     end
     % Save command to file for trouble-shooting:
     fid = fopen(fullfile(self.odir,'elastixCMD.txt'),'w');

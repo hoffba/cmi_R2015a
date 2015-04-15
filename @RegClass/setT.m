@@ -1,15 +1,19 @@
 % RegClass function
-function setT(self,hObject,~)
+function setT(self,hObject,val)
 % Manually set affine matrix values using edit boxes in GUI
 
-i = find(strcmp(hObject.Tag(end-1:end),...
-    {'11','21','31','12','22','32','13','23','33','t1','t2','t3'}),1);
+if ishghandle(hObject)
+    str = hObject.Tag(end-1:end);
+    val = str2double(hObject.String);
+else
+    str = hObject(end-1:end);
+end
+i = find(strcmp(str,{'11','21','31','12','22','32','13','23','33','t1','t2','t3'}),1);
 if isempty(i)
     error('Invalid input object')
 end
-val = str2double(hObject.String);
 M = eye(4);
-if ~(isempty(val) || isnan(val))
+if isnumeric(val) && ~(isempty(val) || isnan(val))
     % Adjust for additional 4th row ([0 0 0 1])
     i = i+(i-mod(i-1,3)-1)/3;
     if isempty(self.elxObj.Tx0)
