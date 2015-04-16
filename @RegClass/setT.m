@@ -7,6 +7,10 @@ if ishghandle(hObject)
     val = str2double(hObject.String);
 else
     str = hObject(end-1:end);
+    if ~strcmp(str(1),'t')
+        tstr = 'a';
+    end
+    hObject = findobj('Tag',['edit_',tstr,str]);
 end
 i = find(strcmp(str,{'11','21','31','12','22','32','13','23','33','t1','t2','t3'}),1);
 if isempty(i)
@@ -21,7 +25,7 @@ if isnumeric(val) && ~(isempty(val) || isnan(val))
     else
         M = self.par2affine(self.elxObj.Tx0.TransformParameters);
     end
-    hObject.String = num2str(val);
+    set(hObject,'String',num2str(val));
     M(i) = val;
     A = M(1:3,1:3)';
     T = M(1:3,4);

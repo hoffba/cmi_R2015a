@@ -176,11 +176,11 @@ if stat
     
     % Start Elastix in new xterm window:
     cmdstr = ['xterm -geometry 170x50 -T "',namestr,'"',...
-                    ' -e ''',elxstr,strcat(tfxC{:}),custr,'csh;'''];
-%     waitstr = '';
-%     if self.h.checkbox_wait.Value
-        waitstr = '&';
-%     end
+                    ' -e ''',elxstr,strcat(tfxC{:}),custr];
+    waitstr = ''''; % End input quote for -e statement
+    if self.h.checkbox_wait.Value
+        waitstr = 'csh;''&';
+    end
     if ismac
         cmdstr = ['/opt/X11/bin/',cmdstr,waitstr];
     end

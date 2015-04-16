@@ -1,4 +1,4 @@
-function C = batch_regVCF
+function C = batch_regVCF(regObj)
 
 % Structure containing data to coregister
 tdata = struct('PatientName',...
@@ -21,10 +21,12 @@ end
 if tdir~=0
     % Initialize coregistration objects/settings:
     C = {};
-    regObj = RegClass;
+    if (nargin==0) || ~isa(regObj,'RegClass')
+        regObj = RegClass;
+    end
     regObj.loadElxPar(fullfile(tdir,'VCF-ElastixParameters.txt'));
     set(regObj.h.checkbox_wait,'Value',0);
-    regObj.cmiObj(1).img.prm.setOpts('thresh',[1,0,1,-100,...
+    regObj.cmiObj(1).img.prm.setOpts('thresh',[1,0,1,-100;...
                                                1,0,1, 100]);
     % Loop over patients and their vertebrae:
     for i = 1:length(tdata)
@@ -40,7 +42,7 @@ if tdir~=0
                     nf = length(fnames);
                     
                 % Load baseline image/VOI
-                regObj.cmiObj(1).loadImg(0,fullfile(bdir,fnames{1}));
+                regObj.cmiObj(1).loadImg(false,fullfile(bdir,fnames{1}));
                 regObj.cmiObj(1).loadMask(fullfile(bdir,[fnames{1}(1:end-4),'_VOI.mhd']));
                 
                 % Adjust schedule for low-res data:
@@ -48,7 +50,7 @@ if tdir~=0
                 R = regObj.cmiObj(1).img.voxsz(3)/regObj.cmiObj(1).img.voxsz(1);
                 fZ = ceil(R./[1,2,4]);
                 tpar([3,6,9]) = fZ;
-                regObj.elxObj.setPar('FixedImagePyramidSchedule',tpar);
+                regObj.elxObj.setPar(1,'FixedImagePyramidSchedule',tpar);
                 
                 % Loop over coregistrations:
                 for fi = 2:nf
@@ -61,7 +63,7 @@ if tdir~=0
                     end
                     
                     % Load moving image and VOI:
-                    regObj.cmiObj(2).loadImg(0,fullfile(bdir,fnames{fi}));
+                    regObj.cmiObj(2).loadImg(false,fullfile(bdir,fnames{fi}));
                     regObj.cmiObj(2).loadMask(fullfile(bdir,[bname,'_VOI.mhd']));
                     
                     % Match VOIs for initial transform:
@@ -75,13 +77,13 @@ if tdir~=0
                     R = regObj.cmiObj(2).img.voxsz(3)/regObj.cmiObj(2).img.voxsz(1);
                     fZ = ceil(R./[1,2,4]);
                     tpar([3,6,9]) = fZ;
-                    regObj.elxObj.setPar('MovingImagePyramidSchedule',tpar);
+                    regObj.elxObj.setPar(1,'MovingImagePyramidSchedule',tpar);
                     
                     % Start coregistration:
                     regObj.runElx;
                     
                     % Append result to Reference data set
-                    regObj.cmiObj(1).loadImg(1,fullfile(elxdir,[bname,'_RR.mhd']));
+                    regObj.cmiObj(1).loadImg(true,{fullfile(elxdir,[bname,'_RR.mhd'])});
                     
                 end
                 % Generate PRM statistics

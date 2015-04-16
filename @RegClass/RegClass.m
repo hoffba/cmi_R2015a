@@ -49,6 +49,7 @@ classdef RegClass < handle
         % RegClass destructor
         function delete(self)
             delete(self.cmiObj(isvalid(self.cmiObj)));
+            delete(self.elxObj);
             if isfield(self.h,'regFig') && ishandle(self.h.regFig)
                 delete(self.h.regFig)
             end

@@ -1,6 +1,9 @@
 % RegClass function
 function stat = selectTform(self,varargin)
 % Select current schedule step (from GUI listbox)
+% Also updates GUI objects with info from ElxClass
+% Syntax:
+%       selectTform(#)
 
 stat = false;
 
@@ -28,7 +31,6 @@ if stat
          self.h.edit_defVal,...
          self.h.button_Start];
     wh = [self.h.checkbox_BEpenalty,...
-          self.h.edit_BEpenaltyAmt,...
           self.h.edit_finalGridX,...
           self.h.edit_finalGridY,...
           self.h.edit_finalGridZ,...
@@ -73,12 +75,8 @@ if stat
             %           Metric{2} = bending energy
             str = p.Metric{1};
             set(self.h.checkbox_BEpenalty,'Value',1);
-            set(self.h.edit_BEpenaltyAmt,...
-                'String',num2str(p.Metric1Weight),...
-                'Enable','on');
         else
             set(self.h.checkbox_BEpenalty,'Value',0);
-            set(self.h.edit_BEpenaltyAmt,'String','','Enable','off');
             str = p.Metric;
         end
         i = find(strcmp(str,get(self.h.popup_Metric,'UserData')));
@@ -95,6 +93,15 @@ if stat
         else
             set(wh,'Enable','off');
         end
+    % Bending Energy Penalty Weight
+        if isfield(p,'Metric1Weight')
+            estr = 'on';
+            str = num2str(p.Metric1Weight);
+        else
+            estr = 'off';
+            str = '';
+        end
+        set(self.h.edit_BEpenaltyAmt,'Enable',estr,'String',str);
     % Save intermediate images:
         if isfield(p,'WriteResultImageAfterEachResolution') ...
                 && strcmp(p.WriteResultImageAfterEachResolution,'true')
