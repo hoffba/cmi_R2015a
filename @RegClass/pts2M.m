@@ -55,8 +55,8 @@ T = M(1:3,4)';
 
 self.elxObj.setTx0([A(:)',T],self.cmiObj(1).img.voxsz,...
                        self.cmiObj(1).img.dims(1:3),...
-                       'DefaultPixelValue',self.defVal);
+                       'DefaultPixelValue',self.T0defVal);
 
-self.showTx0(M);
+self.showTx0(M(1:3,:));
 self.setTchk(true);
 

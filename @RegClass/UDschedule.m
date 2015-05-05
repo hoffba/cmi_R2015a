@@ -2,7 +2,10 @@
 function UDschedule(self,hObject,edata)
 % Handle Callbacks from Elastix Schedule-related GUI objects
 
-if ishghandle(hObject)
+if nargin==1
+    % Re-set Schedule to empty
+    self.elxObj.rmStep;
+elseif ishghandle(hObject)
     C = {};
     tag = get(hObject,'Tag');
     switch tag

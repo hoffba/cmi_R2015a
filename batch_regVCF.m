@@ -1,4 +1,4 @@
-function C = batch_regVCF(regObj)
+function tdata = batch_regVCF(regObj)
 
 % Structure containing data to coregister
 tdata = struct('PatientName',...
@@ -20,14 +20,15 @@ end
 
 if tdir~=0
     % Initialize coregistration objects/settings:
-    C = {};
     if (nargin==0) || ~isa(regObj,'RegClass')
         regObj = RegClass;
+        assignin('base','regObj',regObj);
     end
+    regObj.UDschedule; % Clear schedule
     regObj.loadElxPar(fullfile(tdir,'VCF-ElastixParameters.txt'));
     set(regObj.h.checkbox_wait,'Value',0);
-    regObj.cmiObj(1).img.prm.setOpts('thresh',[1,0,1,-100;...
-                                               1,0,1, 100]);
+    thresh = 100; % PRM rgb threshold
+                                           
     % Loop over patients and their vertebrae:
     for i = 1:length(tdata)
         for vi = 1:length(tdata(i).Vertebra)
@@ -48,15 +49,18 @@ if tdir~=0
                 % Adjust schedule for low-res data:
                 tpar = regObj.elxObj.Schedule{1}.FixedImagePyramidSchedule;
                 R = regObj.cmiObj(1).img.voxsz(3)/regObj.cmiObj(1).img.voxsz(1);
-                fZ = ceil(R./[1,2,4]);
+                fZ = ceil([4,2,1]/R);
                 tpar([3,6,9]) = fZ;
-                regObj.elxObj.setPar(1,'FixedImagePyramidSchedule',tpar);
+                regObj.setElxPar(1,'FixedImagePyramidSchedule',tpar);
                 
                 % Loop over coregistrations:
+                C = {'Homol File','statPRM_H_U_+','statPRM_H_U_0','statPRM_H_U_-',...
+                                  'progPRM_H_U_+','progPRM_H_U_0','progPRM_H_U_-'};
                 for fi = 2:nf
                     
                     % Make sure elxreg_ folder exists
                     [~,bname] = fileparts(fnames{fi});
+                    disp(bname);
                     elxdir = fullfile(bdir,['elxreg_',bname]);
                     if ~exist(elxdir,'dir')
                         mkdir(elxdir);
@@ -75,20 +79,33 @@ if tdir~=0
                     % Adjust schedule depending on resolutions:
                     tpar = regObj.elxObj.Schedule{1}.MovingImagePyramidSchedule;
                     R = regObj.cmiObj(2).img.voxsz(3)/regObj.cmiObj(2).img.voxsz(1);
-                    fZ = ceil(R./[1,2,4]);
-                    tpar([3,6,9]) = fZ;
-                    regObj.elxObj.setPar(1,'MovingImagePyramidSchedule',tpar);
+                    mZ = ceil([4,2,1]/R);
+                    tpar([3,6,9]) = mZ;
+                    regObj.setElxPar(1,'MovingImagePyramidSchedule',tpar);
                     
                     % Start coregistration:
                     regObj.runElx;
                     
-                    % Append result to Reference data set
-                    regObj.cmiObj(1).loadImg(true,{fullfile(elxdir,[bname,'_RR.mhd'])});
-                    
+                    Rfname = fullfile(elxdir,[bname,'_RR.mhd']);
+                    if exist(Rfname,'file') % If it doesn't exist, coreg wasn't successful, so skip
+                        % Append result to Reference data set
+                        regObj.cmiObj(1).loadImg(true,Rfname);
+
+                        % Generate PRM statistics
+                        regObj.cmiObj(1).img.prm.setOpts('thresh',[ 1 fi 1 -thresh ;...
+                                                                    1 fi 1 thresh   ]);
+                        [~,svals] = regObj.cmiObj(1).img.calcPRM(fi);
+                        regObj.cmiObj(1).img.prm.setOpts('thresh',[ fi-1 fi 1 -thresh ;...
+                                                                    fi-1 fi 1 thresh   ]);
+                        [~,pvals] = regObj.cmiObj(1).img.calcPRM(fi);
+                        C(fi,:) = [{bname},num2cell(fliplr(svals')),num2cell(fliplr(pvals'))];
+                        
+                        disp(' ... Done')
+                    else
+                        disp(' ... FAILED')
+                    end
                 end
-                % Generate PRM statistics
-                disp('check')
-                
+                tdata(i).Results{vi} = C;
             end
         end
     end

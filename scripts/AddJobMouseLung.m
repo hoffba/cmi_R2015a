@@ -19,9 +19,10 @@ if TF
     svdir = uigetdir(pwd,'Select directory to save DICOMs');
     if svdir~=0
         hw = waitbar(0,'Starting batch process ...');
-        if matlabpool('size')
+        poolobj = gcp('nocreate');
+        if ~isempty(poolobj)
             % Can't run batch with open matlabpool
-            matlabpool('close');
+            delete(poolobj);
         end
         j = batch(@jobProcMouseLung,1,{cmiObj.img.mat,fov,cmiObj.img.labels,...
                                        fname,svdir});

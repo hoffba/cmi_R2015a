@@ -16,7 +16,7 @@ if self.check
                   'Trapezoidal plateau (cannot be larger than max extent)',...
                   'Trapezoidal max extent'};
         title = 'NOVA filter parameters';
-        default = {num2str(1:self.dims(4)),'2', '2', '200', '0', '3'};
+        default = {num2str(1:self.dims(4)),'3', '2', '200', '0', '3'};
         answer = inputdlg(prompt,title,1,default);
         if ~isempty(answer) && ~any(isnan(str2double(answer(2:end))))
             vec = str2num(answer{1});

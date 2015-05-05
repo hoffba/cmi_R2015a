@@ -16,7 +16,7 @@ if self.check && self.mask.check
         tvec = unique(tvec);
         nv = length(tvec);
         
-        if nv>1
+%         if nv>1
             % extract image values
             vals = zeros(np,nv);
             for i = 1:nv
@@ -25,6 +25,6 @@ if self.check && self.mask.check
 
             % Finally, calculate the PRM
             [labels,vals] = self.prm.calcPRM(vals,tvec,vec,self.labels(tvec),self.mask.mat);
-        end
+%         end
     end
 end

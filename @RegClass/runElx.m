@@ -141,6 +141,9 @@ if stat
     end
 end
 
+delete(hw);
+pause(0.01);
+
 % Generate calls to Elastix and Transformix:
 if stat
     % ~~~~~~~ Elastix ~~~~~~~~
@@ -192,5 +195,4 @@ if stat
     end
     stat = ~system(cmdstr);
 end
-delete(hw);
 

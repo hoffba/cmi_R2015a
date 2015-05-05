@@ -48,7 +48,7 @@ if self.check && (nargin>=2) && (tvec>0) && (tvec<=self.dims(4))
                     func = [];
             end
             if ~isempty(func)
-                hw = waitbar(0);
+                hw = waitbar(0,'Applying 2D filter ...');
                 for islc = 1:self.dims(3)
                     timg(:,:,islc) = feval(func,timg(:,:,islc));
                     waitbar(islc/self.dims(3),hw);

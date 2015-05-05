@@ -79,5 +79,16 @@ classdef RegClass < handle
                                'Enable',str,...
                                'Value',max(size(self.points{2},1),1));
         end
+        % Listener for change in Initial Transform
+        function listenT0(self,~,~)
+            if isfield(self.elxObj.Tx0,'Transform')
+                str = self.elxObj.Tx0.Transform;
+                val = 1;
+            else
+                str = '[None]';
+                val = 0;
+            end
+            set(self.h.text_currTform,'String',str,'Value',val);
+        end
     end
 end

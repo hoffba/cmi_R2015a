@@ -23,9 +23,11 @@ if self.check && (nargin==4)
     self.dims(2) = length(iy);
     self.dims(3) = length(iz);
     stat = true;
-    if isa(self,'ImageClass') && self.mask.check
+    if isa(self,'ImageClass')
         if self.mask.check
             self.mask.subsample(ix,iy,iz);
+        else
+            self.mask.setDims(self.dims(1:3));
         end
         if self.prm.check
             self.prm.subsample(ix,iy,iz);
