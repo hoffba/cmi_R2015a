@@ -12,7 +12,7 @@ ind = dnew/2:dnew:d(3);
 omask = cmiObj.img.mask.mat;
 
 % Set new image:
-iimg = zeros(d);
+iimg = zeros(d)-2000;
 iimg(:,:,ind,:) = cmiObj.img.mat;
 cmiObj.setImg(iimg,cmiObj.img.labels,fov);
 
