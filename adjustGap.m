@@ -1,5 +1,5 @@
 % Script to adjust gapped data, inserting blank slices
-function adjustGap(cmiObj,targetdz,fillval)
+function ind = adjustGap(cmiObj,targetdz,fillval)
 
 if nargin<3
     fillval = 0;
@@ -24,3 +24,5 @@ if ~isempty(omask)
     imask(:,:,ind) = omask;
     cmiObj.img.mask.merge('replace',imask);
 end
+
+disp(['Original slice numbers are now: ',num2str(ind)])
