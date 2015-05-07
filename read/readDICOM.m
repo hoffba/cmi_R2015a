@@ -154,17 +154,49 @@ for i = 1:length(dcmdata)
     dcmdata(i).img = dcmdata(i).img(:,:,ix);
 end
 
-% If multiple series, user selects which to load:
 if length(dcmdata)>1
-    str = strcat('(',cellfun(@(x)num2str(length(x)),{dcmdata(:).SlcLoc},...
-                             'UniformOutput',false),...
-                 ' Slices)',[dcmdata(:).Label]);
-    answer = listdlg('ListString',str,'SelectionMode','single',...
-                     'ListSize',[300,300]);
-    if isempty(answer)
-        return % User cancelled the load
-    else
-        dcmdata = dcmdata(answer);
+    uichk = true;
+    if all(cellfun(@length,{dcmdata(:).SlcLoc})==2)
+% Case for 2-slice gapped CT data
+        answer = questdlg('How would you like to compile these slices?',...
+            '2-Slice Gapped CT',...
+            'Concatenate','Insert Gaps','Cancel','Concatenate');
+        if ~strcmp(answer,'Cancel')
+            tdata = dcmdata(1);
+            tdata.img = cat(3,dcmdata(:).img);
+            tdata.SlcLoc = cat(1,dcmdata(:).SlcLoc);
+            if strcmp(answer,'Insert Gaps')
+                fval = str2double(inputdlg('Blank Slice Value:','',1,{'-1024'}));
+            % Determine gaps:
+                [locs,ix] = sort(tdata.SlcLoc);
+                dnew = floor((locs(3)-locs(1))/(locs(2)-locs(1)));
+                dz = abs(locs(3)-locs(1))/dnew;
+                d = size(tdata.img);
+                d(3) = d(3)*dnew/2;
+                tmat = ones(d)*fval;
+                ind = round(dnew/2):dnew:d(3);
+                ind = [ind;ind+1];
+                tmat(:,:,ind(:)) = tdata.img(:,:,ix);
+                tdata.SlcLoc = (1:d(3))'*dz + locs(1) - round(dnew/2)*dz;
+                tdata.SlcThk = abs(diff(tdata.SlcLoc(1:2)));
+                tdata.img = tmat;
+            end
+            dcmdata = tdata;
+            uichk = false;
+        end
+    end
+    if uichk
+% If multiple series, user selects which to load:
+        str = strcat('(',cellfun(@(x)num2str(length(x)),{dcmdata(:).SlcLoc},...
+                                 'UniformOutput',false),...
+                     ' Slices)',[dcmdata(:).Label]);
+        answer = listdlg('ListString',str,'SelectionMode','single',...
+                         'ListSize',[300,300]);
+        if isempty(answer)
+            return % User cancelled the load
+        else
+            dcmdata = dcmdata(answer);
+        end
     end
 end
 

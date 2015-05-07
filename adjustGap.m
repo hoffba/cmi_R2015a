@@ -9,7 +9,7 @@ dnew = floor(cmiObj.img.voxsz(3)/targetdz);
 d = cmiObj.img.dims;
 fov = d(1:3).*cmiObj.img.voxsz;
 d(3) = dnew * d(3);
-ind = round(dnew/2:dnew:d(3)); % CJG added round b/c I got decimals
+ind = round(dnew/2):dnew:d(3); % CJG added round b/c I got decimals
 
 omask = cmiObj.img.mask.mat;
 
