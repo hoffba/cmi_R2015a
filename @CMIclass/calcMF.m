@@ -21,10 +21,10 @@ if (nargin==3) && ishandle(varargin{1})
 end
 
 p = inputParser;
-addParamValue(p,'Vec',self.vec,@isscalar);
-addParamValue(p,'Thresh',[],@isnumeric);
-addParamValue(p,'Window',[],@isvector);
-addParamValue(p,'ApplyMask',true,@islogical);
+addParameter(p,'Vec',self.vec,@isscalar);
+addParameter(p,'Thresh',[],@isnumeric);
+addParameter(p,'Window',[],@isvector);
+addParameter(p,'ApplyMask',true,@islogical);
 parse(p,varargin{:});
 pp = p.Results;
 

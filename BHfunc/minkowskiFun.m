@@ -28,16 +28,19 @@ nD = nnz(n);
 if ismember(nD,[2,3]);
     [d(1),d(2),d(3),~] = size(img);
     if nD==2
+        disp('Performing 2D Minkowski Functional Analysis');
         labels = {'Area','Perimeter','Euler'};
         nmf = 3;
         n(3) = 0;
         p4 = [];
     else
+        disp('Performing 3D Minkowski Functional Analysis');
         labels = {'Volume','SurfaceArea','Mean Breadth','Euler'};
         nmf = 4;
     end
     if any(isinf(n))
         % Perform analysis on entire image
+        disp('Performing global analysis');
         if (nargin<4) || all(d(1:3)~=size(mask))
             mask = true(d);
         end
@@ -57,17 +60,20 @@ if ismember(nD,[2,3]);
         end
     else
         % Perform analysis on moving window
+        disp(['Performing local analysis [',num2str(n),']']);
         if (nargin<4) || all(d(1:3)~=size(mask))
             ind = 1:prod(d(1:3));
         else
             ind = find(mask);
         end
         ntot = length(ind);
+        disp(['Number of iterations: ',num2str(ntot)])
 
         fimg = zeros([d,nth,nmf]);
         hw = waitbar(0,'Calculating local Minkowski Functionals ...');
         t = tic;
         for i = 1:ntot
+            disp(['  ',num2str(ntot-i),' left'])
             [ii,jj,kk] = ind2sub(d(1:3),ind(i));
             timg = img(max(1,ii-n(1)):min(d(1),ii+n(1)),...
                        max(1,jj-n(2)):min(d(2),jj+n(2)),...
