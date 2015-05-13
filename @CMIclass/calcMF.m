@@ -29,9 +29,4 @@ parse(p,varargin{:});
 pp = p.Results;
 
 [MFout,labels] = self.img.calcMF(self.vec,pp.Thresh,pp.Window,varargin{:});
-if ndims(MFout)==5
-    self.update4Dslider;
-else
-    a = [labels ; num2cell(MFout)];
-    msgbox(sprintf('%s  =  % .4f\n',a{:}),'Minkowski Functionals','none');
-end
+

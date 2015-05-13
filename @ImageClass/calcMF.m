@@ -13,42 +13,58 @@ MFout = [];
 labels = {};
 
 p = inputParser;
-addRequired(p,'Vec',@isscalar);
+addRequired(p,'Vec',@(x)isscalar(x)&&(x>0));
 addRequired(p,'Thresh',@isnumeric);
 addRequired(p,'Window',@isvector);
 addParameter(p,'ApplyMask',true,@islogical);
 parse(p,vec,thresh,n,varargin{:});
 pp = p.Results;
 
-varargin = {};
-stat = false;
-if (pp.Vec==0)
-    if self.mask.check
-        % Use existing VOI
-        timg = double(self.mask.mat);
-        pp.Thresh = 0.5;
-        stat = true;
-    else
-        warning('No VOI exists for Minkowski Functional analysis.');
-    end
-elseif self.check
+if self.check
+    
     timg = self.mat(:,:,:,pp.Vec);
-    stat = true;
-    if pp.ApplyMask
-        varargin = {self.mask.mat};
+    gchk = any(isinf(pp.Window));
+    
+    if gchk
+        
+        nth = length(pp.Thresh);
+        if nD == 2
+            nmf = 3;
+        else
+            nmf = 4;
+        end
+
+        % Initialize output matrix:
+        MFout = zeros([nth,nmf]);
+
+        % Loop over desired image thresholds:
+        for ith = 1:nth
+            BW = timg > pp.Thresh(ith);
+            if gchk
+                BW = BW & self.mask.mat;
+            end
+            [MFout(ith,:),labels] = minkowskiFun(BW,pp.Window,varargin{:});
+        end
+
+        % Display global results:
+        vals = [{'Thresh'},num2cell(pp.Thresh);...
+                labels(:),num2cell(squeeze(MFout))];
+        msgbox(sprintf(['%10s:',repmat(' %8f',nth)],vals{:}),'Minkowski Functionals');
+        
+    else
+        
+        % User decides where to save results:
+        [fname,fpath] = uiputfile('*.mhd','Save MF Results',[self.name,'.mhd']);
+        
+        % Run in batch - will take too long to wait for
+        ind = [];
+        if pp.ApplyMask && self.mask.check
+            ind = find(self.mask.mat);
+        end
+        batch_MinkowskiFun(fullfile(fpath,fname),...
+                           self.voxsz.*self.dims(1:3),...
+                           timg,pp.Window,pp.Thresh,ind);
+        
     end
 end
 
-if stat
-    disp('Starting batch MF analysis ...');
-    batch(@minkowskiFun,2,[{timg,pp.Window,pp.Thresh},varargin]);
-    disp(' ... done')
-%     [MFout,labels] = minkowskiFun(timg,pp.Window,pp.Thresh,varargin{:});
-%     if ~isempty(MFout) && (length(size(MFout))==5)
-%         d = size(MFout);
-%         labels = strcat(repmat(labels,d(4),1),...
-%                         repmat(cellfun(@num2str,num2cell(1:d(4))',...
-%                                        'UniformOutput',false),1,d(5)));
-%         self.imgAppend(reshape(MFout,[d(1:3),prod(d(4:end))]),labels);
-%     end
-end

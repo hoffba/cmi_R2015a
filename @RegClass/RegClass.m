@@ -34,6 +34,10 @@ classdef RegClass < handle
         Tfx = struct('out',{''},'par',{''},'jac',{false},'jacmat',{false},'def',{false},...
             'nn',{false(0,1)},'fnames',{cell(0,1)});
         
+        % Batch job object for dynamic queue
+        qfile   % File containing queue of system commands for batch processing
+        job     % Batch job object
+        
     end
     methods
         % RegClass constructor
@@ -42,9 +46,11 @@ classdef RegClass < handle
             self.cmiObj(2) = CMIclass;
             self.elxObj = ElxClass;
             
+            % Default queue file location:
+            self.qfile = fullfile(fileparts(which('cmi')),'elastix','qfile.txt');
+            
             %main Callback set function
             self.initMain;
-            
         end
         % RegClass destructor
         function delete(self)
