@@ -24,11 +24,12 @@ if self.check
     
     timg = self.mat(:,:,:,pp.Vec);
     gchk = any(isinf(pp.Window));
+    mchk = pp.ApplyMask && self.mask.check;
     
     if gchk
         
         nth = length(pp.Thresh);
-        if nD == 2
+        if length(pp.Window) == 2
             nmf = 3;
         else
             nmf = 4;
@@ -38,18 +39,23 @@ if self.check
         MFout = zeros([nth,nmf]);
 
         % Loop over desired image thresholds:
+        hw = waitbar(0,'Calculating Gobal Minkowski Functionals ...');
         for ith = 1:nth
             BW = timg > pp.Thresh(ith);
-            if gchk
+            if mchk
                 BW = BW & self.mask.mat;
             end
-            [MFout(ith,:),labels] = minkowskiFun(BW,pp.Window,varargin{:});
+            [MFout(ith,:),labels] = minkowskiFun(BW,pp.Window);
+            waitbar(ith/nth,hw,['Calculating Gobal Minkowski Functionals ... ',...
+                                num2str(pp.Thresh(ith)),' done']);
         end
+        delete(hw);
 
         % Display global results:
         vals = [{'Thresh'},num2cell(pp.Thresh);...
-                labels(:),num2cell(squeeze(MFout))];
-        msgbox(sprintf(['%10s:',repmat(' %8f',nth)],vals{:}),'Minkowski Functionals');
+                labels(:),num2cell(squeeze(MFout'))];
+        assignin('base','MRvals',vals);
+        msgbox(sprintf(['%10s:',repmat(' %8f',1,nth)],vals{:}),'Minkowski Functionals');
         
     else
         
@@ -58,7 +64,7 @@ if self.check
         
         % Run in batch - will take too long to wait for
         ind = [];
-        if pp.ApplyMask && self.mask.check
+        if mchk
             ind = find(self.mask.mat);
         end
         batch_MinkowskiFun(fullfile(fpath,fname),...

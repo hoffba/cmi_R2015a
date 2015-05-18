@@ -87,10 +87,9 @@ if ~isempty(fullname)
                 datatype = 'DICOM';
             else
                 idt = find(cellfun(@(x)any(strcmpi(ext,x)),dtypes(:,1)),1);
-                if isempty(idt) && isdicom(fullname{i})
-                    idt = 6;
+                if isempty(idt)
                 end
-                datatype = dtypes{idt,2};
+                datatype = dtypes{cellfun(@(x)any(strcmpi(ext,x)),dtypes(:,1)),2};
             end
             if i==1
                 if any(strcmp(datatype,{'DICOM','FDF','Bruker'}))

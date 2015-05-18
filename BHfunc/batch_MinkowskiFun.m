@@ -26,9 +26,10 @@ else
     disp([]);
     
     % Initialize data:
-    d = size(img);
+%     d = size(img);
     if isempty(ind)
-        ind = 1:prod(d);
+%         ind = 1:prod(d);
+        ind = 1:numel(img);
     end
     nth = length(thresh);
         
@@ -39,15 +40,16 @@ else
         
         BW = img > thresh(ith);
         [MF,labels] = minkowskiFun(BW,r,ind);
-        nmf = length(labels);
+%         nmf = length(labels);
         
         % Save results as we go:
-        MFout = zeros(d);
-        for j = 1:nmf
-            MFout(ind) = MF(:,j);
-            saveMHD(fullfile(fpath,[fname,'_th',num2str(thresh(ith)),'_',...
-                                    labels{j},'.mhd']),img,'',fov);
-        end
+        save(fullfile(fpath,[fname,'_th',num2str(thresh(ith)),'.mat']),'MF','labels');
+%         MFout = zeros(d);
+%         for j = 1:nmf
+%             MFout(ind) = MF(:,j);
+%             saveMHD(fullfile(fpath,[fname,'_th',num2str(thresh(ith)),'_',...
+%                                     labels{j},'.mhd']),MFout,'',fov);
+%         end
     end
     
 end

@@ -26,18 +26,19 @@ if any(isinf(n))
     nD = length(d);
 else
     nD = nnz(n);
-    switch nD
-        case 2
-            func = @calcMF2D;
-            labels = {'Area','Perimeter','Euler'};
-            nmf = 3;
-        case 3
-            func = @calcMF3D;
-            labels = {'Volume','SurfaceArea','Mean Breadth','Euler'};
-            nmf = 4;
-        otherwise
-            error(['Invalid window radius: [',num2str(n),']']);
-    end
+end
+
+switch nD
+    case 2
+        func = @calcMF2D;
+        labels = {'Area','Perimeter','Euler'};
+        nmf = 3;
+    case 3
+        func = @calcMF3D;
+        labels = {'Volume','SurfaceArea','Mean Breadth','Euler'};
+        nmf = 4;
+    otherwise
+        error(['Invalid window radius: [',num2str(n),']']);
 end
 
 if any(isinf(n))
