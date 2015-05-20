@@ -8,8 +8,12 @@ self.points{i} = [];
 if ~isnan(self.hpts(i)) && ishandle(self.hpts(i))
     delete(self.hpts(i))
 end
-% If Homologous image was loaded, reset output director based on name
-if (i==2)
+
+fvoxsz = self.cmiObj(1).img.voxsz;
+fdims = self.cmiObj(1).img.dims(1:3);
+if (i==1) % Reference image loaded
+    self.elxObj.setTx0par('Size',fdims,'Spacing',fvoxsz);
+else % If Homologous image was loaded, reset output directory based on name
     tdir = fileparts(self.odir);
     nname = self.cmiObj(2).img.name;
     ndir = self.cmiObj(2).img.dir;
@@ -22,14 +26,10 @@ if (i==2)
         tdir = ndir;
     end
     self.setOdir(fullfile(tdir,['elxreg_',tname,filesep]));
-    set(self.h.checkbox_useExistingT,'Enable','off','Value',0);
-    self.elxObj.setTx0; % Initializes the transform
+    % Initializes the transform
+    self.elxObj.setTx0([1 0 0 0 1 0 0 0 1 0 0 0],fvoxsz,fdims);
     
     % Update GUI objects:
-    set(self.h.checkbox_useExistingT,'Value',0,'Enable','off');
-    set([self.h.edit_a11,self.h.edit_a12,self.h.edit_a13,...
-         self.h.edit_a21,self.h.edit_a22,self.h.edit_a23,...
-         self.h.edit_a31,self.h.edit_a32,self.h.edit_a33,...
-         self.h.edit_t1,self.h.edit_t2,self.h.edit_t3],'Enable','off');
+    self.showTx0;
     
 end

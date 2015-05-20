@@ -1,33 +1,30 @@
 %
-function [MF,labels] = minkowskiFun(BW,n,ind)
+function [MF,labels] = minkowskiFun2(BW,n,mask)
 % Calculates regional minkowski functionals using a moving window method
 % Inputs:
-%   BW      = 2D/3D binary matrix
+%   BW      = 3D binary matrix
 %   n       = moving window radius
-%   ind     =  (3D) indices of matrix locations to analyze
-% Output:
-%   MF     = [#pts x nMF] Minkowski Functionals 
-%               * 2D : Area, Perimeter, Euler-Poincare
-%               * 3D : Volume, Surface Area, Mean Breadth, Euler-Poincare
-%   labels = cell array of MF names
+%   mask    = binary image mask for VOI
+% Output: fimg = 4D minkowski functional maps 
+%                   OR [#thresh x nMF] matrix of results for global values
+%           * 2D : Area, Perimeter, Euler-Poincare
+%           * 3D : Volume, Surface Area, Mean Breadth, Euler-Poincare
+%         labels = cell array of MF names
 
-BW = logical(BW);
 d = size(BW);
 if (nargin<3)
-    ind = [];
-elseif any((ind<1) | (ind>prod(d)))
+    mask = [];
+elseif ~((ndims(BW)==ndims(mask)) && all(d==size(mask)))
     warning('Mask dimensions do not match, proceeding without a mask ...');
-    ind = [];
+    mask = [];
 end
 if nargin<2
-    n = inf([1,length(d)]);
-end
-if any(isinf(n))
-    nD = length(d);
+    R = [4,4,0];
 else
-    nD = nnz(n);
+    R = zeros(1,3);
+    R(1:length(n)) = n;
 end
-
+nD = nnz(R);
 switch nD
     case 2
         func = @calcMF2D;
@@ -38,26 +35,26 @@ switch nD
         labels = {'Volume','SurfaceArea','Mean Breadth','Euler'};
         nmf = 4;
     otherwise
-        error(['Invalid window radius: [',num2str(n),']']);
+        error(['Invalid window size: [',num2str(n),']']);
 end
 
 if any(isinf(n))
-    % Perform global analysis
-    if nD == length(d)
-        MF = feval(func,BW);
-    else
-        warning('Dimensionality does not match.');
-        MF = [];
+    % Perform analysis on entire image
+    if ~isempty(mask)
+        BW = BW & mask;
     end
+    MF = feval(func,BW);
 else
     % Perform analysis on moving window
-    if isempty(ind)
-        ind = 1:prod(d);
+    if isempty(mask)
+        ind = 1:prod(d(1:3));
+    else
+        ind = find(mask);
     end
     ntot = length(ind);
     disp(['Number of iterations: ',num2str(ntot)])
 
-    MF = zeros([ntot,nmf]);
+    MF = zeros([d,nmf]);
     hw = waitbar(0,'Calculating local Minkowski Functionals ...');
     t = tic;
     for i = 1:ntot
@@ -69,7 +66,7 @@ else
         iBW = BW(max(1,ii-n(1)):min(d(1),ii+n(1)),...
                  max(1,jj-n(2)):min(d(2),jj+n(2)),...
                  max(1,kk-n(3)):min(d(3),kk+n(3)));
-        MF(i,:) = feval(func,iBW);
+        MF(ii,jj,kk,:) = feval(func,iBW);
         waitbar(i/ntot,hw,['Complete: ',num2str(i),'/',num2str(ntot)]);
     end
     delete(hw);

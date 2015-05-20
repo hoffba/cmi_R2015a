@@ -21,17 +21,12 @@ if (nargin==3) && ishandle(varargin{1})
 end
 
 p = inputParser;
-addParamValue(p,'Vec',self.vec,@isscalar);
-addParamValue(p,'Thresh',[],@isnumeric);
-addParamValue(p,'Window',[],@isvector);
-addParamValue(p,'ApplyMask',true,@islogical);
+addParameter(p,'Vec',self.vec,@isscalar);
+addParameter(p,'Thresh',[],@isnumeric);
+addParameter(p,'Window',[],@isvector);
+addParameter(p,'ApplyMask',true,@islogical);
 parse(p,varargin{:});
 pp = p.Results;
 
 [MFout,labels] = self.img.calcMF(self.vec,pp.Thresh,pp.Window,varargin{:});
-if ndims(MFout)==5
-    self.update4Dslider;
-else
-    a = [labels ; num2cell(MFout)];
-    msgbox(sprintf('%s  =  % .4f\n',a{:}),'Minkowski Functionals','none');
-end
+

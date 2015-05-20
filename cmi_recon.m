@@ -37,7 +37,7 @@ if ~isempty(fnames)
                 navchk = false;
                 if strncmp(pp.seqfil,'sems_iadc',9)
                     navchk = true;
-                    kdata = flipdim(kdata,4);
+                    kdata = flip(kdata,4);
                 elseif isfield(pp,'navigator') && strcmp(pp.navigator,'y')
                     navchk = true;
                 else
@@ -51,15 +51,17 @@ if ~isempty(fnames)
                 for iarr = 1:narr
                     for islc = 1:d(3)
                         if navchk
-                            img(:,:,islc,iarr) = navcorrect(kdata(:,:,islc,1,iarr),...
-                                                            kdata(:,:,islc,2,iarr));
+%                             img(:,:,islc,iarr) = navcorrect(kdata(:,:,islc,1,iarr),...
+%                                                             kdata(:,:,islc,2,iarr));
+                            img(:,:,islc,iarr) = abs(fftshift(fft2(kdata(:,:,islc,1,iarr),...
+                                                                    d(1),d(2))));
                         else
                             img(:,:,islc,iarr) = abs(fftshift(fft2(kdata(:,:,islc,iarr),...
                                                                     d(1),d(2))));
                         end
                     end
                 end
-                img = flipdim(flipdim(img,1),2);
+                img = flip(flip(img,1),2);
                 
                 % Determine array labels
                 if isfield(pp,'gdiff') && (length(pp.gdiff)==narr) ...
@@ -103,6 +105,7 @@ if ~isempty(fnames)
                 [~,oname] = fileparts(fnames{i});
                 saveFLD(fullfile(fnames{i},[oname,'.fld']),img,label(:)',fov);
                 
+                waitbar(i/nf,hw,['Completed ',num2str(i),' of ' num2str(nf) ' reconstructions']);
             end
         end
     end

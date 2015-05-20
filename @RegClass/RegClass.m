@@ -34,6 +34,10 @@ classdef RegClass < handle
         Tfx = struct('out',{''},'par',{''},'jac',{false},'jacmat',{false},'def',{false},...
             'nn',{false(0,1)},'fnames',{cell(0,1)});
         
+        % Batch job object for dynamic queue
+        qfile   % File containing queue of system commands for batch processing
+        job     % Batch job object
+        
     end
     methods
         % RegClass constructor
@@ -42,13 +46,16 @@ classdef RegClass < handle
             self.cmiObj(2) = CMIclass;
             self.elxObj = ElxClass;
             
+            % Default queue file location:
+            self.qfile = fullfile(fileparts(which('cmi')),'elastix','qfile.txt');
+            
             %main Callback set function
             self.initMain;
-            
         end
         % RegClass destructor
         function delete(self)
             delete(self.cmiObj(isvalid(self.cmiObj)));
+            delete(self.elxObj);
             if isfield(self.h,'regFig') && ishandle(self.h.regFig)
                 delete(self.h.regFig)
             end
@@ -77,6 +84,17 @@ classdef RegClass < handle
             set(self.h.list_hom,'String',num2str(self.points{2},'% .2f '),...
                                'Enable',str,...
                                'Value',max(size(self.points{2},1),1));
+        end
+        % Listener for change in Initial Transform
+        function listenT0(self,~,~)
+            if isfield(self.elxObj.Tx0,'Transform')
+                str = self.elxObj.Tx0.Transform;
+                val = 1;
+            else
+                str = '[None]';
+                val = 0;
+            end
+            set(self.h.text_currTform,'String',str,'Value',val);
         end
     end
 end

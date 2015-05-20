@@ -10,7 +10,7 @@ elseif get(self.h.checkbox_useExistingT,'Value')
     gochk = true;
 else
     % Calculate new Tform based on existing points:
-    inC = {'DefaultPixelValue',self.defVal};
+    inC = {'DefaultPixelValue',self.T0defVal};
     if get(self.h.popup_Transforms,'Value') == 6 % Warp
 %         np = min(size(self.points{1},1),size(self.points{2},1));
 %         off1 = self.cmiObj(1).img.voxsz.*self.cmiObj(1).img.dims(1:3)/2;

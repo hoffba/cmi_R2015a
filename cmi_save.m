@@ -54,6 +54,7 @@ if nargin > 1
             case 'mat'
                 status = saveMAT(fullfile(pname,fname),img,label,fov);
             case 'tif'
+                status = saveTIFF(fullfile(pname,fname),img,label,fov);
             case 'dcm'
                 status = saveDICOM(fullfile(pname,fname),img,label,fov);
             case 'mhd'

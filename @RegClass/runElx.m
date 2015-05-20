@@ -1,6 +1,5 @@
 % RegClass function
-function stat = runElx(self,~,~)
-
+function stat = runElx(self,hObject,~)
 
 stat = self.cmiObj(1).img.check && self.cmiObj(2).img.check;
 hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
@@ -172,12 +171,17 @@ if stat
                                 ' --> ',self.cmiObj(1).img.name];
     % Clean-up after Elastix/Transformix calls:
     custr = ['find ',self.odir,' -name "elxtemp-*" -exec rm -f {} \; ;'];
+        % DO NOT REMOVE the extra ' ;' at the end of this string!
     
     % Start Elastix in new xterm window:
     cmdstr = ['xterm -geometry 170x50 -T "',namestr,'"',...
-                    ' -e ''',elxstr,strcat(tfxC{:}),custr,'csh''&'];
+                    ' -e ''',elxstr,strcat(tfxC{:}),custr];
+    waitstr = ''''; % End input quote for -e statement
+    if strcmp(hObject.Tag,'button_Start') && self.h.checkbox_wait.Value
+        waitstr = 'csh;''&';
+    end
     if ismac
-        cmdstr = ['/opt/X11/bin/',cmdstr];
+        cmdstr = ['/opt/X11/bin/',cmdstr,waitstr];
     end
     % Save command to file for trouble-shooting:
     fid = fopen(fullfile(self.odir,'elastixCMD.txt'),'w');
@@ -185,7 +189,25 @@ if stat
         fprintf(fid,'%s',cmdstr);
         fclose(fid);
     end
-    stat = ~system(cmdstr);
+    % Determine whether to "Start" or "Add to Queue"
+    if strcmp(hObject.Tag,'button_Queue')
+        fid = fopen(self.qfile,'at'); % 'at' = append text
+        fprintf(fid,'%s\n',cmdstr);
+        fclose(fid);
+        jobchk = (isempty(self.job) || ~strcmp(self.job.State,'running'));
+        if jobchk && exist(self.qfile,'file')
+            % Start new batch:
+            self.job = runBatchFromQ(self.qfile);
+        end
+        delete(hw);
+        pause(0.01);
+    else
+        delete(hw);
+        pause(0.01);
+        stat = ~system(cmdstr);
+    end
+else
+    delete(hw);
+    pause(0.01);
 end
-delete(hw);
 

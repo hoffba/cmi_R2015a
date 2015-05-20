@@ -47,6 +47,7 @@ if ~isempty(self.h)
     addlistener(self.cmiObj,'orient','PostSet', @self.plotPts);
     addlistener(self.cmiObj,'hiover','PostSet', @self.setBDFcn);
     addlistener(self,       'points','PostSet', @self.listenPoints);
+    addlistener(self.elxObj,'Tx0','PostSet',@self.listenT0);
     
     % Set listener for initializing after loading new data sets
     addlistener(self.cmiObj,'LoadImgEvent',@self.initImgData);

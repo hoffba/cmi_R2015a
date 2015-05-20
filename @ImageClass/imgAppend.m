@@ -15,7 +15,8 @@ if (nargin>1) && ~isempty(img)
         self.scaleB(ii) = zeros(1,d(4));
         self.dims(4) = self.dims(4)+d(4);
         self.thresh(ii,:) = 1000000 * ones(d(4),1)*[-1,1];
-        self.valExt(ii,:) = [min(min(min(img))),max(max(max(img)))];
+        self.valExt(ii,:) = [squeeze(min(min(min(img)))),...
+                             squeeze(max(max(max(img))))];
     elseif ~self.check
         self.mat = img;
         self.labels = labels;

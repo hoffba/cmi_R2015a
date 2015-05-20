@@ -53,13 +53,12 @@ if nargin
         
         % Prep data for parallel processing
         mmax = max(img(:));
-        nwrk = min(floor(dims(3)/(4*n+2)),12);
-        if ~any(matlabpool('size')==[0,nwrk])
-            matlabpool('close');
+%         nwrk = min(floor(dims(3)/(4*n+2)),12);
+        poolobj = gcp('nocreate');
+        if isempty(poolobj)
+            poolobj = parpool;
         end
-        if matlabpool('size')==0
-            matlabpool(nwrk);
-        end
+        nwrk = poolobj.NumWorkers;
         sDev = distributed.ones(dims(1:3));
         dimg = distributed.ones(dims(1:3));
         for iv = 1:nv
@@ -129,10 +128,12 @@ if nargin
 
             img(:,:,:,iv) = gather(dimg);
 
-            fsec = round(toc(t));
-            fmin = floor(fsec/60); fsec = mod(fsec,60);
-            fhrs = floor(fmin/60); fmin = mod(fmin,60);
-            disp(['NOVA filter complete: ',sprintf('%02u:%02u:%02u',fhrs,fmin,fsec)]);
+            disp(['NOVA filter complete: ',datestr(toc(t)/(60*60*24),'HH:MM:SS')]);
+            
+%             fsec = round(toc(t));
+%             fmin = floor(fsec/60); fsec = mod(fsec,60);
+%             fhrs = floor(fmin/60); fmin = mod(fmin,60);
+%             disp(['NOVA filter complete: ',sprintf('%02u:%02u:%02u',fhrs,fmin,fsec)]);
         end
         delete(hw);
     else
