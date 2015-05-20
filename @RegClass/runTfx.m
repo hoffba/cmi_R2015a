@@ -49,8 +49,9 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
             if self.Tfx.nn(i)
                 tp = tpNN;
             end
+            [~,oname] = fileparts(self.Tfx.fnames{i});
             inC = {'in',self.Tfx.fnames{i},...
-                   'outfn',[self.Tfx.fnames{i}(1:end-4),'_R.mhd']};
+                   'outfn',fullfile(self.Tfx.out,[oname,'_R.mhd'])};
         end
         str(i) = elxObj.tfxCmd(self.Tfx.out,'tp',tp,...
             'jac',self.Tfx.jac,'jacmat',self.Tfx.jacmat,'def',self.Tfx.def,...

@@ -171,7 +171,7 @@ if stat
     namestr = ['Elastix Registration: ',self.cmiObj(2).img.name,...
                                 ' --> ',self.cmiObj(1).img.name];
     % Clean-up after Elastix/Transformix calls:
-    custr = ['find ',self.odir,' -name "elxtemp-*" -exec rm -f {} \;'];
+    custr = ['find ',self.odir,' -name "elxtemp-*" -exec rm -f {} \; ;'];
     
     % Start Elastix in new xterm window:
     cmdstr = ['xterm -geometry 170x50 -T "',namestr,'"',...
