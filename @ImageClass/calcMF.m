@@ -80,9 +80,11 @@ if self.check
         end
         d = self.dims(1:3);
         fov = self.voxsz.*d;
-        save(fullfile(fpath,[bname,'_MFinfo.mat']),'ind','mask','fov','r');
-        batch_MinkowskiFun(fullfile(fpath,fname),...
-                           fov,timg,r,pp.Thresh,ind);
+%         save(fullfile(fpath,[bname,'_MFinfo.mat']),'ind','mask','fov','r');
+        batch_MinkowskiFun(fullfile(fpath,fname),timg,mask,fov,ind,...
+                            r,pp.Thresh);
+%         batch_MinkowskiFun(fullfile(fpath,fname),...
+%                            fov,timg,r,pp.Thresh,ind);
         
     end
 end

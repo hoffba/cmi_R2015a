@@ -163,34 +163,46 @@ for i = 1:length(dcmdata)
 end
 
 n = length(dcmdata);
-% Case for 2-slice gapped CT data
+gflag = 0;
 oimg = [];
 if (n==1) && (length(unique(round(diff(dcmdata.SlcLoc),4)))==2)
+% Case for 2-slice gapped CT data
     oimg = dcmdata.img;
     oloc = dcmdata.SlcLoc;
-elseif all(cellfun(@length,{dcmdata(:).SlcLoc})==2)
+    gflag = 2;
+elseif all(ismember(cellfun(@length,{dcmdata(:).SlcLoc}),1:2))
+% 1: Case for single-slice gapped CT data
+% 2: Case for 2-slice gapped CT data
+    gflag = all(ismember(cellfun(@length,{dcmdata(:).SlcLoc}),1:2));
     oimg = cat(3,dcmdata(:).img);
     oloc = cat(1,dcmdata(:).SlcLoc);
 end
-if ~isempty(oimg)
+if gflag
     answer = questdlg('How would you like to compile these slices?',...
-        '2-Slice Gapped CT',...
-        'Concatenate','Insert Gaps','Cancel','Concatenate');
+        'Gapped CT','Concatenate','Insert Gaps','Cancel','Concatenate');
     if ~strcmp(answer,'Cancel')
         tdata = dcmdata(1);
         if strcmp(answer,'Insert Gaps')
             fval = str2double(inputdlg('Blank Slice Value:','',1,{'-1024'}));
         % Determine gaps:
             [locs,ix] = sort(oloc);
-            dnew = floor((locs(3)-locs(1))/(locs(2)-locs(1)));
-            dz = abs(locs(3)-locs(1))/dnew;
             d = size(oimg);
-            d(3) = d(3)*dnew/2;
-            tmat = ones(d)*fval;
-            ind = round(dnew/2):dnew:d(3);
-            ind = [ind;ind+1];
+            if gflag == 2
+                dnew = floor((locs(3)-locs(1))/(locs(2)-locs(1)));
+                dz = abs(locs(3)-locs(1))/dnew;
+                d(3) = d(3)*dnew/2;
+                tmat = ones(d)*fval;
+                ind = round(dnew/2):dnew:d(3);
+                ind = [ind;ind+1];
+            else % Single-slice
+                dnew = floor((locs(2)-locs(1))/tdata.SlcThk);
+                dz = abs(locs(2)-locs(1))/dnew;
+                d(3) = d(3)*dnew;
+                tmat = ones(d)*fval;
+                ind = round(dnew/2):dnew:d(3);
+            end
             disp(['Image slices are now: ',num2str(ind(:)')])
-            tmat(:,:,ind(:)) = tdata.img(:,:,ix);
+            tmat(:,:,ind(:)) = oimg(:,:,ix);
             tdata.SlcLoc = (1:d(3))'*dz + locs(1) - round(dnew/2)*dz;
             tdata.SlcThk = abs(diff(tdata.SlcLoc(1:2)));
             tdata.img = tmat;

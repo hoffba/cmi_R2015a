@@ -1,5 +1,6 @@
 %
-function batch_MinkowskiFun(fnout,fov,img,r,thresh,ind,varargin)
+% function batch_MinkowskiFun(fnout,fov,img,r,thresh,ind,varargin)
+function batch_MinkowskiFun(fnout,img,mask,fov,ind,r,thresh,varargin)
 % function batch_MinkowskiFun(fname,img,n,thresh,mask)
 %   Runs a batch job to calculate local Minkowski Functionals over image
 %   using defined image thresholds.
@@ -11,11 +12,11 @@ function batch_MinkowskiFun(fnout,fov,img,r,thresh,ind,varargin)
 %   ind
 
 [fpath,fname] = fileparts(fnout);
-if nargin<7
+if nargin<8
     
     % This code starts the batch
     disp(['Starting batch Minkowski Functional analysis ... ',fname])
-    batch(@batch_MinkowskiFun,0,{fnout,fov,img,r,thresh,ind,1});
+    batch(@batch_MinkowskiFun,0,{fnout,img,mask,fov,ind,r,thresh,1});
     disp(' ... done')
     
 else
@@ -26,8 +27,9 @@ else
     disp([]);
     
     % Initialize data:
+    d = size(img);
     if isempty(ind)
-        ind = 1:numel(img);
+        ind = 1:prod(d);
     end
     nth = length(thresh);
         
@@ -43,40 +45,29 @@ else
         
         % Save results as we go:
         ofname = [fname,'_th',num2str(thresh(ith))];
-        ifname = fullfile(fpath,[fname,'_MFinfo.mat']);
-        if exist(ifname,'file')
-            % Load analysis info:
-            % ind, mask, fov, r
-            i = load(ifname);
-            d = size(i.mask);
-            if length(ind)~=length(i.ind)
-                error('procMF :: Number of MF values does not match number of indices.')
-            end
 
-            % Loop over MF results to interpolate and save
-            [Xq,Yq,Zq] = meshgrid(1:d(2),1:d(1),1:d(3));
-            [Y,X,Z] = ind2sub(d,i.ind);
-            F = scatteredInterpolant(X,Y,Z,MF(:,1),'linear','none');
-            for imf = 1:size(MF,2)
+        % Loop over MF results to interpolate and save
+        [Xq,Yq,Zq] = meshgrid(1:d(2),1:d(1),1:d(3));
+        [Y,X,Z] = ind2sub(d,ind);
+        F = scatteredInterpolant(X,Y,Z,MF(:,1),'linear','none');
+        for imf = 1:size(MF,2)
 
-                disp(['Processing: ',labels{imf}]);
+            disp(['Processing: ',labels{imf}]);
 
-                % Interpolate MF map to original dimensions
-                t = tic;
-                F.Values = MF(:,imf);
-                img = F(Xq,Yq,Zq);
-                img(~i.mask | isnan(img)) = 0;
+            % Interpolate MF map to original dimensions
+            t = tic;
+            F.Values = MF(:,imf);
+%             F = scatteredInterpolant(X,Y,Z,MF(:,imf),'linear','none');
+            MFimg = F(Xq,Yq,Zq);
+            MFimg(~mask | isnan(MFimg)) = 0;
 
-                disp(['     ',num2str(toc(t))]);
+            disp(['     ',num2str(toc(t))]);
 
-                % Save as MHD
-                oname = fullfile(fpath,[ofname,'_',labels{imf},'.mhd']);
-                saveMHD(oname,img,'',i.fov);
-            end
-        else
-            save(fullfile(fpath,[ofname,'.mat']),'MF','labels');
+            % Save as MHD
+            oname = fullfile(fpath,[ofname,'_',labels{imf},'.mhd']);
+            saveMHD(oname,MFimg,'',fov);
         end
-        
+        save(fullfile(fpath,[ofname,'.mat']),'MF','labels','ind','d');
     end
     save(fullfile(fpath,[fname,'_means.mat']),'MFmeans');
 end
