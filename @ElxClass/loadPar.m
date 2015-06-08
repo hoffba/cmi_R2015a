@@ -6,7 +6,7 @@ stat = false;
 if (nargin==1) || isempty(fname)
     [fname,path] = uigetfile('*.txt','Load ElastixParameters.txt',...
                              'MultiSelect','on');
-    if iscell(fname) || (fname~=0)
+    if iscell(fname) || ischar(fname)
         fname = strcat(path,fname);
     else
         fname = {};
