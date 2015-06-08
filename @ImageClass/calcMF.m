@@ -19,17 +19,18 @@ addRequired(p,'Window',@isvector);
 addParameter(p,'ApplyMask',true,@islogical);
 parse(p,vec,thresh,n,varargin{:});
 pp = p.Results;
+r = pp.Window;
 
 if self.check
     
     timg = self.mat(:,:,:,pp.Vec);
-    gchk = any(isinf(pp.Window));
+    gchk = any(isinf(r));
     mchk = pp.ApplyMask && self.mask.check;
     
     if gchk
         
         nth = length(pp.Thresh);
-        if length(pp.Window) == 2
+        if length(r) == 2
             nmf = 3;
         else
             nmf = 4;
@@ -45,31 +46,42 @@ if self.check
             if mchk
                 BW = BW & self.mask.mat;
             end
-            [MFout(ith,:),labels] = minkowskiFun(BW,pp.Window);
+            [MFout(ith,:),labels] = minkowskiFun(BW,r);
             waitbar(ith/nth,hw,['Calculating Gobal Minkowski Functionals ... ',...
                                 num2str(pp.Thresh(ith)),' done']);
         end
         delete(hw);
 
-        % Display global results:
-        vals = [{'Thresh'},num2cell(pp.Thresh);...
-                labels(:),num2cell(squeeze(MFout'))];
-        assignin('base','MRvals',vals);
-        msgbox(sprintf(['%10s:',repmat(' %8f',1,nth)],vals{:}),'Minkowski Functionals');
-        
+        if nargout==0
+            % Display global results:
+            vals = [{'Thresh'},num2cell(pp.Thresh);...
+                    labels(:),num2cell(squeeze(MFout'))];
+            assignin('base','MRvals',vals);
+            msgbox(sprintf(['%10s:',repmat(' %8f',1,nth)],vals{:}),'Minkowski Functionals');
+        end
     else
         
-        % User decides where to save results:
-        [fname,fpath] = uiputfile('*.mhd','Save MF Results',[self.name,'.mhd']);
-        
         % Run in batch - will take too long to wait for
+        
+        % User decides where to save results:
+        [fname,fpath] = uiputfile('*.mat','Save MF Results',self.name);
+        
         ind = [];
         if mchk
-            ind = find(self.mask.mat);
+            mask = self.mask.mat;
+            mmin = [ find(max(max(mask,[],2),[],3),1) ,...
+                     find(max(max(mask,[],1),[],3),1) ,...
+                     find(max(max(mask,[],1),[],2),1) ];
+            gridmask = false(self.dims(1:3));
+            gridmask( mmin(1):r(1):end , ...
+                      mmin(2):r(2):end , ...
+                      mmin(3):r(3):end ) = true;
+            ind = find(self.mask.mat & gridmask);
         end
-        batch_MinkowskiFun(fullfile(fpath,fname),...
-                           self.voxsz.*self.dims(1:3),...
-                           timg,pp.Window,pp.Thresh,ind);
+        d = self.dims(1:3);
+        fov = self.voxsz.*d;
+        batch_MinkowskiFun(fullfile(fpath,fname),timg,mask,fov,ind,...
+                            r,pp.Thresh);
         
     end
 end
