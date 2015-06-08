@@ -52,19 +52,19 @@ if self.check
         end
         delete(hw);
 
-        % Display global results:
-        vals = [{'Thresh'},num2cell(pp.Thresh);...
-                labels(:),num2cell(squeeze(MFout'))];
-        assignin('base','MRvals',vals);
-        msgbox(sprintf(['%10s:',repmat(' %8f',1,nth)],vals{:}),'Minkowski Functionals');
-        
+        if nargout==0
+            % Display global results:
+            vals = [{'Thresh'},num2cell(pp.Thresh);...
+                    labels(:),num2cell(squeeze(MFout'))];
+            assignin('base','MRvals',vals);
+            msgbox(sprintf(['%10s:',repmat(' %8f',1,nth)],vals{:}),'Minkowski Functionals');
+        end
     else
         
         % Run in batch - will take too long to wait for
         
         % User decides where to save results:
         [fname,fpath] = uiputfile('*.mat','Save MF Results',self.name);
-        [~,bname,~] = fileparts(fname);
         
         ind = [];
         if mchk
@@ -80,11 +80,8 @@ if self.check
         end
         d = self.dims(1:3);
         fov = self.voxsz.*d;
-%         save(fullfile(fpath,[bname,'_MFinfo.mat']),'ind','mask','fov','r');
         batch_MinkowskiFun(fullfile(fpath,fname),timg,mask,fov,ind,...
                             r,pp.Thresh);
-%         batch_MinkowskiFun(fullfile(fpath,fname),...
-%                            fov,timg,r,pp.Thresh,ind);
         
     end
 end

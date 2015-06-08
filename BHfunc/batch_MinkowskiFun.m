@@ -47,26 +47,25 @@ else
         ofname = [fname,'_th',num2str(thresh(ith))];
 
         % Loop over MF results to interpolate and save
-        [Xq,Yq,Zq] = meshgrid(1:d(2),1:d(1),1:d(3));
-        [Y,X,Z] = ind2sub(d,ind);
-        F = scatteredInterpolant(X,Y,Z,MF(:,1),'linear','none');
-        for imf = 1:size(MF,2)
-
-            disp(['Processing: ',labels{imf}]);
-
-            % Interpolate MF map to original dimensions
-            t = tic;
-            F.Values = MF(:,imf);
-%             F = scatteredInterpolant(X,Y,Z,MF(:,imf),'linear','none');
-            MFimg = F(Xq,Yq,Zq);
-            MFimg(~mask | isnan(MFimg)) = 0;
-
-            disp(['     ',num2str(toc(t))]);
-
-            % Save as MHD
-            oname = fullfile(fpath,[ofname,'_',labels{imf},'.mhd']);
-            saveMHD(oname,MFimg,'',fov);
-        end
+%         [Xq,Yq,Zq] = meshgrid(1:d(2),1:d(1),1:d(3));
+%         [Y,X,Z] = ind2sub(d,ind);
+%         F = scatteredInterpolant(X,Y,Z,MF(:,1),'linear','none');
+%         for imf = 1:size(MF,2)
+% 
+%             disp(['Processing: ',labels{imf}]);
+% 
+%             % Interpolate MF map to original dimensions
+%             t = tic;
+%             F.Values = MF(:,imf);
+%             MFimg = F(Xq,Yq,Zq);
+%             MFimg(~mask | isnan(MFimg)) = 0;
+% 
+%             disp(['     ',num2str(toc(t))]);
+% 
+%             % Save as MHD
+%             oname = fullfile(fpath,[ofname,'_',labels{imf},'.mhd']);
+%             saveMHD(oname,MFimg,'',fov);
+%         end
         save(fullfile(fpath,[ofname,'.mat']),'MF','labels','ind','d');
     end
     save(fullfile(fpath,[fname,'_means.mat']),'MFmeans');
