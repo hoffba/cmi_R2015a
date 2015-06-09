@@ -190,8 +190,8 @@ classdef CMIclass < handle
                         tprm(isnan(tprm)) = 0;
                         timg = self.ncolors + tprm;
                         adata = true(size(tprm));
-                        if self.img.prm.mask.check && strcmp(get(self.h.analysis_prmselect,'Checked'),'on')
-                            adata = self.img.prm.mask.getSlice(self.orient,1,tslc);
+                        if self.img.prm.check && strcmp(get(self.h.analysis_prmselect,'Checked'),'on')
+                            adata = ~isnan(self.img.prm.getSlice(self.orient,1,tslc));
                         end
                         adata = double(adata & (tprm>0)) * talpha;
                     elseif (self.overcheck && self.img.mask.check)

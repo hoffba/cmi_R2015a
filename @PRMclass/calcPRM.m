@@ -12,25 +12,25 @@ if (nargin==6) % need all inputs
     [np,ndim] = size(vals);
     if (ndim==length(vec)) && (numel(find(mask))==np)
         tthresh = self.thresh; tthresh(tthresh(1:2*size(tthresh,1))==0) = cvec;
-        tcut = self.cutoff; tcut(tcut(:,1)==0,1) = cvec;
+        tcut = self.cutoff; 
+        if ~isempty(tcut)
+            tcut(tcut(:,1)==0,1) = cvec;
+        end
         [ind,C] = prm_seg(vals,vec,tthresh,tcut);
         if ~isempty(ind)
             % Check if # of thresholds matches current mapping scheme
             if size(C,2)==size(self.prmmap{1},2)
                 prmvals = zeros(np,1);
-%                 prmpcts = zeros(self.nprm,1);
                 % Map prm C-index to desired PRM value
                 % (note: any unmatched indexes are cropped)
                 for i = 1:self.nprm
                     Li = find(ismember(C,self.prmmap{i,1},'rows'));
                     for j = 1:length(Li)
                         prmvals((ind==Li(j)) & (ind>0)) = i;
-%                         prmpcts(i) = prmpcts(i) + pcts(Li(j));
                     end
                 end
             % Otherwise, change to arbitrary scheme
             else
-%                 prmpcts = pcts;
                 prmvals = ind;
                 nC = size(C);
                 self.nprm = nC(1);
@@ -46,31 +46,31 @@ if (nargin==6) % need all inputs
             
             % Display scatterplot if desired
             %   2D only!
-            if self.prmscatter && (ndim>1)
+            if self.SPopts.show && (ndim>1)
                 
-                % Initialize PRM mask:
-                self.mask.setDims(size(mask));
-                self.mask.clear;
+%                 % Initialize PRM mask:
+%                 self.mask.setDims(size(mask));
+%                 self.mask.clear;
                 
-                if np > self.npmaxscat
+                if np > self.SPopts.Nmax
                     % Need to down-sample for large data sets
-                    ind = round(1:(np/self.npmaxscat):np);
+                    ind = round(1:(np/self.SPopts.Nmax):np);
                 else
                     ind = 1:np;
                 end
                 % Plot the data
-                txlim = []; tylim = [];
-                if ~isempty(self.cutoff)
-                    ii = self.cutoff(:,1); ii(ii==0) = vec(1);
-                    ix = find(ii==vec(2),1);
-                    iy = find(ii==vec(1),1);
-                    if ix
-                        txlim = self.cutoff(ix,2:3);
-                    end
-                    if iy
-                        tylim = self.cutoff(iy,2:3);
-                    end
-                end
+%                 txlim = []; tylim = [];
+%                 if ~isempty(self.cutoff)
+%                     ii = self.cutoff(:,1); ii(ii==0) = vec(1);
+%                     ix = find(ii==vec(2),1);
+%                     iy = find(ii==vec(1),1);
+%                     if ix
+%                         txlim = self.cutoff(ix,2:3);
+%                     end
+%                     if iy
+%                         tylim = self.cutoff(iy,2:3);
+%                     end
+%                 end
                 if isempty(self.hascatter) || ~(ishandle(self.hascatter) ...
                         && strcmp(get(self.hascatter,'Tag'),'PRMscatter'))
                     pos = get(0,'ScreenSize');
@@ -88,7 +88,8 @@ if (nargin==6) % need all inputs
                 [ha,hs] = prm_plot(vals(ind,1),vals(ind,2),prmvals(ind),self.cmap,...
                                    self.prmmap(:,2),prmpcts,self.hascatter,...
                                    'xlabel',self.dlabels{1},'ylabel',self.dlabels{2},...
-                                   'xlim',txlim,'ylim',tylim);
+                                   'xlim',[self.SPopts.Xmin,self.SPopts.Xmax],...
+                                   'ylim',[self.SPopts.Ymin,self.SPopts.Ymax]);
                 
                                % Add threshold lines
                 d = self.thresh(:,1:2);

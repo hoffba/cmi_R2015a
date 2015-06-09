@@ -33,16 +33,16 @@ if (nargin>=4)
             cla(ha);
         end
         p = inputParser;
-        p.addParamValue('size',      12,@(x) isnumeric(x) && (x>0));
-        p.addParamValue('fill',      true,@(x) islogical(x));
-        p.addParamValue('markertype','o',@(x) ischar(x));
-        p.addParamValue('xlim',      'auto',@(x) isempty(x) || ...
+        p.addParameter('size',      12,@(x) isnumeric(x) && (x>0));
+        p.addParameter('fill',      true,@(x) islogical(x));
+        p.addParameter('markertype','o',@(x) ischar(x));
+        p.addParameter('xlim',      'auto',@(x) isempty(x) || ...
                                      (isnumeric(x) && all(size(x)==[1,2])));
-        p.addParamValue('ylim',      'auto',@(x) isempty(x) || ...
+        p.addParameter('ylim',      'auto',@(x) isempty(x) || ...
                                      (isnumeric(x) && all(size(x)==[1,2])));
-        p.addParamValue('xlabel',    '',@ischar);
-        p.addParamValue('ylabel',    '',@ischar);
-        p.addParamValue('bgcolor',   0.6*[1,1,1],@(x) isnumeric(x) ...
+        p.addParameter('xlabel',    '',@ischar);
+        p.addParameter('ylabel',    '',@ischar);
+        p.addParameter('bgcolor',   0.6*[1,1,1],@(x) isnumeric(x) ...
                                                  && all(size(x)==[1,3]) ...
                                                  && all(x>=0) && all(x<=1));
         if (nargin>8)
@@ -88,8 +88,30 @@ if (nargin>=4)
                'PlotBoxAspectRatioMode','manual');
         set(get(ha,'XLabel'),'String',opts.xlabel);
         set(get(ha,'YLabel'),'String',opts.ylabel);
-        xlim(ha,opts.xlim);
-        ylim(ha,opts.ylim);
+        
+        % Axes limits:
+        if ischar(opts.xlim) || isinf(opts.xlim(1)) || isnan(opts.xlim(1))
+            tlim(1) = min(x);
+        else
+            tlim(1) = opts.xlim(1);
+        end
+        if ischar(opts.xlim) || isinf(opts.xlim(2)) || isnan(opts.xlim(2))
+            tlim(2) = max(x);
+        else
+            tlim(2) = opts.xlim(2);
+        end
+        xlim(ha,tlim);
+        if ischar(opts.ylim) || isinf(opts.ylim(1)) || isnan(opts.ylim(1))
+            tlim(1) = min(y);
+        else
+            tlim(1) = opts.ylim(1);
+        end
+        if ischar(opts.ylim) || isinf(opts.ylim(2)) || isnan(opts.ylim(2))
+            tlim(2) = max(y);
+        else
+            tlim(2) = opts.ylim(2);
+        end
+        ylim(ha,tlim);
         
 %         % Generate title w/ stats
 %         nstr = size(char(labels(:)),2);

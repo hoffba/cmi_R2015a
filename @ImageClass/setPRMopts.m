@@ -11,9 +11,10 @@ if (nargin==2) && isnumeric(cvec)
     h.cutoff = self.prm.cutoff;
     h.cmap = self.prm.cmap;
     h.prmmap = self.prm.prmmap;
-    h.maxnp = self.prm.npmaxscat;
-    h.prmscatter = self.prm.prmscatter;
+%     h.maxnp = self.prm.npmaxscat;
+%     h.prmscatter = self.prm.prmscatter;
     h.normchk = self.prm.normchk;
+    h.SPopts = self.prm.SPopts;
     guidata(hf,h);
     
     % Set GUI object properties
@@ -29,9 +30,15 @@ if (nargin==2) && isnumeric(cvec)
     set(h.table_thresh,'Data',num2cell(self.prm.thresh));
     set(h.table_C,'Data',num2cell(self.prm.prmmap{h.i,1})');
     set(h.table_crop,'Data',num2cell(self.prm.cutoff));
-    set(h.edit_maxnp,'String',num2str(self.prm.npmaxscat));
-    set(h.checkbox_showScatter,'Value',self.prm.prmscatter);
     set(h.checkbox_VolNorm,'Value',self.prm.normchk);
+    set(h.edit_SPmaxX,'String',self.prm.SPopts.Xmax);
+    set(h.edit_SPmaxY,'String',self.prm.SPopts.Ymax);
+    set(h.edit_SPminX,'String',self.prm.SPopts.Xmin);
+    set(h.edit_SPminY,'String',self.prm.SPopts.Ymin);
+    set(h.edit_SPdimX,'String',self.prm.SPopts.Xvec);
+    set(h.edit_SPdimY,'String',self.prm.SPopts.Yvec);
+    set(h.edit_maxnp,'String',num2str(self.prm.SPopts.Nmax));
+    set(h.checkbox_showScatter,'Value',self.prm.SPopts.show);
     
     uiwait(hf); % wait for options figure
     
@@ -49,11 +56,12 @@ if (nargin==2) && isnumeric(cvec)
         else
             labels = strcat('Dim',num2cell(num2str(tval')));
         end
-        stat = self.prm.setOpts('thresh',h.thresh,'cutoff',h.cutoff,...
-                                'cmap',h.cmap,'prmmap',h.prmmap,...
+        stat = self.prm.setOpts('thresh',h.thresh,...
+                                'cutoff',h.cutoff,...
+                                'cmap',h.cmap,...
+                                'prmmap',h.prmmap,...
                                 'labels',labels,...
-                                'npmaxscat',h.maxnp,...
-                                'prmscatter',h.prmscatter,...
-                                'normchk',h.normchk);
+                                'normchk',h.normchk,...
+                                'SPopts',h.SPopts);
     end
 end

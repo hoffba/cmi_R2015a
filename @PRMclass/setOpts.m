@@ -5,6 +5,7 @@ function stat = setOpts(self,varargin)
 
 stat = false;
 p = inputParser;
+p.KeepUnmatched = true;
 p.addOptional('thresh',nan,@(x) isnumeric(x) && (size(x,2)==4));
 p.addOptional('cutoff',nan,@(x) isnumeric(x) && (size(x,2)==3));
 p.addOptional('prmmap',nan,@(x) iscell(x) && (size(x,2)==2) ...
@@ -12,9 +13,10 @@ p.addOptional('prmmap',nan,@(x) iscell(x) && (size(x,2)==2) ...
                 && iscellstr(x(:,2)));
 p.addOptional('cmap'  ,nan,@(x) isnumeric(x) && (size(x,2)==3));
 p.addOptional('labels',nan,@(x) iscellstr(x));
-p.addOptional('npmaxscat',nan,@(x) isnumeric(x) && (x>0));
-p.addOptional('prmscatter',nan,@(x) islogical(x) && length(x)==1);
+% p.addOptional('npmaxscat',nan,@(x) isnumeric(x) && (x>0));
+% p.addOptional('prmscatter',nan,@(x) islogical(x) && length(x)==1);
 p.addOptional('normchk',nan,@(x) islogical(x) && length(x)==1);
+p.addOptional('SPopts',nan,@isstruct);
 p.parse(varargin{:});
 opts = rmfield(p.Results,p.UsingDefaults);
 
@@ -73,21 +75,27 @@ if isfield(opts,'labels') && (length(p.Results.labels)==length(self.dvec))
     stat = true;
 end
 
-if isfield(opts,'npmaxscat')
-    self.npmaxscat = round(opts.npmaxscat);
-    stat = true;
-end
-
-if isfield(opts,'prmscatter')
-    self.prmscatter = opts.prmscatter;
-    stat = true;
-end
+% if isfield(opts,'npmaxscat')
+%     self.npmaxscat = round(opts.npmaxscat);
+%     stat = true;
+% end
+% 
+% if isfield(opts,'prmscatter')
+%     self.prmscatter = opts.prmscatter;
+%     stat = true;
+% end
         
 if isfield(opts,'normchk')
     self.normchk = opts.normchk;
     stat = true;
 end
 
-        
+if isfield(opts,'SPopts')
+    for fldn = fieldnames(self.SPopts)'
+        if isfield(opts.SPopts,fldn{1})
+            self.SPopts.(fldn{1}) = opts.SPopts.(fldn{1});
+        end
+    end
+end
         
 

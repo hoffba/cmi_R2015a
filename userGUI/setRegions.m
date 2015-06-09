@@ -177,36 +177,15 @@ if n>1
     set(handles.list_regions,'Value',handles.i,'String',handles.prmmap(:,2));
     set(handles.edit_name,'String',handles.prmmap{handles.i,2});
     set(handles.axes_color,'Color',handles.cmap(handles.i,:));
-    if isnan(handles.SPopts.Xvec)
-        str = '';
-    else
-        str = num2str(handles.SPopts.Xvec);
-    end
-    set(handles.edit_SPdimX,'String',str);
-    if isnan(handles.SPopts.Xvec)
-        str = '';
-    else
-        str = num2str(handles.SPopts.Xvec);
-    end
-    set(handles.edit_SPdimX,'String',str);
-    if isnan(handles.SPopts.Xvec)
-        str = '';
-    else
-        str = num2str(handles.SPopts.Xvec);
-    end
-    set(handles.edit_SPdimX,'String',str);
-    if isnan(handles.SPopts.Xvec)
-        str = '';
-    else
-        str = num2str(handles.SPopts.Xvec);
-    end
-    set(handles.edit_SPdimX,'String',str);
-    if isnan(handles.SPopts.Xvec)
-        str = '';
-    else
-        str = num2str(handles.SPopts.Xvec);
-    end
-    set(handles.edit_SPdimX,'String',str);
+    
+    set(handles.edit_SPdimX,'String',handles.SPopts.Xvec);
+    set(handles.edit_SPdimY,'String',handles.SPopts.Yvec);
+    set(handles.edit_SPminX,'String',handles.SPopts.Xmin);
+    set(handles.edit_SPmaxX,'String',handles.SPopts.Xmax);
+    set(handles.edit_SPminY,'String',handles.SPopts.Ymin);
+    set(handles.edit_SPmaxY,'String',handles.SPopts.Ymax);
+    set(handles.edit_maxnp,'String',handles.SPopts.Nmax);
+    set(handles.checkbox_showScatter,'Value',handles.SPopts.show);
     
     guidata(gcbo,handles);
 end
@@ -316,33 +295,29 @@ end
 function button_save_Callback(~, ~, handles)
 if ~isempty(handles.prmmap)
     fpath = fullfile(fileparts(which('cmi')),'PRMdefs');
-    if get(handles.popup_defs,'Value')>1
-        % Ask user to save over previous setting for selected definition
-        answer = questdlg('Would you like to save over current definition?',...
-                          'ReWrite PRM Def?');
+    dval = get(handles.popup_defs,'Value');
+    if dval>1
+        str = handles.defs(dval-1).name;
     else
-        answer = 'No';
+        str = '';
     end
-    if strcmp(answer,'Yes')
-    elseif strcmp(answer,'No')
         
-        str = inputdlg('PRM model name:','Save PRM Model');
-        str{1}(str{1}==' ') = []; % remove spaces
-        if ~isempty(str{1})
-            fpath = fullfile(fpath,['PRMdef_',str{1},'.mat']);
-            answer = 'Yes';
-            if exist(fpath,'file')
-                answer = questdlg('File already exists! Replace?');
-            end
-            if strcmp(answer,'Yes')
-                name = str{1};
-                thresh = handles.thresh;
-                cutoff = handles.cutoff;
-                cmap = handles.cmap;
-                prmmap = handles.prmmap;
-                SPopts = handles.SPopts;
-                save(fpath,'name','thresh','cutoff','cmap','prmmap','SPopts');
-            end
+    str = inputdlg('PRM model name:','Save PRM Model',1,{str});
+    str{1}(str{1}==' ') = []; % remove spaces
+    if ~isempty(str{1})
+        fpath = fullfile(fpath,['PRMdef_',str{1},'.mat']);
+        answer = 'Yes';
+        if exist(fpath,'file')
+            answer = questdlg('File already exists! Replace?');
+        end
+        if strcmp(answer,'Yes')
+            name = str{1};
+            thresh = handles.thresh;
+            cutoff = handles.cutoff;
+            cmap = handles.cmap;
+            prmmap = handles.prmmap;
+            SPopts = handles.SPopts;
+            save(fpath,'name','thresh','cutoff','cmap','prmmap','SPopts');
         end
     end
 end
@@ -350,14 +325,14 @@ end
 function edit_maxnp_Callback(~, ~, handles)
 n = str2double(get(handles.edit_maxnp,'String'));
 if ~isnan(n) && (n>0)
-    handles.maxnp = round(n);
+    handles.SPopts.Nmax = round(n);
 end
-set(handles.edit_maxnp,'String',num2str(handles.maxnp));
+set(handles.edit_maxnp,'String',num2str(handles.SPopts.Nmax));
 guidata(gcbo,handles);
 
 % --- Executes on button press in checkbox_showScatter.
 function checkbox_showScatter_Callback(hObject, ~, handles)
-handles.prmscatter = logical(get(hObject,'Value'));
+handles.SPopts.show = logical(get(hObject,'Value'));
 guidata(gcbo,handles);
 
 

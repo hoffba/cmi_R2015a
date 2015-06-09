@@ -29,8 +29,8 @@ classdef PRMclass < Mat3Dclass
                  
         prmdir   % Directory storing PRM default settings
         
-        prmscatter = true;      % Check for display of PRM scatter plot
-        npmaxscat = 5000;       % Max number of scatterplot points
+%         prmscatter = true;      % Check for display of PRM scatter plot
+%         npmaxscat = 5000;       % Max number of scatterplot points
         hfscatter               % Handle to PRM scatterplot figure
         hascatter               % Handle to PRM scatterplot axes
         hsscatter               % Handle to PRM scatterplot object
@@ -55,17 +55,20 @@ classdef PRMclass < Mat3Dclass
             if isempty(idef)
                 idef = 1;
             end
-            pdefs = load(fullfile(self.prmdir,pdefs{idef}));
-            self.thresh = pdefs.thresh;
-            self.prmmap = pdefs.prmmap;
-            self.cutoff = pdefs.cutoff;
-            self.cmap = pdefs.cmap;
+            self.loadPRMdefs(fullfile(self.prmdir,pdefs{idef}));
+%             pdefs = load(fullfile(self.prmdir,pdefs{idef}));
+%             self.thresh = pdefs.thresh;
+%             self.prmmap = pdefs.prmmap;
+%             self.cutoff = pdefs.cutoff;
+%             self.cmap = pdefs.cmap;
+%             A = [fieldnames(pdefs.SPopts),struct2cell(pdefs.SPopts)]';
+%             self.SPopts = setfield(self.SPopts,A{:});
             self.nprm = size(self.cmap,1);
                 tval = self.thresh(:,1:2);
                 tval = unique(tval(:));
             self.dvec = tval(:)';
             self.dlabels = cellstr(strcat('Dim',num2str((1:length(self.dvec))')));
-            self.mask = MaskClass;
+%             self.mask = MaskClass;
         end
         % Deleter method
         function delete(self)

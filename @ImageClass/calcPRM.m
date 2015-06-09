@@ -16,15 +16,13 @@ if self.check && self.mask.check
         tvec = unique(tvec);
         nv = length(tvec);
         
-%         if nv>1
-            % extract image values
-            vals = zeros(np,nv);
-            for i = 1:nv
-                vals(:,i) = self.mat(mskind + (tvec(i)-1)*(prod(self.dims(1:3))));
-            end
+        % extract image values
+        vals = zeros(np,nv);
+        for i = 1:nv
+            vals(:,i) = self.mat(mskind + (tvec(i)-1)*(prod(self.dims(1:3))));
+        end
 
-            % Finally, calculate the PRM
-            [labels,vals] = self.prm.calcPRM(vals,tvec,vec,self.labels(tvec),self.mask.mat);
-%         end
+        % Finally, calculate the PRM
+        [labels,vals] = self.prm.calcPRM(vals,tvec,vec,self.labels(tvec),self.mask.mat);
     end
 end
