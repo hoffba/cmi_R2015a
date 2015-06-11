@@ -28,6 +28,7 @@ end
 D = {};
 F = {};
 if ~isempty(filt)
+%     disp(tpath)
     [~,dname] = fileparts(tpath);
     waitbar(0,h,dname);
     tD = dir(tpath);
@@ -47,6 +48,7 @@ if ~isempty(filt)
             fnames = [fnames;{tfnames(:).name}'];
             fchk = fchk || ~isempty(tfnames);
         end
+%     end
     if fchk
         D = {tpath};
         F = {fnames};
