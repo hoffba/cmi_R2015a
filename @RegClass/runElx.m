@@ -44,8 +44,8 @@ if stat
            self.cmiObj(2).img.dims(1:3).*self.cmiObj(2).img.voxsz];
        
     % Set filenames:
-    outfn = {fullfile(self.odir,[self.cmiObj(2).img.name,'_RR.mhd'])};
-    origfn = {fullfile(self.odir,'elxtemp-origm.mhd')};
+    outfn = fullfile(self.odir,[self.cmiObj(2).img.name,'_RR.mhd']);
+    origfn = fullfile(self.odir,'elxtemp-origm.mhd');
     fnames = {fullfile(self.odir,'elxtemp-f.mhd'),...
               fullfile(self.odir,'elxtemp-m.mhd')};
     
@@ -68,13 +68,13 @@ if stat
     % Save original moving image:
     waitbar(0.1,hw,'Saving Original Fixed Image ...');
     timg = self.cmiObj(2).img.mat(:,:,:,self.cmiObj(2).vec);
-    stat = saveMHD(origfn{1},timg,[],fov(2,:));
+    stat = saveMHD(origfn,timg,[],fov(2,:));
     
     % Moving Image:
     if stat
         if isempty(filtN) || ~any(filtN)
             % Image already saved as origfn
-            fnames{2} = origfn{1};
+            fnames{2} = origfn;
         else
             waitbar(0.25,hw,'Filtering Moving Image ...');
             if strcmp(self.ftype,'Gaussian')
@@ -119,12 +119,6 @@ if stat
         if any(self.dilateN)
             se = bwellipsoid(self.dilateN);
         end
-        if self.tVOI && self.cmiObj(2).img.mask.check
-            origfn = [origfn,{fullfile(self.odir,'elxtemp-origmVOI.mhd')}];
-            outfn = [outfn,{fullfile(self.odir,...
-                                [self.cmiObj(2).img.name,'_VOI_RR.mhd'])}];
-            stat = saveMHD(origfn{2},self.cmiObj(2).img.mask.mat*255,[],fov(2,:));
-        end
         for i = 1:2
             waitbar(0.75,hw,['Dilating and Saving VOI ...',str{i}]);
             if self.cmiObj(i).img.mask.check
@@ -140,55 +134,28 @@ if stat
     end
 end
 
-% Generate calls to Elastix and Transformix:
 if stat
-    % ~~~~~~~ Elastix ~~~~~~~~
-    % !!! Default is not to save resulting image - this will be
-    %       done using Transformix on original moving image file !!!
-    elxstr = self.elxObj.elxCmd(fnames{:},self.odir,elxC{:});
-    % ~~~~~~~~~~~~~~~~~~~~~~~~
-    % ~~~~~~~ Transformix ~~~~
-    tpfname = fullfile(self.odir,['TransformParameters.',...
-                        num2str(length(self.elxObj.Schedule)-1),'.txt']);
-    inC = {'in',origfn,'outfn',outfn,'tp',tpfname};
-    if self.jac
-        inC = [inC,{'jac',true}];
-    end
-    if self.jacmat
-        inC = [inC,{'jacmat',true}];
-    end
-    if self.def
-        inC = [inC,{'def',true}];
-    end
-    tfxC = self.elxObj.tfxCmd(self.odir,inC{:});
-    % ~~~~~~~~~~~~~~~~~~~~~~~~
-end
-
-% Run Elastix through system command
-if stat
+    
     % Name of xterm window:
     namestr = ['Elastix Registration: ',self.cmiObj(2).img.name,...
                                 ' --> ',self.cmiObj(1).img.name];
-    % Clean-up after Elastix/Transformix calls:
-    custr = ['find ',self.odir,' -name "elxtemp-*" -exec rm -f {} \; ;'];
-        % DO NOT REMOVE the extra ' ;' at the end of this string!
+    % Transformix setup:
+    tpfname = fullfile(self.odir,['TransformParameters.',...
+                        num2str(length(self.elxObj.Schedule)-1),'.txt']);
+                    
+    cmdstr = self.elxObj.sysCmd(self.odir,'title',namestr,...
+        'f',fnames{1},'m',fnames{2},elxC{:},...
+        'in',origfn,'outfn',outfn,'tp',tpfname,...
+        'jac',self.jac,'jacmat',self.jacmat,'def',self.def,...
+        'cleanup',true);
     
-    % Start Elastix in new xterm window:
-    cmdstr = ['xterm -geometry 170x50 -T "',namestr,'"',...
-                    ' -e ''',elxstr,strcat(tfxC{:}),custr];
-    waitstr = ''''; % End input quote for -e statement
-    if strcmp(hObject.Tag,'button_Start') && self.h.checkbox_wait.Value
-        waitstr = 'csh;''&';
-    end
-    if ismac
-        cmdstr = ['/opt/X11/bin/',cmdstr,waitstr];
-    end
     % Save command to file for trouble-shooting:
     fid = fopen(fullfile(self.odir,'elastixCMD.txt'),'w');
     if fid>2
         fprintf(fid,'%s',cmdstr);
         fclose(fid);
     end
+    
     % Determine whether to "Start" or "Add to Queue"
     if strcmp(hObject.Tag,'button_Queue')
         fid = fopen(self.qfile,'at'); % 'at' = append text
@@ -199,15 +166,11 @@ if stat
             % Start new batch:
             self.job = runBatchFromQ(self.qfile);
         end
-        delete(hw);
-        pause(0.01);
     else
-        delete(hw);
-        pause(0.01);
         stat = ~system(cmdstr);
     end
-else
-    delete(hw);
-    pause(0.01);
 end
+delete(hw);
+pause(0.01);
+
 

@@ -15,20 +15,20 @@ function str = tfxCmd(self,odir,varargin)
 str = '';
 % Parse variable inputs:
 p = inputParser;
-addRequired(p,'out',@isdir);
-addParamValue(p,'in','',@(x)ischar(x)||iscellstr(x));
-addParamValue(p,'outfn','',@(x)ischar(x)||iscellstr(x));
-addParamValue(p,'tp','',@ischar);
-addParamValue(p,'jac',false,@islogical);
-addParamValue(p,'jacmat',false,@islogical);
-addParamValue(p,'def',false,@islogical);
+addRequired(p,'odir',@isdir);
+addParameter(p,'in','',@(x)ischar(x)||iscellstr(x));
+addParameter(p,'outfn','',@(x)ischar(x)||iscellstr(x));
+addParameter(p,'tp','',@ischar);
+addParameter(p,'jac',false,@islogical);
+addParameter(p,'jacmat',false,@islogical);
+addParameter(p,'def',false,@islogical);
 parse(p,odir,varargin{:})
 pp = p.Results;
 
 % Determine tranform parameters:
 if isempty(pp.tp) && ~isempty(self.Tx0)
     % If no file was input, save current Tx0 in ExlClass object
-    pp.tp = self.saveTx0(fullfile(pp.out,...
+    pp.tp = self.saveTx0(fullfile(pp.odir,...
                 ['TransformParameters-',datestr(now,'yyyymmdd'),'.txt']));
 end
 if ischar(pp.in)
@@ -44,7 +44,7 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
     str = cell(np,1);
     for i = 1:np
         str{i} = [fullfile(self.elxdir,'transformix'),...
-               ' -out "',pp.out,'"',...
+               ' -out "',pp.odir,'"',...
                ' -tp "',pp.tp,'"'];
         if ~isempty(pp.in)
             str{i} = [str{i},' -in "',pp.in{i},'"'];
@@ -61,10 +61,15 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
             str{i} = [str{i},' -jacmat all'];
             pp.jacmat = false; % only need to perform once
         end
-        str{i} = [str{i},';'];
         if ~isempty(pp.outfn{i}) && outchk
-            str{i} = [str{i},'cp "',fullfile(pp.out,'result.mhd'),'" "',pp.outfn{i},...
-                     '";cp "',fullfile(pp.out,'result.raw'),'" "',pp.outfn{i}(1:end-3),'raw";'];
+            if ispc
+                cpexec = 'copy';
+            else
+                cpexec = 'cp';
+            end
+            str{i} = [str{i},self.sepstr,cpexec,' "',fullfile(pp.odir,'result.mhd'),'" "',...
+                pp.outfn{i},'"',self.sepstr,cpexec,' "',fullfile(pp.odir,'result.raw'),...
+                '" "',pp.outfn{i}(1:end-3),'raw"'];
         end
     end
 end

@@ -55,14 +55,10 @@ if gochk
                        [],self.cmiObj(2).img.dims(1:3).*self.cmiObj(2).img.voxsz);
         if stat
             waitbar(0.5,hw,'Calling Transformix ...');
-            tfxstr = self.elxObj.tfxCmd(self.odir,'tp',tpfname,'in',fname);
 
-            % Run Transformix in new xterm window:
-            namestr = 'Transformix';
-            cmdstr = ['xterm -geometry 170x50 -T "',namestr,'"',' -e ''',tfxstr{1},''''];
-            if ismac
-                cmdstr = ['/opt/X11/bin/',cmdstr];
-            end
+            % Generate system command:
+            cmdstr = self.elxObj.sysCmd(self.odir,'title','Transformix',...
+                'tp',tpfname,'in',fname);
             % Save command to file for trouble-shooting:
             fid = fopen(fullfile(self.odir,'transformixCMD.txt'),'w');
             if fid>2

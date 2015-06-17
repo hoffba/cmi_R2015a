@@ -1,7 +1,10 @@
 classdef ElxClass < handle
     properties (SetObservable, SetAccess=private, GetAccess=public)
         
-        elxdir = '/opt/elastix/bin/';
+        % Default for Linux
+        elxdir = '';  % Directory for Elastix/Transformix
+        xtstr = '';   % Directory for Xterm exe
+        sepstr = '';  % Command input seperator
         
         % Stack of multi-parameter optimizations
         T0check = false; % Determines whether to apply initial transform during Elastix call
@@ -13,9 +16,15 @@ classdef ElxClass < handle
         % Constructor
         function self = ElxClass
             if ismac
-                % You won't need the full path if you've installed Elastix
-                % correctly
-                self.elxdir = '';
+                self.xtstr = '/opt/X11/bin/xterm -geometry 170x50 ';
+                self.sepstr = ' ; ';
+            elseif ispc
+                self.xtstr = 'mode CON: COLS=160 && ';
+                self.sepstr = ' && ';
+            else % Linux
+                self.elxdir = '/opt/elastix/bin/';
+                self.xtstr = 'xterm -geometry 170x50 ';
+                self.sepstr = ' ; ';
             end
         end
     end

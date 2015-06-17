@@ -8,7 +8,6 @@ classdef RegClass < handle
         % Elastix parameters / functions:
         elxObj  % ElxClass object for storing/executing Elastix commands
         ind     % Selected schedule step
-        tVOI = false; % Option to transform Moving VOI
         odir = '';    % Elastix/Transformix Output directory
         
         % Warping Extras:

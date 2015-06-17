@@ -20,7 +20,7 @@ if ns~=0
     p = inputParser;
     addRequired(p,'f',@ischar);
     addRequired(p,'m',@ischar);
-    addRequired(p,'out',@ischar);
+    addRequired(p,'odir',@ischar);
     addParameter(p,'fMask','',@ischar);
     addParameter(p,'mMask','',@ischar);
     addParameter(p,'ipp','',@ischar);
@@ -31,7 +31,7 @@ if ns~=0
     str = [fullfile(self.elxdir,'elastix'),...
            ' -f "',pp.f,'"',...
            ' -m "',pp.m,'"',...
-           ' -out "',pp.out,'"'];
+           ' -out "',pp.odir,'"'];
     
     % Add masks to string:
     mchk = false;
@@ -54,7 +54,7 @@ if ns~=0
     
     % Save initial transform:
     if self.T0check && ~isempty(self.Tx0)
-        pstr = self.saveTx0(fullfile(pp.out,'InitialTransform.txt'));
+        pstr = self.saveTx0(fullfile(pp.odir,'InitialTransform.txt'));
         str = [str,' -t0 "',pstr,'"'];
     end
     
@@ -67,11 +67,11 @@ if ns~=0
     end
     
     % Save Parameter File(s):
-    pstr = self.savePar(1:ns,fullfile(pp.out,'ElastixParameters.txt'));
+    pstr = self.savePar(1:ns,fullfile(pp.odir,'ElastixParameters.txt'));
     if ischar(pstr)
         pstr = {pstr};
     end
-    str = [str,sprintf(' -p "%s"',pstr{:}),';'];
+    str = [str,sprintf(' -p "%s"',pstr{:})];
     
 end
 
