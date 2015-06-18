@@ -27,21 +27,30 @@ if any(isinf(n))
 else
     nD = nnz(n);
 end
+gchk = any(isinf(n));
 
 switch nD
     case 2
-        func = @calcMF2D;
+        if gchk
+            func = @calcMF2D;
+        else
+            func = @calcMF2Drho;
+        end
         labels = {'Area','Perimeter','Euler'};
         nmf = 3;
     case 3
-        func = @calcMF3D;
+        if gchk
+            func = @calcMF3D;
+        else
+            func = @calcMF3Drho;
+        end
         labels = {'Volume','SurfaceArea','Mean Breadth','Euler'};
         nmf = 4;
     otherwise
         error(['Invalid window radius: [',num2str(n),']']);
 end
 
-if any(isinf(n))
+if gchk
     % Perform global analysis
     if nD == length(d)
         MF = feval(func,BW);
@@ -78,12 +87,25 @@ end
 
 % Raw 2D MF calculation
 function p = calcMF2D(BW)
+p = [ imAreaEstimate(BW) , ...
+      imPerimeterEstimate(BW) ,...
+      imEuler2dEstimate(BW) ];
+  
+% Raw 3D MF calculation
+function p = calcMF3D(BW)
+p = [ imVolumeEstimate(BW) ,...
+      imSurfaceEstimate(BW) ,...
+      imMeanBreadth(BW) ,...
+      imEuler3dEstimate(BW)];
+  
+% Raw 2D MF calculation
+function p = calcMF2Drho(BW)
 p = [ imAreaDensity(BW) , ...
       imPerimeterDensity(BW) ,...
       imEuler2dDensity(BW) ];
   
 % Raw 3D MF calculation
-function p = calcMF3D(BW)
+function p = calcMF3Drho(BW)
 p = [ imVolumeDensity(BW) ,...
       imSurfaceDensity(BW) ,...
       imMeanBreadth(BW) ,...

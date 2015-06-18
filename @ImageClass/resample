@@ -1,5 +1,0 @@
-% ImageClass function
-% Filter image
-function imgFilt(self,tvec)
-if self.check && (nargin==2)
-end
