@@ -6,9 +6,9 @@ classdef PRMclass < Mat3Dclass
         %   check       % Check that matrix is available
         
         % Current PRM options
-        thresh   % [n x 4] matrix : row = [vec1 vec2 m b]
-                 %       evaluated: d2 > m*d1 + b
-        cutoff   % [n x 3] matrix : row = [vec min max]
+        thresh = zeros(0,4);   % [n x 4] matrix : row = [vec1 vec2 m b]
+                               %       evaluated: d2 > m*d1 + b
+        cutoff = zeros(0,3);   % [n x 3] matrix : row = [vec min max]
         normchk = true; % Normalize PRM volumes by cropped volume if true
         cmap     % RGB columns
         prmmap   % {n x 2} cell array:
@@ -29,8 +29,6 @@ classdef PRMclass < Mat3Dclass
                  
         prmdir   % Directory storing PRM default settings
         
-%         prmscatter = true;      % Check for display of PRM scatter plot
-%         npmaxscat = 5000;       % Max number of scatterplot points
         hfscatter               % Handle to PRM scatterplot figure
         hascatter               % Handle to PRM scatterplot axes
         hsscatter               % Handle to PRM scatterplot object
@@ -56,19 +54,11 @@ classdef PRMclass < Mat3Dclass
                 idef = 1;
             end
             self.loadPRMdefs(fullfile(self.prmdir,pdefs{idef}));
-%             pdefs = load(fullfile(self.prmdir,pdefs{idef}));
-%             self.thresh = pdefs.thresh;
-%             self.prmmap = pdefs.prmmap;
-%             self.cutoff = pdefs.cutoff;
-%             self.cmap = pdefs.cmap;
-%             A = [fieldnames(pdefs.SPopts),struct2cell(pdefs.SPopts)]';
-%             self.SPopts = setfield(self.SPopts,A{:});
             self.nprm = size(self.cmap,1);
                 tval = self.thresh(:,1:2);
                 tval = unique(tval(:));
             self.dvec = tval(:)';
             self.dlabels = cellstr(strcat('Dim',num2str((1:length(self.dvec))')));
-%             self.mask = MaskClass;
         end
         % Deleter method
         function delete(self)

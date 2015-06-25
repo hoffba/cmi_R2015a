@@ -20,8 +20,8 @@ function vol = imVolumeEstimate(img, varargin)
 %% Input arguments processing
 
 % check image dimension
-if ndims(img)~=2
-    error('first argument should be a 2D binary or label image');
+if ndims(img)~=3
+    error('first argument should be a 3D binary or label image');
 end
 
 % in case of a label image, return a vector with a set of results

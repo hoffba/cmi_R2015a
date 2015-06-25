@@ -11,8 +11,6 @@ if (nargin==2) && isnumeric(cvec)
     h.cutoff = self.prm.cutoff;
     h.cmap = self.prm.cmap;
     h.prmmap = self.prm.prmmap;
-%     h.maxnp = self.prm.npmaxscat;
-%     h.prmscatter = self.prm.prmscatter;
     h.normchk = self.prm.normchk;
     h.SPopts = self.prm.SPopts;
     guidata(hf,h);

@@ -1,6 +1,6 @@
 %
 % function batch_MinkowskiFun(fnout,fov,img,r,thresh,ind,varargin)
-function batch_MinkowskiFun(fnout,img,mask,fov,ind,r,thresh,varargin)
+function batch_MinkowskiFun(fnout,img,mask,voxsz,ind,r,thresh,varargin)
 % function batch_MinkowskiFun(fname,img,n,thresh,mask)
 %   Runs a batch job to calculate local Minkowski Functionals over image
 %   using defined image thresholds.
@@ -16,7 +16,7 @@ if nargin<8
     
     % This code starts the batch
     disp(['Starting batch Minkowski Functional analysis ... ',fname])
-    batch(@batch_MinkowskiFun,0,{fnout,img,mask,fov,ind,r,thresh,1});
+    batch(@batch_MinkowskiFun,0,{fnout,img,mask,voxsz,ind,r,thresh,1});
     disp(' ... done')
     
 else
@@ -27,9 +27,8 @@ else
     disp([]);
     
     % Initialize data:
-    d = size(img);
     if isempty(ind)
-        ind = 1:prod(d);
+        ind = 1:numel(img);
     end
     nth = length(thresh);
         
@@ -40,7 +39,7 @@ else
         disp(['Threshold (',num2str(ith),'/',num2str(nth),'): ',num2str(thresh(ith))]);
         
         BW = img > thresh(ith);
-        [MF,labels] = minkowskiFun(BW,r,ind);
+        [MF,~] = minkowskiFun(BW,r,ind,voxsz);
         MFmeans(ith,:) = mean(MF,1);
         
         % Save results as we go:

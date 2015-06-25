@@ -35,11 +35,12 @@ if (nargin>2)
         % Determine cropped values
         if (nargin<4) || ~isnumeric(cutoff) || (size(cutoff,2)~=3)
             cutoff = [];
+        else
+            % Replace 0 with first vec (dynamic image)
+            [~,i,~] = unique(cutoff(:,1));
+            cutoff = cutoff(i,:);
         end
         cropind = false(np,1);
-        % Replace 0 with first vec (dynamic image)
-        [~,i,~] = unique(cutoff(:,1));
-        cutoff = cutoff(i,:);
         for i = 1:size(cutoff,1)
             d1 = find(vec==cutoff(i,1),1);
             if ~isempty(d1)

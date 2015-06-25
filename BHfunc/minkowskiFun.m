@@ -1,5 +1,5 @@
 %
-function [MF,labels] = minkowskiFun(BW,n,ind)
+function [MF,labels] = minkowskiFun(BW,n,ind,voxsz)
 % Calculates regional minkowski functionals using a moving window method
 % Inputs:
 %   BW      = 2D/3D binary matrix
@@ -22,12 +22,17 @@ end
 if nargin<2
     n = inf([1,length(d)]);
 end
-if any(isinf(n))
+gchk = any(isinf(n));
+if gchk
     nD = length(d);
 else
     nD = nnz(n);
 end
-gchk = any(isinf(n));
+if (nargin<4)
+    voxsz = ones(nD);
+else
+    voxsz = voxsz(1:nD);
+end
 
 switch nD
     case 2
@@ -53,7 +58,7 @@ end
 if gchk
     % Perform global analysis
     if nD == length(d)
-        MF = feval(func,BW);
+        MF = feval(func,BW,voxsz);
     else
         warning('Dimensionality does not match.');
         MF = [];
@@ -78,7 +83,7 @@ else
         iBW = BW(max(1,ii-n(1)):min(d(1),ii+n(1)),...
                  max(1,jj-n(2)):min(d(2),jj+n(2)),...
                  max(1,kk-n(3)):min(d(3),kk+n(3)));
-        MF(i,:) = feval(func,iBW);
+        MF(i,:) = feval(func,iBW,voxsz);
         waitbar(i/ntot,hw,['Complete: ',num2str(i),'/',num2str(ntot)]);
     end
     delete(hw);
@@ -86,29 +91,29 @@ else
 end
 
 % Raw 2D MF calculation
-function p = calcMF2D(BW)
-p = [ imAreaEstimate(BW) , ...
-      imPerimeterEstimate(BW) ,...
+function p = calcMF2D(BW,voxsz)
+p = [ imAreaEstimate(BW,voxsz) , ...
+      imPerimeterEstimate(BW,voxsz) ,...
       imEuler2dEstimate(BW) ];
   
 % Raw 3D MF calculation
-function p = calcMF3D(BW)
-p = [ imVolumeEstimate(BW) ,...
-      imSurfaceEstimate(BW) ,...
-      imMeanBreadth(BW) ,...
+function p = calcMF3D(BW,voxsz)
+p = [ imVolumeEstimate(BW,voxsz) ,...
+      imSurfaceEstimate(BW,voxsz) ,...
+      imMeanBreadth(BW,voxsz) ,...
       imEuler3dEstimate(BW)];
   
 % Raw 2D MF calculation
-function p = calcMF2Drho(BW)
-p = [ imAreaDensity(BW) , ...
-      imPerimeterDensity(BW) ,...
+function p = calcMF2Drho(BW,voxsz)
+p = [ imAreaDensity(BW,voxsz) , ...
+      imPerimeterDensity(BW,voxsz) ,...
       imEuler2dDensity(BW) ];
   
 % Raw 3D MF calculation
-function p = calcMF3Drho(BW)
-p = [ imVolumeDensity(BW) ,...
-      imSurfaceDensity(BW) ,...
-      imMeanBreadth(BW) ,...
+function p = calcMF3Drho(BW,voxsz)
+p = [ imVolumeDensity(BW,voxsz) ,...
+      imSurfaceDensity(BW,voxsz) ,...
+      imMeanBreadth(BW,voxsz) ,...
       imEuler3dDensity(BW)];
 
 

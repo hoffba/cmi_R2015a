@@ -25,9 +25,9 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
         if ismac && strncmp(ffname,'/mnt/cmi/',9)
             ffname = ['/Volumes/',ffname(10:end)];
         end
-        tname = fullfile(self.Tfx.out,'InitialTransform.txt');
-        copyfile(ffname,tname);
-        elxObj.setTx0par('InitialTransformParametersFileName',tname);
+%         tname = fullfile(self.Tfx.out,'InitialTransform.txt');
+%         copyfile(ffname,tname);
+        elxObj.setTx0par('InitialTransformParametersFileName',ffname);
     end
     tpfn = fullfile(self.Tfx.out,[pname,ext]);
     elxObj.saveTx0(tpfn);

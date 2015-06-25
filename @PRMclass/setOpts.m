@@ -7,7 +7,7 @@ stat = false;
 p = inputParser;
 p.KeepUnmatched = true;
 p.addOptional('thresh',nan,@(x) isnumeric(x) && (size(x,2)==4));
-p.addOptional('cutoff',nan,@(x) isnumeric(x) && (size(x,2)==3));
+p.addOptional('cutoff',nan,@(x) isnumeric(x) && any(size(x,2)==[0,3]));
 p.addOptional('prmmap',nan,@(x) iscell(x) && (size(x,2)==2) ...
                 && all(cellfun(@islogical,x(:,1))) ...
                 && iscellstr(x(:,2)));
@@ -42,12 +42,12 @@ end
 if isfield(opts,'cutoff')
     tcutoff = opts.cutoff;
     if isempty(tcutoff)
-        self.cutoff = zeros(0,size(self.cutoff,2));
+        self.cutoff = zeros(0,3);
     else
         ind = (tcutoff(:,1)>=0);
         tcutoff = tcutoff(ind',:);
         if isempty(tcutoff)
-            tcutoff = zeros(0,size(self.cutoff,2));
+            tcutoff = zeros(0,3);
         else
             tcutoff(:,2:3) = sort(tcutoff(:,2:3),2); % sort for [min max] order
         end

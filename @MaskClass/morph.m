@@ -13,7 +13,7 @@ if (nargin == 3) && ~isempty(options) && isnumeric(options)
         % Determine iterations (max single dilate/erode of 5)
         ni = max(ceil(r/5));
         
-        hw = waitbar(0,['Performing ',meth,' (',num2str(r'),') - ',num2str(ni),' iterations']);
+        hw = waitbar(0,['Performing ',meth,' (',num2str(r(:)'),') - ',num2str(ni),' iterations']);
         for i = 1:ni
             rt = min(r,5);
             r = r - rt;

@@ -46,7 +46,7 @@ if self.check
             if mchk
                 BW = BW & self.mask.mat;
             end
-            [MFout(ith,:),labels] = minkowskiFun(BW,r);
+            [MFout(ith,:),labels] = minkowskiFun(BW,r,[],self.voxsz);
             waitbar(ith/nth,hw,['Calculating Gobal Minkowski Functionals ... ',...
                                 num2str(pp.Thresh(ith)),' done']);
         end
@@ -77,10 +77,10 @@ if self.check
                       mmin(2):r(2):end , ...
                       mmin(3):r(3):end ) = true;
             ind = find(self.mask.mat & gridmask);
+        else
+            mask = true(self.mask.dims(1:3));
         end
-        d = self.dims(1:3);
-        fov = self.voxsz.*d;
-        batch_MinkowskiFun(fullfile(fpath,fname),timg,mask,fov,ind,...
+        batch_MinkowskiFun(fullfile(fpath,fname),timg,mask,self.voxsz,ind,...
                             r,pp.Thresh);
         
     end

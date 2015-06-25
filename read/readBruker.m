@@ -9,11 +9,11 @@ dmult = [1,1];
 
 % First determine basename and find all related files:
 fname = varargin{1};
-[path,bname,~] = fileparts(fname);
+[fpath,bname,~] = fileparts(fname);
 % fnames = dir(fullfile(path,[bname,'*',ext]));
 
 % Read image parameters from .log file:
-fid = fopen(fullfile(path,[bname,'.log']));
+fid = fopen(fullfile(fpath,[bname,'.log']));
 if fid>2
     info = strsplit(fread(fid,inf,'*char')','\n');
     fclose(fid);
@@ -57,12 +57,19 @@ end
 
 % Load all image files:
 if go
+    % Load images by what's in the folder
+    fnames = dir(fullfile(fpath,['*_rec*',ext]));
+    fnames = {fnames(:).name}';
+    fnames(cellfun(@(x)isempty(regexp(x,'_rec\d\d\d\d','once')),fnames)) = [];
+    dims(3) = length(fnames);
+    
     hw = waitbar(0,'');
     set(findall(hw,'type','text'),'Interpreter','none');
     img = zeros(dims);
     for i = 1:dims(3)
-        img(:,:,i) = imread(fullfile(path,sprintf([bname,'%0',fnind,'u',ext],...
-                                                  istart/usf+(i-1)*zstep)));
+        img(:,:,i) = imread(fullfile(fpath,fnames{i}));
+%         img(:,:,i) = imread(fullfile(fpath,sprintf([bname,'%0',fnind,'u',ext],...
+%                                                   istart/usf+(i-1)*zstep)));
         waitbar(i/dims(3),hw,{bname;['Loading slice:',num2str(i),' of ',...
                               num2str(dims(3))]});
     end

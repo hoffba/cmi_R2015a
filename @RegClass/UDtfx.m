@@ -21,9 +21,11 @@ if isa(varargin{1},'matlab.ui.control.UIControl')
         case 'button_TfxPar'
             [fname,fpath] = uigetfile('*.txt','Select Transformix Parameters');
             if (fname~=0)
+                % * Default Output to same directory
                 fname = fullfile(fpath,fname);
-                C = {'par',fname};
+                C = {'par',fname,'out',fpath};
                 self.h.text_TfxPar.String = fname;
+                self.h.text_TfxOut.String = fpath;
             end
         case 'button_TfxOut'
             fpath = uigetdir(pwd,'Select Output Directory');

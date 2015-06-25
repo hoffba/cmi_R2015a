@@ -29,4 +29,5 @@ parse(p,varargin{:});
 pp = p.Results;
 
 [MFout,labels] = self.img.calcMF(self.vec,pp.Thresh,pp.Window,varargin{:});
+assignin('base','MFvals',MFout);
 

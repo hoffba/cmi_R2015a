@@ -25,7 +25,7 @@ if self.cmiObj(1).img.check && self.cmiObj(2).img.check
     
     % Grid
     if strcmp(self.elxObj.getPar(self.ind,'Transform'),'BSplineTransform')
-        SPa = 
+        SPa = [];
         gsp
         if max([fov1,fov2])>100
             be = 50; % Human data
