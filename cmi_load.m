@@ -8,6 +8,11 @@ function [img,label,fov,fnameOut] = cmi_load(imgflag,d,fullname)
 %          fov - spatial extents of the image, [1x3] for 3D images
 
 % Accepted file types:
+if imgflag
+    str = 'Image';
+else
+    str = 'Mask';
+end
 dtypes = {...
             {'.hdr','.img'},            'ANALYZE';...   % 1
             {'.mhd'},                   'MHD';...       % 2
@@ -59,7 +64,7 @@ if gopt
     % User selects file(s)
     filter = [{[filter{:,1}],'All Images'};filter];
     filter(:,1) = cellfun(@(x)sprintf('*%s;',x{:}),filter(:,1),'UniformOutput',false);
-    [fullname,fpath,findex] = uigetfile([filter;{'*','All'}],'Load Image:','MultiSelect',str);
+    [fullname,fpath,findex] = uigetfile([filter;{'*','All'}],['Load ',str,':'],'MultiSelect',str);
     if fpath
         if ischar(fullname) % single selection
             fullname = {[fpath,fullname]};
