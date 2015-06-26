@@ -20,6 +20,12 @@ if fid>2
     if ~isempty(ind)
         voxsz = str2num(hstr{ind+1});
     end
+    ind = find(strcmp('ElementNumberOfChannels',hstr),1);
+    if ~isempty(ind)
+        nv = str2double(hstr{ind+1});
+    else
+        nv = 1;
+    end
     ind = find(strcmp('ElementType',hstr),1);
     if ~isempty(ind)
         Etype = hstr{ind+1};
@@ -65,7 +71,8 @@ end
 if hchk && exist(rawfname,'file')
     fid = fopen(rawfname, 'r');
     if fid>2
-        img = reshape(fread(fid,inf,Etype),d);
+        img = permute(reshape(fread(fid,inf,Etype),[nv,d]),[2,3,4,1]);
+%         img = reshape(fread(fid,inf,Etype),d);
         fclose(fid);
 %         if ~(isempty(emin) || isempty(emax) || isnan(emin) || isnan(emax))
 %             % Use scaling factors
@@ -74,7 +81,13 @@ if hchk && exist(rawfname,'file')
 %             img = (emax-emin)/(imax-imin)*(img-imin) + emin; 
 %         end
         fov = d.*voxsz;
-        label = {bname};
+        if nv>1
+            label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
+                                         'UniformOutput',false));
+        else
+            label = {bname};
+        end
+        disp('check')
     else
         disp('File could not be read correctly. Heartbreaker.');
     end
