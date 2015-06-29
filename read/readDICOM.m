@@ -189,7 +189,7 @@ if ~isempty(dcmdata)
         oimg = dcmdata.img;
         oloc = dcmdata.SlcLoc;
         gflag = 2;
-    elseif all(ismember(lengths,1:2)) && length
+    elseif all(ismember(lengths,1:2)) && (length(unique(lengths))==1)
     % 1: Case for single-slice gapped CT data
     % 2: Case for 2-slice gapped CT data
         gflag = length(dcmdata(1).SlcLoc);
