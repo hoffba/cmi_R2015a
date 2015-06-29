@@ -1,6 +1,6 @@
 %
 % function batch_MinkowskiFun(fnout,fov,img,r,thresh,ind,varargin)
-function batch_MinkowskiFun(fnout,img,mask,voxsz,ind,r,thresh,varargin)
+function batch_MinkowskiFun(fnout,img,mask,voxsz,ind,r,thresh,BWmode,varargin)
 % function batch_MinkowskiFun(fname,img,n,thresh,mask)
 %   Runs a batch job to calculate local Minkowski Functionals over image
 %   using defined image thresholds.
@@ -10,9 +10,10 @@ function batch_MinkowskiFun(fnout,img,mask,voxsz,ind,r,thresh,varargin)
 %   r
 %   thresh
 %   ind
+%   BWmode
 
 [fpath,fname] = fileparts(fnout);
-if nargin<8
+if nargin<9
     
     % This code starts the batch
     disp(['Starting batch Minkowski Functional analysis ... ',fname])
@@ -38,7 +39,11 @@ else
         
         disp(['Threshold (',num2str(ith),'/',num2str(nth),'): ',num2str(thresh(ith))]);
         
-        BW = img > thresh(ith);
+        if BWmode
+            BW = img > thresh(ith);
+        else
+            BW = img < thresh(ith);
+        end
         [MF,~] = minkowskiFun(BW,r,ind,voxsz);
         MFmeans(ith,:) = mean(MF,1);
         

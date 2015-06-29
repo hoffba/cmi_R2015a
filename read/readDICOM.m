@@ -183,15 +183,16 @@ if ~isempty(dcmdata)
     n = length(dcmdata);
     gflag = 0; % Flag for number of slices per location group
     oimg = [];
+    lengths = cellfun(@length,{dcmdata(:).SlcLoc});
     if (n==1) && (length(unique(round(diff(dcmdata.SlcLoc),4)))==2)
     % Case for 2-slice gapped CT data
         oimg = dcmdata.img;
         oloc = dcmdata.SlcLoc;
         gflag = 2;
-    elseif all(ismember(cellfun(@length,{dcmdata(:).SlcLoc}),1:2))
+    elseif all(ismember(lengths,1:2)) && length
     % 1: Case for single-slice gapped CT data
     % 2: Case for 2-slice gapped CT data
-        gflag = all(ismember(cellfun(@length,{dcmdata(:).SlcLoc}),1:2));
+        gflag = length(dcmdata(1).SlcLoc);
         oimg = cat(3,dcmdata(:).img);
         oloc = cat(1,dcmdata(:).SlcLoc);
     end

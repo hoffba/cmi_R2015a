@@ -8,6 +8,8 @@ function [MFout,labels] = calcMF(self,vec,thresh,n,varargin)
 %                               *(use inf if you want whole-image)
 %               'ApplyMask' = check for use of existing VOI
 %               'ImgCheck'  = check to analyze image (true) or VOI (false)
+%               'BWmode'    = true (>, default) / false (<)
+%               'OutVal'    = logical value of voxels outside VOI (default=0)
 
 MFout = [];
 labels = {};
@@ -17,6 +19,8 @@ addRequired(p,'Vec',@(x)isscalar(x)&&(x>0));
 addRequired(p,'Thresh',@isnumeric);
 addRequired(p,'Window',@isvector);
 addParameter(p,'ApplyMask',true,@islogical);
+addParameter(p,'BWmode',true,@islogical);
+addParameter(p,'OutVal',false,@islogical);
 parse(p,vec,thresh,n,varargin{:});
 pp = p.Results;
 r = pp.Window;
@@ -27,7 +31,7 @@ if self.check
     gchk = any(isinf(r));
     mchk = pp.ApplyMask && self.mask.check;
     
-    if gchk
+    if gchk % Global analysis:
         
         nth = length(pp.Thresh);
         if length(r) == 2
@@ -42,9 +46,14 @@ if self.check
         % Loop over desired image thresholds:
         hw = waitbar(0,'Calculating Gobal Minkowski Functionals ...');
         for ith = 1:nth
-            BW = timg > pp.Thresh(ith);
+            if pp.BWmode
+                BW = timg > pp.Thresh(ith);
+            else
+                BW = timg < pp.Thresh(ith);
+            end
             if mchk
                 BW = BW & self.mask.mat;
+                BW(~self.mask.mat) = pp.OutVal;
             end
             [MFout(ith,:),labels] = minkowskiFun(BW,r,[],self.voxsz);
             waitbar(ith/nth,hw,['Calculating Gobal Minkowski Functionals ... ',...
@@ -81,7 +90,7 @@ if self.check
             mask = true(self.mask.dims(1:3));
         end
         batch_MinkowskiFun(fullfile(fpath,fname),timg,mask,self.voxsz,ind,...
-                            r,pp.Thresh);
+                            r,pp.Thresh,pp.BWmode);
         
     end
 end

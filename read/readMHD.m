@@ -72,14 +72,7 @@ if hchk && exist(rawfname,'file')
     fid = fopen(rawfname, 'r');
     if fid>2
         img = permute(reshape(fread(fid,inf,Etype),[nv,d]),[2,3,4,1]);
-%         img = reshape(fread(fid,inf,Etype),d);
         fclose(fid);
-%         if ~(isempty(emin) || isempty(emax) || isnan(emin) || isnan(emax))
-%             % Use scaling factors
-%             imin = min(img(:));
-%             imax = max(img(:));
-%             img = (emax-emin)/(imax-imin)*(img-imin) + emin; 
-%         end
         fov = d.*voxsz;
         if nv>1
             label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
@@ -87,7 +80,6 @@ if hchk && exist(rawfname,'file')
         else
             label = {bname};
         end
-        disp('check')
     else
         disp('File could not be read correctly. Heartbreaker.');
     end
