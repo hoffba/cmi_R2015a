@@ -1,12 +1,18 @@
 function status = saveMHD(fname,img,labels,max_ext,~)
 % Save as MHD file for Elastix
+% * Automatically adds label to name if dim(4) > 1
 
 [d(1),d(2),d(3),nv] = size(img);
-if length(labels)<nv
-    labels = cellfun(@num2str,num2cell(1:5)');
-end
 [pathstr, fname, ~] = fileparts(fname);
-ofnames = strcat(fname,'_',labels);
+if (nv>1)
+    % Add label to file name
+    if length(labels)<nv
+        labels = cellfun(@num2str,num2cell(1:nv)');
+    end
+    ofnames = strcat(fname,'_',labels);
+else
+    ofnames = fname;
+end
 % Data types
 if islogical(img)
     Etype = 'uint8';
@@ -27,6 +33,9 @@ end
 NDims = length(d);
 % ElementNumberOfChannels = 1;
 voxsz = max_ext./d;
+if ischar(ofnames)
+    ofnames = {ofnames};
+end
 
 for ifn = 1:nv
     % First check that the file name is correct

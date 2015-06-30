@@ -42,7 +42,6 @@ end
 
 dcmdata = struct('SeriesInstanceUID',{},... % for sorting multiple images
                  'img',{},...
-                 'd',{},...
                  'AcqN',{},...
                  'SerN',{},...
                  'TempN',{},...
@@ -141,9 +140,6 @@ for ifn = 1:nf
         end
         dcmdata(j).PatientID = val;
         dcmdata(j).img = [];
-        if all(isfield(tinfo,{'Rows','Columns'}))
-            dcmdata(j).d = [tinfo.Rows,tinfo.Columns];
-        end
     end
     k = length(dcmdata(j).SlcLoc)+1;
     if isfield(tinfo,'SliceLocation')
