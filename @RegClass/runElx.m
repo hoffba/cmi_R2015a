@@ -144,8 +144,8 @@ if stat
                         num2str(length(self.elxObj.Schedule)-1),'.txt']);
                     
     % Waiting for completion / running independently:
-    waitchk = self.h.checkbox_wait.Value || strcmp(hObject.Tag,'button_Queue');
-                    
+    waitchk = ~self.h.checkbox_wait.Value || strcmp(hObject.Tag,'button_Queue');
+    
     cmdstr = self.elxObj.sysCmd(self.odir,'title',namestr,...
         'f',fnames{1},'m',fnames{2},elxC{:},...
         'in',origfn,'outfn',outfn,'tp',tpfname,...

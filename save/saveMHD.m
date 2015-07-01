@@ -60,7 +60,7 @@ for ifn = 1:nv
     % fprintf(fid,'ElementNumberOfChannels = %u\n',ElementNumberOfChannels);
     fprintf(fid,'ElementType = %s\n',element_types.(Etype));
     fprintf(fid,'ElementDataFile = %s\n',rawfname);
-    fprintf(fid,'ElementNumberOfChannels = ');
+    fprintf(fid,'ElementNumberOfChannels = 1');
     % fprintf(fid,'ElementMin = %.6f',emin);
     % fprintf(fid,'ElementMax = %.6f',emax);
     fclose(fid);

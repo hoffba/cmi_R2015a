@@ -23,6 +23,9 @@ if fid>2
     ind = find(strcmp('ElementNumberOfChannels',hstr),1);
     if ~isempty(ind)
         nv = str2double(hstr{ind+1});
+        if isnan(nv)
+            nv = 1;
+        end
     else
         nv = 1;
     end
