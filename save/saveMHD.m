@@ -57,7 +57,6 @@ for ifn = 1:nv
     fprintf(fid,'AnatomicalOrientation = %s\n','RAI');
     fprintf(fid,['ElementSpacing =',repmat(' %.6f',1,NDims),'\n'],voxsz);
     fprintf(fid,['DimSize =',repmat(' %u',1,NDims),'\n'],d);
-    % fprintf(fid,'ElementNumberOfChannels = %u\n',ElementNumberOfChannels);
     fprintf(fid,'ElementType = %s\n',element_types.(Etype));
     fprintf(fid,'ElementDataFile = %s\n',rawfname);
     fprintf(fid,'ElementNumberOfChannels = 1');

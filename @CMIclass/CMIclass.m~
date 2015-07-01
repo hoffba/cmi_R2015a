@@ -17,10 +17,8 @@ classdef CMIclass < handle
         cmap = 'gray';          % Colormap for image
         bgcmap = 'gray';        % Colormap for background
         ncolors = 128;          % number of colors for display
-        voispec = '*r';         % Define VOI edge type/color
+        voispec = '*m';         % Define VOI edge type/color
         voimarksz = 3;          % Define VOI marker size
-        thspec = '*c';            % Define Threshold edge type/color
-        thmarksz = 0.2;           % Define Threshold edge marker size
         dispPos                 % Position of display figure
         dalpha = 1;             % Transparency of overlay image (0:1)
         
@@ -232,14 +230,14 @@ classdef CMIclass < handle
                 else
                     % Find ROI outline
                     if ~(self.overcheck || self.prmcheck)
-%                         timg = self.img.getImgSlice(1);
-%                         tmask = (timg>=self.img.thresh(self.vec,1)) ...
-%                               & (timg<=self.img.thresh(self.vec,2));
-%                         if self.img.mask.check
-%                             tmask = tmask & self.img.getImgSlice(0);
-%                         end
-%                         [voir,voic] = find(edge(tmask));
-                        [voir,voic] = find(edge(self.getImgSlice('mask'),'Canny'));
+                        timg = self.img.getSlice(self.orient,self.vec,self.slc(self.orient));
+                        tmask = (timg>=self.img.thresh(self.vec,1)) ...
+                              & (timg<=self.img.thresh(self.vec,2));
+                        if self.img.mask.check
+                            tmask = tmask & ...
+                                self.img.mask.getSlice(self.orient,1,self.slc(self.orient));
+                        end
+                        [voir,voic] = find(edge(tmask));
                         tsz = self.img.voxsz; tsz(self.orient) = [];
                         voir = tsz(1) * voir - tsz(1)/2;
                         voic = tsz(2) * voic - tsz(2)/2;
@@ -269,32 +267,6 @@ classdef CMIclass < handle
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 else
-                    if ~(self.overcheck || self.prmcheck)
-                        tmask = self.getImgSlice('img');
-                        tmask = (tmask>=self.img.thresh(self.vec,1)) ...
-                              & (tmask<=self.img.thresh(self.vec,2));
-                        [voir,voic] = find(edge(tmask,'Canny'));
-                        tsz = self.img.voxsz; tsz(self.orient) = [];
-                        voir = tsz(1) * voir - tsz(1)/2;
-                        voic = tsz(2) * voic - tsz(2)/2;
-                    else
-                        voir = [];
-                        voic = [];
-                    end
-                    
-                    % Check to see if the current handle points to valid object
-                    handlecheck = ~(isempty(self.hthresh) || ~ishandle(self.hthresh));
-                    % Determine how to update the ROI plot
-                    if (isempty(voir) && handlecheck)
-                        delete(self.hthresh);
-                    elseif (~handlecheck && ~isempty(voir))
-                        %axes(self.haxes);
-                        hold(self.haxes,'on');
-                        self.hthresh = plot(self.haxes,voic,voir,self.thspec,'MarkerSize',self.thmarksz);
-                        hold(self.haxes,'off');
-                    elseif ~isempty(voir)
-                        set(self.hthresh,'XData',voic,'YData',voir);
-                    end
                 end
             end
         end
@@ -309,7 +281,7 @@ classdef CMIclass < handle
                 set(th,'Visible','on');
             end
             self.dispUDroi;
-            self.dispUDthreshplot;
+            self.dispUD
         end
         % Update display view
         function dispUDview(self)

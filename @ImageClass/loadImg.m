@@ -27,7 +27,7 @@ if ~isempty(img)
         self.mat = cat(4,self.mat,img);
         self.dims(4) = size(self.mat,4);
         self.labels = [self.labels label];
-        self.thresh = [self.thresh; (10^6*[-1 1]'*ones(1,nnv))'];
+        self.thresh = [self.thresh; ([-1 1]'*inf(1,nnv))'];
         self.scaleM = [self.scaleM ones(1,nnv)];
         self.scaleB = [self.scaleB zeros(1,nnv)];
         self.valExt = [self.valExt ; [squeeze(min(min(min(img,[],1),[],2),[],3)),...
@@ -41,7 +41,7 @@ if ~isempty(img)
         self.voxsz = fov./d(1:3);
         self.dims = d;
         self.mask.setDims(d(1:3));
-        self.thresh = (10^6*[-1 1]'*ones(1,d(4)))';
+        self.thresh = ([-1 1]'*inf(1,d(4)))';
         self.scaleM = ones(1,d(4));
         self.scaleB = zeros(1,d(4));
         self.valExt = [squeeze(min(min(min(img,[],1),[],2),[],3)),...
