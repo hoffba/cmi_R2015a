@@ -34,14 +34,15 @@ if self.guicheck
     set(self.h.text_nv,'String',num2str(td(2)));
     set(self.h.edit_veclabel,'String',self.img.labels{self.vec},...
                              'Enable','On');
-    [tmin,tmax] = self.getColorLimits;
-    [imin,imax] = self.getColorMinMax;
-    cpad = (imax - imin) / 2;
-    set(self.h.slider_cmin,'Min',(imin-cpad),'Max',(imax+cpad),...
-                            'Value',tmin,'Enable','On');
-    set(self.h.slider_cmax,'Min',(imin-cpad),'Max',(imax+cpad),...
-                            'Value',tmax,'Enable','On');
-    set(self.h.edit_cmin,'String',num2str(tmin),'Enable','On');
-    set(self.h.edit_cmax,'String',num2str(tmax),'Enable','On');
+    [vext,clim] = self.getProp('ValLim','cLim');
+    cpad = diff(vext) / 2;
+    set(self.h.slider_cmin,'Min',(vext(1)-cpad),'Max',(vext(2)+cpad),...
+                            'Value',clim(1),'Enable','On');
+    set(self.h.slider_cmax,'Min',(vext(1)-cpad),'Max',(vext(2)+cpad),...
+                            'Value',clim(2),'Enable','On');
+    set(self.h.edit_cmin,'String',num2str(clim(1)),'Enable','On');
+    set(self.h.edit_cmax,'String',num2str(clim(2)),'Enable','On');
+    set([self.h.slider_thMin,self.h.slider_thMax],...
+        'Min',vext(1),'Max',vext(2));
     self.dispUDview;
 end
