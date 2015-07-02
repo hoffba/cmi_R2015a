@@ -29,9 +29,13 @@ if (nv>0) && (length(V)==nv)
                     n = length(V{i});
                     if (n>0) && ismember(V{i}(1),mspecs)
                         self.voispec(1) = V{i}(1);
+                    else
+                        warning(['Availible markers: ',sprintf(' %s',mspecs{:})]);
                     end
                     if (n>1) && ismember(V{i}(2),cspecs)
                         self.voispec(2) = V{i}(2);
+                    else
+                        warning(['Availible colors: ',sprintf(' %s',cspecs{:})]);
                     end
                     set(self.h.edit_voiLSpec,'String',self.voispec);
                     self.dispUDroi;
@@ -50,9 +54,13 @@ if (nv>0) && (length(V)==nv)
                     n = length(V{i});
                     if (n>0) && ismember(V{i}(1),mspecs)
                         self.thspec(1) = V{i}(1);
+                    else
+                        warning(['Availible markers: ',sprintf(' %s',mspecs{:})]);
                     end
                     if (n>1) && ismember(V{i}(2),cspecs)
                         self.thspec(2) = V{i}(2);
+                    else
+                        warning(['Availible colors: ',sprintf(' %s',cspecs{:})]);
                     end
                     set(self.h.edit_thrLSpec,'String',self.thspec);
                     self.dispUDthreshplot;
