@@ -15,6 +15,8 @@ if ~isempty(self.h)
     addlistener(self.h.slider_4D,   'ContinuousValueChange', @self.setVec);
     addlistener(self.h.slider_cmin, 'ContinuousValueChange', @self.setClim);
     addlistener(self.h.slider_cmax, 'ContinuousValueChange', @self.setClim);
+    addlistener(self.h.slider_thMin, 'ContinuousValueChange', @self.imgThreshold);
+    addlistener(self.h.slider_thMax, 'ContinuousValueChange', @self.imgThreshold);
     % ~~~~~ Edit Boxes
     set(self.h.edit_veclabel,'Callback',@self.setLabel);
     set(self.h.edit_vec,     'Callback',@self.setVec);
@@ -107,6 +109,10 @@ if ~isempty(self.h)
     set(self.h.script_run,'Callback',@self.scriptRun);
     set(self.h.script_edit,'Callback',@self.scriptRun);
     set(self.h.script_create,'Callback',@self.scriptCreate);
+    set(self.h.checkbox_thMin,'Callback',@self.imgThreshold);
+    set(self.h.checkbox_thMax,'Callback',@self.imgThreshold);
+    set(self.h.edit_thMin,'Callback',@self.imgThreshold);
+    set(self.h.edit_thMax,'Callback',@self.imgThreshold);
     % ~~~~~ Context Menu Items
     set(self.h.tools_voi_stats,'Callback',@self.genStats);
     stat = true;
@@ -126,4 +132,7 @@ if self.img.check
     set(self.h.edit_veclabel,'String',self.img.labels(self.vec));
     set(self.h.text_nv,'String',num2str(self.img.dims(4)));
     set(self.h.text_ns,'String',num2str(self.img.dims(3)));
+    vext = self.getProp('ValLim');
+    set([self.h.slider_thMin,self.h.slider_thMax],...
+        'Min',vext(1),'Max',vext(2));
 end

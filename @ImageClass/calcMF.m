@@ -19,7 +19,7 @@ addRequired(p,'Vec',@(x)isscalar(x)&&(x>0));
 addRequired(p,'Thresh',@isnumeric);
 addRequired(p,'Window',@isvector);
 addParameter(p,'ApplyMask',true,@islogical);
-addParameter(p,'BWmode',true,@islogical);
+addParameter(p,'BWmode','>',@(x)all(ismember(x,{'<','>','<=','>=','=='})));
 addParameter(p,'OutVal',false,@islogical);
 parse(p,vec,thresh,n,varargin{:});
 pp = p.Results;
@@ -46,11 +46,7 @@ if self.check
         % Loop over desired image thresholds:
         hw = waitbar(0,'Calculating Gobal Minkowski Functionals ...');
         for ith = 1:nth
-            if pp.BWmode
-                BW = timg > pp.Thresh(ith);
-            else
-                BW = timg < pp.Thresh(ith);
-            end
+            BW = eval(['timg ',pp.BWmode, 'pp.Thresh(ith);']);
             if mchk
                 BW = BW & self.mask.mat;
                 BW(~self.mask.mat) = pp.OutVal;

@@ -17,8 +17,10 @@ classdef CMIclass < handle
         cmap = 'gray';          % Colormap for image
         bgcmap = 'gray';        % Colormap for background
         ncolors = 128;          % number of colors for display
-        voispec = '*m';         % Define VOI edge type/color
+        voispec = '*r';         % Define VOI edge type/color
         voimarksz = 3;          % Define VOI marker size
+        thspec = '*c';            % Define Threshold edge type/color
+        thmarksz = 0.2;           % Define Threshold edge marker size
         dispPos                 % Position of display figure
         dalpha = 1;             % Transparency of overlay image (0:1)
         
@@ -30,6 +32,7 @@ classdef CMIclass < handle
         hibg                    % Handle of background image
         hiover                  % Handle of overlay image
         hvoi                    % Handle of VOI plot
+        hthresh                 % Handle of threshold plot
         hdcm                    % Handle of DataCursorMode object
         haplot                  % Handle of extra axes for plotting various data
         
@@ -47,6 +50,7 @@ classdef CMIclass < handle
     end
     events
         LoadImgEvent
+        ChangeView
     end
     methods % Constructor/Destructor
         % Constructor with handle inputs for Umich3 listeners
@@ -162,9 +166,8 @@ classdef CMIclass < handle
                     self.dispUDview;
                 % only update if background overlay is activated
                 elseif (self.prmcheck || self.overcheck)
-                    timg = self.img.getSlice(self.orient,self.bgvec,self.slc(self.orient));
                     % values are arbitrarily displayed, scaled to colormap
-                    timg = (timg - self.clim(self.bgvec,1)) / ...
+                    timg = (self.getImgSlice('img') - self.clim(self.bgvec,1)) / ...
                         diff(self.clim(self.bgvec,:)) * (self.ncolors - 1);
                     timg(timg > (self.ncolors - 1)) = self.ncolors - 1;
                     set(self.hibg,'CData',timg);
@@ -177,8 +180,6 @@ classdef CMIclass < handle
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 else
-                    tvec = self.vec;
-                    tslc = self.slc(self.orient);
                     if self.overcheck || self.prmcheck
                         talpha = self.dalpha;
                     else
@@ -186,27 +187,24 @@ classdef CMIclass < handle
                     end
                     % Determine mask for transparency
                     if (self.prmcheck && self.img.prm.check)
-                        tprm = self.img.prm.getSlice(self.orient,1,tslc);
-                        tprm(isnan(tprm)) = 0;
+                        tprm = self.getImgSlice('prm');
+                        adata = ~isnan(tprm);
+                        tprm(~adata) = 0;
                         timg = self.ncolors + tprm;
-                        adata = true(size(tprm));
-                        if self.img.prm.check && strcmp(get(self.h.analysis_prmselect,'Checked'),'on')
-                            adata = ~isnan(self.img.prm.getSlice(self.orient,1,tslc));
-                        end
                         adata = double(adata & (tprm>0)) * talpha;
                     elseif (self.overcheck && self.img.mask.check)
-                        timg = self.img.getSlice(self.orient,self.vec,tslc);
-                        adata = self.img.mask.getSlice(self.orient,1,tslc);
+                        timg = self.getImgSlice('img');
+                        adata = self.getImgSlice('mask');
                         adata = double( adata ...
                             & (timg>=self.img.thresh(self.vec,1)) ...
                             & (timg<=self.img.thresh(self.vec,2)) ) * talpha;
                     else
-                        timg = self.img.getSlice(self.orient,self.vec,tslc);
+                        timg = self.getImgSlice('img');
                         adata = talpha; % No transparency
                     end
                     % Determine image to show
                     if ~self.prmcheck
-                        tclim = self.clim(tvec,:);
+                        tclim = self.clim(self.vec,:);
                         timg = (timg - tclim(1)) / diff(tclim) * (self.ncolors - 1);
                         timg(timg < 1) = 1;
                         timg = timg + self.ncolors;
@@ -229,14 +227,7 @@ classdef CMIclass < handle
                 else
                     % Find ROI outline
                     if ~(self.overcheck || self.prmcheck)
-                        timg = self.img.getSlice(self.orient,self.vec,self.slc(self.orient));
-                        tmask = (timg>=self.img.thresh(self.vec,1)) ...
-                              & (timg<=self.img.thresh(self.vec,2));
-                        if self.img.mask.check
-                            tmask = tmask & ...
-                                self.img.mask.getSlice(self.orient,1,self.slc(self.orient));
-                        end
-                        [voir,voic] = find(edge(tmask));
+                        [voir,voic] = find(edge(self.getImgSlice('mask'),'Canny'));
                         tsz = self.img.voxsz; tsz(self.orient) = [];
                         voir = tsz(1) * voir - tsz(1)/2;
                         voic = tsz(2) * voic - tsz(2)/2;
@@ -250,12 +241,44 @@ classdef CMIclass < handle
                     if (isempty(voir) && handlecheck)
                         delete(self.hvoi);
                     elseif (~handlecheck && ~isempty(voir))
-                        %axes(self.haxes);
                         hold(self.haxes,'on');
                         self.hvoi = plot(self.haxes,voic,voir,self.voispec,'MarkerSize',self.voimarksz);
                         hold(self.haxes,'off');
                     elseif ~isempty(voir)
                         set(self.hvoi,'XData',voic,'YData',voir);
+                    end
+                end
+            end
+        end
+        % Update threshold plot
+        function dispUDthreshplot(self)
+            if self.img.check && self.dispcheck
+                if ~ishandle(self.hfig)
+                    self.dispUDview;
+                else
+                    if ~(self.overcheck || self.prmcheck)
+                        tmask = self.getImgSlice('img');
+                        tmask = (tmask>=self.img.thresh(self.vec,1)) ...
+                              & (tmask<=self.img.thresh(self.vec,2));
+                        [voir,voic] = find(edge(tmask,'Canny'));
+                        tsz = self.img.voxsz; tsz(self.orient) = [];
+                        voir = tsz(1) * voir - tsz(1)/2;
+                        voic = tsz(2) * voic - tsz(2)/2;
+                    else
+                        voir = [];
+                        voic = [];
+                    end
+                    % Check to see if the current handle points to valid object
+                    handlecheck = ~(isempty(self.hthresh) || ~ishandle(self.hthresh));
+                    % Determine how to update the ROI plot
+                    if (isempty(voir) && handlecheck)
+                        delete(self.hthresh);
+                    elseif (~handlecheck && ~isempty(voir))
+                        hold(self.haxes,'on');
+                        self.hthresh = plot(self.haxes,voic,voir,self.thspec,'MarkerSize',self.thmarksz);
+                        hold(self.haxes,'off');
+                    elseif ~isempty(voir)
+                        set(self.hthresh,'XData',voic,'YData',voir);
                     end
                 end
             end
@@ -271,6 +294,7 @@ classdef CMIclass < handle
                 set(th,'Visible','on');
             end
             self.dispUDroi;
+            self.dispUDthreshplot;
         end
         % Update display view
         function dispUDview(self)
@@ -342,8 +366,5 @@ classdef CMIclass < handle
             figure(self.h.mainFig);
         end
 
-    end
-    events
-        ChangeView
     end
 end
