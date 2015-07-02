@@ -17,10 +17,10 @@ classdef CMIclass < handle
         cmap = 'gray';          % Colormap for image
         bgcmap = 'gray';        % Colormap for background
         ncolors = 128;          % number of colors for display
-        voispec = '*r';         % Define VOI edge type/color
-        voimarksz = 3;          % Define VOI marker size
-        thspec = '*c';            % Define Threshold edge type/color
-        thmarksz = 0.2;           % Define Threshold edge marker size
+        voispec = 'om';         % Define VOI edge type/color
+        voimarksz = 5;          % Define VOI marker size
+        thspec = 'oc';            % Define Threshold edge type/color
+        thmarksz = 2;           % Define Threshold edge marker size
         dispPos                 % Position of display figure
         dalpha = 1;             % Transparency of overlay image (0:1)
         
@@ -245,7 +245,11 @@ classdef CMIclass < handle
                         self.hvoi = plot(self.haxes,voic,voir,self.voispec,'MarkerSize',self.voimarksz);
                         hold(self.haxes,'off');
                     elseif ~isempty(voir)
-                        set(self.hvoi,'XData',voic,'YData',voir);
+                        set(self.hvoi,'XData',voic,'YData',voir,...
+                            'MarkerSize',self.voimarksz,...
+                            'Marker',self.voispec(1),...
+                            'MarkerEdgeColor',self.voispec(2),...
+                            'MarkerFaceColor',self.voispec(2));
                     end
                 end
             end
@@ -278,7 +282,11 @@ classdef CMIclass < handle
                         self.hthresh = plot(self.haxes,voic,voir,self.thspec,'MarkerSize',self.thmarksz);
                         hold(self.haxes,'off');
                     elseif ~isempty(voir)
-                        set(self.hthresh,'XData',voic,'YData',voir);
+                        set(self.hthresh,'XData',voic,'YData',voir,...
+                            'MarkerSize',self.thmarksz,...
+                            'Marker',self.thspec(1),...
+                            'MarkerEdgeColor',self.thspec(2),...
+                            'MarkerFaceColor',self.thspec(2));
                     end
                 end
             end

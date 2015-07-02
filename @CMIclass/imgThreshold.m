@@ -38,22 +38,24 @@ if self.img.check
             set(self.h.slider_thMin,'Max',tval(2));
             set(self.h.edit_thMax,'String',num2str(tval(2)));
         case 'edit_thMin'
-            a = str2double(hObject.Value);
+            a = str2double(hObject.String);
             if isnan(a)
                 go = false;
                 set(hObject,'String',num2str(tval(1)));
             else
                 tval(1) = a;
                 set(self.h.slider_thMax,'Min',tval(1));
+                set(self.h.slider_thMin,'Value',tval(1));
             end
         case 'edit_thMax'
-            a = str2double(hObject.Value);
+            a = str2double(hObject.String);
             if isnan(a)
                 go = false;
                 set(hObject,'String',num2str(tval(2)));
             else
                 tval(2) = a;
                 set(self.h.slider_thMin,'Max',tval(2));
+                set(self.h.slider_thMax,'Value',tval(2));
             end
         case 'image_thresh'
             defAns = cellstr(num2str(tval'))';

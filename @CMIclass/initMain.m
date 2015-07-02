@@ -113,6 +113,11 @@ if ~isempty(self.h)
     set(self.h.checkbox_thMax,'Callback',@self.imgThreshold);
     set(self.h.edit_thMin,'Callback',@self.imgThreshold);
     set(self.h.edit_thMax,'Callback',@self.imgThreshold);
+    set(self.h.edit_thrLSpec,'String',self.thspec,'Callback',@self.setPlotProp);
+    set(self.h.edit_thrMkSz,'String',num2str(self.thmarksz),'Callback',@self.setPlotProp);
+    set(self.h.edit_voiLSpec,'String',self.voispec,'Callback',@self.setPlotProp);
+    set(self.h.edit_voiMkSz,'String',num2str(self.voimarksz),'Callback',@self.setPlotProp);
+    
     % ~~~~~ Context Menu Items
     set(self.h.tools_voi_stats,'Callback',@self.genStats);
     stat = true;
