@@ -30,6 +30,8 @@ for i = 1:nargout
             [tval(1),tval(2)] = self.img.getColorMinMax(v);
         case 'cLim'
             tval = self.clim(v,:);
+        case 'thresh'
+            tval = self.img.thresh(v,:);
         case 'cMap'
             if self.bgcheck
                 tval = self.bgcmap;

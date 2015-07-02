@@ -24,18 +24,19 @@ if ((val > 0) && (val <= self.img.dims(4)))
     end
     % Update GUI properties
     if self.guicheck
-        self.h.edit_veclabel.String = self.img.labels{val};
-        self.h.slider_4D.Value = val;
-        self.h.edit_vec.String = num2str(val);
-        [tmin,tmax] = self.getColorLimits;
-        [imin,imax] = self.getColorMinMax;
-        cpad = (imax - imin) / 2;
-        set(self.h.slider_cmin,'Min',(imin-cpad),'Max',(imax+cpad),...
-                                'Value',tmin);
-        set(self.h.slider_cmax,'Min',(imin-cpad),'Max',(imax+cpad),...
-                                'Value',tmax);
-        self.h.edit_cmin.String = num2str(tmin);
-        self.h.edit_cmax.String = num2str(tmax);
+        self.GUIupdate;
+%         self.h.edit_veclabel.String = self.img.labels{val};
+%         self.h.slider_4D.Value = val;
+%         self.h.edit_vec.String = num2str(val);
+%         [tmin,tmax] = self.getColorLimits;
+%         [imin,imax] = self.getColorMinMax;
+%         cpad = (imax - imin) / 2;
+%         set(self.h.slider_cmin,'Min',(imin-cpad),'Max',(imax+cpad),...
+%                                 'Value',tmin);
+%         set(self.h.slider_cmax,'Min',(imin-cpad),'Max',(imax+cpad),...
+%                                 'Value',tmax);
+%         self.h.edit_cmin.String = num2str(tmin);
+%         self.h.edit_cmax.String = num2str(tmax);
     end
     self.dispUDslice;
     self.dispUDhist;
