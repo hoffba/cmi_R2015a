@@ -9,5 +9,5 @@ if ~isempty(tmask)
         str = 'add';
     end
     self.mask.merge(str,tmask);
-    self.threshold(vec,10^6*[-1 1]');
+    self.threshold(vec,inf*[-1 1]');
 end
