@@ -18,7 +18,7 @@ p = inputParser;
 addRequired(p,'odir',@isdir);
 addParameter(p,'in','',@(x)ischar(x)||iscellstr(x));
 addParameter(p,'outfn','',@(x)ischar(x)||iscellstr(x));
-addParameter(p,'tp','',@ischar);
+addParameter(p,'tp','',@(x)ischar(x)||iscellstr(x));
 addParameter(p,'jac',false,@islogical);
 addParameter(p,'jacmat',false,@islogical);
 addParameter(p,'def',false,@islogical);
@@ -37,28 +37,34 @@ end
 if ischar(pp.outfn)
     pp.outfn = {pp.outfn};
 end
+if ischar(pp.tp)
+    pp.tp = {pp.tp};
+end
+nf = length(pp.in);
+if length(pp.tp)~=nf
+    pp.tp = repmat(pp.tp,nf,1);
+end
 
 if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
-    outchk = length(pp.in)==length(pp.outfn);
-    np = length(pp.in);
-    str = cell(np,1);
-    for i = 1:np
-        str{i} = [fullfile(self.elxdir,'transformix'),...
+    outchk = length(pp.outfn)==nf;
+    str = cell(1+2*outchk,nf);
+    for i = 1:nf
+        str{1,i} = [fullfile(self.elxdir,'transformix'),...
                ' -out "',pp.odir,'"',...
-               ' -tp "',pp.tp,'"'];
+               ' -tp "',pp.tp{i},'"'];
         if ~isempty(pp.in)
-            str{i} = [str{i},' -in "',pp.in{i},'"'];
+            str{1,i} = [str{1,i},' -in "',pp.in{i},'"'];
         end
         if pp.jac
-            str{i} = [str{i},' -jac all'];
+            str{1,i} = [str{1,i},' -jac all'];
             pp.jac = false; % only need to perform once
         end
         if pp.def
-            str{i} = [str{i},' -def all'];
+            str{1,i} = [str{1,i},' -def all'];
             pp.def = false; % only need to perform once
         end
         if pp.jacmat
-            str{i} = [str{i},' -jacmat all'];
+            str{1,i} = [str{1,i},' -jacmat all'];
             pp.jacmat = false; % only need to perform once
         end
         if ~isempty(pp.outfn{i}) && outchk
@@ -67,9 +73,10 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
             else
                 cpexec = 'cp';
             end
-            str{i} = [str{i},self.sepstr,cpexec,' "',fullfile(pp.odir,'result.mhd'),'" "',...
-                pp.outfn{i},'"',self.sepstr,cpexec,' "',fullfile(pp.odir,'result.raw'),...
-                '" "',pp.outfn{i}(1:end-3),'raw";'];
+            str{2,i} = [cpexec,' "',fullfile(pp.odir,'result.mhd'),'" "',...
+                        pp.outfn{i},'"'];
+            str{3,i} = [cpexec,' "',fullfile(pp.odir,'result.raw'),'" "',...
+                        pp.outfn{i}(1:end-4),'.raw"'];
         end
     end
 end

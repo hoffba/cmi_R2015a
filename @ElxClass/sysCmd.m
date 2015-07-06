@@ -1,7 +1,6 @@
 function str = sysCmd(self,odir,varargin)
 
-str = '';
-istr = {};
+str = {};
 mxCores = feature('numCores');
 
 p = inputParser;
@@ -19,12 +18,12 @@ p.addParameter('p','',@(x)ischar(x)||iscellstr(x));
 p.addParameter('t0','',@ischar);
 p.addParameter('threads',[],@(x)isnumeric(x)&&(x>0)&&(x<=mxCores));
 % Transformix:
-p.addParameter('tp','',@ischar);
+p.addParameter('tp','',@(x)ischar(x)||iscellstr(x));
 p.addParameter('in','',@(x)ischar(x)||iscellstr(x));
 p.addParameter('jac',false,@islogical);
 p.addParameter('jacmat',false,@islogical);
 p.addParameter('def',false,@islogical);
-p.addParameter('outfn','',@ischar);
+p.addParameter('outfn','',@(x)ischar(x)||iscellstr(x));
 % Parse inputs:
 parse(p,odir,varargin{:});
 iflds = setdiff(p.Parameters,p.UsingDefaults);
@@ -34,17 +33,17 @@ odir = fileparts(p.Results.odir);
 
 % Generate Elastix call:
 if all(ismember({'f','m'},iflds))
-    istr = self.elxCmd(p.Results.f,...
+    str = {self.elxCmd(p.Results.f,...
                        p.Results.m,...
                        odir,...
                'fMask',p.Results.fMask,...
                'mMask',p.Results.mMask,...
-             'threads',p.Results.threads);
+             'threads',p.Results.threads)};
 end
 % Generate Transformix call:
 ii = ismember({'tp','in','jac','jacmat','def'},iflds);
 if ii(1) && any(ii(2:end))
-    istr = [istr,self.tfxCmd(odir,...
+    str = [str;self.tfxCmd(odir,...
                         'in',p.Results.in,...
                      'outfn',p.Results.outfn,...
                         'tp',p.Results.tp,...
@@ -52,42 +51,34 @@ if ii(1) && any(ii(2:end))
                     'jacmat',p.Results.jacmat,...
                        'def',p.Results.def)];
 end
-
-if ~isempty(istr)
-    % Generate executable:
-    str = istr{1};
-    if length(istr)>1
-        istr = sprintf([self.sepstr,' %s'],istr{2:end});
-    else
-        istr = '';
-    end
-    istr = [str,istr];
+if ~isempty(str)
     % Cleanup string:
     if p.Results.cleanup
         if ispc
-            custr = '';
+            tstr = {}; % not programmed yet
         else
-            custr = ['find ',odir,' -name "elxtemp-*" -exec rm -f {} \;'];
+            tstr = {['find ',odir,' -name "elxtemp-*" -exec rm -f {} \;']};
         end
-        istr = [istr,self.sepstr,custr];
+        str = [str;tstr];
     end
-    % Generate system call:
-    str = self.xtstr;
-    if ispc
-        str = [str,'title ',p.Results.title,self.sepstr,istr];
-    else
-        str = [str,'-T "',p.Results.title,'" -e ''',istr];
-    end
-    % Option to wait for execution:
+    % Option to keep terminal window open:
     if ~p.Results.wait
         if ispc
-            waitstr = '&';
+            tstr = {};
         else
-            waitstr = ' ;csh;''&';
+            tstr = 'csh';
         end
-    elseif ~ispc
-        waitstr = '''';
+        str = [str;tstr];
+        wstr = '&';
+    else
+        wstr = '';
     end
-    str = [str,waitstr];
+    % Concatenate system calls:
+    str = sprintf(['%s',repmat([self.sepstr,'%s'],1,numel(str)-1)],str{:});
+    if ispc
+        str = [self.xtstr,'title ',p.Results.title,self.sepstr,str,wstr];
+    else
+        str = [self.xtstr,'-T "',p.Results.title,'" -e ''',str,'''',wstr];
+    end
 end
 

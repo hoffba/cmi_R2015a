@@ -44,7 +44,7 @@ if stat
            self.cmiObj(2).img.dims(1:3).*self.cmiObj(2).img.voxsz];
        
     % Set filenames:
-    outfn = fullfile(self.odir,[self.cmiObj(2).img.name,'_RR.mhd']);
+    outfn = fullfile(self.odir,[self.cmiObj(2).img.name,'_R.mhd']);
     origfn = fullfile(self.odir,'elxtemp-origm.mhd');
     fnames = {fullfile(self.odir,'elxtemp-f.mhd'),...
               fullfile(self.odir,'elxtemp-m.mhd')};

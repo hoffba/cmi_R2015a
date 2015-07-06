@@ -58,7 +58,7 @@ if self.img.check
                 set(self.h.slider_thMax,'Value',tval(2));
             end
         case 'image_thresh'
-            defAns = cellstr(num2str(tval'))';
+            defAns = cellstr(num2str(tval))';
             answer = inputdlg({'Threshold MIN value:','Threshold MAX value:'},...
                 'Set image threshold',1,defAns);
             tval = str2double(answer);
