@@ -38,6 +38,6 @@ if ((val > 0) && (val <= self.img.dims(4)))
 %         self.h.edit_cmin.String = num2str(tmin);
 %         self.h.edit_cmax.String = num2str(tmax);
     end
-    self.dispUDslice;
+%     self.dispUDslice;
     self.dispUDhist;
 end

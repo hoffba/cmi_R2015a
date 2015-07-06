@@ -167,7 +167,7 @@ classdef CMIclass < handle
                 % only update if background overlay is activated
                 elseif (self.prmcheck || self.overcheck)
                     % values are arbitrarily displayed, scaled to colormap
-                    timg = (self.getImgSlice('img') - self.clim(self.bgvec,1)) / ...
+                    timg = (self.getImgSlice('img',self.bgvec) - self.clim(self.bgvec,1)) / ...
                         diff(self.clim(self.bgvec,:)) * (self.ncolors - 1);
                     timg(timg > (self.ncolors - 1)) = self.ncolors - 1;
                     set(self.hibg,'CData',timg);
