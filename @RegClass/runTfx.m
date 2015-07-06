@@ -70,6 +70,7 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
         fprintf(fid,'%s',estr);
         fclose(fid);
     end
+    % Send command to the system:
     system(estr);
     
     delete(hw);

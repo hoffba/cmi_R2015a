@@ -69,7 +69,7 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
             end
             str{i} = [str{i},self.sepstr,cpexec,' "',fullfile(pp.odir,'result.mhd'),'" "',...
                 pp.outfn{i},'"',self.sepstr,cpexec,' "',fullfile(pp.odir,'result.raw'),...
-                '" "',pp.outfn{i}(1:end-3),'raw"'];
+                '" "',pp.outfn{i}(1:end-3),'raw";'];
         end
     end
 end
