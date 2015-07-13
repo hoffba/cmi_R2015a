@@ -11,9 +11,11 @@ if all(d>0) && (length(d)>2)
     end
     self.prmBaseVec = 1;
     self.mat = imat;
+    self.valExt = [squeeze(min(min(min(imat,[],1),[],2),[],3)),...
+                   squeeze(max(max(max(imat,[],1),[],2),[],3))];
     self.dims = d;
     self.mask.setDims(d(1:3));
-    self.thresh = (10^6*[-1 1]'*ones(1,d(4)))';
+    self.thresh = (inf*[-1 1]'*ones(1,d(4)))';
     self.scaleM = ones(1,d(4));
     self.scaleB = zeros(1,d(4));
     self.check = true;
