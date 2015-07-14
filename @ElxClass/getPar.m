@@ -1,18 +1,23 @@
 % ElxClass function
 % Set Elastix parameters in existing schedule
-function val = getPar(self,i,fldn)
+function varargout = getPar(self,i,varargin)
 % Get current parameter value fldn from schedule step i
 
-val = [];
-if (nargin==3) && ismember(i,1:length(self.Schedule))
-    if ischar(fldn)
-        if isfield(self.Schedule{i},fldn)
-            val = self.Schedule{i}.(fldn);
-        end
-    elseif iscellstr(fldn)
-        val = cell(1,length(fldn));
-        for j = find(isfield(self.Schedule{i},fldn))
-            val{j} = self.Schedule{i}.(fldn{j});
-        end
-    end
+na = length(varargin);
+if nargin<3
+    error('Not enough input arguments.')
+elseif ~ismember(i,1:length(self.Schedule))
+    error('Invalid Schedule index.')
+elseif ~iscellstr(varargin)
+    error('Invalid parameter inputs.')
+elseif nargout<na
+    warning(['Not enough outputs for requested parameters ... only returning the first ',...
+        num2str(nargout),'.']);
+    varargin(nargout+1:end) = [];
+elseif nargout>na
+    warning(['Too many outputs ... only return the first ',num2str(na),'.']);
+end
+varargout = cell(1,nargout);
+for j = find(isfield(self.Schedule{i},varargin))
+    varargout{j} = self.Schedule{i}.(varargin{j});
 end

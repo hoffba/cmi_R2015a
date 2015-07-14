@@ -164,11 +164,24 @@ if stat
         fid = fopen(self.qfile,'at'); % 'at' = append text
         fprintf(fid,'%s\n',cmdstr);
         fclose(fid);
+        
+        % Determine if new batch job needs to be started
         jobchk = (isempty(self.job) || ~strcmp(self.job.State,'running'));
+        if jobchk
+            % Check for existing job in local cluster:
+            c = parcluster('local');
+            j = c.findJob;
+            i = find(strcmp('running',{j(:).State}) & strcmp('runBatchFromQ',{j(:).Name}));
+            if ~isempty(i)
+                self.job = j(i);
+                jobchk = false;
+            end
+        end
         if jobchk && exist(self.qfile,'file')
             % Start new batch:
             self.job = runBatchFromQ(self.qfile);
         end
+        disp(['Added to queue: ',namestr]);
     else
         stat = ~system(cmdstr);
     end

@@ -23,7 +23,7 @@ p.addParameter('in','',@(x)ischar(x)||iscellstr(x));
 p.addParameter('jac',false,@islogical);
 p.addParameter('jacmat',false,@islogical);
 p.addParameter('def',false,@islogical);
-p.addParameter('outfn','',@(x)ischar(x)||iscellstr(x));
+p.addParameter('outfn',{},@(x)ischar(x)||iscellstr(x));
 % Parse inputs:
 parse(p,odir,varargin{:});
 iflds = setdiff(p.Parameters,p.UsingDefaults);
@@ -81,4 +81,3 @@ if ~isempty(str)
         str = [self.xtstr,'-T "',p.Results.title,'" -e ''',str,'''',wstr];
     end
 end
-

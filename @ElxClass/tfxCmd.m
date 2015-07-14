@@ -17,7 +17,7 @@ str = '';
 p = inputParser;
 addRequired(p,'odir',@isdir);
 addParameter(p,'in','',@(x)ischar(x)||iscellstr(x));
-addParameter(p,'outfn','',@(x)ischar(x)||iscellstr(x));
+addParameter(p,'outfn',{},@(x)ischar(x)||iscellstr(x));
 addParameter(p,'tp','',@(x)ischar(x)||iscellstr(x));
 addParameter(p,'jac',false,@islogical);
 addParameter(p,'jacmat',false,@islogical);
@@ -67,7 +67,7 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
             str{1,i} = [str{1,i},' -jacmat all'];
             pp.jacmat = false; % only need to perform once
         end
-        if ~isempty(pp.outfn{i}) && outchk
+        if outchk && ~isempty(pp.outfn) && ~isempty(pp.outfn{i})
             if ispc
                 cpexec = 'copy';
             else

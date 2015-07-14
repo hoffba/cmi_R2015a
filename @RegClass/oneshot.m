@@ -58,7 +58,7 @@ if gochk
 
             % Generate system command:
             cmdstr = self.elxObj.sysCmd(self.odir,'title','Transformix',...
-                'tp',tpfname,'in',fname);
+                'tp',tpfname,'in',fname,'wait',true);
             % Save command to file for trouble-shooting:
             fid = fopen(fullfile(self.odir,'transformixCMD.txt'),'w');
             if fid>2
