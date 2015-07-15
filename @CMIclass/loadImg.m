@@ -4,7 +4,7 @@ function stat = loadImg(self,x,fname)
 % appcheck = self.appendcheck;
 
 % Validate inputs:
-if (nargin==3) && isa(x,'matlab.ui.control.UIControl')
+if (nargin==3) && isa(x,'matlab.ui.container.Menu')
     switch get(x,'Tag')
         case 'file_openimg'
             appcheck = false;
