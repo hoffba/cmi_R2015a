@@ -43,6 +43,9 @@ if ~isempty(filt)
                 tfnames([tfnames(:).isdir]) = [];
                 % Ignore files with extensions
                 tfnames(cellfun(@(x)ismember('.',x),{tfnames(:).name})) = [];
+                tfnames = tfnames(1); % assume DICOM, only list first one
+            elseif any(strcmp(filt{i},{'.dcm','.1'}))
+                tfnames = tfnames(1);
             end
             fnames = [fnames;{tfnames(:).name}'];
             fchk = fchk || ~isempty(tfnames);

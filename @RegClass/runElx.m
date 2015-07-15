@@ -1,6 +1,19 @@
 % RegClass function
 function stat = runElx(self,hObject,~)
 
+if isa(hObject,'matlab.ui.control.UIControl')
+    switch hObject.Tag
+        case 'button_Start'
+            qchk = false;
+        case 'button_Queue'
+            qchk = true;
+    end
+elseif isnumeric(hObject)
+    qchk = logical(hObject);
+else
+    qchk = false;
+end
+
 stat = self.cmiObj(1).img.check && self.cmiObj(2).img.check;
 hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
 
@@ -72,10 +85,8 @@ if stat
     
     % Moving Image:
     if stat
-        if isempty(filtN) || ~any(filtN)
-            % Image already saved as origfn
-            fnames{2} = origfn;
-        else
+        if ~isempty(filtN) && any(filtN)
+            % Apply image filter
             waitbar(0.25,hw,'Filtering Moving Image ...');
             if strcmp(self.ftype,'Gaussian')
                 timg = feval(func,timg);
@@ -85,11 +96,13 @@ if stat
                     waitbar(islc/size(timg,3),hw);
                 end
             end
-            timg(timg>self.clamp(2,2)) = self.clamp(2,2);
-            timg(timg<self.clamp(2,1)) = self.clamp(2,1);
-            waitbar(0.35,hw,'Saving Processed Moving Image ...');
-            stat = saveMHD(fnames{2},timg,[],fov(2,:));
         end
+        % Apply image crops:
+        timg(timg>self.clamp(2,2)) = self.clamp(2,2);
+        timg(timg<self.clamp(2,1)) = self.clamp(2,1);
+        % Save moving image:
+        waitbar(0.35,hw,'Saving Processed Moving Image ...');
+        stat = saveMHD(fnames{2},timg,[],fov(2,:));
     end
         
     % Fixed Image:
@@ -105,9 +118,11 @@ if stat
                     waitbar(islc/size(timg,3),hw);
                 end
             end
-            timg(timg>self.clamp(1,2)) = self.clamp(1,2);
-            timg(timg<self.clamp(1,1)) = self.clamp(1,1);
         end
+        % Apply image crops:
+        timg(timg>self.clamp(1,2)) = self.clamp(1,2);
+        timg(timg<self.clamp(1,1)) = self.clamp(1,1);
+        % Save fixed image:
         waitbar(0.6,hw,'Saving Processed Fixed Image ...');
         stat = saveMHD(fnames{1},timg,[],fov(1,:));
     end
@@ -115,16 +130,21 @@ if stat
     % Dilate Masks 
     if stat
         str = {'fMask','mMask'};
-        se = [];
-        if any(self.dilateN)
-            se = bwellipsoid(self.dilateN);
-        end
+        r = self.dilateN;
         for i = 1:2
             waitbar(0.75,hw,['Dilating and Saving VOI ...',str{i}]);
             if self.cmiObj(i).img.mask.check
                 timg = self.cmiObj(i).img.mask.mat;
-                if ~isempty(se)
-                    timg = imdilate(timg,se);
+                r = self.dilateN;
+                if any(r)
+                    ni = max(ceil(r/5));
+                    for j = 1:ni
+                        rt = min(r,5);
+                        r = r - rt;
+                        se = bwellipsoid(rt);
+                        timg = imdilate(timg,se);
+                        waitbar(i/ni,hw);
+                    end
                 end
                 fname = fullfile(self.odir,['elxtemp-',str{i},'.mhd']);
                 elxC = [elxC,str(i),{fname}];
@@ -144,13 +164,14 @@ if stat
                         num2str(length(self.elxObj.Schedule)-1),'.txt']);
                     
     % Waiting for completion / running independently:
-    waitchk = ~self.h.checkbox_wait.Value || strcmp(hObject.Tag,'button_Queue');
+    waitchk = ~self.h.checkbox_wait.Value || qchk;
     
+    ncores = feature('numCores');
     cmdstr = self.elxObj.sysCmd(self.odir,'title',namestr,...
         'f',fnames{1},'m',fnames{2},elxC{:},...
         'in',origfn,'outfn',outfn,'tp',tpfname,...
         'jac',self.jac,'jacmat',self.jacmat,'def',self.def,...
-        'cleanup',true,'wait',waitchk);
+        'cleanup',true,'wait',waitchk,'threads',ncores);
     
     % Save command to file for trouble-shooting:
     fid = fopen(fullfile(self.odir,'elastixCMD.txt'),'w');
@@ -160,7 +181,7 @@ if stat
     end
     
     % Determine whether to "Start" or "Add to Queue"
-    if strcmp(hObject.Tag,'button_Queue')
+    if qchk
         fid = fopen(self.qfile,'at'); % 'at' = append text
         fprintf(fid,'%s\n',cmdstr);
         fclose(fid);
