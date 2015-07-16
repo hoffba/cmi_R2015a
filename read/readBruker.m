@@ -58,7 +58,7 @@ end
 % Load all image files:
 if go
     % Load images by what's in the folder
-    fnames = dir(fullfile(fpath,['*_rec*',ext]));
+    fnames = dir(fullfile(fpath,[bname,'*',ext]));
     fnames = {fnames(:).name}';
     fnames(cellfun(@(x)isempty(regexp(x,'_rec\d\d\d\d','once')),fnames)) = [];
     dims(3) = length(fnames);

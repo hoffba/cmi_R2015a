@@ -24,8 +24,7 @@ if TF
             % Can't run batch with open matlabpool
             delete(poolobj);
         end
-        j = batch(@jobProcMouseLung,1,{cmiObj.img.mat,fov,cmiObj.img.labels,...
-                                       fname,svdir});
+        j = batch(@jobProcMouseLung,1,{cmiObj.img.mat,fov,cmiObj.img.labels,fname,svdir});
         delete(hw);
         disp([fname,' : Job # ',num2str(j.ID)]);
     end

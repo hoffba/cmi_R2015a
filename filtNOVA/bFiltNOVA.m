@@ -69,7 +69,9 @@ if nargin>0
                     for j = -n:n
                         for k = -n:n
                             ct = ((i+n)*D^2+(j+n)*D+k+n+1)/D^3;
-                            disp([sprintf('%5.1f',ct),'%']);
+                            if mod(ct,30)==0
+                                disp([sprintf('%5.1f',ct),'%']);
+                            end
                             W = kernelNOVA(img(i+yy,j+xx,k+zz,iv)-img(yy,xx,zz,iv),sDev,p,d);
                             Wcum = Wcum + W;
                             filtIMG(yy,xx,zz) = filtIMG(yy,xx,zz) + W.*img(i+yy,j+xx,k+zz,iv);

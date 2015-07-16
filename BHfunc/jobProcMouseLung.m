@@ -2,7 +2,7 @@ function stats = jobProcMouseLung(img,fov,labels,fname,svdir)
 % Processes mouse lung CT images from the Bruker SkyScan 1176
 % Performs the following steps:
 %   - NOVA filter both images
-%   - Save filtered images as DICOM
+%   - Save filtered images as MHD
 %   - Grow VOI to measure mean/mode HU and lung volume
 %       * values are output in stats structure
 %           use fetchOutputs function to retrieve stats
