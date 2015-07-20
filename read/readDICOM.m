@@ -178,6 +178,19 @@ end
 delete(hp);
 
 if ~isempty(dcmdata)
+    
+%     % Some image sets not separable into 4D, so use multiples of slice
+%     % locations to determine splits (e.g. MR Solutions):
+%     if length(dcmdata)==1
+%         u = unique(cellfun(@(x)sum(dcmdata.SlcLoc==x),num2cell(unique(dcmdata.SlcLoc))));
+%         if (length(u)==1) && (u>1)
+%             ns = length(dcmdata.SlcLoc)/u;
+%             dcmdata.img = reshape(dcmdata.img,[dcmdata.d,ns,u]);
+%             dcmdata.SlcLoc = dcmdata.SlcLoc(1:ns);
+%             dcmdata.Label = repmat(dcmdata.Label,1,u);
+%         end
+%     end
+    
     % Sort by slice location
     for i = 1:length(dcmdata)
         [dcmdata(i).SlcLoc,ix] = sort(dcmdata(i).SlcLoc);
@@ -270,9 +283,9 @@ if ~isempty(dcmdata)
         % MR Solutions DICOMs have no way to separate out b-values of DWI
         if mod(d(3),ns)==0
             n4d =  d(3)/ns;
-            uind = repmat(1:n4d,ns,1);
+            uind = repmat(0:n4d-1,ns,1);
             uind = uind(:);
-            ix = repmat(ix,n4d,1);
+            ix = repmat(ix,n4d,1) + uind;
         else
             error('Matrix cannot be separated into 4D.')
         end
@@ -296,9 +309,9 @@ if ~isempty(dcmdata)
         end
         ind = cellfun(@isempty,dcmdata.Label);
         if any(ind)
-            dcmdata.Label(ind) = cellfun(@num2str,num2cell(find(ind)));
-            dcmdata.Label = cellfun(@num2str,num2cell(1:n4d),...
-                                    'UniformOutput',false);
+            dcmdata.Label(ind) = cellfun(@num2str,num2cell(find(ind)),'UniformOutput',false);
+%             dcmdata.Label = cellfun(@num2str,num2cell(1:n4d),...
+%                                     'UniformOutput',false);
         end
     end
 

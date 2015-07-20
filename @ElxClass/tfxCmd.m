@@ -27,7 +27,7 @@ pp = p.Results;
 
 % Determine tranform parameters:
 if isempty(pp.tp) && ~isempty(self.Tx0)
-    % If no file was input, save current Tx0 in ExlClass object
+    % If no file was input, save current Tx0 in ElxClass object
     pp.tp = self.saveTx0(fullfile(pp.odir,...
                 ['TransformParameters-',datestr(now,'yyyymmdd'),'.txt']));
 end

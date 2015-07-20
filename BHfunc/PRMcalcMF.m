@@ -16,7 +16,9 @@ end
 if ~isempty(prm) && obj.check
     thr = 1:max(prm(:));
     [MF,labels] = minkowskiFun(prm,thr,'==','voxsz',obj.voxsz,'prog',true);
-    C = [{[]},labels;obj.prmmap(:,2),num2cell(MF)];
+    [prml,prmv] = obj.getStats;
+    C = [ {[]} ,    {'PRM%'} ,          labels ;...
+          prml(:) , num2cell(prmv(:)) , num2cell(MF)];
     
     disp(mat2clip(C));
     disp(' ... Copied to clipboard.');

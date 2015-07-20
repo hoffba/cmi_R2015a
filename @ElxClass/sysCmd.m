@@ -29,7 +29,10 @@ parse(p,odir,varargin{:});
 iflds = setdiff(p.Parameters,p.UsingDefaults);
 
 % Need to remove trailing "\" on directories in Windows:
-odir = fileparts(p.Results.odir);
+odir = p.Results.odir;
+if strcmp(odir(end),filesep)
+    odir(end) = [];
+end
 
 % Generate Elastix call:
 if all(ismember({'f','m'},iflds))

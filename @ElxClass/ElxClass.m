@@ -8,8 +8,9 @@ classdef ElxClass < handle
         
         % Stack of multi-parameter optimizations
         T0check = false; % Determines whether to apply initial transform during Elastix call
-        Tx0            % Initial transformation (before optimization)
-        Schedule = {}; % Schedule of coregistration parameters
+        Tx0guess = struct('i',{},'fname',{},'fpath',{}); % File names of initial guess transform (.txt)
+        Tx0              % Initial transformation(s) (before optimization)
+        Schedule = {};   % Schedule of coregistration parameters
         
     end
     methods

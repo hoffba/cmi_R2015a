@@ -58,6 +58,54 @@ if ns~=0
         str = [str,' -t0 "',pstr,'"'];
     end
     
+    
+    
+    
+    
+    
+    
+    % Copy and adjust secondary initial transform guess:
+    if ischar(self.Tx0guess) && exist(self.Tx0guess,'file')
+        fname = self.Tx0guess;
+        it = true;
+        ct = 0;
+        while it
+            
+            % Read file:
+            fid = fopen(fname,'rt');
+            str = fread(fid,ind,'*char')';
+            fclose(fid);
+            
+            % Find sub-initial transform:
+            [ext,tok] = regexp(str,'\(InitialTransformParametersFileName \"(.*?)\"\)',...
+                'tokenExtents','tokens');
+            fname = tok{1}{1};
+            it = ~strcmp(fname,'NoInitialTransform');
+            if it 
+                if exist(fname,'file')
+                    str = [ str(1:ext{1}(1)-1) ,...
+                            fullfile(pp.odir,sprintf('InitialGuess_%u.txt',ct+1)) ,...
+                            str(ext{1}(2)+1:end) ];
+                else
+                    error(['Missing transform file: ',fname]);
+                end
+            end
+            
+            % Save new file to output directory:
+            fid = fopen(fullfile(self.odir,sprintf('InitialGuess_%u.txt',ct)),'wt');
+            fwrite(fid,str,'char');
+            fclose(fid);
+        end
+    end
+    
+    
+    
+    
+    
+    
+    
+    
+    
     % Fix parameter structures
     for i = 1:ns
         if strcmp(self.getPar(i,'ImageSampler'),'RandomSparseMask') && ~mchk

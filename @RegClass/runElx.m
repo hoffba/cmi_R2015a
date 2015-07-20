@@ -17,8 +17,7 @@ end
 stat = self.cmiObj(1).img.check && self.cmiObj(2).img.check;
 hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
 
-% Default to use only one thread for multiple simultaneous coregistrations
-elxC = {'threads',1};
+elxC = {};
 
 % Check for initial transform
 if stat && ~any(cellfun(@isempty,self.points)) && (self.h.popup_Transforms.Value~=1) ...
@@ -37,12 +36,15 @@ if stat && ~any(cellfun(@isempty,self.points)) && (self.h.popup_Transforms.Value
             inC{:});
 end
 
-% If warping is used for initial transform (ThinPlateSpline), 
-%       points need to be saved in .txt for additional Elastix input
-if ~isempty(self.elxObj.Tx0) && strcmp(self.elxObj.Tx0.Transform,'SplineKernelTransform')
-    fname = self.savePoints(1,fullfile(self.odir,'ipp.txt'));
-    elxC = [elxC,{'ipp'},{fname}];
-end
+% ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+% ThinPlateSpline does not work as initial transform!!
+% ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+% % If warping is used for initial transform (ThinPlateSpline), 
+% %       points need to be saved in .txt for additional Elastix input
+% if ~isempty(self.elxObj.Tx0) && strcmp(self.elxObj.Tx0.Transform,'SplineKernelTransform')
+%     fname = self.savePoints(1,fullfile(self.odir,'ipp.txt'));
+%     elxC = [elxC,{'ipp'},{fname}];
+% end
 
 if stat && isempty(self.odir)
     self.setOdir;
@@ -159,7 +161,7 @@ if stat
     % Name of xterm window:
     namestr = ['Elastix Registration: ',self.cmiObj(2).img.name,...
                                 ' --> ',self.cmiObj(1).img.name];
-    % Transformix setup:
+    % Final Transformix setup:
     tpfname = fullfile(self.odir,['TransformParameters.',...
                         num2str(length(self.elxObj.Schedule)-1),'.txt']);
                     
