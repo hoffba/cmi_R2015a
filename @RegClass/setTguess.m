@@ -1,7 +1,7 @@
 % RegClass function
 function setTguess(self,x,edata)
 
-if (nargin==1) || ischar(x) || (isa(x,'matlab.ui.control.UIControl') && strcmp(x.Tag,'button_Tguess'))
+if (nargin==1) || ischar(x) || (isa(x,'matlab.ui.control.UIControl') && strcmp(x.Tag,'button_TGload'))
     if ischar(x)
         fname = x;
         fpath = '';
@@ -35,7 +35,10 @@ if (nargin==1) || ischar(x) || (isa(x,'matlab.ui.control.UIControl') && strcmp(x
         self.elxObj.setT0guess(cell2struct(C',{'i','fname','fpath'}));
         
     end
-elseif (isa(x,'matlab.ui.control.UIControl') && strcmp(x.Tag,'table_Tguess'))
+elseif isa(x,'matlab.ui.control.UIControl') && strcmp(x.Tag,'button_TGclear')
+    self.elxObj.setT0guess(struct('i',{},'fname',{},'fpath',{}));
+    set(self.h.table_Tguess,'Data',{});
+elseif isa(x,'matlab.ui.control.Table') && strcmp(x.Tag,'table_Tguess')
     
     % Grab new selection value:
     i = edata.Indices(1);

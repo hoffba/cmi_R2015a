@@ -19,22 +19,22 @@ hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
 
 elxC = {};
 
-% Check for initial transform
-if stat && ~any(cellfun(@isempty,self.points)) && (self.h.popup_Transforms.Value~=1) ...
-        && ~get(self.h.checkbox_useExistingT,'Value')
-    if self.h.popup_Transforms.Value == 6
-        M = reshape(self.points{2}',1,[]);
-        inC = {'FixedImageLandmarks',reshape(self.points{1}',1,[])};
-    else
-        M = self.pts2M;
-        M = [reshape(M(1:3,1:3),1,[]),M(1:3,4)'];
-        inC = {};
-    end
-    self.elxObj.setTx0(M,...
-            self.cmiObj(1).img.voxsz,...
-            self.cmiObj(1).img.dims(1:3),...
-            inC{:});
-end
+% % Check for initial transform
+% if stat && ~any(cellfun(@isempty,self.points)) && (self.h.popup_Transforms.Value~=1) ...
+%         && ~get(self.h.checkbox_useExistingT,'Value')
+%     if self.h.popup_Transforms.Value == 6
+%         M = reshape(self.points{2}',1,[]);
+%         inC = {'FixedImageLandmarks',reshape(self.points{1}',1,[])};
+%     else
+%         M = self.pts2M;
+%         M = [reshape(M(1:3,1:3),1,[]),M(1:3,4)'];
+%         inC = {};
+%     end
+%     self.elxObj.setTx0(M,...
+%             self.cmiObj(1).img.voxsz,...
+%             self.cmiObj(1).img.dims(1:3),...
+%             inC{:});
+% end
 
 % ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 % ThinPlateSpline does not work as initial transform!!

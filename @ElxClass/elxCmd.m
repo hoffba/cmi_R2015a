@@ -53,58 +53,58 @@ if ns~=0
     end
     
     % Save initial transform:
+    pstr = '';
     if self.T0check && ~isempty(self.Tx0)
         pstr = self.saveTx0(fullfile(pp.odir,'InitialTransform.txt'));
-        str = [str,' -t0 "',pstr,'"'];
     end
     
-    
-    
-    
-    
-    
-    
     % Copy and adjust secondary initial transform guess:
-    if ischar(self.Tx0guess) && exist(self.Tx0guess,'file')
-        fname = self.Tx0guess;
-        it = true;
-        ct = 0;
-        while it
+    if ~isempty(self.Tx0guess)
+        C = struct2cell(self.Tx0guess);
+        i = [C{1,:}];
+        fnames = cellfun(@(x,y)fullfile(x,y),C(3,i),C(2,i),'UniformOutput',false)';
+        nf = length(fnames);
+        for i = 1:nf
             
-            % Read file:
-            fid = fopen(fname,'rt');
-            str = fread(fid,ind,'*char')';
-            fclose(fid);
-            
-            % Find sub-initial transform:
-            [ext,tok] = regexp(str,'\(InitialTransformParametersFileName \"(.*?)\"\)',...
-                'tokenExtents','tokens');
-            fname = tok{1}{1};
-            it = ~strcmp(fname,'NoInitialTransform');
-            if it 
-                if exist(fname,'file')
-                    str = [ str(1:ext{1}(1)-1) ,...
-                            fullfile(pp.odir,sprintf('InitialGuess_%u.txt',ct+1)) ,...
-                            str(ext{1}(2)+1:end) ];
-                else
-                    error(['Missing transform file: ',fname]);
-                end
+            % Read parameter file:
+            if exist(fnames{i},'file')
+                fid = fopen(fnames{i},'rt');
+                txt = fread(fid,inf,'*char')';
+                fclose(fid);
+            else
+                error(['Missing transform file: ',fname]);
             end
             
-            % Save new file to output directory:
-            fid = fopen(fullfile(self.odir,sprintf('InitialGuess_%u.txt',ct)),'wt');
-            fwrite(fid,str,'char');
+            % Change initial transform file name:
+            ext = regexp(txt,'\(InitialTransformParametersFileName \"(.*?)\"\)','tokenExtents');
+            if (i==nf)
+                if isempty(itname)
+                    % No initial transform
+                    igname = 'NoInitialTransform';
+                else
+                    igname = itname;
+                end
+            else
+                igname = fullfile(pp.odir,sprintf('InitialGuess_%u.txt',i+1));
+            end
+            txt = [ txt(1:ext{1}(1)-1) , igname , txt(ext{1}(2)+1:end) ];
+            
+            % Save copy into new output directory for this optimization:
+            igname = fullfile(pp.odir,sprintf('InitialGuess_%u.txt',i));
+            if i==1
+                itname = pstr;
+                pstr = igname;
+            end
+            fid = fopen(igname,'wt');
+            fwrite(fid,txt,'char');
             fclose(fid);
         end
     end
     
-    
-    
-    
-    
-    
-    
-    
+    % Set initial transform for this elastix call:
+    if ~isempty(pstr)
+        str = [str,' -t0 "',pstr,'"'];
+    end
     
     % Fix parameter structures
     for i = 1:ns
