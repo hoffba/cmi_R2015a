@@ -66,15 +66,18 @@ if gchk
         if any(isnan(x))
             error('Parameter inputs must be numeric.');
         end
+        if Ttype==3
+            x(1:3) = x(1:3)/180*pi; % degrees to radians
+        end
     end
 end
 
 if ~isempty(x)
-    x = self.par2affine(x(:)');
-    self.elxObj.setTx0(reshape(x(1:3,:),1,[]),...
+    M = self.par2affine(x(:)');
+    self.elxObj.setTx0(reshape(M(1:3,:),1,[]),...
                        self.cmiObj(1).img.voxsz,...
                        self.cmiObj(1).img.dims(1:3),...
                        'DefaultPixelValue',self.T0defVal);
-    self.showTx0(x);
+    self.showTx0(M(1:3,:));
     self.setTchk(true);
 end

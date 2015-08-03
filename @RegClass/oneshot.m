@@ -29,8 +29,8 @@ else
     if ~isempty(M)
         % Set elxObj Initial Transform properties:
         self.elxObj.setTx0(M,...
-                self.cmiObj(1).img.voxsz,...
-                self.cmiObj(1).img.dims(1:3),...
+                self.cmiObj(1).img.voxsz([2,1,3]),...
+                self.cmiObj(1).img.dims([2,1,3]),...
                 inC{:});
         set(self.h.checkbox_useExistingT,'Enable','on','Value',1);
         gochk = true;
@@ -52,7 +52,7 @@ if gochk
             ['TransformParameters-snap-',datestr(now,'yyyymmdd'),'.txt']));
         fname = fullfile(self.odir,'elxtemp-in.mhd');
         stat = saveMHD(fname,self.cmiObj(2).img.mat(:,:,:,self.cmiObj(2).vec),...
-                       [],self.cmiObj(2).img.dims(1:3).*self.cmiObj(2).img.voxsz);
+                       [],self.cmiObj(2).getProp('fov'));
         if stat
             waitbar(0.5,hw,'Calling Transformix ...');
 

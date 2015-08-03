@@ -1,7 +1,7 @@
 % ImageClass function
 % Performs 2D image filter
-function imgFilt(self,tvec,pars)
-if self.check && (nargin>=2) && (tvec>0) && (tvec<=self.dims(4))
+function imgFilt(self,tvec,fstr,ftype)
+if self.check && (nargin>=2) && all(tvec>0) && all(tvec<=self.dims(4))
     go = false;
     if nargin<3
         % Ask for user inputs:
@@ -15,13 +15,11 @@ if self.check && (nargin>=2) && (tvec>0) && (tvec<=self.dims(4))
             ftype = strsplit(answer{3},' ');
             go = true;
         end
-    elseif iscell(pars) && (length(pars)==3)
-        tvec = pars{1};
-        fstr = pars{2};
-        ftype = pars{3}; % cell array of strings
-        go = true;
     end
-    if go
+    if go && isnumeric(fstr) && (iscellstr(ftype) || ischar(ftype))
+        if ischar(ftype)
+            ftype = {ftype};
+        end
         nv = length(tvec);
         nstr = length(fstr);
         nt = length(ftype);

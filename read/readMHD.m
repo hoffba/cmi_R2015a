@@ -39,6 +39,18 @@ if fid>2
             rawfname = fullfile(path,hstr{ind+1});
         end
     end
+    ind = find(strcmp('Labels',hstr),1);
+    if isempty(ind)
+        if nv>1
+            label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
+                                         'UniformOutput',false));
+        else
+            label = {bname};
+        end
+    else
+        label = regexp(hstr{ind+1},'\"(.*?)\"','tokens');
+        label = [label{:}];
+    end
 %     ind = find(strcmp('ElementMin',hstr),1);
 %     if ~isempty(ind)
 %         emin = str2double(hstr{ind+1});
@@ -74,15 +86,12 @@ end
 if hchk && exist(rawfname,'file')
     fid = fopen(rawfname, 'r');
     if fid>2
-        img = permute(reshape(fread(fid,inf,Etype),[nv,d]),[2,3,4,1]);
+        img = fread(fid,inf,Etype);
+        img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
+        img = permute(reshape(img,[d,nv]),[2,1,3,4]);
+%         img = permute(reshape(fread(fid,inf,Etype),[d,nv]),[2,1,3,4]);
         fclose(fid);
         fov = d.*voxsz;
-        if nv>1
-            label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
-                                         'UniformOutput',false));
-        else
-            label = {bname};
-        end
     else
         disp('File could not be read correctly. Heartbreaker.');
     end

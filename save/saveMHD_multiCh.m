@@ -26,6 +26,8 @@ if ~isa(img,'double')
 end
 NDims = length(d);
 % ElementNumberOfChannels = 1;
+d = d([2,1,3]);
+max_ext = max_ext([2,1,3]);
 voxsz = max_ext./d;
 
 % First check that the file name is correct
@@ -59,6 +61,6 @@ fclose(fid);
 
 % write *.raw file
 fid = fopen(fullfile(pathstr,rawfname),'w');
-status = fwrite(fid,img(:,:,:,ifn),Etype);
+status = fwrite(fid,permute(img,[2,1,3,4]),Etype);
 fclose(fid);
 

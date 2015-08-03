@@ -13,14 +13,18 @@ end
 nq = length(str);
 
 % Extract names:
-if ispc
-    expr = [' title (.*?)',self.sepstr];
+if nq
+    if ispc
+        expr = [' title (.*?)',self.sepstr];
+    else
+        expr = ' -T \"(.*?)\"';
+    end
+    enames = cellfun(@(x)regexp(x,expr,'tokens'),str);
+    enames = [enames{:}]';
+    enames(cellfun(@isempty,enames)) = {''};
 else
-    expr = ' -T \"(.*?)\"';
+    enames = {};
 end
-enames = cellfun(@(x)regexp(x,expr,'tokens'),str);
-enames = [enames{:}]';
-enames(cellfun(@isempty,enames)) = {''};
 
 % Determine wheter a re-ordering was called from table:
 if isa(x,'matlab.ui.control.Table') && nq

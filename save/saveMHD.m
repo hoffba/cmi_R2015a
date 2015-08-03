@@ -2,6 +2,10 @@ function status = saveMHD(fname,img,labels,max_ext,~)
 % Save as MHD file for Elastix
 % * Automatically adds label to name if dim(4) > 1
 
+% Permute from YXZ to XYZ:
+img = permute(img,[2,1,3,4]);
+max_ext = max_ext([2,1,3]);
+
 [d(1),d(2),d(3),nv] = size(img);
 [pathstr, fname, ~] = fileparts(fname);
 if (nv>1)

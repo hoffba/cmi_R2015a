@@ -85,9 +85,11 @@ if (nargin>=4)
         % Adjust axes properties
         set(ha,'Color',opts.bgcolor,'Tag','PRMscatter',...
                'CLim',[0 , size(cmap,1)]+0.5,...
-               'PlotBoxAspectRatioMode','manual');
-        set(get(ha,'XLabel'),'String',opts.xlabel);
-        set(get(ha,'YLabel'),'String',opts.ylabel);
+               'PlotBoxAspectRatioMode','manual','FontSize',18);
+        set(get(ha,'XLabel'),'String',opts.xlabel,'Interpreter','none',...
+            'FontSize',22,'FontWeight','bold');
+        set(get(ha,'YLabel'),'String',opts.ylabel,'Interpreter','none',...
+            'FontSize',22,'FontWeight','bold');
         
         % Axes limits:
         if ischar(opts.xlim) || isinf(opts.xlim(1)) || isnan(opts.xlim(1))

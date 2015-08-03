@@ -4,7 +4,7 @@ function permuteMat(self,order)
 % Input = some permutation of [1,2,3]
 %   - no other numbers!
 %   - includes all three!
-if (nargin == 2) && (length(order)==3) && self.check
+if (nargin == 2) && (length(order)==3)
     order = [round(order),4];
     if all(sort(order)==(1:4))
         self.mat = permute(self.mat,order);

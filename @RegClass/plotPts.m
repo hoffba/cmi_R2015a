@@ -15,13 +15,22 @@ elseif (nargin==3)
 end
 
 if ~isempty(h)
-    % Convert points back to corner-centric geometry
+    % POINTS ARE IN XYZ
     p = self.points{i};
     if ~isempty(p)
-        ind = round(0.5 + p(:,self.cmiObj(i).orient)/...
-                            self.cmiObj(i).img.voxsz(self.cmiObj(i).orient))...
-              == self.cmiObj(i).slc(self.cmiObj(i).orient);
-        p = p(ind,(1:3)~=self.cmiObj(i).orient);
+        
+        ornt = [2,1,3];
+        ornt = ornt(self.cmiObj(i).orient);
+        fov = self.cmiObj(i).getProp('fov');
+        voxsz = self.cmiObj(i).img.voxsz;
+        
+        % Convert slice coordinates to matrix indices and find those on current slice:
+        ind = round((p(:,ornt) + fov(ornt)/2)/voxsz(ornt) + 0.5) == self.cmiObj(i).getProp('slc');
+        
+        % Find points on current slice:
+        ind2 = (1:3)~=ornt;
+        p = bsxfun(@plus,p(ind,ind2),fov(ind2)/2);
+        
     end
     if isempty(p)
         if ~isnan(self.hpts(i)) && ishghandle(self.hpts(i))
@@ -31,10 +40,10 @@ if ~isempty(h)
     else
         if isnan(self.hpts(i)) || ~ishghandle(self.hpts(i))
             hold(h,'on');
-            self.hpts(i) = plot(h,p(:,2),p(:,1),'*g');
+            self.hpts(i) = plot(h,p(:,1),p(:,2),'*g');
             hold(h,'off');
         else
-            set(self.hpts(i),'XData',p(:,2),'YData',p(:,1));
+            set(self.hpts(i),'XData',p(:,1),'YData',p(:,2));
         end
     end
 end

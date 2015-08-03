@@ -25,8 +25,9 @@ dtypes = {...
             {'.sur','.mrd'},            'MRS';...       % 9
             {'.mask'},                  'MASK';...      % 10
             {'.tif'},                   'TIFF';...      % 11
-            {'.mat'},                   'MAT';...       % 12
-            {'.fid'},                   'FID';...       % 13
+            {'.jpg'},                   'JPG';...       % 12
+            {'.mat'},                   'MAT';...       % 13
+            {'.fid'},                   'FID';...       % 14
          };
 imggp = true(13,1); imggp(10) = false;
 maskgp = false(13,1); maskgp([1:3,6,7,10,12]) = true;

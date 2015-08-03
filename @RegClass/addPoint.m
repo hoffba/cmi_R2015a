@@ -16,16 +16,22 @@ if nargin==3
             i = find(cellfun(@(x)~isempty(x)&&(x==hObject),...
                                 {self.cmiObj(:).hiover}),1);
             tObj = self.cmiObj(i);
+            
+            % Grap selected point (x,y):
             p = get(get(hObject,'Parent'),'CurrentPoint');
-            % [x,y] --> [row,column,slice] dimensions
-            p = [p(1,[2,1]),(tObj.slc(tObj.orient)-0.5)*tObj.img.voxsz(tObj.orient)];
+            
+            % convert to image-centric coordinates
+            ornt = tObj.orient;
+            p = [p(1,1:2),(tObj.slc(ornt)-0.5)*tObj.img.voxsz(ornt)] ...
+                            - tObj.getProp('fov')/2;
+            
+            % Permute to original matrix coordinates
             if tObj.orient==2
                 p = p([1,3,2]);
             elseif tObj.orient==1
                 p = p([3,1,2]);
             end
-            % Shift to image-centric geometry
-%             p = p - tObj.img.dims(1:3).*tObj.img.voxsz/2;
+            
         end
     elseif ismember(hObject,[1,2]) && (size(edata,2)==3)
         % Manual input points [x,y,z]

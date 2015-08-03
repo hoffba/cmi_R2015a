@@ -60,6 +60,7 @@ if ~isempty(self.h)
     set(self.h.tools_disp_overlay,   'Callback',@self.setOverCheck);
     set(self.h.tools_disp_histo,     'Callback',@self.setHistVis);
     set(self.h.tools_disp_overtransp,'Callback',@self.setOverTransp);
+    set(self.h.tools_disp_checker,   'Callback',@self.setChecker);
     set(self.h.tools_recon,          'Callback',@self.recon);
     set(self.h.tools_plot4D,         'Callback',@(varargin)self.img.plot4D);
     set(self.h.image_isosurf,    'Callback',@self.isosurf);
@@ -79,6 +80,7 @@ if ~isempty(self.h)
     set(self.h.image_filter,     'Callback',@self.imgFilt);
     set(self.h.image_filtNOVA,   'Callback',@self.filtNOVA);
     set(self.h.image_surfcoilcorr,'Callback',@self.surfCoilCorrect);
+    set(self.h.image_pad,        'Callback',@self.padImg);
     set(self.h.analysis_imgmath, 'Callback',@self.imgMath);
     set(self.h.analysis_prmopt,  'Callback',@self.setPRMopts);
     set(self.h.analysis_PRM,     'Callback',@self.activatePRM);

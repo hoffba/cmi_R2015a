@@ -46,10 +46,23 @@ elxC = {};
 %     elxC = [elxC,{'ipp'},{fname}];
 % end
 
+% Check output directory:
 if stat && isempty(self.odir)
     self.setOdir;
 end
 stat = ~isempty(self.odir);
+
+% Adjust Elastix parameters based on input images:
+labl = {'Fixed','Moving'};
+npar = length(self.elxObj.Schedule);
+for i = 1:2
+    if self.cmiObj(i).img.dims(3)<5
+        str = 'Recursive';
+    else
+        str = 'Smoothing';
+    end
+    self.elxObj.setPar(1:npar,[labl{i},'ImagePyramid'],[labl{i},str,'ImagePyramid']);
+end
 
 % Pre-processing & save temporary .mhd files
 if stat

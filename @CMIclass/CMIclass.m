@@ -23,6 +23,9 @@ classdef CMIclass < handle
         thmarksz = 2;           % Define Threshold edge marker size
         dispPos                 % Position of display figure
         dalpha = 1;             % Transparency of overlay image (0:1)
+        checkerd = 20;          % Checkerboard size
+        checkerM = [];          % Checkerboard logical matrix
+        
         
         % Display handles
         guicheck = false;       % Check whether GUI was loaded
@@ -165,7 +168,7 @@ classdef CMIclass < handle
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 % only update if background overlay is activated
-                elseif (self.prmcheck || self.overcheck)
+                elseif (self.prmcheck || self.overcheck || ~isempty(self.checkerM))
                     % values are arbitrarily displayed, scaled to colormap
                     timg = (self.getImgSlice('img',self.bgvec) - self.clim(self.bgvec,1)) / ...
                         diff(self.clim(self.bgvec,:)) * (self.ncolors - 1);
@@ -180,27 +183,29 @@ classdef CMIclass < handle
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 else
-                    if self.overcheck || self.prmcheck
-                        talpha = self.dalpha;
-                    else
-                        talpha = 1;
-                    end
                     % Determine mask for transparency
                     if (self.prmcheck && self.img.prm.check)
                         tprm = self.getImgSlice('prm');
                         adata = ~isnan(tprm);
                         tprm(~adata) = 0;
                         timg = self.ncolors + tprm;
-                        adata = double(adata & (tprm>0)) * talpha;
+                        adata = double(adata & (tprm>0)) * self.dalpha;
+                    elseif ~isempty(self.checkerM)
+                        timg = self.getImgSlice('img');
+                        adata = self.checkerM;
+                        if self.img.mask.check
+                            adata = adata & self.img.mask.mat;
+                        end
+                        adata = adata * self.dalpha;
                     elseif (self.overcheck && self.img.mask.check)
                         timg = self.getImgSlice('img');
                         adata = self.getImgSlice('mask');
                         adata = double( adata ...
                             & (timg>=self.img.thresh(self.vec,1)) ...
-                            & (timg<=self.img.thresh(self.vec,2)) ) * talpha;
+                            & (timg<=self.img.thresh(self.vec,2)) ) * self.dalpha;
                     else
                         timg = self.getImgSlice('img');
-                        adata = talpha; % No transparency
+                        adata = 1; % No transparency
                     end
                     % Determine image to show
                     if ~self.prmcheck
@@ -295,7 +300,7 @@ classdef CMIclass < handle
         function dispUDslice(self)
             self.dispUDimg;
             th = findall(self.hfig,'ToolTipString','Data Cursor');
-            if (self.overcheck || self.prmcheck)
+            if (self.overcheck || self.prmcheck || ~isempty(self.checkerM))
                 self.dispUDbg;
                 set(th,'Visible','off');
             else
@@ -310,6 +315,7 @@ classdef CMIclass < handle
                 self.dispFigs;
                 set(self.hfig,'Name',self.img.name)
                 self.dispUDslice;
+                self.setChecker;
                 dpix = self.img.voxsz(1:3); dpix(self.orient) = [];
                 tdims = self.img.dims(1:3); tdims(self.orient) = [];
                 fov = dpix .* tdims;

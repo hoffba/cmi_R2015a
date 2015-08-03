@@ -1,7 +1,8 @@
-function M = pts2T(phom,pref,Tflag,cor)
+function M = pts2T(Y,X,Tflag)
+% phom = M * pref
 % Inputs:
-%   X = homologous points [n x 3]
-%   U = reference points [n x 3]
+%   X = homologous points [n x ndim]
+%   U = reference points [n x ndim]
 %   Tflag = type of transform
 %           0: Translation
 %           1: Rigid Body
@@ -11,65 +12,68 @@ function M = pts2T(phom,pref,Tflag,cor)
 if (nargin<3)
     Tflag = 3;
 end
-if (nargin<4)
-    cor = mean(phom,1);
-end
-M = eye(4);
-npts = min(size(phom,1),size(pref,1));
-if (nargin>1) && ismember(Tflag,0:3) && (size(phom,2)==3) && (size(pref,2)==3) ...
-        && (size(phom,1)==size(pref,1))
+ndim = size(Y,2);
+M = eye(ndim+1);
+npts = min(size(Y,1),size(X,1));
+
+if (nargin>1) && ismember(Tflag,0:3) && (size(Y,1)==size(X,1))
     
-    switch Tflag
-        case 0
-            nmin = 1;
-        case 1
-            nmin = 3;
-        case 2
-            nmin = 3;
-        case 3
-            nmin = 4;
-    end
-    if npts<nmin
-        error('Not enough points for transform')
-    end
+%     switch Tflag
+%         case 0
+%             nmin = 1;
+%         case 1
+%             nmin = 3;
+%         case 2
+%             nmin = 3;
+%         case 3
+%             nmin = 4;
+%     end
+%     if npts<nmin
+%         error('Not enough points for transform')
+%     end
     
-    % Compute centroid-based coordinates
-    phom = bsxfun(@minus,phom(1:npts,:),cor);
-    pref = bsxfun(@minus,pref(1:npts,:),cor);
+    % Make sure using same number of points each:
+    Y = Y(1:npts,:);
+    X = X(1:npts,:);
     
     if Tflag==3 % Full Affine
         
         % Linear least squares solution for full affine:
-        pref = [pref,ones(npts,1)];
-        phom = [phom,ones(npts,1)];
-        M = [pref'*phom/(phom'*phom);0,0,0,1];
+        X = [X,ones(npts,1)];
+        Y = [Y,ones(npts,1)];
+        M = [Y(:,1:ndim)'*X/(X'*X);zeros(1,ndim),1];
+        M(1:ndim,end) = -M(1:ndim,end);
 
     else
         % Reference: 
         
         % Determine point-set centers
-        chom = mean(phom,1);
-        cref = mean(pref,1);
+        ybar = mean(Y,1);
+        xbar = mean(X,1);
         
         if Tflag==0
-            A = eye(3);
-            T = (cref-chom)';
+            A = eye(ndim);
+            T = (xbar-ybar)';
         else
+            
             % Determine rotation matrix via SVD:
-            X = bsxfun(@minus,pref,cref);
-            U = bsxfun(@minus,phom,chom);
-            [u,s,v] = svd(X' * U);
-            Z = diag([1,1,det(u*v')]);
-            R = v*Z*u';
+            X = bsxfun(@minus,X,xbar);
+            Y = bsxfun(@minus,Y,ybar);
+            [u,s,v] = svd(Y' * X);
+            Z = diag([ones(1,ndim-1),det(u*v')]);
+            R = u*Z*v';
+            
             if Tflag==2
                 % Determine scales
-                S = trace(s*Z)/sum(sum(phom.^2))*(npts-1);
+                S = trace(s*Z)/sum(sum(X.^2)) * eye(ndim);
             else
                 S = 1;
             end
-            T = (cref' - (S*R)\chom');
-            A = (S*eye(3)*R)';
+            
+            % Determine translation:
+            T = (S*R)*xbar' - ybar';
+            A = S*R;
         end
-        M = [A,T;0,0,0,1];
+        M = [A,T;zeros(1,ndim),1];
     end
 end
