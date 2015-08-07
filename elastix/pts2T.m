@@ -56,7 +56,7 @@ if (nargin>1) && ismember(Tflag,0:3) && (size(Y,1)==size(X,1))
             end
             
             % Determine translation:
-            T = (S*R)*xbar' - ybar';
+            T = ybar' - (S*R)*xbar';
             A = S*R;
         end
         M = [A,T;zeros(1,ndim),1];
