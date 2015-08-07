@@ -32,5 +32,5 @@ if self.cmiObj(1).img.mask.check && self.cmiObj(2).img.mask.check
     self.setTchk(true);
     
     set(self.h.popup_Transforms,'Value',5); % Set to Affine
-    self.showTx0(x);
+    self.showTx0;
 end
