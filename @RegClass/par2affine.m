@@ -25,4 +25,4 @@ switch n
     otherwise
         error('RegClass:par2affine - Invalid number of parameters input.');
 end
-self.showTx0(M(1:3,:));
+self.showTx0;

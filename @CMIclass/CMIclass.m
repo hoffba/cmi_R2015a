@@ -194,7 +194,7 @@ classdef CMIclass < handle
                         timg = self.getImgSlice('img');
                         adata = self.checkerM;
                         if self.img.mask.check
-                            adata = adata & self.img.mask.mat;
+                            adata = adata & self.getImgSlice('mask');
                         end
                         adata = adata * self.dalpha;
                     elseif (self.overcheck && self.img.mask.check)

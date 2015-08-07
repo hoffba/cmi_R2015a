@@ -18,20 +18,6 @@ npts = min(size(Y,1),size(X,1));
 
 if (nargin>1) && ismember(Tflag,0:3) && (size(Y,1)==size(X,1))
     
-%     switch Tflag
-%         case 0
-%             nmin = 1;
-%         case 1
-%             nmin = 3;
-%         case 2
-%             nmin = 3;
-%         case 3
-%             nmin = 4;
-%     end
-%     if npts<nmin
-%         error('Not enough points for transform')
-%     end
-    
     % Make sure using same number of points each:
     Y = Y(1:npts,:);
     X = X(1:npts,:);
@@ -42,7 +28,6 @@ if (nargin>1) && ismember(Tflag,0:3) && (size(Y,1)==size(X,1))
         X = [X,ones(npts,1)];
         Y = [Y,ones(npts,1)];
         M = [Y(:,1:ndim)'*X/(X'*X);zeros(1,ndim),1];
-        M(1:ndim,end) = -M(1:ndim,end);
 
     else
         % Reference: 

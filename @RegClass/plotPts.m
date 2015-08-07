@@ -19,17 +19,16 @@ if ~isempty(h)
     p = self.points{i};
     if ~isempty(p)
         
-        ornt = [2,1,3];
-        ornt = ornt(self.cmiObj(i).orient);
+        % Retrieve image properties:
+        ornt = self.cmiObj(i).orient;
         fov = self.cmiObj(i).getProp('fov');
         voxsz = self.cmiObj(i).img.voxsz;
         
-        % Convert slice coordinates to matrix indices and find those on current slice:
-        ind = round((p(:,ornt) + fov(ornt)/2)/voxsz(ornt) + 0.5) == self.cmiObj(i).getProp('slc');
-        
-        % Find points on current slice:
-        ind2 = (1:3)~=ornt;
-        p = bsxfun(@plus,p(ind,ind2),fov(ind2)/2);
+        % Convert spatial to matrix dimension order, find points on this slice
+        p = p(:,[2,1,3]);
+        zind = round((p(:,ornt) + fov(ornt)/2)/voxsz(ornt) + 0.5) == self.cmiObj(i).getProp('slc');
+        xyi = (1:3)~=ornt;
+        p = bsxfun(@plus,p(zind,xyi),fov(xyi)/2);
         
     end
     if isempty(p)
@@ -40,10 +39,10 @@ if ~isempty(h)
     else
         if isnan(self.hpts(i)) || ~ishghandle(self.hpts(i))
             hold(h,'on');
-            self.hpts(i) = plot(h,p(:,1),p(:,2),'*g');
+            self.hpts(i) = plot(h,p(:,2),p(:,1),'*g');
             hold(h,'off');
         else
-            set(self.hpts(i),'XData',p(:,1),'YData',p(:,2));
+            set(self.hpts(i),'XData',p(:,2),'YData',p(:,1));
         end
     end
 end

@@ -55,6 +55,10 @@ if gochk
                        [],self.cmiObj(2).getProp('fov'));
         if stat
             waitbar(0.5,hw,'Calling Transformix ...');
+            
+            % Set Reference image properties:
+            self.elxObj.setTx0par('Size',self.cmiObj(1).img.dims([2,1,3]),...
+                                  'Spacing',self.cmiObj(1).img.voxsz([2,1,3]));
 
             % Generate system command:
             cmdstr = self.elxObj.sysCmd(self.odir,'title','Transformix',...

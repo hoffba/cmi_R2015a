@@ -3,7 +3,7 @@ function addPoint(self,hObject,edata)
 % Add selected point to list
 % addPoint(image#,pts)
 %       image# = 1 or 2 (Ref or Hom)
-%       pts = [N x 3] List of 3D coordinates to add
+%       pts = [N x 3] List of 3D coordinates to add (X,Y,Z)
 % ** Remember that Elasix geometry puts (0,0,0) at center of 3D FOV!
 
 i = [];
@@ -16,21 +16,25 @@ if nargin==3
             i = find(cellfun(@(x)~isempty(x)&&(x==hObject),...
                                 {self.cmiObj(:).hiover}),1);
             tObj = self.cmiObj(i);
-            
-            % Grap selected point (x,y):
-            p = get(get(hObject,'Parent'),'CurrentPoint');
-            
-            % convert to image-centric coordinates
             ornt = tObj.orient;
-            p = [p(1,1:2),(tObj.slc(ornt)-0.5)*tObj.img.voxsz(ornt)] ...
-                            - tObj.getProp('fov')/2;
+            
+            % Grap selected 2D point from axes (x,y):
+            p = get(get(hObject,'Parent'),'CurrentPoint');
+            p = [ p(1,1:2) , (tObj.slc(ornt)-0.5)*tObj.img.voxsz(ornt) ];
             
             % Permute to original matrix coordinates
-            if tObj.orient==2
-                p = p([1,3,2]);
-            elseif tObj.orient==1
-                p = p([3,1,2]);
+            switch ornt
+                case 1
+                    torder = [2,3,1];
+                case 2
+                    torder = [3,2,1];
+                case 3
+                    torder = [1,2,3];
             end
+            
+            % convert to image-centric coordinates
+            fov = tObj.getProp('fov');
+            p = p(torder) - fov([2,1,3])/2;
             
         end
     elseif ismember(hObject,[1,2]) && (size(edata,2)==3)

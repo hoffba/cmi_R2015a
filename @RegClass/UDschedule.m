@@ -105,8 +105,13 @@ elseif ishghandle(hObject)
                 i = cellfun(@str2double,inputdlg(str,'Scales',[1,10],...
                             cellfun(@num2str,num2cell(val),...
                                     'UniformOutput',false)))';
-                if ~isempty(i) && ~any(isnan(i) | isinf(i))
-                    C = {'Scales',i};
+                if ~isempty(i) && ~any(isinf(i))
+                    if any(isnan(i))
+                        str = 'true';
+                    else
+                        str = 'false';
+                    end
+                    C = {'Scales',i,'AutomaticScalesEstimation',str};
                 end
             end
         case 'edit_defVal'
