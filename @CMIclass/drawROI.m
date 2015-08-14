@@ -25,8 +25,14 @@ if self.img.check && self.dispcheck
         overmod = false;
     end
     % Draw ROI on slice
-    axes(self.haxes);
-    BW = roipoly;
+    if self.drawMode
+        h = imfreehand(self.haxes);
+        BW = h.createMask(self.hiover);
+        h.delete;
+    else
+        axes(self.haxes);
+        BW = roipoly;
+    end
     % Return to overlay mode
     if overmod
         self.prmcheck = tprmcheck;

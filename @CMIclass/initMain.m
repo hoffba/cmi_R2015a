@@ -56,6 +56,7 @@ if ~isempty(self.h)
     set(self.h.tools_voi_dilate,     'Callback',@self.dilateMask);
     set(self.h.tools_voi_clearAll,   'Callback',@self.clearMask);
     set(self.h.tools_voi_clearSlice, 'Callback',@self.clearMask);
+    set(self.h.tools_voi_drawmode,   'Callback',@self.setDrawMode);
     set(self.h.tools_disp_bgSel,     'Callback',@self.setBGvec);
     set(self.h.tools_disp_overlay,   'Callback',@self.setOverCheck);
     set(self.h.tools_disp_histo,     'Callback',@self.setHistVis);
