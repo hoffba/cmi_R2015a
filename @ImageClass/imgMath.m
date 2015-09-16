@@ -27,7 +27,7 @@ if ok
         self.labels(end+1) = str(2);
         self.scaleM(end+1) = 1;
         self.scaleB(end+1) = 0;
-        self.thresh(end+1,:) = [-100000,100000];
+        self.thresh(end+1,:) = [-inf,inf];
         self.dims(4) = size(self.mat,4);
     else
         ok = false;

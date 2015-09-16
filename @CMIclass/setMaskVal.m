@@ -17,7 +17,7 @@ else
     stat = true;
 end
 if stat
-    stat = self.img.setMaskVal(vec,mval,ival);
+    self.img.setMaskVal(vec,mval,ival);
     if stat
         self.dispUDslice;
     end

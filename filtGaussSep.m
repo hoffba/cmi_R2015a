@@ -10,7 +10,7 @@ if (nargin==2) && isnumeric(X) && isnumeric(str)
     pn = round(n/2);
     X = padarray(X,pn*ones(1,3),'replicate');
     d = size(X);
-    H = gaussfir(1/str,n);
+    H = gaussdesign(1/str,2*n);
     for i = 1:length(d)
         if d(1)>50
             X = reshape(conv(X(:),H,'same'),d);

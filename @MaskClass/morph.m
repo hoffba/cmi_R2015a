@@ -4,8 +4,8 @@ function morph(self,meth,options)
 % meth: 'dilate' or 'erode'
 % options: vector of morphological options
 if (nargin == 3) && ~isempty(options) && isnumeric(options)
-    opts = {'dilate','erode'};
-    if any(strcmpi(meth,opts(1:2))) % Dilate / Erode
+    opts = {'dilate','erode','close','open'};
+    if any(strcmpi(meth,opts)) % Dilate / Erode
         % options: [xy-radius z-radius]
         %          * if z-rad = 0, makes 2D
         r = abs(options([1,1,2]));
@@ -18,10 +18,15 @@ if (nargin == 3) && ~isempty(options) && isnumeric(options)
             rt = min(r,5);
             r = r - rt;
             se = bwellipsoid(rt);
-            if strcmpi(meth,'dilate')
-                self.mat = imdilate(self.mat,se);
-            else
-                self.mat = imerode(self.mat,se);
+            switch meth
+                case 'dilate'
+                    self.mat = imdilate(self.mat,se);
+                case 'erode'
+                    self.mat = imerode(self.mat,se);
+                case 'open'
+                    self.mat = imopen(self.mat,se);
+                case 'close'
+                    self.mat = imclose(self.mat,se);
             end
             waitbar(i/ni,hw);
         end

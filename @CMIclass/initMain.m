@@ -52,8 +52,9 @@ if ~isempty(self.h)
     set(self.h.tools_connVOI,    'Callback',@self.conn2voi);
     set(self.h.tools_voi_fillholes,  'Callback',@self.fillHoles);
     set(self.h.tools_voi_segment,    'Callback',@self.growMask);
-    set(self.h.tools_voi_erode,      'Callback',@self.erodeMask);
-    set(self.h.tools_voi_dilate,     'Callback',@self.dilateMask);
+%     set(self.h.tools_voi_erode,      'Callback',@self.erodeMask);
+%     set(self.h.tools_voi_dilate,     'Callback',@self.dilateMask);
+    set(self.h.tools_voi_morph,      'Callback',@self.morphMask);
     set(self.h.tools_voi_clearAll,   'Callback',@self.clearMask);
     set(self.h.tools_voi_clearSlice, 'Callback',@self.clearMask);
     set(self.h.tools_voi_drawmode,   'Callback',@self.setDrawMode);

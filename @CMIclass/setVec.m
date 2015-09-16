@@ -24,7 +24,7 @@ if ((val > 0) && (val <= self.img.dims(4)))
     end
     % Update GUI properties
     if self.guicheck
-        self.GUIupdate;
+        self.GUIupdate('4D');
 %         self.h.edit_veclabel.String = self.img.labels{val};
 %         self.h.slider_4D.Value = val;
 %         self.h.edit_vec.String = num2str(val);
