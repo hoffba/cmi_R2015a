@@ -41,7 +41,7 @@ if ischar(pp.tp)
     pp.tp = {pp.tp};
 end
 nf = length(pp.in);
-if length(pp.tp)~=nf
+if (nf>0) && (length(pp.tp)~=nf)
     pp.tp = repmat(pp.tp,nf,1);
 end
 

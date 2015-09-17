@@ -47,9 +47,13 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
         [~,tfn,ext] = fileparts(self.Tfx.fnames{i});
         ofn{i} = fullfile(self.Tfx.out,[tfn,'_R',ext]);
     end
-    tp = cell(nf,1);
-    tp(self.Tfx.nn) = {tpNN};
-    tp(~self.Tfx.nn) = {tpfn};
+    if (nf==0)
+        tp = {tpfn};
+    else
+        tp = cell(nf,1);
+        tp(self.Tfx.nn) = {tpNN};
+        tp(~self.Tfx.nn) = {tpfn};
+    end
     str = elxObj.sysCmd(self.Tfx.out,'title',namestr,'tp',tp,...
         'jac',self.Tfx.jac,'jacmat',self.Tfx.jacmat,'def',self.Tfx.def,...
         'in',self.Tfx.fnames,'outfn',ofn,'wait',true);
