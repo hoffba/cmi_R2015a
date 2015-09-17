@@ -55,7 +55,7 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
         'in',self.Tfx.fnames,'outfn',ofn,'wait',true);
     
     % Save command to file for trouble-shooting:
-    fid = fopen(fullfile(self.odir,'transformixCMD.txt'),'w');
+    fid = fopen(fullfile(self.Tfx.out,'transformixCMD.txt'),'w');
     if fid>2
         fprintf(fid,'%s',str);
         fclose(fid);

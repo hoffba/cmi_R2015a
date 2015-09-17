@@ -40,7 +40,7 @@ end
 if ischar(pp.tp)
     pp.tp = {pp.tp};
 end
-nf = length(pp.in);
+nf = max(length(pp.in),(pp.jac || pp.jacmat || pp.def));
 if length(pp.tp)~=nf
     pp.tp = repmat(pp.tp,nf,1);
 end
