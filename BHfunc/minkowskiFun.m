@@ -72,7 +72,7 @@ switch nD
         else
             func = @calcMF3Drho;
         end
-        labels = {'Volume','SurfaceArea','Mean Breadth','Euler'};
+        labels = {'Volume','SurfaceArea','MeanBreadth','Euler'};
         nmf = 4;
     otherwise
         error(['Invalid window radius: [',num2str(pp.n),']']);

@@ -15,7 +15,7 @@ MF = [];
 labels = {};
 
 p = inputParser;
-addRequired(p,'vec',@(x)isscalar(x)&&(x>0));
+addRequired(p,'vec',@(x)(isscalar(x)&&(x>0))||any(strcmpi(x,{'voi','prm'})));
 addRequired(p,'thresh',@isnumeric);
 addRequired(p,'n',@isvector);
 addParameter(p,'ApplyMask',true,@islogical);
@@ -26,18 +26,25 @@ parse(p,vec,thresh,n,varargin{:});
 pp = p.Results;
 
 if self.check
-    if pp.vec
-        timg = self.mat(:,:,:,pp.vec);
-    else % Perform analysis on VOI
-        timg = self.mask.mat;
+    if ischar(pp.vec)
+        switch lower(pp.vec)
+            case 'voi'
+                timg = self.mask.mat;
+                pp.thresh = 1;
+            case 'prm'
+                timg = self.prm.mat;
+                pp.thresh = round(pp.thresh);
+            otherwise
+        end
         pp.ApplyMask = false;
-        pp.thresh = 0.5;
-        pp.tmode = '>';
+        pp.tmode = '==';
+    else
+        timg = self.mat(:,:,:,pp.vec);
     end
     if pp.ApplyMask && self.mask.check
         mask = self.mask.mat;
     else
-        mask = [];
+        mask = false(0);
     end
     gchk = any(isinf(pp.n));
     
