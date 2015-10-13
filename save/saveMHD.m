@@ -41,10 +41,12 @@ if ischar(ofnames)
     ofnames = {ofnames};
 end
 
+legalchars = 'a-zA-Z0-9\-\_\.';
 for ifn = 1:nv
     % First check that the file name is correct
-    mhfname = fullfile(pathstr,[ofnames{ifn},'.mhd']);
-    rawfname = [ofnames{ifn},'.raw'];
+    tname = regexprep(ofnames{ifn},['[^' legalchars ']'],'');
+    mhfname = fullfile(pathstr,[tname,'.mhd']);
+    rawfname = [tname,'.raw'];
 
     % write *.mhd file
     fid = fopen(mhfname,'w');
