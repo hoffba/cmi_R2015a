@@ -6,7 +6,7 @@ if self.check && (nargin>=2) && all(tvec>0) && all(tvec<=self.dims(4))
     if nargin<3
         % Ask for user inputs:
         answer = inputdlg({'Image Vector(s)','Filter Neighborhood',...
-                            'Filter Type ([w]iener,[m]edian,[g]aussian,[u]nsharp mask)'},...
+                            'Filter Type ([a]verage,[w]iener,[m]edian,[g]aussian,[u]nsharp mask)'},...
                           'Median Filter',1,...
                           {num2str(tvec),'3','m'});
         if ~isempty(answer)
@@ -33,6 +33,8 @@ if self.check && (nargin>=2) && all(tvec>0) && all(tvec<=self.dims(4))
             timg = self.mat(:,:,:,tvec(iv));
             ifilt = fstr(iv)*[1,1];
             switch ftype{iv}
+                case 'a'
+                    func = @(x)imfilter(x,ones(fstr));
                 case 'm'
                     func = @(x)medfilt2(x,ifilt);
                 case 'w'

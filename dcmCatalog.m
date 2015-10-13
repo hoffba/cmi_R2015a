@@ -1,4 +1,4 @@
-function C = dcmCatalog(extout,pathout)
+function C = dcmCatalog
 % Catalogs desired DICOM header values
 % Inputs (optional):
 %       extout = extension of files to save

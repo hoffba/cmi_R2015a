@@ -1,9 +1,13 @@
 % CMIclass function
-% Allows user to manually align images within a series to first image
+% Allows user to manually translate images
 function manreg(self)
-if self.img.check && self.img.dims(4)>1
-    baseimg = self.img.mat(:,:,self.slc(self.orient),1);
-    origimg = self.img.mat(:,:,self.slc(self.orient),self.vec);
-    dims = size(baseimg);
+if self.img.check
+    
+    v = 1;
+    if self.img.dims(4)>1
+        answer = questdlg('Move all images or only the current?',...
+            'Shift Image','All','Current','Current');
+        
+    end
     
 end

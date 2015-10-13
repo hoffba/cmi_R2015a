@@ -65,6 +65,7 @@ if ~isempty(self.h)
     set(self.h.tools_disp_checker,   'Callback',@self.setChecker);
     set(self.h.tools_recon,          'Callback',@self.recon);
     set(self.h.tools_plot4D,         'Callback',@(varargin)self.img.plot4D);
+    set(self.h.image_shift,     'Callback',@self.imgShift);
     set(self.h.image_isosurf,    'Callback',@self.isosurf);
     set(self.h.image_showmip,    'Callback',@self.showMIP);
     set(self.h.image_flipdim,    'Callback',@self.imgFlip);

@@ -101,9 +101,9 @@ if ~isempty(fnames)
                 dz = (max(pp.pss)-min(pp.pss));
                 fov = [pp.lro , pp.lpe , dz+dz/(pp.ns-1)]*10;
                 
-                % Save images as FLD
+                % Save images as MHD
                 [~,oname] = fileparts(fnames{i});
-                saveFLD(fullfile(fnames{i},[oname,'.fld']),img,label(:)',fov);
+                saveMHD(fullfile(fnames{i},[oname,'.mhd']),img,label(:)',fov);
                 
                 waitbar(i/nf,hw,['Completed ',num2str(i),' of ' num2str(nf) ' reconstructions']);
             end
