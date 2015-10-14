@@ -24,7 +24,6 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
     
     % User input for filter options:
     if (nargin<4)
-        N = [];
         switch lower(ftype)
             case 'median'
                 opts = {'Neighborhood'};
@@ -41,7 +40,6 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
                 defs = {'3 3'};
                 nchk = true;
                 func = @(x,opts) wiener2(x,opts{1});
-                N = zeros(1,self.dims(3));
             case 'average'
                 opts = {'Neighborhood'};
                 defs = {'3 3'};
@@ -83,23 +81,12 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
         hw = waitbar(0,'Applying 2D image filter:');
         for v = 1:length(vec)
             for i = 1:self.dims(3)
-                val{:} = feval(func,self.mat(:,:,i,vec(v)),opts);
-                self.mat(:,:,i,vec(v)) = val{1};
-                if ~isempty(N)
-                    N(i) = val{2};
-                end
+                self.mat(:,:,i,vec(v)) = feval(func,self.mat(:,:,i,vec(v)),opts);
                 ct = ct+1;
                 waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
             end
         end
         delete(hw);
-        
-        if ~isempty(N)
-            figure,plot(1:self.dims(3),N);
-            title('Wiener Filter Noise Estimates');
-            xlabel('Slice Number');
-            ylabel('Image Noise');
-        end
     end
     
 end
