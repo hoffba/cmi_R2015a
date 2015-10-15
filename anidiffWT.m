@@ -12,8 +12,17 @@ tS = prod(S,2);
 N = tS.*[1;3*ones(lvls,1);0];
 for il = 1:lvls
     for ii = 1:3
-        ind = sum(N(1:il)) + (1:tS(il+1));
-        C(ind) = anisodiff2D(reshape(C(ind),S(il+1,:)),niter,dt,kappa,opt);
+        
+        % Reshape data to 2D:
+        ind = sum(N(1:il)) + (ii-1)*tS(il+1) + (1:tS(il+1));
+        tC = reshape(C(ind),S(il+1,:));
+        
+        % Filter the detail image:
+        tC = anisodiff2D(tC,niter,dt,kappa,opt);
+        
+        % Replace original detail data:
+        C(ind) = tC;
+        
     end
 end
 
