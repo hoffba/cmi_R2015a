@@ -6,7 +6,7 @@ function imgFilt(self,vec,ftype,opts)
 %   ftype = (string) type of filter to use
 %   opts = (vector) filter parameters
 
-filts = {'Median','Gauss','Wiener','Average','Unsharp','AniDiffWT','Mode'};
+filts = {'Median','Gauss','Wiener','Average','Unsharp','AniDiffWavelet','ThreshWavelet','Mode'};
 if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
     go = false;
     
@@ -50,11 +50,18 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
                 defs = {'1','0.8','0.7'};
                 nchk = true(1,3);
                 func = @(x,opts) imsharpen(x,'Radius',opts{1},'Amount',opts{2},'Threshold',opts{3});
-            case 'anidiffwt'
-                opts = {'Wavelet Filter (wfilters)','Levels','Iterations','dt','Conduction','Conduction Function (1/2)'};
+            case 'anidiffwavelet'
+                opts = {'Wavelet Filter (wfilters)','Wavelet Levels',...
+                    '(Diff) Iterations','(Diff) dt','(Diff) Conduction',...
+                    'Conduction Function (1/2)'};
                 defs = {'sym8','1','50','1/7','50','1'};
                 nchk = [false,true(1,5)];
                 func = @(x,opts) anidiffWT(x,opts{1},opts{2},opts{3},opts{4},opts{5},opts{6});
+            case 'threshwavelet'
+                opts = {'Wavelet Filter (wfilters)','Wavelet Levels','Threshold','Hard/Soft (0/1)'};
+                defs = {'sym8','1','20','1'};
+                nchk = [false,true(1,3)];
+                func = @(x,opts) threshWT(x,opts{1},opts{2},opts{3},opts{4});
             case 'mode'
                 opts = {'Neighborhood'};
                 defs = {'3 3'};
