@@ -44,7 +44,7 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
                 opts = {'Neighborhood'};
                 defs = {'3 3'};
                 nchk = true;
-                func = @(x,opts) imfilter(x,ones(opts{1}));
+                func = @(x,opts) imfilter(x,ones(opts{1})/prod(opts{1}));
             case 'unsharp'
                 opts = {'Sigma','Amount','Threshold'};
                 defs = {'1','0.8','0.7'};
