@@ -51,10 +51,10 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
                 nchk = true(1,3);
                 func = @(x,opts) imsharpen(x,'Radius',opts{1},'Amount',opts{2},'Threshold',opts{3});
             case 'anidiffwt'
-                opts = {'Wavelet Filter (wfilters)','Levels','Iterations','Conduction'};
-                defs = {'dmey','4','20','70'};
-                nchk = [false,true(1,3)];
-                func = @(x,opts) anidiffWT(x,opts{1},opts{2},opts{3},1/7,opts{4},1);
+                opts = {'Wavelet Filter (wfilters)','Levels','Iterations','dt','Conduction'};
+                defs = {'dmey','4','20','1/7','70'};
+                nchk = [false,true(1,4)];
+                func = @(x,opts) anidiffWT(x,opts{1},opts{2},opts{3},opts{4},opts{5},1);
             case 'mode'
                 opts = {'Neighborhood'};
                 defs = {'3 3'};

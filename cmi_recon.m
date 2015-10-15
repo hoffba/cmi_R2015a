@@ -36,9 +36,11 @@ if ~isempty(fnames)
                 % Determine navigator data:
                 navchk = false;
                 if strncmp(pp.seqfil,'sems_iadc',9)
+                            warning('Currently not correcting for navigator data ...')
                     navchk = true;
                     kdata = flip(kdata,4);
                 elseif isfield(pp,'navigator') && strcmp(pp.navigator,'y')
+                            warning('Currently not correcting for navigator data ...')
                     navchk = true;
                 else
                     narr = narr*necho;
@@ -103,7 +105,11 @@ if ~isempty(fnames)
                 
                 % Save images as MHD
                 [~,oname] = fileparts(fnames{i});
-                saveMHD(fullfile(fnames{i},[oname,'.mhd']),img,label(:)',fov);
+                [oname,fpath] = uiputfile('*.mhd','Save image as:',...
+                                    fullfile(fnames{i},[oname,'.mhd']));
+                if ~isempty(oname)
+                    saveMHD(fullfile(fpath,oname),img,label(:)',fov);
+                end
                 
                 waitbar(i/nf,hw,['Completed ',num2str(i),' of ' num2str(nf) ' reconstructions']);
             end
