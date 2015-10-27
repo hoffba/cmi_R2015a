@@ -65,7 +65,7 @@ if self.check
         
         % Run in batch - will take too long to wait for
         
-        fnout = fullfile(self.dir,[self.name,'_MF',datestr(now(),'yyyymmddHHMM'),'.mat']);
+        fnout = fullfile(self.dir,[self.name,'_MF',datestr(now(),'yyyymmddHHMMSS'),'.mat']);
 
         % Generate grid indices:
         mchk = isempty(mask);
@@ -85,7 +85,11 @@ if self.check
         end
         ind = find(gridmask);
         
-        batch_MinkowskiFun(fnout,timg,mask,self.voxsz,ind,pp.n,pp.thresh,pp.tmode,pp.defVal);
+        [fnout,fpath] = uiputfile('*.mat','Save MF results as:',fnout);
+        if ~isempty(fnout)
+            batch_MinkowskiFun(fullfile(fpath,fnout),timg,mask,...
+                                self.voxsz,ind,pp.n,pp.thresh,pp.tmode,pp.defVal);
+        end
     end
 end
 

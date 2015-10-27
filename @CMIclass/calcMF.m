@@ -59,9 +59,11 @@ end
                               'tmode',MFmode,...
                               'defVal',MFdefval);
                           
-% Return results to base workspace and display:
-dout = array2table(MF,'VariableNames',labels,...
-    'RowNames',cellfun(@num2str,num2cell(MFval),'UniformOutput',false));
-disp(dout)
-assignin('base','MFresults',dout);
+if ~isempty(MF)
+    % Return results to base workspace and display:
+    dout = array2table(MF,'VariableNames',labels,...
+        'RowNames',cellfun(@num2str,num2cell(MFval),'UniformOutput',false));
+    disp(dout)
+    assignin('base','MFresults',dout);
+end
 

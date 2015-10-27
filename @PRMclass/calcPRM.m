@@ -85,20 +85,24 @@ if (nargin==6) % need all inputs
                     self.htscatter = text(0,0.5,'');
                     set(self.htscatter,'FontName','FixedWidth');
                 end
-                [ha,hs] = prm_plot(vals(ind,1),vals(ind,2),prmvals(ind),self.cmap,...
-                                   self.prmmap(:,2),prmpcts,self.hascatter,...
-                                   'xlabel',self.dlabels{1},'ylabel',self.dlabels{2},...
-                                   'xlim',[self.SPopts.Xmin,self.SPopts.Xmax],...
-                                   'ylim',[self.SPopts.Ymin,self.SPopts.Ymax]);
                 
-                               % Add threshold lines
+                % Determine threshold lines:
                 d = self.thresh(:,1:2);
                 d(d==0) = cvec;
                 m = self.thresh(:,3);
                 b = self.thresh(:,4);
-                ind = d(:,1)>d(:,2);
-                m(ind) = 1./m(ind);
-                plotlines(ha,m,b);
+                vind = d(:,1)>d(:,2);
+                m(vind) = 1./m(vind);
+%                 plotlines(ha,m,b);
+                
+                % Plot the PRM:
+                [ha,hs] = prm_plot(vals(ind,1),vals(ind,2),prmvals(ind),self.cmap,...
+                                   self.prmmap(:,2),prmpcts,self.hascatter,...
+                                   'xlabel',self.dlabels{1},'ylabel',self.dlabels{2},...
+                                   'xlim',[self.SPopts.Xmin,self.SPopts.Xmax],...
+                                   'ylim',[self.SPopts.Ymin,self.SPopts.Ymax],...
+                                   'm',m',...
+                                   'b',b');
                 
                 % Update PRM stats:
                 % Calculate statistics

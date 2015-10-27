@@ -6,7 +6,17 @@ function [ha,hs] = prm_plot(x,y,ind,cmap,labels,pcts,ha,varargin)
 %         labels = cell array of string labels
 %         pcts   = matrix of region percents
 %         ha     = handle of existing scatterplot axes
-%         varargin = optional inputs: Namve/Value pairs
+%         optional inputs (Name/Value pairs):
+%                   'size'          marker size
+%                   'fill'          marker fill
+%                   'markertype'    marker type
+%                   'xlim'          [1x2] x-axis limits
+%                   'ylim'          [1x2] y-axis limits
+%                   'xlabel'        x-axis label
+%                   'ylabel'        y-axis label
+%                   'bgcolor'       axes background color [R G B]
+%                   'm'             [1xn] threshold line slopes
+%                   'b'             [1xn] threshold line y-intercepts
 
 if (nargin>=4)
     nx = length(x);
@@ -45,6 +55,8 @@ if (nargin>=4)
         p.addParameter('bgcolor',   0.6*[1,1,1],@(x) isnumeric(x) ...
                                                  && all(size(x)==[1,3]) ...
                                                  && all(x>=0) && all(x<=1));
+        p.addParameter('m',[],@isvector);
+        p.addParameter('b',[],@isvector);
         if (nargin>8)
             p.parse(varargin{:});
         end
@@ -114,6 +126,12 @@ if (nargin>=4)
             tlim(2) = opts.ylim(2);
         end
         ylim(ha,tlim);
+        
+        % Plot the threshold lines:
+        if ~isempty(opts.m) && (length(opts.m)==length(opts.b))
+            nl = length(opts.m);
+            plotlines(ha,[opts.m,1],[opts.b,0],[repmat({'-k'},1,nl),{'--k'}]);
+        end
         
 %         % Generate title w/ stats
 %         nstr = size(char(labels(:)),2);

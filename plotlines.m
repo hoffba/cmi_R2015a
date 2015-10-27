@@ -1,9 +1,12 @@
 % Add lines to a current plot
-function plotlines(ha,m,b)
+function plotlines(ha,m,b,linespec)
 % Inputs: ha  = handle to axes object
 %         m   = vector of line slopes
 %         b   = vector of line y-intercepts
-if (nargin==3) && ishandle(ha) && (length(m)==length(b))
+if nargin<4
+    linespec = repmat({'-k'},1,length(m));
+end
+if (nargin>=3) && ishandle(ha) && (length(m)==length(b)) && iscellstr(linespec)
     xlim = get(ha,'XLim');
     ylim = get(ha,'YLim');
     hold(ha,'on')
@@ -15,7 +18,7 @@ if (nargin==3) && ishandle(ha) && (length(m)==length(b))
             x = xlim;
             y = m(i)*xlim + b(i);
         end
-        plot(ha,x,y,'-k','Tag',['Line',num2str(i)]);
+        plot(ha,x,y,linespec{i},'Tag',['Line',num2str(i)]);
     end
     hold(ha,'off')
 end
