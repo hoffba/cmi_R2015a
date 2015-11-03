@@ -29,6 +29,6 @@ else
     [MF,labels] = minkowskiFun(img,thresh,tmode,'mask',mask,'voxsz',voxsz,...
             'ind',ind,'n',r,'defVal',defVal);
     d = size(img);
-    save(fnout,'MF','labels','thresh','ind','d','r','tmode','defVal','voxsz');
+    save(fnout,'MF','labels','thresh','ind','d','r','tmode','defVal','voxsz','mask');
     
 end
