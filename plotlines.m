@@ -16,6 +16,7 @@ if (nargin==3) && ishandle(ha) && (length(m)==length(b))
             y = m(i)*xlim + b(i);
         end
         plot(ha,x,y,'-k','Tag',['Line',num2str(i)]);
+        plot(ha,x,x,'--k','Tag',['Line',num2str(i)]);
     end
     hold(ha,'off')
 end

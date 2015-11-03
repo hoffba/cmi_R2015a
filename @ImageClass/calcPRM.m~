@@ -18,14 +18,13 @@ if self.check && self.mask.check
         
         % CJG 20151103: Apply Wiener2([3 3]) Filter to data
         if self.prm.normchk
-            imag_temp=self.mat;
             hing = waitbar(0,'Wiener2 Filter ...');
             for j= 1:size(self.mat,3)
-                waitbar(j/size(self.mat,3),hing)
-                imag_temp(:,:,j,1)=wiener2(imag_temp(:,:,j,1),[3 3]);
-                imag_temp(:,:,j,2)=wiener2(imag_temp(:,:,j,2),[3 3]);
+                waitbar(i/size(ximg,3),hing)
+                imag_temp(:,:,:,1)=wiener2(self.mat(:,:,j,1),[3 3]);
+                imag_temp(:,:,:,2)=wiener2(self.mat(:,:,j,2),[3 3]);
             end
-            close(hing);
+            close(hing
         else
             imag_temp=self.mat;
         end
@@ -38,7 +37,6 @@ if self.check && self.mask.check
 %             (tvec(i)-1)*(prod(self.dims(1:3)))); %commented out by CJG
 %             20151103
         end
-        clear imag_temp
 
         % Finally, calculate the PRM
         [labels,vals] = self.prm.calcPRM(vals,tvec,vec,self.labels(tvec),self.mask.mat);

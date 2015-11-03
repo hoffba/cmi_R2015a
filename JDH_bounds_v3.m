@@ -32,7 +32,6 @@ func_tag=4;
 k=2;
 
 nbins=50;
-CI=zeros(2,9);
 goF=zeros(1,1);
 
 [N,C]=hist3([exp1 ins1],[nbins nbins]);
@@ -104,25 +103,27 @@ ins_temp=insv(expv<(C{1}(I)+h1)&expv>=(C{1}(I)-h1));
 
 % Inspriation
 figure(11)
-[paramEsts,paramCIs,goodF]=histo_fit(ins_temp,-1000,-250,func_tag);
-CI(1,1:9)=round(paramEsts(4:end),4);goF(1,1)=goodF;
-GEV_quant(1,1:12)=round(paramEsts(1:end),4);
+[paramEsts,Hist_results,paramCIs,goodF]=histo_fit(ins_temp,-1000,-500,func_tag);
+CI(1,:)=round(paramEsts(4:end),4);goF(1,1)=goodF;
+GEV_quant(1,:)=round(paramEsts(1:end),4);
+['Ins(I)  ',num2str(Hist_results(7))]
 % Expiration
 figure(12)
-[paramEsts,paramCIs,goodF]=histo_fit(exp_temp,-1000,-250,func_tag);
-CI(2,1:9)=round(paramEsts(4:end),4);goF(2,1)=goodF
-GEV_quant(2,1:12)=round(paramEsts(1:end),4);
+[paramEsts,Hist_results,paramCIs,goodF]=histo_fit(exp_temp,-1000,-250,func_tag);
+CI(2,:)=round(paramEsts(4:end),4);goF(2,1)=goodF
+GEV_quant(2,:)=round(paramEsts(1:end),4);
 %%
 'GEV for Exp(all) and Ins(all) histograms'
 % Inspriation
 figure(13)
-[paramEsts,paramCIs,goodF]=histo_fit(ins1(1:1000:end),-1000,-250,func_tag);
-GEV_quant2(1,1:12)=round(paramEsts(1:end),4);
+[paramEsts,Hist_results,paramCIs,goodF]=histo_fit(ins1(1:1000:end),-1000,-500,func_tag);
+GEV_quant2(1,:)=round(paramEsts(1:end),4);
 GoF2(1,1)=goodF;
+['Ins(all)  ',num2str(Hist_results(7))]
 % Expiration
 figure(14)
-[paramEsts,paramCIs,goodF]=histo_fit(exp1(1:1000:end),-1000,-250,func_tag);
-GEV_quant2(2,1:12)=round(paramEsts(1:end),4);
+[paramEsts,Hist_results,paramCIs,goodF]=histo_fit(exp1(1:1000:end),-1000,-250,func_tag);
+GEV_quant2(2,:)=round(paramEsts(1:end),4);
 GoF2(2,1)=goodF
 %% This is to determine the JDH values for each quantile
 % quantiles are 0.025 0.05 0.15 0.25 0.5. 
@@ -141,7 +142,7 @@ end
 %%
 % Save results to workspace
 % PRMv3=[VOI,Upper Limit,D,AUC,Latent,Coeff,theta,Exp_JDHmax,Ins_JDHmax,paramEsts_Ins,Gof_Ins,paramEsts_Exp,Gof_Exp,...
-% paramEsts_Ins2,Gof_Ins2,paramEsts_Exp2,Gof_Exp2]
+% mean(exp1),mean(ins1),std(exp1),std(ins1),paramEsts_Ins2,Gof_Ins2,paramEsts_Exp2,Gof_Exp2]
 PRMv3=cat(1,[VOI,UL,stats.D,stats.AUC,reshape(latent,[1,2]),reshape(coeff,[1,4]),theta,...
     C{2}(I),C{1}(J),GEV_quant(1,1:end),goF(1,1),GEV_quant(2,1:end),goF(2,1),mean(exp1),mean(ins1),std(exp1),std(ins1),...
     GEV_quant2(1,1:end),GoF2(1,1),GEV_quant2(2,1:end),GoF2(2,1)]);

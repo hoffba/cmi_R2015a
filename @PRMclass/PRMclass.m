@@ -9,7 +9,11 @@ classdef PRMclass < Mat3Dclass
         thresh = zeros(0,4);   % [n x 4] matrix : row = [vec1 vec2 m b]
                                %       evaluated: d2 > m*d1 + b
         cutoff = zeros(0,3);   % [n x 3] matrix : row = [vec min max]
-        normchk = false; % Normalize PRM volumes by cropped volume if true
+        
+        % Commented out by CJG 20151103: using for Wiener2 filter
+%         normchk = false; % Normalize PRM volumes by cropped volume if true
+        normchk = true; % Turn on Wiener2([3 3]) before PRM analysis. Added by CJG 20151103
+        
         cmap     % RGB columns
         prmmap   % {n x 2} cell array:
                  %       col1 = [n x nthresh] logical array for matching to C

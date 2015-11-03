@@ -86,12 +86,15 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
         ct = 0;
         ntot = self.dims(3)*length(vec);
         hw = waitbar(0,'Applying 2D image filter:');
+        selfTemp=zeros(size(self.mat));
         for v = 1:length(vec)
             for i = 1:self.dims(3)
-                self.mat(:,:,i,vec(v)) = feval(func,self.mat(:,:,i,vec(v)),opts);
+%                 self.mat(:,:,i,vec(v)) = feval(func,self.mat(:,:,i,vec(v)),opts);
+                selfTemp(:,:,i,vec(v)) = feval(func,self.mat(:,:,i,vec(v)),opts);
                 ct = ct+1;
                 waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
             end
+            self.mat(:,:,:,vec(v))=selfTemp(:,:,:,vec(v));
         end
         delete(hw);
     end

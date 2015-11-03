@@ -1,17 +1,22 @@
-function [paramEsts,paramCIs,goodF]=histo_fit(tdata,LB,UB,func)
+function [paramEsts,Hist_results,paramCIs,goodF]=histo_fit(tdata,LB,UB,func)
 
 % code acquired from
 % www.mathworks.com/help/stats/examples/fitting-custom-univariate-distributions.html
 
-if nargin==1  
-    UB=-250;
+if nargin==1||isinf(LB) 
+    UB=-200;
     LB=-1000;
     func=4; % 1=bi-Gaussian, 2=trunc Gaussian, 3=trunc Gamma, 4=trunc GEV
 end
 
 
 tdata=tdata(tdata>LB&tdata<UB);
-x=tdata(1:end);
+if numel(tdata)>100000
+    n=100000;
+else
+    n=numel(tdata);
+end
+x=tdata(1:round(numel(tdata)/n):end);
 mu=mean(x);
 sigma=sqrt(std(x));
 
@@ -26,6 +31,7 @@ sigma=sqrt(std(x));
 [f,xi]=hist(x,x_clim);
 % finx=find(f~=0); % This was to remove zeros from the histogram
 subplot(1,3,1);plot(xi,f/max(f),'r');axis([LB UB 0 1]);
+pause(1)
 
 if func==1
     % normalize CT lung data
@@ -56,7 +62,8 @@ elseif func==3
     y=gampdf(xi+1024,paramEsts(1),paramEsts(2));
     GR=gamrnd(paramEsts(1),paramEsts(2),[10000,1]);
     Quant_results=quantile(GR(:,1),[0.025 0.975]); % 95% confidence interval [2.5% 97.5%]
-    paramEsts(3:4)=Quant_results-1024;
+    Hist_results=quantile(x,[0.025 0.05 0.15 0.25 0.5 0.75 0.85 0.95 0.975]); % quantiles from data
+    paramEsts=cat(2,paramEsts,Quant_results-1024);
     paramEsts(5)=0;
 else
     x1=x+1024;a=0;b=100;c=200;
@@ -65,8 +72,9 @@ else
     [paramEsts,paramCIs]=mle(x1,'distribution','gev','pdf',pdf_truncfunc,'start',start, 'upper', [0 Inf]);
     y=gevpdf(xi+1024,paramEsts(1),paramEsts(2),paramEsts(3));
     GR=gevrnd(paramEsts(1),paramEsts(2),paramEsts(3),[10000,1]);
-    Quant_results=quantile(GR(:,1),[0.025 0.05 0.15 0.25 0.5 0.75 0.85 0.95 0.975]);
-    paramEsts(4:12)=Quant_results-1024;
+    Quant_results=round(quantile(GR(:,1),[0.025 0.05 0.15 0.25 0.5 0.75 0.85 0.95 0.975])); % quantile from fit
+    Hist_results=round(quantile(x,[0.025 0.05 0.15 0.25 0.5 0.75 0.85 0.95 0.975])); % quantiles from data
+    paramEsts=cat(2,paramEsts,Quant_results-1024);
 end
 
 subplot(1,3,2);plot(xi,y/max(y));axis([LB UB 0 1]);

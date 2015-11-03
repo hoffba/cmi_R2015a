@@ -17,6 +17,7 @@ classdef ElxClass < handle
         % Constructor
         function self = ElxClass
             if ismac
+                self.elxdir = '/usr/local/bin/';
                 self.xtstr = '/opt/X11/bin/xterm -geometry 170x50 ';
                 self.sepstr = ' ; ';
             elseif ispc

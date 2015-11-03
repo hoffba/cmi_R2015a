@@ -113,10 +113,11 @@ if (nargin==6) % need all inputs
                     ['                [% of VOI] ; [% of PRM]',char(10)...
                      sprintf('%16s = % 7.3f ; % 7.3f\n',str{:})]);
                 
-                % Calculate PRM stats to return:
-                if self.normchk
-                    np = nnz(prmvals);
-                end
+%   Commented out by CJG 20151103. Using check box for Wiener2 filter in ImageClass/calcPRM.                 
+%                 % Calculate PRM stats to return:
+%                 if self.normchk
+%                     np = nnz(prmvals);
+%                 end
                 prmpcts = tot/np;
                 
                 self.hascatter = ha;
