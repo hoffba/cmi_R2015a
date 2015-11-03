@@ -18,12 +18,7 @@ if (nargin>=3) && ishandle(ha) && (length(m)==length(b)) && iscellstr(linespec)
             x = xlim;
             y = m(i)*xlim + b(i);
         end
-<<<<<<< HEAD
-        plot(ha,x,y,'-k','Tag',['Line',num2str(i)]);
-        plot(ha,x,x,'--k','Tag',['Line',num2str(i)]);
-=======
         plot(ha,x,y,linespec{i},'Tag',['Line',num2str(i)]);
->>>>>>> origin/master
     end
     hold(ha,'off')
 end

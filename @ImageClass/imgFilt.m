@@ -86,18 +86,10 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
         ct = 0;
         ntot = self.dims(3)*length(vec);
         hw = waitbar(0,'Applying 2D image filter:');
-<<<<<<< HEAD
-        selfTemp=zeros(size(self.mat));
-        for v = 1:length(vec)
-            for i = 1:self.dims(3)
-%                 self.mat(:,:,i,vec(v)) = feval(func,self.mat(:,:,i,vec(v)),opts);
-                selfTemp(:,:,i,vec(v)) = feval(func,self.mat(:,:,i,vec(v)),opts);
-=======
         tmat = nan([self.dims(1:3),length(vec)]);
         for v = 1:length(vec)
             for i = 1:self.dims(3)
                 tmat(:,:,i,v) = feval(func,self.mat(:,:,i,vec(v)),opts);
->>>>>>> origin/master
                 ct = ct+1;
                 waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
             end
@@ -109,63 +101,3 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
     
 end
 
-
-
-% if self.check && (nargin>=2) && all(tvec>0) && all(tvec<=self.dims(4))
-%     go = false;
-%     if nargin<3
-%         % Ask for user inputs:
-%         answer = inputdlg({'Image Vector(s)','Filter Neighborhood',...
-%             'Filter Type ([a]verage,[w]iener,[m]edian,[g]aussian,[u]nsharp mask,anisotropic wavelet [d]iffusion)'},...
-%             'Filter Image:',1,...
-%             {num2str(tvec),'3','m'});
-%         if ~isempty(answer)
-%             tvec = str2num(answer{1});
-%             fstr = str2num(answer{2});
-%             ftype = strsplit(answer{3},' ');
-%             go = true;
-%         end
-%     end
-%     if go && isnumeric(fstr) && (iscellstr(ftype) || ischar(ftype))
-%         if ischar(ftype)
-%             ftype = {ftype};
-%         end
-%         nv = length(tvec);
-%         nstr = length(fstr);
-%         nt = length(ftype);
-%         if (nstr==1) && (nv>1)
-%             fstr = fstr*ones(1,nv);
-%         end
-%         if (nt==1) && (nv>1)
-%             ftype = repmat(ftype,1,nv);
-%         end
-%         for iv = 1:nv
-%             timg = self.mat(:,:,:,tvec(iv));
-%             ifilt = fstr(iv)*[1,1];
-%             switch ftype{iv}
-%                 case 'a'
-%                     func = @(x)imfilter(x,ones(fstr));
-%                 case 'm'
-%                     func = @(x)medfilt2(x,ifilt);
-%                 case 'w'
-%                     func = @(x)wiener2(x,ifilt);
-%                 case 'g'
-%                     ifilt = round(fstr(iv)*6);
-%                     func = @(x)imfilter(x,fspecial('gaussian',ifilt,fstr(iv)));
-%                 case 'u'
-%                     func = @(x)imsharpen(x,'Radius',fstr(iv)*6);
-%                 otherwise
-%                     func = [];
-%             end
-%             if ~isempty(func)
-%                 hw = waitbar(0,'Applying 2D filter ...');
-%                 for islc = 1:self.dims(3)
-%                     timg(:,:,islc) = feval(func,timg(:,:,islc));
-%                     waitbar(islc/self.dims(3),hw);
-%                 end
-%                 self.mat(:,:,:,tvec(iv)) = timg;
-%                 delete(hw);
-%             end
-%         end
-%     end
-% end
