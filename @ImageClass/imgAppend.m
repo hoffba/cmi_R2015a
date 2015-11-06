@@ -14,7 +14,7 @@ if (nargin>1) && ~isempty(img)
         self.scaleM(ii) = ones(1,d(4));
         self.scaleB(ii) = zeros(1,d(4));
         self.dims(4) = self.dims(4)+d(4);
-        self.thresh(ii,:) = 1000000 * ones(d(4),1)*[-1,1];
+        self.thresh(ii,:) = inf(d(4),1)*[-1,1];
         self.valExt(ii,:) = [squeeze(min(min(min(img)))),...
                              squeeze(max(max(max(img))))];
     elseif ~self.check
@@ -24,7 +24,7 @@ if (nargin>1) && ~isempty(img)
         self.scaleB = zeros(1,d(4));
         self.dims = d;
         self.check = true;
-        self.thresh = 1000000 * ones(d(4),1)*[-1,1];
+        self.thresh = inf(d(4),1)*[-1,1];
         self.valExt = [ squeeze(min(min(min(img)))) ,...
                         squeeze(max(max(max(img)))) ];
     end
