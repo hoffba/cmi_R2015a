@@ -12,8 +12,18 @@ function lmask = segLungHuman(img,mask)
 %                 bt4 = 3; % End erosion
 %                 slc = round(2*self.dims(3)/3);
 % case 3 % Clin. Exp.
+
+% CJG 20151112 added to rescale img so min = 0, this avoids having to
+% do this manually using Image/Scale Image. Also changed prompt to display
+% correct values of image and then scale to >0 values using "b".
+if min(img(mask))<0
+    img=img+1024;
+    b=-1024;
+else
+    b=0; %min
+end
+    
 sm = 3;
-b = 0;%min(img(:));
 Ti = 607 + b;
 Tt = 125 + b;
 bt1 = 8; % Trachea dilation
@@ -35,11 +45,11 @@ if ~isempty(answer)
     end
     val = str2double(answer{2});
     if ~isnan(val)
-        Ti = val;
+        Ti = val-b;
     end
     val = str2double(answer{3});
     if ~isnan(val)
-        Tt = val;
+        Tt = val-b;
     end
     val = str2double(answer{4});
     if ~isnan(val)

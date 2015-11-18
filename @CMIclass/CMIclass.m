@@ -19,7 +19,7 @@ classdef CMIclass < handle
         bgcmap = 'gray';        % Colormap for background
         ncolors = 128;          % number of colors for display
         voispec = 'om';         % Define VOI edge type/color
-        voimarksz = 5;          % Define VOI marker size
+        voimarksz = 1;          % Define VOI marker size
         thspec = 'oc';            % Define Threshold edge type/color
         thmarksz = 2;           % Define Threshold edge marker size
         dispPos                 % Position of display figure

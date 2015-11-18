@@ -72,8 +72,8 @@ else
     [paramEsts,paramCIs]=mle(x1,'distribution','gev','pdf',pdf_truncfunc,'start',start, 'upper', [0 Inf]);
     y=gevpdf(xi+1024,paramEsts(1),paramEsts(2),paramEsts(3));
     GR=gevrnd(paramEsts(1),paramEsts(2),paramEsts(3),[10000,1]);
-    Quant_results=round(quantile(GR(:,1),[0.025 0.05 0.15 0.25 0.5 0.75 0.85 0.95 0.975])); % quantile from fit
-    Hist_results=round(quantile(x,[0.025 0.05 0.15 0.25 0.5 0.75 0.85 0.95 0.975])); % quantiles from data
+    Quant_results=round(quantile(GR(:,1),[0.025 0.05 0.1 0.15 0.25 0.5 0.75 0.85 0.9 0.95 0.975])); % quantile from fit
+    Hist_results=round(quantile(x,[0.025 0.05 0.1 0.15 0.25 0.5 0.75 0.85 0.9 0.95 0.975])); % quantiles from data
     paramEsts=cat(2,paramEsts,Quant_results-1024);
 end
 

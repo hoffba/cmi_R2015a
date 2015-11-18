@@ -15,20 +15,22 @@ if self.check && (self.dims(4)>1) && self.mask.check
     end
     dvec = self.prm.dvec; dvec(dvec==0) = cvec;
     
-    try
-        lims = self.prm.cutoff; lims(lims(:,1)==0) = cvec;
-    catch
+    lims = self.prm.cutoff; lims(lims(:,1)==0) = cvec;
+    if isempty(lims)
         lims = cat(1,[1 2],self.thresh')'; lims(lims(:,1)==0) = cvec;
+        if dvec(1)==dvec(2)
+            dvec(2)=dvec(1)+1;
+        end
     end
     
     xi = find(lims(:,1)==dvec(1),1);
     yi = find(lims(:,1)==dvec(2),1);
     
     prompt={'Wiener2[3 3]: 1=yes, 0=no','PP Plot: 1=yes, 0=no','X-Histogram Fit: 1=all, 0=no','Y-Histogram Fit: 2=Max, 1=all, 0=no',...
-        'PCA: 1=yes, 0=no'};
+        'PCA: 1=yes, 0=no','Stanford Threshold: 1=yes, 0=no'};
     dlg_title='Which Analysis?';
     num_lines=1;
-    def={'1','0','0','2','1'};
+    def={'0','0','0','0','0','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if ~(isempty(xi) || isempty(yi) || isempty(answer)) && (xi~=yi)
@@ -58,11 +60,11 @@ if self.check && (self.dims(4)>1) && self.mask.check
             if (~isfield(self.h,'ppfig') || ~ishandle(self.h.ppfig))
                 self.h.ppfig = figure('Name','PPplot'); self.h.ppax = axes;
             end
-            waitbar(1/4,hw,'Generating P-P plot and statistics ...');
+            waitbar(1/5,hw,'Generating P-P plot and statistics ...');
             [~,stats.D,stats.AUC] = PPplot(xvals,yvals,self.h.ppax);
         end
         if strcmp(answer{3},'1')
-            waitbar(2/4,hw,'Determining X-histogram confidence intervals ...');
+            waitbar(2/5,hw,'Determining X-histogram confidence intervals ...');
             if ~isfield(self.h,'histfitX') || ~ishandle(self.h.histfitX)
                 self.h.histfitX = figure('Name','Histogram Fit (X)');
             else
@@ -71,7 +73,7 @@ if self.check && (self.dims(4)>1) && self.mask.check
             [stats.xEsts,stats.xHist,stats.xCI,stats.xGoF] = histo_fit(xvals,lims(xi,2),lims(xi,3),4); % 4 = trunc GEV
         end
         if strcmp(answer{4},'1')||strcmp(answer{4},'2')
-            waitbar(3/4,hw,'Determining Y-histogram confidence intervals ...');
+            waitbar(3/5,hw,'Determining Y-histogram confidence intervals ...');
             if ~isfield(self.h,'histfitY') || ~ishandle(self.h.histfitY)
                 self.h.histfitY = figure('Name','Histogram Fit (Y)');
             else
@@ -97,9 +99,25 @@ if self.check && (self.dims(4)>1) && self.mask.check
             [stats.yEsts,stats.yHist,stats.yCI,stats.yGoF] = histo_fit(yvals_temp,lims(yi,2),lims(yi,3),4);
         end
         if strcmp(answer{5},'1')
-            waitbar(4/4,hw,'Determining Principal Component Analysis ...');
+            waitbar(4/5,hw,'Determining Principal Component Analysis ...');
             [stats.PCA.coeff,stats.PCA.score,stats.PCA.latent]=pca([xvals yvals]);
-            stats.PCA.theta=round(45-(atand(stats.PCA.coeff(1,1)/stats.PCA.coeff(2,1))),2);
+            stats.PCA.theta=round(45-(atand(stats.PCA.coeff(2,1)/stats.PCA.coeff(1,1))),2);
+        end
+        if strcmp(answer{6},'1')
+            waitbar(5/5,hw,'Calculate Stanford Thresholds ...');
+            % This technique of calculating the gas trapping threshold is
+            % published in CHEST/123/5/May,2003/Goris et al.
+            x90=round(quantile(xvals,0.9)); % 90%ils from xvals
+            y90=round(quantile(yvals,0.9)); % 90%ils from yvals
+            D=y90-x90; % change in 90%ile values in ins and exp
+            X=round(quantile(yvals,0.5)); % 50%ils from yvals
+            for i=1:3
+                stats.Stanford.T(i)=X-(i-1)*(X-y90)/3-(1-D/343)*(X-y90)/3;
+            end
+            stats.Stanford.x90=x90;
+            stats.Stanford.y90=y90;
+            stats.Stanford.D=D;
+            stats.Stanford.X=X;
         end
         delete(hw);
         if ~nargout
