@@ -7,16 +7,25 @@ if (nargin == 2) && (length(nd)==3)
         nd = nd(:)';
         d = self.dims(1:3);
         dd = (d(:)'./nd);
-        [xi,yi,zi] = meshgrid((dd(2) : dd(2) : d(2))+0.5-dd(2)/2,...
-                              (dd(1) : dd(1) : d(1))+0.5-dd(1)/2,...
-                              (dd(3) : dd(3) : d(3))+0.5-dd(3)/2);
+        if nd(3)==1
+            [xi,yi] = meshgrid((dd(2) : dd(2) : d(2))+0.5-dd(2)/2,...
+                               (dd(1) : dd(1) : d(1))+0.5-dd(1)/2);
+        else
+            [xi,yi,zi] = meshgrid((dd(2) : dd(2) : d(2))+0.5-dd(2)/2,...
+                                  (dd(1) : dd(1) : d(1))+0.5-dd(1)/2,...
+                                  (dd(3) : dd(3) : d(3))+0.5-dd(3)/2);
+        end
         lchk = islogical(self.mat);
         if lchk
             self.mat = single(self.mat);
         end
         tmat = zeros([nd,self.dims(4)]);
         for i = 1:self.dims(4)
-            tmat(:,:,:,i) = interp3(self.mat(:,:,:,i),xi,yi,zi,'linear');
+            if nd(3)==1
+                tmat(:,:,1,i) = interp2(self.mat(:,:,1,i),xi,yi,'linear');
+            else
+                tmat(:,:,:,i) = interp3(self.mat(:,:,:,i),xi,yi,zi,'linear');
+            end
         end
         % Now update the image
         tmat(isnan(tmat)) = 0;
