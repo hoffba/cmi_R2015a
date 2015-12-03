@@ -1,61 +1,47 @@
 
 function Cout = batch_mouselunganalysis(C)
-% Needs {n x 4} cell array of strings containing mouse lung images/VOIs
-%   { Ins , Exp , Exp_VOI , Ins-R , |Jac| }
+% Input:    C = cell array of file names: { Exp-VOI , Exp , Ins-R }
+% Output:   Cout = cell array with results
 
-bpath = '/mnt/cmi/projects/CT_Lung/preclinical/Bleomycin-Fibrosis/Group2/DICOMs';
-if nargin==0
-    C = cell(20*3,5);
-    ct = 1;
-    for i = 1:20
-        anID = sprintf('Bleo_G2M%02u',i);
-        for j = [-1,7,16]
-            scanID = sprintf([anID,'_d%02i'],j);
-            C(ct,:) = {fullfile(bpath,anID,scanID,[scanID,'_Ins.mhd']),...
-                       fullfile(bpath,anID,scanID,[scanID,'_Exp.mhd']),...
-                       fullfile(bpath,anID,scanID,[scanID,'_Exp_lungsVOI.mhd']),...
-                       fullfile(bpath,anID,scanID,'elxreg','result.mhd'),...
-                       fullfile(bpath,anID,scanID,'elxreg','spatialJacobian.mhd')};
-            ct = ct+1;
-        end
-    end
-end
 
-% Initialize ImageClass and PRMclass:
+% Initialize ImageClass and PRM options:
 img = ImageClass;
-img.setPRMopts(1);
+h = load(fullfile(img.prm.prmdir,'PRMdef_MouseLungALL.mat'));
+img.prm.setOpts('thresh',h.thresh,...
+                'cutoff',h.cutoff,...
+                'cmap',h.cmap,...
+                'prmmap',h.prmmap,...
+                'SPopts',h.SPopts);
 pause(0.01);
 
+% Initialize output cell array:
 n = size(C,1);
-Cout = [{'bname','Ins-Vol','Ins-Mean','Ins-Med','Exp-Vol','Exp-Mean','Exp-Med',...
+Cout = [{'bname','Ins-Mean','Ins-Med','Exp-Vol','Exp-Mean','Exp-Med',...
          'D','AUC','Ins-Low','Ins-High','Exp-Low','Thresh','Slope'},...
-         img.prm.prmmap(:,2)';...
-        cell(n,24)];
-for i = 1:size(C,1)
+         img.prm.prmmap(:,2)'];
+Cout = [Cout;cell(n,length(Cout))];
+
+for i = 1:n
     
-    [~,bname] = fileparts(fileparts(C{i,3}));
+    bname = strsplit(C{i,1},filesep);
+    bname = bname{end-1};
     disp(bname);
     
-    if exist(C{i,1},'file') && exist(C{i,2},'file') ...
-            && exist(C{i,3},'file') && exist(C{i,4},'file')
+    if exist(C{i,1},'file') && exist(C{i,2},'file') && exist(C{i,3},'file')
         
         tC = cell(1,24);
         
-        % Analyze Ins:
-%         disp(' - Analyzing Ins ...');
-%         img.loadImg(0,C{i,1});
-%         mask = quicklungs(img.mat < -200);
-%         img.mask.merge('replace',mask&(img.mat<-300));
-%         [InsMean,~,InsMed,InsVol,~] = img.getStats(1);
-%         tC(2:4) = {InsVol,InsMean,InsMed};
+        % Load images and mask:
+        img.loadImg(0,C(i,2:3));
+        img.loadMask(C{i,1});
+        
+        % Threshold mask to -200HU for analysis:
+        img.mask.merge('intersect',prod(img.mat<-200,4));
 
         % Analyze Exp:
-        img.loadImg(0,C(i,[2,4,5]));
-        img.loadMask(C{i,3});
-        img.mask.merge('intersect',img.mat(:,:,:,2)<-200);
         disp(' - Analyzing Ins ...');
         voxvol = prod(img.voxsz);
-        tvals = img.getMaskVals([2,3]);
+        tvals = img.getMaskVals(1:2);
         InsVol = sum(tvals(:,2)) * voxvol;
         InsMean = sum(prod(tvals,2)) / InsVol * voxvol;
         % Compute weighted median:
@@ -71,9 +57,6 @@ for i = 1:size(C,1)
         tC(5:7) = {ExpVol,ExpMean,ExpMed};
 
         % Analyze Coreg:
-%         disp(' - Analyzing Coreg ...');
-%         img.loadImg(1,C{i,4});
-%         img.loadMask(C{i,3});
         clearText(findobj('Name','Histogram Fit (X)'));
         clearText(findobj('Name','Histogram Fit (Y)'));
         PPstats = img.ppPlot(2);
@@ -93,18 +76,6 @@ for i = 1:size(C,1)
     end
 end
 cmi_csvwrite(fullfile(bpath,'batch.csv'),Cout);
-
-
-function omask = quicklungs(mask)
-omask = false(size(mask));
-omask([1,end],:,:) = true;
-omask(:,[1,end],:) = true;
-medge = find(omask);
-cc = bwconncomp(mask);
-i = cellfun(@(x)(~any(ismember(x,medge)))*length(x),cc.PixelIdxList);
-i = find(i==max(i),1);
-omask(:) = false;
-omask(cc.PixelIdxList{i}) = true;
 
 function clearText(h)
 if ~isempty(h) && ishandle(h)

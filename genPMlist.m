@@ -1,72 +1,52 @@
 % Function to generate listmode trigger times in Bruker .lst files
 %       if forgot to start trigger and ".._pm.lst" was not created
-function genPMlist(fname,val)
+function genPMlist(aqname,toff,dt)
 % Inputs: fname = ".._aq.lst" full filename
-%         val   = offset time (seconds)
+%         toff  = offset time (seconds)
+%         dt    = time between triggers
 
 p = 1; % seconds
 
 % GUI if called without inputs
 if nargin==0
-    [fname,path] = uigetfile('*_aq.lst','Select AQ list file:');
-    if fname~=0
-        fname = fullfile(path,fname);
-        val = str2double(inputdlg('Shift time by how much (seconds)?',...
-                                  'LST Time Shift',1,{'0'}));
+    [aqname,fpath] = uigetfile('*_aq.lst','Select AQ list file:');
+    if ischar(aqname)
+        aqname = fullfile(fpath,aqname);
+        val = inputdlg({'Shift time by how much (seconds)?',...
+                        'Time between triggers:'},...
+                       'LST Options',1,{'0','1'});
+        if isempty(val)
+            reture;
+        else
+            toff = str2double(val{1});
+            dt = str2double(val{2});
+        end
     else
-        fname = [];
+        return;
     end
-elseif (nargin~=2)
-    val = [];
-end
-
-if ~(isempty(fname) || isempty(val)) && ischar(fname) && ...
-        exist(fname,'file') && strcmp(fname(end-6:end),'_aq.lst') && ...
-        isnumeric(val) && ~isnan(val)
-    
-    % Determine file names
-    aqname = fname;
-    [path,fname,~] = fileparts(fname);
-    pmname = fullfile(path,[fname(1:end-2),'pm.lst']);
-    
-    % First, determine acquisition timestamps:
-    if exist(aqname,'file')
-        fid = fopen(aqname,'r');
-        if fid>2
-            str = strsplit(fread(fid,inf,'*char')',{'=','\r'});
-            fclose(fid);
-            t0 = str2t(str{3});
-            t1 = str2t(str{floor((length(str)-1)/2)*2 + 1});
-        end
+elseif ~exist(aqname,'file') || ~strcmp(aqname(end-6:end),'_aq.lst')
+    error('Invalid input file');
+else
+    if nargin<2
+        toff = 0;
     end
-    
-    % Modulate time offset by the trigger period
-    val = mod(val,p);
-    
-    % Next, generate PM timestamps:
-    pmtimes = ((t0-4*p) : p : (t1+4*p)) + val;
-    npm = length(pmtimes);
-    fid = fopen(pmname,'w');
-    if fid>2
-        fprintf(fid,'[PM timemarks]\rtotal=%04u\r',npm);
-        for i = 1:npm
-            fprintf(fid,'%04u=%s\r',i-1,t2str(pmtimes(i)));
-        end
-        fclose(fid);
+    if nargin<3
+        dt = 1;
     end
 end
+    
+% Set output name
+pmname = aqname;
+pmname(end-5:end-4) = 'pm';
 
-function t = str2t(str)
-% Time string: HH:MM:SS:ddd
-% Returns time in seconds
-tsep = str2double(strsplit(str,':'));
-t = (tsep(1)*60 + tsep(2))*60 + tsep(3) + tsep(4)/1000;
+% Determine acquisition time limits:
+t = readLST(aqname);
+t0 = t(1);
+t1 = t(end);
 
-function str = t2str(tval)
-t(4) = round(mod(tval,1) * 1000);
-tval = floor(tval);
-t(3) = mod(tval,60);
-tval = floor(tval/60);
-t(2) = mod(tval,60);
-t(1) = floor(tval/60);
-str = sprintf('%02u:%02u:%02u:%03u',t);
+% Next, generate PM timestamps within acquisition limits:
+t = ((t0+toff) : dt : (t1+dt));
+
+% Save PM list:
+saveLST(t,pmname);
+

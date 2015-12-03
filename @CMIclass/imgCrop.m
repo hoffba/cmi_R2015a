@@ -1,6 +1,9 @@
 % CMIclass function
 % Crop Image to current zoom
 function imgCrop(self,ind,lims)
+% Inputs: ind = [nx1] matrix index of dimension for cropping
+%         lims = [nx2] matrix indices of crop limits
+
 if self.img.check
     
     if (nargin==1) || isa(ind,'matlab.ui.container.Menu')

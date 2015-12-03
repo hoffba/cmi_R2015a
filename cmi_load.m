@@ -70,7 +70,7 @@ if gopt
         if ischar(fullname) % single selection
             fullname = {[fpath,fullname]};
         else % multi-selection
-            if any((findex-1)==[4,6,9]) % Saved by slice, don't accept multiple selection
+            if any((findex-1)==[4,6]) % Saved by slice, don't accept multiple selection
                 fullname = fullname(1);
             end
             fullname = cellfun(@(x)fullfile(fpath,x),fullname,'UniformOutput',false);

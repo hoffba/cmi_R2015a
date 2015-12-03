@@ -14,9 +14,13 @@ if self.img.check
             self.slc = round(tdims/2);
             % Update GUI objects
             currslc = self.getSlc;
-            set(self.h.slider_slice,'Value',currslc,...
-                                    'SliderStep',[1,1]/(ns-1),...
-                                    'Max',ns);
+            if ns>1
+                set(self.h.slider_slice,'Value',currslc,...
+                                        'SliderStep',[1,1]/(ns-1),...
+                                        'Max',ns);
+            else
+                set(self.h.slider_slice,'Enable','off');
+            end
             set(self.h.edit_slc,'String',num2str(currslc));
             set(self.h.text_ns,'String',num2str(ns));
             self.dispUDslice;
