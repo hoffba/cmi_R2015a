@@ -93,7 +93,6 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
                 ct = ct+1;
                 waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
             end
-            self.mat(:,:,:,vec(v))=selfTemp(:,:,:,vec(v));
         end
         self.mat(:,:,:,vec) = tmat;
         delete(hw);

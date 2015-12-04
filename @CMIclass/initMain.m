@@ -52,8 +52,6 @@ if ~isempty(self.h)
     set(self.h.tools_connVOI,    'Callback',@self.conn2voi);
     set(self.h.tools_voi_fillholes,  'Callback',@self.fillHoles);
     set(self.h.tools_voi_segment,    'Callback',@self.growMask);
-%     set(self.h.tools_voi_erode,      'Callback',@self.erodeMask);
-%     set(self.h.tools_voi_dilate,     'Callback',@self.dilateMask);
     set(self.h.tools_voi_morph,      'Callback',@self.morphMask);
     set(self.h.tools_voi_clearAll,   'Callback',@self.clearMask);
     set(self.h.tools_voi_clearSlice, 'Callback',@self.clearMask);
@@ -88,7 +86,7 @@ if ~isempty(self.h)
     set(self.h.analysis_prmopt,  'Callback',@self.setPRMopts);
     set(self.h.analysis_PRM,     'Callback',@self.activatePRM);
     set(self.h.analysis_calcCI,  'Callback',@self.calcPRMCI);
-    set(self.h.analysis_PPplot,  'Callback',@(varargin)self.img.ppPlot(self));
+    set(self.h.analysis_PPplot,  'Callback',@self.ppPlot);
     set(self.h.analysis_prmselect,'Callback',@self.selectPRMscatter);
     set(self.h.analysis_prmstats,'Callback',@(varargin)self.img.savePRM(varargin{:}));
     set(self.h.analysis_saveprm, 'Callback',@(varargin)self.img.savePRM(varargin{:}));

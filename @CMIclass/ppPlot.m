@@ -1,0 +1,13 @@
+% CMIclass function
+function stats = ppPlot(self,~,~)
+
+prompt={'Wiener2[3 3]: 1=yes, 0=no',...
+        'PP Plot: 1=yes, 0=no',...
+        'X-Histogram Fit: 1=all, 0=no',...
+        'Y-Histogram Fit: 2=Max, 1=all, 0=no',...
+        'PCA: 1=yes, 0=no'};
+def={'1','0','0','2','1'};
+answer = cellfun(@str2double,inputdlg(prompt,'Which Analysis?',1,def));
+if ~isempty(answer)
+    stats = self.img.ppPlot(self.vec,answer);
+end

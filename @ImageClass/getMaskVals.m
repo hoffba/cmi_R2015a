@@ -1,5 +1,6 @@
 % ImageClass function
 function vals = getMaskVals(self,vec)
+vals = [];
 if (nargin==1)
     vec = 1:self.dims(4);
 end

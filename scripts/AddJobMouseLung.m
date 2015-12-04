@@ -43,9 +43,10 @@ if TF
     % Create batch process for each image
     % * Images too large to do all at once
     for i = 1:nv
+        fname = [bname,cmiobj.img.labels{i},'.mhd'];
         j = batch(@jobProcMouseLung,0,{cmiObj.img.mat(:,:,:,i),...
                     fov,cmiObj.img.labels(i),...
-                    [bname,cmiobj.img.labels{i},'.mhd'],svdir});
+                    fname,svdir});
         disp([fname,' : Job # ',num2str(j.ID)]);
         waitbar(i/nv,hw);
     end
