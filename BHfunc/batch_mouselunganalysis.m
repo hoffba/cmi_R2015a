@@ -24,8 +24,11 @@ pause(0.01);
 n = size(C,1);
 % Cout = [{'bname','Ins-Mean','Ins-Med','Exp-Vol','Exp-Mean','Exp-Med',...
 %          'D','AUC','Ins-Low','Ins-High','Exp-Low','Thresh','Slope'},...
-Cout = [{'bname','Exp-Vol','Ins-Vol','Exp-Mean','Ins-Mean','Exp-Med','Ins-Med',...
-         'D','AUC','Exp-Low','Ins-Low','Ins-High','PCA-theta','Thresh','Slope'},...
+Cout = [{'bname',...
+         'Exp-Vol','Ins-Vol','Exp-Mean','Ins-Mean','Exp-Med','Ins-Med',...
+         'D','AUC',...
+         'Exp-2.5pctl','Ins-2.5pctl','Ins-97.5pctl',...
+         'PCA-theta','Thresh','Slope'},...
          img.prm.prmmap(:,2)'];
 Cout = [Cout;cell(n,length(Cout))];
 
@@ -38,18 +41,13 @@ for i = 1:n
     
     if exist(C{i,1},'file') && exist(C{i,2},'file') && exist(C{i,3},'file')
         
-        % Find elxreg folder (for SpatialJacobian)
-        edir = dir(fullfile(fpath,'elxreg_*'));
-        ne = length(edir);
+        % Find spatialJacobian.mhd
+        jname = fullfile(fpath,'spatialJacobian.mhd');
         jchk = false;
-        if ne==0
-            warning('No elxreg_ folder found for SpatialJacobian.');
-        elseif ne>1
-            warning('More than one elxreg_ folder found.');
-            edir = '';
-        else
-            edir = fullfile(fpath,edir(1).name);
+        if exist(jname,'file')
             jchk = true;
+        else
+            warning('No spatialJacobian.mhd found.');
         end
         
         % Load images and mask:
@@ -57,7 +55,8 @@ for i = 1:n
         img.loadImg(0,C(i,2:3));
         img.loadMask(C{i,1});
         if jchk
-            img.loadImg(1,fullfile(edir,'spatialJacobian.mhd'));
+            % Append the spatialJacobian
+            img.loadImg(1,jname);
         end
         
         % Threshold mask to -200HU for analysis:
@@ -84,7 +83,7 @@ for i = 1:n
         clearText(findobj('Name','Histogram Fit (X)'));
         clearText(findobj('Name','Histogram Fit (Y)'));
         s = img.ppPlot(2,[ 0 1 1 1 1 ]);
-        Cout(i+1,8:13) = {s.D,s.AUC,s.xEsts(4),s.yEsts(4),s.yEsts(5),s.PCA.theta};
+        Cout(i+1,8:13) = {s.D,s.AUC,s.xEsts(4),s.yEsts(4),s.yEsts(end),s.PCA.theta};
         pause(0.01);
         
         % CI
