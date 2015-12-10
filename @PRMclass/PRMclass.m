@@ -12,7 +12,7 @@ classdef PRMclass < Mat3Dclass
         
         % Commented out by CJG 20151103: using for Wiener2 filter
 %         normchk = false; % Normalize PRM volumes by cropped volume if true
-        normchk = true; % Turn on Wiener2([3 3]) before PRM analysis. Added by CJG 20151103
+        normchk = false; % Turn on Wiener2([3 3]) before PRM analysis. Added by CJG 20151103
         
         cmap     % RGB columns
         prmmap   % {n x 2} cell array:

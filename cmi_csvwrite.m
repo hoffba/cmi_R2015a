@@ -7,6 +7,9 @@ if isnumeric(A)
 end
 if ischar(fname) && ~isempty(A) && iscell(A)
     tpath = fileparts(fname);
+    if isempty(tpath)
+        tpath = pwd;
+    end
     if isdir(tpath)
         [nr,nc] = size(A);
         fid = fopen(fname,'w');

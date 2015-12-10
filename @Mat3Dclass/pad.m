@@ -7,7 +7,7 @@ function pad(self,dim,r,val)
 %   val = [cell array] pad value for each image
 %           (numeric, 'circular', 'replicate', or 'symmetric')
 
-if self.check && isnumeric(dim) && isnumeric(r) && iscell(val)
+if ~isempty(self.mat) && isnumeric(dim) && isnumeric(r) && iscell(val)
     d4 = self.dims(4);
     
     % May set all values the same with one input:
