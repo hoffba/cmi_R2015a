@@ -3,102 +3,105 @@ fnames = varargin{1};
 [path,~] = fileparts(fnames);
 % Find and load all FDF files in selected directory
 fnames = dir([path filesep '*.fdf']);
+nf = length(fnames);
 % Read in each FDF in the directory
 strarray = '';
 valarray = '';
-check = false;
-for ifn = 1:size(fnames,1)
+for ifn = 1:nf
     % Read first FDF for header info
     fid = fopen([path filesep fnames(ifn).name],'r','l');
-    num = 0;
     done = false;
     line = fgetl(fid);%disp(line)
-    d4 = 1; ns = 1; echo = 1; vec = 1;
+    na = 1; vec = 1; ns = 1; ne = 1; echo = 1;
     while (~isempty(line) && ~done)
+        
         line = fgetl(fid);%disp(line)
-        % For first file, load general image details
-        if ifn == 1
-            if any(strncmp(line,{'float  rank = ','float rank = '},13))
-                [rank, ~] = strtok(line,'float  rank = ;');
+        line = strsplit(line,' = ');
+        
+        if length(line)==2
+            svar = strsplit(line{1});
+            svar = svar{end};
+            sval = strtok(line{end},';');
+            
+            if strcmp(svar(1),'*')
+                % remove * from variable name
+                svar(1) = [];
+                % find strings between quotes
+                sval = regexp(sval,'(?<=")[^"]+(?=")','match');
+                sval = sval(1:2:end);
+            elseif strcmp('[]',svar(end-1:end))
+                % remove [] from variable name
+                svar(end-1:end) = [];
+                % find numbers in {} separated by comma
+                sval = cellfun(@str2double,strsplit(sval(2:end-1),','));
+            else
+                % sval is a scalar
+                sval = str2double(sval);
             end
-            if any(strncmp(line,{'float  matrix[] = ','float matrix[] = '},17))
-                [token, rem] = strtok(line,'float  matrix[] = { , };');
-                d1 = str2num(token);
-                d2 = str2num(strtok(rem,', };'));
-                if strcmp(rank,'3')
-                    rem_st = strfind(rem,',');
-                    d3 = str2num(rem(rem_st(2)+1:end-2));
-                else
-                    d3 = 1;
-                end
-            end
-            if any(strncmp(line,{'float  bits = ','float bits = '},13))
-                [token, ~] = strtok(line,'float  bits = { , };');
-                bits = str2num(token);
-            end
-            if strncmp('float  array_dim = ',line,19)
-                [token, ~] = strtok(line,'float  array_dim = ');
-                d4 = str2num(token);
-            end
-            if strncmp('int    slices = ',line,16)
-                [token, ~] = strtok(line,'int    slices = ');
-                ns = str2num(token);
-            end
-            if any(strncmp(line,{'float  roi[] = ','float roi[] = '},14))
-                [token,rem] = strtok(line,'float  roi[] = ;');
-                fov = cell2mat(textscan([token rem],'{%f,%f,%f}'));
-            end
-            if check % Read array label and current value
-                if ~strncmp('int checksum = ',line,15)
-                    token = textscan(line,'%s %s %s %f');
-                    strarray = token{2}{1};
-                    valarray = token{4};
-                end
-                check = false;
-            end
-            if strncmp('float  orientation[] = ',line,23)
-                check = true; % Next line will be the array label
-            end
+            
         else
-            if strncmp(['float  ' strarray ' = '],line,length(strarray)+10)
-                valarray = str2num(strtok(line,['float  ' strarray ' = ;']));
+            svar = '';
+            sval = '';
+        end
+        
+        if ifn==1
+        % For first file, load general image details
+            switch svar
+                case 'rank'
+                    rank = sval;
+                case 'matrix'
+                    d1 = sval(1);
+                    d2 = sval(2);
+                    if rank==3
+                        d3 = sval(3);
+                    else
+                        d3 = 1;
+                    end
+                case 'echoes'
+                    ne = sval;
+                case 'bits'
+                    bits = sval;
+                case 'array_dim'
+                    na = sval;
+                case 'slices'
+                    ns = sval;
+                case 'roi'
+                    fov = sval;
+                case 'array_name'
+                    if ~strcmp(sval,'none')
+                        strarray = svar;
+                    end
             end
         end
         % After first image, only look for matrix index values
-        if strncmp('int    slice_no = ',line,18)
-            [token, ~] = strtok(line,'int    slice_no = ');
-            slc = str2num(token);
-        end
-        if strncmp('int    echo_no = ',line,17)
-            [token, ~] = strtok(line,'int    echo_no = ');
-            echo = str2num(token);
-        end
-        if strncmp('int    array_index = ',line,21)
-            [token, ~] = strtok(line,'int    array_index = ');
-            vec = str2num(token);
+        switch svar
+            case 'slice_no'
+                slc = sval;
+            case 'echo_no'
+                echo = sval;
+            case 'array_index'
+                vec = sval;
+            case strarray
+                valarray = sval;
         end
         
-        num = num + 1;
-        if num > 48
+        if strcmp(svar,'checksum')
             done = true;
         end
     end
     % Initialize image matrix
     if ifn == 1
-        img = zeros(d2,d1,d3*ns,d4);
-        label = cell(1,d4);
-        if strcmp(rank,'2')
+        img = zeros(d2,d1,d3*ns,ne,na);
+        label = cell(1,na);
+        if rank==2
             fov(3) = fov(3) * ns;
         end
-        fov = fov*10;
-        % Determine what echo to keep
-        if strcmp(strarray,'gdiff') % sems_iadc, keep second echo (first is nav)
-            techo = 2;
-        else
-            techo = 1;
-        end
+        fov = fov*10; % convert to mm
     end
-    if echo == techo % For now, only load second echo (the image for sems_iadc)
+    if ~(strcmp(strarray,'gdiff') && (echo==1))
+        % *For sems_iadc, keep only second echo (first is nav)
+        %   otherwise, load all echoes
+        
         % Load FDF file
         fseek(fid, -d1*d2*d3*bits/8, 'eof');
                 % If your image shifted, you may turn "shift...." off by 
@@ -107,10 +110,12 @@ for ifn = 1:size(fnames,1)
         if d3 > 1
             slc = 1:d3;
         end
-        img(:,:,slc,vec)=permute(reshape(img1,[d1 d2 d3]),[2 1 3]);
+        img(:,:,slc,echo,vec)=permute(reshape(img1,[d1 d2 d3]),[2 1 3]);
         if isempty(label{vec})
             label{vec} = [strarray '=' num2str(valarray)];
         end
     end
     fclose(fid);
 end
+img = reshape(img,d1,d2,d3*ns,[]);
+label = cellfun(@num2str,num2cell(1:size(img,4)),'UniformOutput',false);
