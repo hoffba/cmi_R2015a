@@ -6,7 +6,7 @@ if nargin==2
     din = varargin{2};
 end
 img = []; label = {}; fov = [];
-[path,fname,ext] = fileparts(fnames);
+[fpath,fname,ext] = fileparts(fnames);
 if ~any(strcmp(ext,{'.dcm','.1'}))
     ext = [];
 end
@@ -33,9 +33,9 @@ if strcmpi(fname,'dicomdir')
     nf = nf - nnz(ind);
 else
     % All DICOMs are in single directory
-    fnames = dir([path,filesep,'*',ext]);
+    fnames = dir([fpath,filesep,'*',ext]);
     fnames = {fnames(:).name};
-    fnames(~cellfun(@(x)(exist(x,'file')==2)&&isdicom(x),fnames)) = [];
+    fnames(~cellfun(@(x)(exist(fullfile(fpath,x),'file')==2)&&isdicom(fullfile(fpath,x)),fnames)) = [];
 %     fnames = fnames(isDICOM(fullfile(path,fnames))==1);
     nf = length(fnames);
 end
@@ -72,108 +72,112 @@ for ifn = 1:nf
     waitbar((ifn-1)/nf,hp,fnames{ifn});
     
     % Load DICOM file info:
-    tinfo = dicominfo(fullfile(path,fnames{ifn}));
+    tinfo = dicominfo(fullfile(fpath,fnames{ifn}));
     
-    % Check if Series already exists in structure:
-%     disp(tinfo.SeriesInstanceUID);
-%     disp(num2str(tinfo.AcquisitionNumber));
-%     disp(num2str(tinfo.SeriesNumber));
-%     disp(num2str(tinfo.InstanceNumber));
-%     waitforbuttonpress
-    acqN = 0;
-    if isfield(tinfo,'AcquisitionNumber') && ~isempty(tinfo.AcquisitionNumber)
-        acqN = tinfo.AcquisitionNumber;
-    end
-    serN = 0;
-    if isfield(tinfo,'SeriesNumber') && ~isempty(tinfo.SeriesNumber)
-        serN = tinfo.SeriesNumber;
-    end
-    tempN = 0;
-    if isfield(tinfo,'TemporalPositionIdentifier') && ~isempty(tinfo.TemporalPositionIdentifier)
-        tempN = tinfo.TemporalPositionIdentifier;
-    end
-    j = [];
-    if ~isempty(dcmdata)
-        j = find(strcmp(tinfo.SeriesInstanceUID,{dcmdata(:).SeriesInstanceUID}) ...
-                    & (acqN==[dcmdata(:).AcqN]) ...
-                    & (serN==[dcmdata(:).SerN]) ...
-                    & (tempN == [dcmdata(:).TempN]),1);
-    end
-    if isempty(j)
-        % Initialize new series in structure:
-        j = length(dcmdata)+1;
-        val = '';
-        if isfield(tinfo,'SeriesInstanceUID')
-            val = tinfo.SeriesInstanceUID;
+    if isfield(tinfo,'Modality')
+        % Check if Series already exists in structure:
+    %     disp(tinfo.SeriesInstanceUID);
+    %     disp(num2str(tinfo.AcquisitionNumber));
+    %     disp(num2str(tinfo.SeriesNumber));
+    %     disp(num2str(tinfo.InstanceNumber));
+    %     waitforbuttonpress
+        acqN = 0;
+        if isfield(tinfo,'AcquisitionNumber') && ~isempty(tinfo.AcquisitionNumber)
+            acqN = tinfo.AcquisitionNumber;
         end
-        dcmdata(j).SeriesInstanceUID = val;
-        dcmdata(j).AcqN = acqN;
-        dcmdata(j).SerN = serN;
-        dcmdata(j).TempN = tempN;
-        val = [1,1];
-        if isfield(tinfo,'PixelSpacing')
-            val = tinfo.PixelSpacing;
+        serN = 0;
+        if isfield(tinfo,'SeriesNumber') && ~isempty(tinfo.SeriesNumber)
+            serN = tinfo.SeriesNumber;
         end
-        dcmdata(j).PixelSpacing = val;
-        val = [];
-        if isfield(tinfo,'SliceThickness')
-            val = tinfo.SliceThickness;
-        elseif isfield(tinfo,'SpacingBetweenSlices')
-            val = tinfo.SpacingBetweenSlices;
+        tempN = 0;
+        if isfield(tinfo,'TemporalPositionIdentifier') && ~isempty(tinfo.TemporalPositionIdentifier)
+            tempN = tinfo.TemporalPositionIdentifier;
         end
-        dcmdata(j).SlcThk = val;
-        val = '';
-        if isfield(tinfo,'StudyDescription')
-            val = tinfo.StudyDescription;
+        j = [];
+        if ~isempty(dcmdata)
+            j = find(strcmp(tinfo.SeriesInstanceUID,{dcmdata(:).SeriesInstanceUID}) ...
+                        & (acqN==[dcmdata(:).AcqN]) ...
+                        & (serN==[dcmdata(:).SerN]) ...
+                        & (tempN == [dcmdata(:).TempN]),1);
         end
-        dcmdata(j).StudyDescription = val;
-        if isfield(tinfo,'SeriesDescription') && ~isempty(tinfo.SeriesDescription)
-            val = tinfo.SeriesDescription;
-        elseif isfield(tinfo,'ProtocolName') && ~isempty(tinfo.ProtocolName)
-            val = tinfo.ProtocolName;
-        else val = tinfo.Modality;
+        if isempty(j)
+            % Initialize new series in structure:
+            j = length(dcmdata)+1;
+            val = '';
+            if isfield(tinfo,'SeriesInstanceUID')
+                val = tinfo.SeriesInstanceUID;
+            end
+            dcmdata(j).SeriesInstanceUID = val;
+            dcmdata(j).AcqN = acqN;
+            dcmdata(j).SerN = serN;
+            dcmdata(j).TempN = tempN;
+            val = [1,1];
+            if isfield(tinfo,'PixelSpacing')
+                val = tinfo.PixelSpacing;
+            end
+            dcmdata(j).PixelSpacing = val;
+            val = [];
+            if isfield(tinfo,'SliceThickness')
+                val = tinfo.SliceThickness;
+            elseif isfield(tinfo,'SpacingBetweenSlices')
+                val = tinfo.SpacingBetweenSlices;
+            end
+            dcmdata(j).SlcThk = val;
+            val = '';
+            if isfield(tinfo,'StudyDescription')
+                val = tinfo.StudyDescription;
+            end
+            dcmdata(j).StudyDescription = val;
+            if isfield(tinfo,'SeriesDescription') && ~isempty(tinfo.SeriesDescription)
+                val = tinfo.SeriesDescription;
+            elseif isfield(tinfo,'ProtocolName') && ~isempty(tinfo.ProtocolName)
+                val = tinfo.ProtocolName;
+            else val = tinfo.Modality;
+            end
+            dcmdata(j).Label = {val};
+            dcmdata(j).SlcLoc = [];
+            val = '';
+            if isfield(tinfo,'PatientID')
+                val = tinfo.PatientID;
+            end
+            dcmdata(j).PatientID = val;
+            dcmdata(j).img = [];
+            if all(isfield(tinfo,{'Rows','Columns'}))
+                dcmdata(j).d = [tinfo.Rows,tinfo.Columns];
+            end
         end
-        dcmdata(j).Label = {val};
-        dcmdata(j).SlcLoc = [];
-        val = '';
-        if isfield(tinfo,'PatientID')
-            val = tinfo.PatientID;
+        k = length(dcmdata(j).SlcLoc)+1;
+        if isfield(tinfo,'SliceLocation')
+            val = tinfo.SliceLocation;
+        elseif isfield(tinfo,'ImagePositionPatient')
+            val = tinfo.ImagePositionPatient;
+        else
+            val = ifn;
         end
-        dcmdata(j).PatientID = val;
-        dcmdata(j).img = [];
-        if all(isfield(tinfo,{'Rows','Columns'}))
-            dcmdata(j).d = [tinfo.Rows,tinfo.Columns];
+        dcmdata(j).SlcLoc(k,1) = val(end);
+        if isfield(tinfo,'EchoTime')
+            if ~isempty(tinfo.EchoTime)
+                dcmdata(j).TE(k) = tinfo.EchoTime;
+            end
         end
+        if isfield(tinfo,'RepetitionTime')
+            if ~isempty(tinfo.RepetitionTime)
+                dcmdata(j).TR(k) = tinfo.RepetitionTime;
+            end
+        end
+
+        % Read slice data from file:
+        if isfield(tinfo,'RescaleSlope')
+            ySlope = tinfo.RescaleSlope;
+        else ySlope = 1;
+        end
+        if isfield(tinfo,'RescaleIntercept')
+            yInt = tinfo.RescaleIntercept;
+        else yInt = 0;
+        end
+        timg = ySlope * double(dicomread(tinfo)) + yInt;
+        dcmdata(j).img(:,:,k) = timg;
     end
-    k = length(dcmdata(j).SlcLoc)+1;
-    if isfield(tinfo,'SliceLocation')
-        val = tinfo.SliceLocation;
-    elseif isfield(tinfo,'ImagePositionPatient')
-        val = tinfo.ImagePositionPatient;
-    end
-    dcmdata(j).SlcLoc(k,1) = val(end);
-    if isfield(tinfo,'EchoTime')
-        if ~isempty(tinfo.EchoTime)
-            dcmdata(j).TE(k) = tinfo.EchoTime;
-        end
-    end
-    if isfield(tinfo,'RepetitionTime')
-        if ~isempty(tinfo.RepetitionTime)
-            dcmdata(j).TR(k) = tinfo.RepetitionTime;
-        end
-    end
-    
-    % Read slice data from file:
-    if isfield(tinfo,'RescaleSlope')
-        ySlope = tinfo.RescaleSlope;
-    else ySlope = 1;
-    end
-    if isfield(tinfo,'RescaleIntercept')
-        yInt = tinfo.RescaleIntercept;
-    else yInt = 0;
-    end
-    timg = ySlope * double(dicomread(tinfo)) + yInt;
-    dcmdata(j).img(:,:,k) = timg;
 end
 delete(hp);
 

@@ -36,11 +36,9 @@ if ~isempty(fnames)
                 % Determine navigator data:
                 navchk = false;
                 if strncmp(pp.seqfil,'sems_iadc',9)
-                            warning('Currently not correcting for navigator data ...')
                     navchk = true;
                     kdata = flip(kdata,4);
                 elseif isfield(pp,'navigator') && strcmp(pp.navigator,'y')
-                            warning('Currently not correcting for navigator data ...')
                     navchk = true;
                 else
                     narr = narr*necho;
@@ -53,6 +51,7 @@ if ~isempty(fnames)
                 for iarr = 1:narr
                     for islc = 1:d(3)
                         if navchk
+                            warning('Currently not correcting for navigator data ...')
 %                             img(:,:,islc,iarr) = navcorrect(kdata(:,:,islc,1,iarr),...
 %                                                             kdata(:,:,islc,2,iarr));
                             img(:,:,islc,iarr) = abs(fftshift(fft2(kdata(:,:,islc,1,iarr),...

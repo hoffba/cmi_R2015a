@@ -1,5 +1,7 @@
 % ImageClass function
 function stat = setPRMopts(self,cvec)
+% Provides a GUI for user input of PRM properties:
+
 stat = false;
 if (nargin==2) && isnumeric(cvec)
     % Load figure and retrieve figure handles

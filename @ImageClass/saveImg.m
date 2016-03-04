@@ -37,6 +37,8 @@ if self.check
         else
             fname = '';
         end
+    else
+        fname = '';
     end
 else
     fname = '';

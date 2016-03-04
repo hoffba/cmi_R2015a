@@ -20,6 +20,16 @@ if (nargin>1) && isnumeric(i) && ~isempty(i) ...
             tval = vals{ipar};
             tC = {};
             switch pname{ipar}
+                case 'jac'
+                    tval = logical(tval);
+                    self.jac = tval;
+                    set(self.h.checkbox_jac,'Value',tval);
+                case 'jacmat'
+                    self.jacmat = logical(tval);
+                    set(self.h.checkbox_jacmat,'Value',tval);
+                case 'def'
+                    self.def = logical(tval);
+                    set(self.h.checkbox_def,'Value',tval);
                 case 'FixedImagePyramidSchedule'
                     if isnumeric(tval) && (length(tval)==3*nres) && all(tval>0)
                         tC = [pname(ipar),{tval}];

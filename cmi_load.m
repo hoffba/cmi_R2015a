@@ -15,7 +15,7 @@ else
 end
 dtypes = {...
             {'.hdr','.img'},            'ANALYZE';...   % 1
-            {'.mhd'},                   'MHD';...       % 2
+            {'.mhd','.raw'},            'MHD';...       % 2
             {'.fld'},                   'FLD';...       % 3
             {'.fdf'},                   'FDF';...       % 4
             {'.vff'},                   'VFF';...       % 5
@@ -63,7 +63,7 @@ if gopt
         str = 'off';
     end
     % User selects file(s)
-    filter = [{[filter{:,1}],'All Images'};filter];
+    filter = [{[filter{:,1},'.gz'],'All Images'};filter];
     filter(:,1) = cellfun(@(x)sprintf('*%s;',x{:}),filter(:,1),'UniformOutput',false);
     [fullname,fpath,findex] = uigetfile([{'*','All'};filter],['Load ',str,':'],'MultiSelect',str);
     if fpath
@@ -82,6 +82,9 @@ end
 
 if ~isempty(fullname)
     fnameOut = fullname{1};
+    if strcmp(fnameOut(end-2:end),'.gz')
+        fnameOut(end-2:end) = [];
+    end
     nf = length(fullname);
     alabel = cell(1,nf);
     ok = 1;
@@ -89,6 +92,15 @@ if ~isempty(fullname)
         if ok
             % Evaluate format-relevant load function
             [fpath,~,ext] = fileparts(fullname{i});
+            % If GNU zipped, unzip to same folder:
+            if strcmp(ext,'.gz')
+                if ~exist(fullname{i}(1:end-3),'file')
+                    disp('Unzipping ...');
+                    gunzip(fullname{i});
+                end
+                fullname{i} = fullname{i}(1:end-3);
+                [~,~,ext] = fileparts(fullname{i});
+            end
             if isempty(ext)
                 datatype = 'DICOM';
             else

@@ -1,5 +1,6 @@
 % ImageClass function
-function [MF,labels] = calcMF(self,vec,thresh,n,varargin)
+function [MF,p] = calcMF(self,vec,varargin)
+% function [MF,labels] = calcMF(self,vec,varargin)
 % Calculate Minkowski Functionals
 % Inputs:   vec = 4D image index to perform analysis on
 %           ithresh = vector of thresholds to use
@@ -12,83 +13,76 @@ function [MF,labels] = calcMF(self,vec,thresh,n,varargin)
 %               'defVal'    = logical value of voxels outside the VOI
 
 MF = [];
-labels = {};
+p = [];
 
-p = inputParser;
-addRequired(p,'vec',@(x)(isscalar(x)&&(x>0))||any(strcmpi(x,{'voi','prm'})));
-addRequired(p,'thresh',@isnumeric);
-addRequired(p,'n',@isvector);
-addParameter(p,'ApplyMask',true,@islogical);
-addParameter(p,'tmode','>',@ischar);
-addParameter(p,'defVal',false,@islogical);
-
-parse(p,vec,thresh,n,varargin{:});
-pp = p.Results;
+if nargin<4 % GUI for user input:
+    str = {'MF Data ("VOI", "PRM", or image index)',        'prm'   ;...
+           'Values (for binarization)',                     ''      ;...
+           'Mode (p if percentiles, then <,>,>=,<=,==)',    '=='    ;...
+           'Window radius ("inf" for global analysis)',     'inf'   ;...
+           'Grid spacing',                                  ''      ;...
+           'Apply VOI to analysis? (y/n)',                  'y'     ;...
+           'Non-VOI value (1/0)',                           '0'     };
+    answer = inputdlg(str(:,1),'Minkowski Functionals',1,str(:,2));
+    if isempty(answer)
+        return;
+    else
+        vec = str2double(answer{1});
+        if isnan(vec)
+            vec = answer{1};
+        end
+        r = sscanf(answer{4},'%f');
+        varargin = {'thresh',   str2num(answer{2}),...
+                    'tmode',    answer{3},...
+                    'n',        r,...
+                    'gridsp',   sscanf(answer{5},'%f'),...
+                    'defVal',   logical(str2double(answer{7}))};
+        voichk = strcmpi(answer{6},'y');
+    end
+end
 
 if self.check
-    if ischar(pp.vec)
-        switch lower(pp.vec)
+    if ischar(vec)
+        switch lower(vec)
             case 'voi'
                 timg = self.mask.mat;
-                pp.thresh = 1;
             case 'prm'
                 timg = self.prm.mat;
-                pp.thresh = round(pp.thresh);
             otherwise
+                error('Invalid data selection.');
         end
-        pp.ApplyMask = false;
-        pp.tmode = '==';
+    elseif ismember(vec,1:self.dims(4))
+        timg = self.mat(:,:,:,vec);
     else
-        timg = self.mat(:,:,:,pp.vec);
+        error('Invalid image vector selected.');
     end
-    if pp.ApplyMask && self.mask.check
+    if voichk
         mask = self.mask.mat;
-    else
-        mask = false(0);
     end
-    gchk = any(isinf(pp.n));
+    gchk = any(isinf(r));
+    varargin = [varargin,{'voxsz',self.voxsz,'mask',mask,'prog',true}];
     
     if gchk % Global analysis:
 
         % Calculate MF:
-        [MF,labels] = minkowskiFun(timg,pp.thresh,pp.tmode,...
-            'n',pp.n,'voxsz',self.voxsz,'mask',mask,'defVal',pp.defVal,'prog',true);
+        [MF,p] = minkowskiFun(timg,varargin{:});
             
         if nargout==0
             % Save results to base workspace:
-            pp.MF = MF;
-            pp.labels = labels;
-            assignin('base','MFvals',pp);
+            p.MF = MF;
+            assignin('base','MFresults',p);
         end
         
     else
         
         % Run in batch - will take too long to wait for
         
+        % User select where to save results:
         fnout = fullfile(self.dir,[self.name,'_MF',datestr(now(),'yyyymmddHHMMSS'),'.mat']);
-
-        % Generate grid indices:
-        mchk = isempty(mask);
-        if mchk
-            mmin = [ find(max(max(mask,[],2),[],3),1) ,...
-                     find(max(max(mask,[],1),[],3),1) ,...
-                     find(max(max(mask,[],1),[],2),1) ];
-        else
-            mmin = ones(1,3);
-        end
-        gridmask = false(self.dims(1:3));
-        gridmask( mmin(1):pp.n(1):end , ...
-                  mmin(2):pp.n(2):end , ...
-                  mmin(3):pp.n(3):end ) = true;
-        if mchk
-            gridmask = gridmask & mask;
-        end
-        ind = find(gridmask);
-        
         [fnout,fpath] = uiputfile('*.mat','Save MF results as:',fnout);
+        
         if ~isempty(fnout)
-            batch_MinkowskiFun(fullfile(fpath,fnout),timg,mask,...
-                                self.voxsz,ind,pp.n,pp.thresh,pp.tmode,pp.defVal);
+            batch_MinkowskiFun(fullfile(fpath,fnout),timg,varargin{:});
         end
     end
 end

@@ -47,17 +47,18 @@ if (nargin>=4)
         info.ImageOrientationPatient = [0,1,0,1,0,0];
     end
     
-    rtags = {'PatientID','Modality','StudyID','StudyDescription'};
-    if (nargin<5) || ~all(isfield(info,rtags))
-        prompt = {'Modality (MR,CT,PT=PET,ST=SPECT,SEG=Segmentation,OT=other)',...
-                  'PatientID:',...
-                  'StudyID',...
-                  'StudyDescription:'};
+%     rtags = {'PatientID','Modality','StudyID','StudyDescription'};
+%     if (nargin<5) || ~all(isfield(info,rtags))
+%         prompt = {'Modality (MR,CT,PT=PET,ST=SPECT,SEG=Segmentation,OT=other)',...
+%                   'PatientID:',...
+%                   'StudyID',...
+%                   'StudyDescription:'};
+%         answer = {info.Modality,info.PatientID,info.StudyID,info.StudyDescription};
+%         answer = inputdlg(prompt,'DICOM Tags',1,answer);
+%     else
+%         answer = true;
+%     end
         answer = {info.Modality,info.PatientID,info.StudyID,info.StudyDescription};
-        answer = inputdlg(prompt,'DICOM Tags',1,answer);
-    else
-        answer = true;
-    end
     
     if ~isempty(answer)
         if iscellstr(answer)

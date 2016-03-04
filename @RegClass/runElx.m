@@ -10,6 +10,8 @@ if isa(hObject,'matlab.ui.control.UIControl')
     end
 elseif isnumeric(hObject)
     qchk = logical(hObject);
+elseif islogical(hObject)
+    qchk = hObject;
 else
     qchk = false;
 end
@@ -197,12 +199,13 @@ if stat
     
     % Determine whether to "Start" or "Add to Queue"
     if qchk
+        % Add command to Qfile:
         fid = fopen(self.qfile,'at'); % 'at' = append text
         fprintf(fid,'%s\n',cmdstr);
         fclose(fid);
         
         % Determine if new batch job needs to be started
-        jobchk = (isempty(self.job) || ~strcmp(self.job.State,'running'));
+        jobchk = (isempty(self.job) || ~any(strcmp(self.job.State,{'running','queued'})));
         if jobchk
             % Check for existing job in local cluster:
             c = parcluster('local');

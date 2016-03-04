@@ -1,47 +1,77 @@
 function [img,label,fov] = readMRS(varargin)
-% .MRD = Reconstructed images
-% .SUR = Raw k-space data
+% .MRD = Raw k-space data
+% .SUR = Reconstructed images
 
 if nargin==0
     % Use GUI to select file
     [fname,fpath] = uigetfile('*.SUR;*.MRD','Select a file:');
-%     [~,~,ext] = fileparts(fname);
+    [~,~,ext] = fileparts(fname);
 else
     [fpath,fname,ext] = fileparts(varargin{1});
     fname = strcat(fname,ext);
 end
 if ischar(fname)
-    % Find files to load:
-%     allfnames = dir(fullfile(fpath,['*',ext]));
-%     ind = find(strcmp(fname,{allfnames(:).name}),1);
-    [img,dim,par] = Get_mrd_3D1(fullfile(fpath,fname));
-    img = permute(img,[1,2,4,3,5,6]);
     [~,label,~] = fileparts(fname);
-    label = {label};
-    fov = [par.FOV , par.FOV , (par.SLICE_THICKNESS+par.SLICE_SEPARATION)*ns];
-%     if isfield(par,'no_expts')
-%         nv = par.no_expts;
-%     else
-%         nv = 1;
-%     end
-%     if all(isfield(par,{'IM_SLICE','IM_EXPERIMENT','IM_TOTAL_SLICES'}))
-%         ns = par.IM_TOTAL_SLICES;
-%         ii = ind - par.IM_SLICE - (par.IM_EXPERIMENT-1)*ns + (1:(ns*nv));
-%     else
-%         error('Missing par fields ... fix the code.');
-%     end
-%     allfnames = allfnames(ii);
-%     nf = length(ii);
-%     img = zeros(dim(1),dim(2),ns,nv);
-%     hw = waitbar(0,'Reading image slices ...');
-%     for j = 1:nv
-%         for i = 1:ns
-%             ii = i+(j-1)*ns;
-%             img(:,:,i,j) = Get_mrd_3D1(fullfile(fpath,allfnames(ii).name));
-%             waitbar(ii/nf,hw);
-%         end
-%     end
-%     delete(hw);
-%     label = strcat('MRS-',cellfun(@num2str,num2cell(1:nv),'UniformOutput',false));
-%     fov = par.IM_FOV; fov(3) = fov(3)*ns;
+    label = strtok(label,'_');
+    if strcmpi(ext,'.SUR') % Magnitude images
+        
+        % Find all files to load:
+        fname = dir(fullfile(fpath,[label,'_*',ext]));
+        nf = length(fname);
+        
+        % Load slices:
+        [timg,par] = Get_mrd_3D1(fullfile(fpath,fname(1).name));
+        img = nan([size(timg),nf]);
+        img(:,:,1) = timg;
+        pos = nan(nf,3);
+        pos(1,:) = [par.IM_EXPERIMENT,par.IM_ECHO,par.IM_SLICE];
+        for i = 2:nf
+            [img(:,:,i),par] = Get_mrd_3D1(fullfile(fpath,fname(i).name));
+            pos(i,:) = [par.IM_EXPERIMENT,par.IM_ECHO,par.IM_SLICE];
+        end
+        
+        % Rearrange and sort:
+        [~,ind] = sortrows(pos);
+        img = reshape(img(:,:,ind),par.IM_RESOLUTION(1),...
+            par.IM_RESOLUTION(2),par.IM_TOTAL_SLICES,[]);
+        
+        fov = par.IM_FOV;
+        
+    elseif strcmpi(ext,'.MRD') % Complex k-space data
+        
+        % Read all k-space data
+        [img,par] = Get_mrd_3D1(fullfile(fpath,fname));
+        
+        % Rearrange into 4D:
+        [d(1),d(2),d(3),d(4)] = size(img);
+        img = reshape(img,d);
+        
+        fov = par.FOV;
+    else
+        error('Invalid file name.');
+    end
+    
+    % Determine FOV:
+    if isfield(par,'no_views_2') && (par.no_views_2>1) % 3D acquisition
+        fovz = par.SLICE_THICKNESS;
+    else
+        fovz = max(par.FOV_OFFSETS(:,3)) - min(par.FOV_OFFSETS(:,3))...
+            + diff(par.FOV_OFFSETS(1:2,3));
+    end
+    fov = [ fov , fov , fovz ];
+    
+    % Determine labels:
+    d4 = size(img,4);
+    label = repmat({label},1,size(img,4));
+    if isfield(par,'no_echoes') && (par.no_echoes>1)
+        val = repmat((1:par.no_echoes)',1,d4/par.no_echoes);
+        val = cellfun(@(x)num2str(x,'%02u'),num2cell(val(:)),'UniformOutput',false)';
+        label = strcat(label,'_Echo',val);
+    end
+    if isfield(par,'no_experiments') && (par.no_experiments>1)
+        val = repmat((1:par.no_echoes),d4/par.no_experiments,1);
+        val = cellfun(@(x)num2str(x,'%02u'),num2cell(val(:)),'UniformOutput',false)';
+        label = strcat(label,'_Exp',val);
+    end
+    
 end

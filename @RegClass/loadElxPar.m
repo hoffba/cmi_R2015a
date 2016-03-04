@@ -4,7 +4,7 @@ function loadElxPar(self,fname,~)
 % loadElxPar('path/fname.txt')
 % loadElxPar({'fname1','fname2',...})
 
-if (nargin==1) || ~ischar(fname)
+if (nargin==1) || ~(ischar(fname) || iscellstr(fname))
     fname = {};
 end
 stat = self.elxObj.loadPar(fname);

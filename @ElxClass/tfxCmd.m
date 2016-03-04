@@ -1,16 +1,16 @@
 % ElxClass function
 % Generate system call to elastix
-function str = tfxCmd(self,odir,varargin)
 % Inputs: odir  = output directory
 %         Name/Value pairs (need at least one of the following:)
 %           'in'    / Images to transform (.mhd)
-%           'outfn' / File names for transformed 'in' images
 %           'jac'   / Flag to generate Jacobian map (TF)
 %           'def'   / Flag to generate deformation maps (TF)
 %           'jacmat'/ Flag to generate Jacobian matrices (TF)
 %         Name/Value pairs (optional)
+%           'outfn' / File names for transformed 'in' images
 %           'tp'    / TransformParameterFile (.txt)
 %               * if absent, uses ElxClass.Tx0 property
+function str = tfxCmd(self,odir,varargin)
 
 str = '';
 % Parse variable inputs:

@@ -65,3 +65,7 @@ if ~isempty(filt)
         end
     end
 end
+
+if (nargin<3) && ishandle(h)
+    delete(h);
+end

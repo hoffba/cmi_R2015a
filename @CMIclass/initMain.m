@@ -82,6 +82,7 @@ if ~isempty(self.h)
     set(self.h.image_filtNOVA,   'Callback',@self.filtNOVA);
     set(self.h.image_surfcoilcorr,'Callback',@self.surfCoilCorrect);
     set(self.h.image_pad,        'Callback',@self.padImg);
+    set(self.h.image_histeq,     'Callback',@self.imgHistEq);
     set(self.h.analysis_imgmath, 'Callback',@self.imgMath);
     set(self.h.analysis_prmopt,  'Callback',@self.setPRMopts);
     set(self.h.analysis_PRM,     'Callback',@self.activatePRM);

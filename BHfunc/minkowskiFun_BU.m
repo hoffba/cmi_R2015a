@@ -18,26 +18,20 @@
 %       mask    = binary image mask
 %       defVal  = (logical) value assigned to voxels outside the mask
 %       prog    = logical check to display waitbar/progress
-%       calcConfl = logical check to calculate confluence
-%       Cwin    = confluence smoothing window (default 9)
-%       Cstr    = confluence smoothing strength (default 2)
-%       Cthresh = confluence thresholds to integrate (default 0:0.05:1)
 % Output:
-%   MF     = [#thresh x nMF x (1+#pts)] Minkowski Functionals 
-%               * First analysis is always global
+%   MF     = [#thresh x nMF x #pts] Minkowski Functionals 
 %               * 2D : Area, Perimeter, Euler-Poincare
 %               * 3D : Volume, Surface Area, Mean Breadth, Euler-Poincare
 %                   ** one extra MF when percentiles used (for threshold)
 %   labels = cell array of MF names
 
-function p = minkowskiFun(img,varargin)
+function [MF,p] = minkowskiFun(img,varargin)
 
 % Validate all inputs:
 p = parseInputs(img,varargin{:});
 
 nmf = length(p.ord);
 nth = length(p.thresh);
-ni = length(p.ind) + p.gchk;
 voxvol = prod(p.voxsz);
 nCth = length(p.Cthresh);
 if p.calcConfl
@@ -46,107 +40,119 @@ end
 
 logchk = islogical(img);
 
-% Initialize results matrix
-p.MF = nan(nth,nmf+p.calcConfl,ni);
-
-% Convert percentiles to threshold values:
-if p.pchk
-    p.thresh = prctile(p.img(p.mask),p.thresh);
-end
-
-if p.prog, hw = waitbar(0,'Processing Minkowski Functional Analysis ...'); end
-fprintf('Number of iterations: %u\n',ni)
-
-% Loop over thresholds
-p.wnum = nan(ni,1); % for saving window volumes (used in normalization)
-for ith = 1:nth
-    if logchk
-        BW = img;
-    else
-        BW = feval(p.tfun,img,p.thresh(ith));
-    end
-    BW(~p.mask) = p.defVal;
-    if p.calcConfl
-        % Smooth binary matrix for confluence calcuation:
-        fprintf('Smothing binary image: win = %u ; str = %f\n',p.Cwin,p.Cstr);
-        BWdens = smooth3(double(BW),'gaussian',p.Cwin,p.Cstr);
+% Now calculate the MF values:
+if p.gchk % Perform global analysis
+    
+    MF = nan(nth,nmf+p.calcConfl);
+    
+    % Convert percentiles to threshold values:
+    if p.pchk
+        p.thresh = prctile(p.img(p.mask),p.thresh);
     end
     
-    % Loop over desired windows:
-    for i = 1:ni
+    if p.prog, hw = waitbar(0,'Processing Minkowski Functional Analysis ...'); end
+    
+    % Loop over thresholds
+    for ith = 1:nth
+        if logchk
+            BW = img;
+        else
+            BW = feval(p.tfun,img,p.thresh(ith));
+        end
+        BW(~p.mask) = p.defVal;
+        if p.calcConfl
+            % Smooth binary matrix for confluence calcuation:
+            fprintf('Smothing binary image: win = %u ; str = %f\n',p.Cwin,p.Cstr);
+            BWdens = smooth3(double(BW),'gaussian',p.Cwin,p.Cstr);
+        end
+        if nmf
+            MF(ith,1:nmf) = feval(p.func,BW,p.voxsz,p.ord);
+        end
+        if p.calcConfl
+            X = nan(nCth,1);
+            for j = 1:nCth
+                BW = feval(@gt,BWdens,p.Cthresh(j));
+                X(j) = feval(p.Cfunc,BW);
+            end
+            X = (X-1).^2;
+            MF(ith,end) = sqrt( dCth * ((X(1:end-1) + X(2:end))/2) );
+        end
+        if p.prog, waitbar(ith/nth,hw); end
+    end
+    % Adjust for voxel size (except for Euler):
+    MF(:,(p.ord~=p.nD)) = MF(:,(p.ord~=p.nD));
+    if p.prog, delete(hw); end
+    
+else % Perform analysis on moving window
+    
+    ntot = length(p.ind);
+    disp(['Number of iterations: ',num2str(ntot)])
+
+    pthresh = p.thresh;
+    if p.pchk
+        pthresh = prctile(img(p.mask),pp.thresh);
+    end
         
-        if i==1
-            t = tic;
+    tt = tic;
+    MF = zeros(nth,nmf+p.calcConfl,ntot);
+    hw = waitbar(0,'Calculating local Minkowski Functionals ...');
+    for ith = 1:nth
+        fprintf(['Calculating local MF: img ',p.tmode,' %f\n'],pthresh(ith));
+        if logchk
+            BW = img;
+        else
+            BW = feval(p.tfun,img,pthresh(ith));
         end
-        % Only update display every 10k iterations
-        if mod(i,10000)==0
-            disp(['  ',num2str(ni-i),' left (',...
-                  datestr(toc(t)*(ni-i)/(i*86400),'DD:HH:MM:SS'),')'])
+        BW(~p.mask) = p.defVal;
+        if p.calcConfl
+            % Smooth binary matrix for confluence calcuation:
+            fprintf('Smothing binary image: win = %u ; str = %f\n',p.Cwin,p.Cstr);
+            BWdens = smooth3(double(BW),'gaussian',p.Cwin,p.Cstr);
         end
-            
-        % Determine matrices to evaluate:
-        % * If global analysis is requested, it's always done first and
-        %   separated out after the windowed analysis.
-        if (i==1) && p.gchk % GLOBAL
-            
-            wBW = BW;
-            wmask = p.mask;
-            if p.calcConfl
-                wBWdens = BWdens;
+        
+        % Now loop over window locations:
+        for i = 1:ntot
+            if i==1
+                t = tic;
+            end
+            % Only update display every 10k iterations
+            if mod(i,10000)==0
+                disp(['  ',num2str(ntot-i),' left (',...
+                      datestr(toc(t)*(ntot-i)/(i*60*60*24),'DD:HH:MM:SS'),')'])
             end
             
-        else % LOCAL GRIDDED WINDOW
-            
             % Grab local region:
-            [ii,jj,kk] = ind2sub(p.D,p.ind(i-1));
+            [ii,jj,kk] = ind2sub(p.D,p.ind(i));
             ii = max(1,ii-p.n(1)):min(p.D(1),ii+p.n(1));
             jj = max(1,jj-p.n(2)):min(p.D(2),jj+p.n(2));
             kk = max(1,kk-p.n(3)):min(p.D(3),kk+p.n(3));
             wBW = BW(ii,jj,kk);
             wmask = p.mask(ii,jj,kk);
-            if p.calcConfl
-                wBWdens = BWdens(ii,jj,kk);
+            wvol = nnz(wmask)*voxvol*ones(1,nmf);
+            wvol(p.ord==p.nD) = 1; % Don't normalize Euler value
+            
+            % Calculate selected MF and normalize by wvol for density:
+            if nmf
+                MF(ith,1:nmf,i) = feval(p.func,wBW,p.voxsz,p.ord)./wvol;
             end
             
-        end
-        
-        % Calculate MF normalization values:
-        if isnan(p.wnum(i))
-            p.wnum(i) = nnz(wmask);
-        end
-        normval = p.wnum(i)*voxvol*ones(1,nmf); % For normalizing V, S, B
-        normval(p.ord==p.nD) = p.wnum(i);
-        
-        % Calculate MF values:
-        if nmf
-            p.MF(ith,1:nmf,i) = feval(p.func,wBW,p.voxsz,p.ord)./normval;
-        end
-        
-        % Calculate confluence:
-        if p.calcConfl
-            X = nan(nCth,1);
-            for j = 1:nCth
-                cBW = feval(@gt,wBWdens,p.Cthresh(j));
-                X(j) = feval(p.Cfunc,cBW);
+            % Calculate confluence if desired:
+            if p.calcConfl
+                wBWdens = BWdens(ii,jj,kk);
+                X = nan(nCth,1);
+                for j = 1:nCth
+                    wBW = feval(@gt,wBWdens,p.Cthresh(j));
+                    X(j) = feval(p.Cfunc,wBW);
+                end
+                X = (X-1).^2;
+                MF(ith,end,i) = sqrt( dCth * ((X(1:end-1) + X(2:end))/2) );
             end
-            X = (X-1).^2;
-            p.MF(ith,end,i) = sqrt( dCth * ((X(1:end-1) + X(2:end))/2) )/p.wnum(i);
+            waitbar(i/ntot,hw,['Complete: ',num2str(i),'/',num2str(ntot)]);
         end
-        
     end
-    
-    if p.prog, waitbar(ith/nth,hw); end
+    delete(hw);
+    toc(tt);
 end
-
-% Separate out the GLOBAL results:
-if p.gchk
-    p.gMF = p.MF(:,:,1);
-    p.gnum = p.wnum(1);
-    p.wnum(1) = [];
-    p.MF(:,:,1) = [];
-end
-
-if p.prog, delete(hw); end
 
 % Raw 2D MF calculation
 function p = calcMF2D(BW,voxsz,ord)
@@ -178,7 +184,7 @@ if ismember(3,ord)
 end
 
 function p = parseInputs(img,varargin)
-% Validate inputs:
+% Validate optional inputs:
 if ~(isnumeric(img)||islogical(img))
     error('Invalid input image.')
 end
@@ -197,7 +203,6 @@ addParameter(p,'calcConfl',false,@(x)islogical(x)&&isscalar(x));
 addParameter(p,'Cwin',9,@(x)isnumeric(x)&&(x>0));
 addParameter(p,'Cstr',2,@(x)isnumeric(x)&&(x>0));
 addParameter(p,'Cthresh',0:0.05:1,@isvector);
-addParameter(p,'gchk',true,@(x)islogical(x)&&isscalar(x));
 parse(p,varargin{:});
 p = p.Results;
 D = size(img);
@@ -217,7 +222,8 @@ if any((p.ind<1) | (p.ind>prod(D)))
     p.ind = [];
 end
 % Global vs Local analysis:
-if any(isinf(p.n))
+p.gchk = any(isinf(p.n));
+if p.gchk
     p.nD = length(D);
     p.ind = [];
 else

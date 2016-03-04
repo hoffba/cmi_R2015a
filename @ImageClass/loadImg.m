@@ -22,7 +22,19 @@ if ~isempty(img)
 %         label = label(1);
 %         fov(3) = mean(fov(1:2));
 %     end
-    if appendcheck && self.check
+
+    dd = size(img);
+    
+    % If reading in a complex image, separate into real and imaginary
+    % components
+    if ~isreal(img)
+        nv = size(img,4);
+        img = cat(4,real(img),imag(img));
+        label = strcat([repmat({'Re-'},[1,nv]),repmat({'Im-'},[1,nv])],...
+                    label);
+    end
+    
+    if appendcheck && self.check && all(self.dims(1:3)==dd(1:3))
         nnv = size(img,4);
         self.mat = cat(4,self.mat,img);
         self.dims(4) = size(self.mat,4);
