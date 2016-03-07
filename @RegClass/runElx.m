@@ -204,22 +204,31 @@ if stat
         fprintf(fid,'%s\n',cmdstr);
         fclose(fid);
         
-        % Determine if new batch job needs to be started
-        jobchk = (isempty(self.job) || ~any(strcmp(self.job.State,{'running','queued'})));
-        if jobchk
-            % Check for existing job in local cluster:
-            c = parcluster('local');
-            j = c.findJob;
-            i = find(strcmp('running',{j(:).State}) & strcmp('runBatchFromQ',{j(:).Name}));
-            if ~isempty(i)
-                self.job = j(i);
-                jobchk = false;
-            end
+        % Determine if new batch job needs to be started:
+        jobchk = false(1,self.qnum);
+        if ~isempty(self.job)
+            jobchk(1:length(self.job)) = ~ismember({self.job(:).State},{'running','queued'});
         end
-        if jobchk && exist(self.qfile,'file')
-            % Start new batch:
-            self.job = runBatchFromQ(self.qfile);
+        jobchk = find(jobchk,1);
+        if ~isempty(jobchk) && exist(self.qfile,'file')
+            % Start new batch job:
+            self.job(jobchk) = runBatchFromQ(self.qfile);
         end
+%         jobchk = (isempty(self.job) || ~any(strcmp(self.job.State,{'running','queued'})));
+%         if jobchk
+%             % Check for existing job in local cluster:
+%             c = parcluster('local');
+%             j = c.findJob;
+%             i = find(strcmp('running',{j(:).State}) & strcmp('runBatchFromQ',{j(:).Name}));
+%             if ~isempty(i)
+%                 self.job = j(i);
+%                 jobchk = false;
+%             end
+%         end
+%         if jobchk && exist(self.qfile,'file')
+%             % Start new batch:
+%             self.job = runBatchFromQ(self.qfile);
+%         end
         disp(['Added to queue: ',namestr]);
     else
         stat = ~system(cmdstr);

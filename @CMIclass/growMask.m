@@ -37,7 +37,10 @@ if self.img.check
             case 3 % Ends-in
                 self.img.growVOI(self.vec,1);
             case 4 % Automated Lung Segmentation
-                self.img.segmentLung(self.vec);
+                lmask = self.img.segmentLung(self.vec);
+                if ~islogical(lmask)
+                    self.imgAppend(lmask,{'Segmentation'});
+                end
         end
         self.dispUDmask;
     end

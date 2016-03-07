@@ -1,10 +1,9 @@
 % RegClass function
-function setElxPar(self,i,varargin)
 % Function to manually set Elastix parameter and update GUI with new value
 %   includes Parameter Name and Value validity checks
 % Syntax:
 %       RegClass.setElxPar(#,'Name',Value,...)
-
+function setElxPar(self,i,varargin)
 np = length(varargin)/2;
 if (nargin>1) && isnumeric(i) && ~isempty(i) ...
         && ismember(i,1:length(self.elxObj.Schedule)) ...

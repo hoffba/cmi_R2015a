@@ -18,11 +18,6 @@ function varargout = multiTform(varargin)
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
-% See also: GUIDE, GUIDATA, GUIHANDLES
-
-% Edit the above text to modify the response to help multiTform
-
-% Last Modified by GUIDE v2.5 04-Mar-2016 09:47:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -43,103 +38,191 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-
 % --- Executes just before multiTform is made visible.
-function multiTform_OpeningFcn(hObject, eventdata, handles, varargin)
-% This function has no output args, see OutputFcn.
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to multiTform (see VARARGIN)
+function multiTform_OpeningFcn(hObject, ~, handles, varargin)
 
 % Choose default command line output for multiTform
 handles.output = hObject;
+handles.table_TF.Data = {};
+setappdata(hObject,'tp',struct('fin',{},'fname',{},'im',{}));
+setappdata(hObject,'sel',[]);
+setappdata(hObject,'odir','');
 
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes multiTform wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
-
-
 % --- Outputs from this function are returned to the command line.
-function varargout = multiTform_OutputFcn(hObject, eventdata, handles) 
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Get default command line output from handles structure
+function varargout = multiTform_OutputFcn(~, ~, handles) 
 varargout{1} = handles.output;
 
-
-% --- Executes on selection change in listbox1.
-function listbox1_Callback(hObject, eventdata, handles)
-% hObject    handle to listbox1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns listbox1 contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from listbox1
-
-
-% --- Executes during object creation, after setting all properties.
-function listbox1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to listbox1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
+function button_TFadd_Callback(~, ~, handles)
+[fname,fdir] = uigetfile('*.txt','TransformParameters');
+if ischar(fname)
+    tp = getappdata(handles.figure1,'tp');
+    i = length(tp)+1;
+    tp(i).fname = fullfile(fdir,fname);
+    tp(i).im = {};
+    if i==1
+        tp(i).fin = true;
+    else
+        tp(i).fin = false;
+    end
+    
+    % Update table
+    dind = max(1,length(tp(i).fname)-100);
+    handles.table_TF.Data = [handles.table_TF.Data;
+        {tp(i).fin,['... ',tp(i).fname(dind:end)]}];
+    
+    setappdata(handles.figure1,'tp',tp);
 end
 
+function button_TFremove_Callback(~, ~, handles)
+i = getappdata(handles.figure1,'sel');
+if i
+    tp = getappdata(handles.figure1,'tp');
+    tp(i) = [];
+    setappdata(handles.figure1,'tp',tp);
+    handles.table_TF.Data(i,:) = [];
+end
 
-% --- Executes on button press in pushbutton1.
-function pushbutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+function button_Iadd_Callback(~, ~, handles)
+i = getappdata(handles.figure1,'sel');
+if i
+    [fname,fdir] = uigetfile('*.mhd','Images','MultiSelect','on');
+    if ischar(fdir)
+        if ischar(fname)
+            fname = {fname};
+        end
+        tp = getappdata(handles.figure1,'tp');
+        tp(i).im = [tp(i).im;cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false)];
+        setappdata(handles.figure1,'tp',tp);
+        str = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],tp(i).im,'UniformOutput',false);
+        set(handles.list_imgs,'String',str,'Value',max(1,length(str)));
+    end
+end
 
+function button_Iremove_Callback(~, ~, handles)
+i = getappdata(handles.figure1,'sel');
+if i
+    tp = getappdata(handles.figure1,'tp');
+    tp(i).im(handles.list_imgs.Value) = [];
+    setappdata(handles.figure1,'tp',tp);
+    str = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],tp(i).im,'UniformOutput',false);
+    set(handles.list_imgs,'String',str,'Value',max(1,length(str)));
+end
 
-% --- Executes on button press in pushbutton2.
-function pushbutton2_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+function button_TFup_Callback(~, ~, handles)
+i = getappdata(handles.figure1,'sel');
+if i
+    tp = getappdata(handles.figure1,'tp');
+    tp([i-1,i]) = tp([i,i-1]);
+    setappdata(handles.figure1,'tp',tp);
+    handles.table_TF.Data([i-1,i],:) = handles.table_TF.Data([i,i-1],:);
+    pause(0.1);
+    setappdata(handles.figure1,'sel',i-1);
+end
 
+function button_TFdown_Callback(~, ~, handles)
+i = getappdata(handles.figure1,'sel');
+if i
+    tp = getappdata(handles.figure1,'tp');
+    tp([i,i+1]) = tp([i+1,i]);
+    setappdata(handles.figure1,'tp',tp);
+    handles.table_TF.Data([i,i+1],:) = handles.table_TF.Data([i+1,i],:);
+    pause(0.1);
+    setappdata(handles.figure1,'sel',i+1);
+end
 
-% --- Executes on button press in pushbutton3.
-function pushbutton3_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+function button_clear_Callback(~, ~, handles)
+setappdata(handles.figure1,'tp',struct('fin',{},'fname',{},'im',{}));
+setappdata(handles.figure1,'sel',0);
+handles.table_TF.Data = {};
+set(handles.list_imgs,'Value',1,'String','');
 
+function button_help_Callback(~, ~, ~)
+str = {'TRANSFORMS:';...
+       ['Add TransformParameters.*.txt files in forward order ',...
+        '(transforms are applied backwards, from end of list).',...
+        'Mark final transformations in the chain in the first column. ',...
+        'Images at the end will be transformed up through the chain until ',...
+        'a final transform is reached.'];...
+       '';...
+       'IMAGES:';...
+       'MHD images may be added to any step in the chain to be transformed from that point upward.';...
+       '';...
+       'OUTPUT:';...
+       ['All transforms, images, and a .log file are saved in the same selected directory. , '...
+        'Images have the following format: [fname].[chain#].[step#].[image#].mhd ',...
+        'and original file names are saved in the log.']};
+msgbox(str,'MultiTransform HELP','help','modal');
 
-% --- Executes on button press in pushbutton4.
-function pushbutton4_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton4 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+function button_odir_Callback(~, ~, handles)
+odir = getappdata(handles.figure1,'odir');
+if isempty(odir)
+    odir = pwd;
+else
+    odir = fileparts(odir);
+end
+odir = uigetdir(odir,'Output directory');
+if odir~=0
+    setappdata(handles.figure1,'odir',odir);
+    set(handles.edit_odir,'String',odir);
+end
 
+function edit_odir_Callback(hObject, ~, handles)
+odir = hObject.String;
+stat = false;
+if ~exist(odir,'dir')
+    answer = questdlg('Directory not found. Create new?','MkDir','Yes','Cancel','Cancel');
+    if strcmp(answer,'Yes')
+        stat = mkdir(odir);
+    else
+        set(handles.edit_odir,'String',getappdata(handles.figure1,'odir'));
+    end
+end
+if stat
+    setappdata(handles.figure1,'odir',odir);
+end
 
-% --- Executes on button press in pushbutton5.
-function pushbutton5_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+% --- Executes when selected cell(s) is changed in table_TF.
+function table_TF_CellSelectionCallback(~, eventdata, handles)
+i = eventdata.Indices;
+if isempty(i)
+    i = 0;
+else
+    i = i(1);
+    tp = getappdata(handles.figure1,'tp');
+    str = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],tp(i).im,'UniformOutput',false);
+    set(handles.list_imgs,'Value',1,'String',str);
+end
+setappdata(handles.figure1,'sel',i);
 
+function table_TF_CellEditCallback(~, eventdata, handles)
+i = eventdata.Indices(1);
+if i==1
+    % First transform MUST be a final
+    handles.table_TF.Data{1} = true;
+else
+    tp = getappdata(handles.figure1,'tp');
+    tp(i).fin = logical(eventdata.NewData);
+    setappdata(handles.figure1,'tp',tp);
+end
 
-% --- Executes on button press in pushbutton6.
-function pushbutton6_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton6 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+function button_START_Callback(~, ~, handles)
+tp = getappdata(handles.figure1,'tp');
+odir = getappdata(handles.figure1,'odir');
+if ~isempty(tp) && ~isempty(odir)
+    
+    % Compile transforms and images:
+    for i = 1:length(tp)
+        
+    end
+    
+    % Write log file:
+    logfname = fullfile(odir,'multiTransform.log');
+    
+    % Generate system calls to Transformix
+    
+    
+end
 
-
-% --- Executes on button press in pushbutton7.
-function pushbutton7_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton7 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)

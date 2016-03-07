@@ -35,7 +35,8 @@ classdef RegClass < handle
         
         % Batch job object for dynamic queue
         qfile   % File containing queue of system commands for batch processing
-        job     % Batch job object
+        qnum = 1; % Number of batch jobs running the queue
+        job     % Batch job object(s)
         
     end
     methods
