@@ -14,6 +14,8 @@ if nargin==0
 elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         ~isempty(tp) && ischar(odir) && exist(odir,'dir')
     t = tic;
+    
+    logperm = 'wt';
     ncores = feature('NumCores');
     elxobj = ElxClass;
     logfname = fullfile(odir,'MultiTform.log');
@@ -53,12 +55,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         jac = tp(i).jac;
         ncalls = max(jac,length(tp(i).im));
         if ncalls
-            if i==1
-                permission = 'wt';
-            else
-                permission = 'at';
-            end
-            fid = fopen(logfname,permission);
+            fid = fopen(logfname,logperm);
             if fid>2
                 fprintf(fid,'\nImages:\n');
                 if ~isempty(tp(i).im)
@@ -73,6 +70,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             else
                 error(['Could not open output directory: ',odr]);
             end
+            logperm = 'at'; % change to append after first
         end
         
         % Re-direct previous transform to new level:
