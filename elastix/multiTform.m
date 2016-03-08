@@ -3,7 +3,7 @@
 % Inputs: tp = structure containging:
 %               .fname  = string file name of TransformParameters.*.txt
 %               .chain  = chain number (see below)
-%               .im     = cell array of image file names
+%               .im     = {nx2} cell array of image file names and output names
 %               .jac    = logical, to spit out SpatialJacobian
 %         odir = directory for outputs
 % 
@@ -124,6 +124,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
     end
     delete(fullfile(odir,'result.mhd'));
     delete(fullfile(odir,'result.raw'));
+    fixMHDnames(odir);
     h = toc(t);
 end
 

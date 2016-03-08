@@ -44,8 +44,10 @@ function multiTformGUI_OpeningFcn(hObject, ~, handles, varargin)
 % Choose default command line output for multiTformGUI
 handles.output = hObject;
 handles.table_TF.Data = {};
+handles.table_im.Data = {};
 setappdata(hObject,'tp',struct('chain',{},'fname',{},'im',{},'jac',{}));
-setappdata(hObject,'sel',[]);
+setappdata(hObject,'tsel',[]);
+setappdata(hObject,'isel',[]);
 setappdata(hObject,'odir','');
 
 % Update handles structure
@@ -89,7 +91,7 @@ if i
 end
 
 function button_Iadd_Callback(~, ~, handles)
-i = getappdata(handles.figure1,'sel');
+i = getappdata(handles.figure1,'tsel');
 if i
     [fname,fdir] = uigetfile('*.mhd','Images','MultiSelect','on');
     if ischar(fdir)
@@ -97,25 +99,34 @@ if i
             fname = {fname};
         end
         tp = getappdata(handles.figure1,'tp');
-        tp(i).im = [tp(i).im;cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false)];
+        j = size(tp(i).im,1)+1;
+        tp(i).im = [tp(i).im;cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false),...
+                    {sprintf('TransformedImage.%02u.%02u.%02u.mhd',tp(i).chain,i,j)}];
         setappdata(handles.figure1,'tp',tp);
-        str = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],tp(i).im,'UniformOutput',false);
-        set(handles.list_imgs,'String',str,'Value',max(1,length(str)));
+        im = tp(i).im;
+        if ~isempty(im)
+            im(:,1) = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],im(:,1),'UniformOutput',false);
+        end
+        set(handles.table_im,'Data',im);
     end
 end
 
 function button_Iremove_Callback(~, ~, handles)
-i = getappdata(handles.figure1,'sel');
+i = getappdata(handles.figure1,'tsel');
+j = getappdata(handles.figure1,'isel');
 if i
     tp = getappdata(handles.figure1,'tp');
-    tp(i).im(handles.list_imgs.Value) = [];
+    tp(i).im(j,:) = [];
     setappdata(handles.figure1,'tp',tp);
-    str = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],tp(i).im,'UniformOutput',false);
-    set(handles.list_imgs,'String',str,'Value',max(1,length(str)));
+    im = tp(i).im;
+    if ~isempty(im)
+        im(:,1) = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],im(:,1),'UniformOutput',false);
+    end
+    set(handles.table_im,'Data',im);
 end
 
 function button_TFup_Callback(~, ~, handles)
-i = getappdata(handles.figure1,'sel');
+i = getappdata(handles.figure1,'tsel');
 if i
     tp = getappdata(handles.figure1,'tp');
     tp([i-1,i]) = tp([i,i-1]);
@@ -126,7 +137,7 @@ if i
 end
 
 function button_TFdown_Callback(~, ~, handles)
-i = getappdata(handles.figure1,'sel');
+i = getappdata(handles.figure1,'tsel');
 if i
     tp = getappdata(handles.figure1,'tp');
     tp([i,i+1]) = tp([i+1,i]);
@@ -138,7 +149,8 @@ end
 
 function button_clear_Callback(~, ~, handles)
 setappdata(handles.figure1,'tp',struct('fin',{},'fname',{},'im',{}));
-setappdata(handles.figure1,'sel',0);
+setappdata(handles.figure1,'tsel',0);
+setappdata(handles.figure1,'isel',0);
 handles.table_TF.Data = {};
 set(handles.list_imgs,'Value',1,'String','');
 
@@ -190,15 +202,16 @@ end
 % --- Executes when selected cell(s) is changed in table_TF.
 function table_TF_CellSelectionCallback(~, eventdata, handles)
 i = eventdata.Indices;
-if isempty(i)
-    i = 0;
-else
+if ~isempty(i)
     i = i(1);
     tp = getappdata(handles.figure1,'tp');
-    str = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],tp(i).im,'UniformOutput',false);
-    set(handles.list_imgs,'Value',1,'String',str);
+    im = tp(i).im;
+    if ~isempty(im)
+        im(:,1) = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],im(:,1),'UniformOutput',false);
+    end
+    set(handles.table_im,'Data',im);
 end
-setappdata(handles.figure1,'sel',i);
+setappdata(handles.figure1,'tsel',i);
 
 function table_TF_CellEditCallback(hObject, eventdata, handles)
 row = eventdata.Indices(1);
@@ -219,8 +232,28 @@ elseif col==3
 end
 setappdata(handles.figure1,'tp',tp);
 
+function table_im_CellEditCallback(hObject, eventdata, handles)
+row = eventdata.Indices(1);
+str = eventdata.NewData;
+if ~strcmp(str(end-3:end),'.mhd')
+    str = [str,'.mhd'];
+end
+i = getappdata(handles.figure1,'tsel');
+tp = getappdata(handles.figure1,'tp');
+tp(i).im{row,2} = str;
+setappdata(handles.figure1,'tp',tp);
+hObject.Data{row,2} = str;
+
+function table_im_CellSelectionCallback(~, eventdata, handles)
+i = eventdata.Indices;
+if ~isempty(i)
+    i = i(1);
+end
+setappdata(handles.figure1,'isel',i);
+
 function button_START_Callback(~, ~, handles)
 multiTform(getappdata(handles.figure1,'tp'),...
     getappdata(handles.figure1,'odir'));
 
     
+
