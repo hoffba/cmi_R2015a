@@ -152,7 +152,7 @@ setappdata(handles.figure1,'tp',struct('fin',{},'fname',{},'im',{}));
 setappdata(handles.figure1,'tsel',0);
 setappdata(handles.figure1,'isel',0);
 handles.table_TF.Data = {};
-set(handles.list_imgs,'Value',1,'String','');
+handles.table_im.Data = {};
 
 function button_help_Callback(~, ~, ~)
 str = {'TRANSFORMS:';...

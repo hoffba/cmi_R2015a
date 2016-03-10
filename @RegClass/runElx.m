@@ -204,15 +204,21 @@ if stat
         fprintf(fid,'%s\n',cmdstr);
         fclose(fid);
         
-        % Determine if new batch job needs to be started:
-        jobchk = false(1,self.qnum);
+        % Remove finished/failed/deleted jobs
         if ~isempty(self.job)
-            jobchk(1:length(self.job)) = ~ismember({self.job(:).State},{'running','queued'});
+            self.job(~ismember({self.job(:).State},{'running','queued'})) = [];
         end
-        jobchk = find(jobchk,1);
-        if ~isempty(jobchk) && exist(self.qfile,'file')
+        
+        % Determine if new batch job needs to be started:
+        nj = length(self.job);
+        if (nj<self.qnum) && exist(self.qfile,'file')
             % Start new batch job:
-            self.job(jobchk) = runBatchFromQ(self.qfile);
+            tjob = runBatchFromQ(self.qfile);
+            if isempty(self.job)
+                self.job = tjob;
+            else
+                self.job(nj+1) = tjob;
+            end
         end
 %         jobchk = (isempty(self.job) || ~any(strcmp(self.job.State,{'running','queued'})));
 %         if jobchk

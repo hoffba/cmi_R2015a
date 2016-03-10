@@ -29,6 +29,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         
         % Concatenate transform chain:
         nextname = tp(i).fname;
+        bdir = fileparts(nextname);
         C{end+1} = nextname;
         go = true;
         while go
@@ -42,7 +43,14 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             end
             % Search for initial transform:
             str = regexp(str,'\(InitialTransformParametersFileName "([^"]*)','tokens');
-            nextname = str{1}{1};
+            [nextdir,nextname,ext] = fileparts(str{1}{1});
+            % Make sure path is correct (copied folders/files)
+            if ~exist(nextdir,'dir')
+                tname = fullfile(bdir,[nextname,ext]);
+                if exist(tname,'file')
+                    nextname = tname;
+                end
+            end
             % Determine end of chain:
             if strcmp(nextname,'NoInitialTransform')
                 go = false;
@@ -53,13 +61,14 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         
         % Write to log file:
         jac = tp(i).jac;
-        ncalls = max(jac,length(tp(i).im));
+        ncalls = max(jac,size(tp(i).im,1));
         if ncalls
             fid = fopen(logfname,logperm);
             if fid>2
                 fprintf(fid,'\nImages:\n');
                 if ~isempty(tp(i).im)
-                    fprintf(fid,'   %s\n',tp(i).im{:});
+                    im = fliplr(tp(i).im)';
+                    fprintf(fid,'   %s <-- %s\n',im{:});
                 end
                 if tp(i).jac
                     fprintf(fid,'   Jacobian\n');
@@ -87,15 +96,19 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         
         % Call transformix for selected images/jacobian:
         jac = tp(i).jac;
-        for j = 1:max(jac,length(tp(i).im))
+        for j = 1:ncalls
             chain = tp(i).chain;
             chlink = sum([tp(1:i).chain]==tp(i).chain);
             if ~isempty(tp(i).im)
                 % Fix MHD in case copied:
-                fixMHDnames(tp(i).im{j})
-                fmt = 'TransformedImage.%02u.%02u.%02u.mhd';
-                outfn = fullfile(odir,sprintf(fmt,chain,chlink,j));
-                inputs = {'in',tp(i).im{j},'outfn',outfn};
+                fixMHDnames(tp(i).im{j,1})
+                if (size(tp(i).im,2)==1) || isempty(tp(i).im{j,2})
+                    fmt = 'TransformedImage.%02u.%02u.%02u.mhd';
+                    outfn = fullfile(odir,sprintf(fmt,chain,chlink,j));
+                else
+                    outfn = fullfile(odir,tp(i).im{j,2});
+                end
+                inputs = {'in',tp(i).im{j,1},'outfn',outfn};
             end
             str = elxobj.sysCmd(odir,inputs{:},'tp',tpcall,'jac',jac,...
                 'wait',true,'threads',ncores);
@@ -108,10 +121,6 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
                 movefile(fullfile(odir,'spatialJacobian.raw'),...
                     fullfile(odir,sprintf('spatialJacobian.%02u.%02u.raw',...
                     chain,chlink)));
-            end
-            if ~isempty(inputs)
-                % Fix copied MHD
-                fixMHDnames(outfn);
             end
         end
         
