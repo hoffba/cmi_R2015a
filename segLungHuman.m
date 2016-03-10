@@ -1,5 +1,5 @@
 % Automatic segmentation of human lung CT images
-function lmask = segLungHuman(img,mask)
+function lmask_label = segLungHuman(img,mask)
 
 %             case 2 % Clin. Insp.
 %                 sm = 3;
@@ -136,6 +136,7 @@ if ~isempty(answer)
     idx = find(~ind & ((nvox/n)>0.005));
     disp(['    Using ' num2str(length(idx)) ' regions ...'])
     lmask2 = false(size(lmask)); lmask = lmask2;
+    lmask_label=zeros(size(lmask)); % CJG 20160304 generate label for individual masks 
     for i = 1:length(idx)
         disp(['    Region ' num2str(i) ': ' num2str(nvox(idx(i))) ' voxels'])
         if dopt
@@ -169,6 +170,8 @@ if ~isempty(answer)
             pause(0.1)
         end
         lmask = (lmask | lmask2);
+        lmask_temp(:,:,:,i)=lmask2.*i; % CJG 20160304 used for generating label
+        lmask_label=sum(lmask_temp,4); % CJG 20160304 sum lung masks.
     end
     disp(['Ended after ' num2str(toc) ' seconds'])
 end

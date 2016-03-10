@@ -129,6 +129,15 @@ if ~isempty(fullname)
                     img = timg;
                     fov = tfov;
                     d0 = dt;
+                    % added by CJG 20151204---
+                    if strcmp('.jpg',ext)&numel(tlabel)==3
+                        img4=double(rgb2gray(uint8(squeeze(img))));
+                        img(:,:,:,4)=(img4-min(img4(img4>=0)))./(max(img4(img4>=0))-min(img4(img4>=0)));
+                        clear img4
+                        d0(:,:,:,4)=d0(:,:,:,1);
+                        alabel{1}(4)={'gray'};
+                    end
+                    %---------
                 else
                     [d1(1),d1(2),d1(3),d1(4)] = size(timg);
                     if all(d0(1:3) == d1(1:3))

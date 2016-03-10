@@ -28,9 +28,11 @@ if self.img.check
         end
         pos = [ xl(1)+shft(1) , yl(1)+shft(2) , dx , dy ];
         hrect = imrect(self.haxes,pos);
-        if self.orient==3
-            setFixedAspectRatioMode(hrect,true);
-        end
+        % CJG commented out. Not sure why this is here. 20151204
+%         if self.orient==3
+%             setFixedAspectRatioMode(hrect,true);
+%         end
+%--------------------
         setPositionConstraintFcn(hrect,...
             makeConstrainToRectFcn('imrect',get(self.haxes,'XLim'),...
                                             get(self.haxes,'YLim')));

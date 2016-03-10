@@ -1,5 +1,5 @@
 % ImageClass function
-function segmentLung(self,vec,humanchk)
+function lmask = segmentLung(self,vec,humanchk)
 lmask = [];
 if (nargin<3)
     humanchk = questdlg('Choose Data Type:','Lung Segmentation',...

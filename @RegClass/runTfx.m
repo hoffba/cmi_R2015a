@@ -68,5 +68,8 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
     system(str);
     
     delete(hw);
+    % CJG added BAH code to correct mhd filename issue.
+    fixMHDnames(ofn);
+    %--------
     self.h.button_TfxSTART.Enable = 'on';
 end

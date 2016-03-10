@@ -107,17 +107,21 @@ if self.check && (self.dims(4)>1) && self.mask.check
             waitbar(5/5,hw,'Calculate Stanford Thresholds ...');
             % This technique of calculating the gas trapping threshold is
             % published in CHEST/123/5/May,2003/Goris et al.
+            % T(i)=X-(i-1)(X-Y)/3-1(1-D/343)(X-Y)/3
+            % X = ins 90%
+            % Y = ins 50%
+            % D = ins90% - exp90%
             x90=round(quantile(xvals,0.9)); % 90%ils from xvals
-            y90=round(quantile(yvals,0.9)); % 90%ils from yvals
-            D=y90-x90; % change in 90%ile values in ins and exp
-            X=round(quantile(yvals,0.5)); % 50%ils from yvals
+            y90=round(quantile(yvals,0.9)); % 90%ils from yvals (X in equation)
+            D=y90-x90; % change in 90%ile values in ins and exp (D in equation)
+            y50=round(quantile(yvals,0.5)); % 50%ils from yvals (Y in equation)
             for i=1:3
-                stats.Stanford.T(i)=X-(i-1)*(X-y90)/3-(1-D/343)*(X-y90)/3;
+                stats.Stanford.T(i)=y90-(i-1)*(y90-y50)/3-(1-D/343)*(y90-y50)/3;
             end
             stats.Stanford.x90=x90;
             stats.Stanford.y90=y90;
             stats.Stanford.D=D;
-            stats.Stanford.X=X;
+            stats.Stanford.y50=y50;
         end
         delete(hw);
         if ~nargout

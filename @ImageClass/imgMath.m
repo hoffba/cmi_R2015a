@@ -5,7 +5,7 @@ function ok = imgMath(self,str)
 
 ok = true;
 if (nargin==1) || isempty(str) || ~ischar(str)
-    str = inputdlg({'Type equation:','New Label'},'Image Math',[10,60;1,60],{'','Math'},'on');
+    str = inputdlg({'Type equation (e.g. self.mat(:,:,:,1).*self.mask.mat):','New Label'},'Image Math',[10,60;1,60],{'','Math'},'on');
     if isempty(str)
         ok = false;
     end

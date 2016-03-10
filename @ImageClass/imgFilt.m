@@ -6,7 +6,7 @@ function imgFilt(self,vec,ftype,opts)
 %   ftype = (string) type of filter to use
 %   opts = (vector) filter parameters
 
-filts = {'Median','Gauss','Wiener','Average','Unsharp','AniDiffWavelet','ThreshWavelet','Mode'};
+filts = {'Median','Gauss','Wiener','Average','Unsharp','AniDiffWavelet','ThreshWavelet','Mode','AdaptHistEq','Normalize'};
 if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
     go = false;
     
@@ -67,6 +67,17 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
                 defs = {'3 3'};
                 nchk = true;
                 func = @(x,opts) colfilt(x,opts{1},'sliding',@mode);
+            case 'adapthisteq' % CJG 20160308 added AdaptHistEq
+                opts = {'Neighborhood'};
+                defs = {'3 3'};
+                nchk = true;
+                func = @(x,opts) adapthisteq(x);
+            case 'normalize' % CJG 20160308 added AdaptHistEq
+                opts = {'Neighborhood'};
+                defs = {'3 3'};
+                nchk = true;
+                func = @(x,opts) ((x-min(x(x>-realmax)))./...
+                (max(x(x>-realmax))-min(x(x>-realmax))))*1000;
         end
         answer = inputdlg([{'Image(s):'},opts],ftype,1,[{num2str(vec)},defs]);
         if isempty(answer)
@@ -87,11 +98,24 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
         ntot = self.dims(3)*length(vec);
         hw = waitbar(0,'Applying 2D image filter:');
         tmat = nan([self.dims(1:3),length(vec)]);
+        % CJG added 20160308
+        if strcmpi(ftype,'adapthisteq')
+            tmat_temp=(self.mat-min(self.mat(self.mat>-realmax)))./...
+                (max(self.mat(self.mat>-realmax))-min(self.mat(self.mat>-realmax)));
+        else
+            tmat_temp=self.mat;
+        end
+        %----
         for v = 1:length(vec)
-            for i = 1:self.dims(3)
-                tmat(:,:,i,v) = feval(func,self.mat(:,:,i,vec(v)),opts);
-                ct = ct+1;
-                waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
+            if strcmpi(ftype,'normalize')
+                tmat(:,:,:,v) = feval(func,tmat_temp(:,:,:,vec(v)),opts);
+            else
+                for i = 1:self.dims(3)
+                    %                 tmat(:,:,i,v) = feval(func,self.mat(:,:,i,vec(v)),opts);
+                    tmat(:,:,i,v) = feval(func,tmat_temp(:,:,i,vec(v)),opts); % CJG added 20160308
+                    ct = ct+1;
+                    waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
+                end
             end
         end
         self.mat(:,:,:,vec) = tmat;
