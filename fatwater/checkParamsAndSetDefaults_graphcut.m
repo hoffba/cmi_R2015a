@@ -126,7 +126,7 @@ end
 try
   imDataParams2.PrecessionIsClockwise = imDataParams.PrecessionIsClockwise;
   if imDataParams2.PrecessionIsClockwise <= 0 
-    imDataParams2.PrecessionIsClockwise == -1;
+    imDataParams2.PrecessionIsClockwise = -1;
   end
 catch 
   imDataParams2.PrecessionIsClockwise = -1;

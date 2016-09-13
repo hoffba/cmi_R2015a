@@ -54,8 +54,13 @@ else
             warning(['No .fdf files found in .img directory: ',imgdir])
         else
             img.loadImg(0,{fullfile(imgdir,tfname(1).name)});
+            if (img.dims(4)==4) && ~isempty(strfind(imgdir,'_iadc_'))
+                tvec = [2,4];
+            else
+                tvec = 1:img.dims(4);
+            end
             [~,tfname] = fileparts(nnames{i});
-            img.saveImg(1,fullfile(odir,[tfname,'.mhd']),1);
+            img.saveImg(tvec,fullfile(odir,[tfname,'.mhd']),1);
         end
     end
     delete(hw);

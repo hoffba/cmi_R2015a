@@ -11,7 +11,7 @@
 %                 1     Perimeter   Surface Area
 %                 2     Euler       Mean Breadth
 %                 3     n/a         Euler
-%       n       = moving window radius
+%       n       = [1 x nD] moving window radius
 %       gridsp  = grid spacing
 %       ind     = (3D) indices of matrix locations to analyze
 %       voxsz   = voxel size in 3D
@@ -22,13 +22,17 @@
 %       Cwin    = confluence smoothing window (default 9)
 %       Cstr    = confluence smoothing strength (default 2)
 %       Cthresh = confluence thresholds to integrate (default 0:0.05:1)
+%       gchk    = TF flag for processing global measurements (default TRUE)
 % Output:
-%   MF     = [#thresh x nMF x (1+#pts)] Minkowski Functionals 
-%               * First analysis is always global
-%               * 2D : Area, Perimeter, Euler-Poincare
-%               * 3D : Volume, Surface Area, Mean Breadth, Euler-Poincare
-%                   ** one extra MF when percentiles used (for threshold)
-%   labels = cell array of MF names
+%   p = structure containing all parameters and results
+%    .gMF = [#thresh x nMF] global MF
+%    .MF  = [#thresh x nMF x (1+#pts)] Minkowski Functionals
+%    .labels = names of MF requested
+% Minkowski Functionals:
+%    * First analysis is always global
+%    * 2D : Area, Perimeter, Euler-Poincare
+%    * 3D : Volume, Surface Area, Mean Breadth, Euler-Poincare
+%      ** one extra MF when percentiles used (for threshold)
 
 function p = minkowskiFun(img,varargin)
 
@@ -60,6 +64,7 @@ fprintf('Number of iterations: %u\n',ni)
 % Loop over thresholds
 p.wnum = nan(ni,1); % for saving window volumes (used in normalization)
 for ith = 1:nth
+    fprintf('Processing threshold: %s %f\n',p.tmode,p.thresh(ith));
     if logchk
         BW = img;
     else
@@ -98,7 +103,7 @@ for ith = 1:nth
         else % LOCAL GRIDDED WINDOW
             
             % Grab local region:
-            [ii,jj,kk] = ind2sub(p.D,p.ind(i-1));
+            [ii,jj,kk] = ind2sub(p.D,p.ind(i-p.gchk));
             ii = max(1,ii-p.n(1)):min(p.D(1),ii+p.n(1));
             jj = max(1,jj-p.n(2)):min(p.D(2),jj+p.n(2));
             kk = max(1,kk-p.n(3)):min(p.D(3),kk+p.n(3));

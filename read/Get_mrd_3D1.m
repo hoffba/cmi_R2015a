@@ -81,7 +81,7 @@ if fid
             str = ppr_text{1}{i};
             if strcmp(str(1),':') && ~strncmp(str,':END',4)
                 [field_,rem] = strtok(str(2:end));
-                tval = strsplit(rem(2:end),', ');
+                tval = strsplit(rem(2:end),{', ',' '});
                 switch field_
                     case {'VAR_ARRAY'}
                         % Variable, values on multiple lines
@@ -124,6 +124,7 @@ if fid
                         num = str2double(tval{1});
                         if isnan(num)
                             if length(tval)==1
+                                % Leave as string
                                 val = tval{1};
                             else
                                 % First value is the field name:

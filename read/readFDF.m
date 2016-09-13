@@ -3,16 +3,17 @@ fnames = varargin{1};
 [path,~] = fileparts(fnames);
 % Find and load all FDF files in selected directory
 fnames = dir([path filesep '*.fdf']);
+fnames(cellfun(@(x)strcmp(x(1),'.'),{fnames(:).name})) = [];
 nf = length(fnames);
 % Read in each FDF in the directory
 strarray = '';
 valarray = '';
+na = 1; vec = 1; ns = 1; ne = 1; echo = 1;
 for ifn = 1:nf
     % Read first FDF for header info
     fid = fopen([path filesep fnames(ifn).name],'r','l');
     done = false;
     line = fgetl(fid);%disp(line)
-    na = 1; vec = 1; ns = 1; ne = 1; echo = 1;
     while (~isempty(line) && ~done)
         
         line = fgetl(fid);%disp(line)
@@ -91,7 +92,7 @@ for ifn = 1:nf
     end
     % Initialize image matrix
     if ifn == 1
-        img = zeros(d2,d1,d3*ns,ne,na);
+        img = zeros(d1,d2,d3*ns,ne,na);
         label = cell(1,na);
         if rank==2
             fov(3) = fov(3) * ns;
@@ -106,16 +107,16 @@ for ifn = 1:nf
         fseek(fid, -d1*d2*d3*bits/8, 'eof');
                 % If your image shifted, you may turn "shift...." off by 
                 % add a "%" before fseek.
-        img1 = fread(fid, 'float32');
+        img1 = fread(fid,'float32');
         if d3 > 1
             slc = 1:d3;
         end
-        img(:,:,slc,echo,vec)=permute(reshape(img1,[d1 d2 d3]),[2 1 3]);
+        img(:,:,slc,echo,vec) = reshape(img1,d1,d2,d3);
         if isempty(label{vec})
             label{vec} = [strarray '=' num2str(valarray)];
         end
     end
     fclose(fid);
 end
-img = reshape(img,d1,d2,d3*ns,[]);
+img = permute(reshape(img,d1,d2,d3*ns,[]),[2,1,3,4]);
 label = cellfun(@num2str,num2cell(1:size(img,4)),'UniformOutput',false);

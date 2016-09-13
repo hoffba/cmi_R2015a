@@ -12,15 +12,26 @@ function lmask = segLungHuman(img,mask)
 %                 bt4 = 3; % End erosion
 %                 slc = round(2*self.dims(3)/3);
 % case 3 % Clin. Exp.
+
+% CJG 20151112 added to rescale img so min = 0, this avoids having to
+% do this manually using Image/Scale Image. Also changed prompt to display
+% correct values of image and then scale to >0 values using "b".
+if min(img(mask))<0
+    img=img+1024;
+    b=-1024;
+else
+    b=0; %min
+end
+    
 sm = 3;
-b = 0;%min(img(:));
 Ti = 607 + b;
 Tt = 125 + b;
 bt1 = 8; % Trachea dilation
 bt2 = 8; % Lung erosion
 bt3 = 9; % End dilation
 bt4 = 3; % End erosion
-slc = round(2*size(img,3)/3);
+d = size(img);
+slc = round(2*d(3)/3);
 dopt = ~isempty(slc);
 
 prompt = {'Smoothing','Lung Threshold','Trachea Threshold',...
@@ -35,11 +46,11 @@ if ~isempty(answer)
     end
     val = str2double(answer{2});
     if ~isnan(val)
-        Ti = val;
+        Ti = val-b;
     end
     val = str2double(answer{3});
     if ~isnan(val)
-        Tt = val;
+        Tt = val-b;
     end
     val = str2double(answer{4});
     if ~isnan(val)
@@ -70,7 +81,7 @@ if ~isempty(answer)
     img(img<b) = b;
 
     % Find image ends
-    tmask = false(size(img));
+    tmask = false(d);
     tmask([1,end],:,:) = true;
     tmask(:,[1,end],:) = true;
     cind = find(tmask);
@@ -85,7 +96,7 @@ if ~isempty(answer)
     lmask = filtGaussSep(lmask,bt1) > 0.1; % dilate to fill trachea
 
     cc = bwconncomp(lmask);
-    lmask = false(size(lmask));
+    lmask = false(d);
     for i = 1:cc.NumObjects
         if any(ismember(vind,cc.PixelIdxList{i}))
             lmask(cc.PixelIdxList{i}) = true;
@@ -125,13 +136,15 @@ if ~isempty(answer)
     ind = cellfun(@(x)any(ismember(x,cind)),cc.PixelIdxList);
     idx = find(~ind & ((nvox/n)>0.005));
     disp(['    Using ' num2str(length(idx)) ' regions ...'])
-    lmask2 = false(size(lmask)); lmask = lmask2;
+%     lmask2 = false(d); % temporary mask
+    lmask = zeros(d);  % final label matrix
+%     lmask_label = zeros(d); % CJG 20160304 generate label for individual masks 
     for i = 1:length(idx)
         disp(['    Region ' num2str(i) ': ' num2str(nvox(idx(i))) ' voxels'])
         if dopt
             th2 = tic;
         end
-        lmask2 = false(size(lmask));
+        lmask2 = false(d);
         lmask2(cc.PixelIdxList{idx(i)}) = true;
         lmask2 = filtGaussSep(double(lmask2),bt3) > 0.1; % dilate
         if dopt
@@ -144,7 +157,7 @@ if ~isempty(answer)
         end
         cc2 = bwconncomp(~lmask2);
         nvox2 = cellfun(@numel,cc2.PixelIdxList);
-        lmask2 = true(size(lmask));
+        lmask2 = true(d);
         lmask2(cc2.PixelIdxList{nvox2==max(nvox2)}) = false;
         if dopt
             disp(['      Found outside (' num2str(toc(th2)) ' seconds)...'])
@@ -158,7 +171,12 @@ if ~isempty(answer)
             disp(['      Eroded (' num2str(toc(th2)) ' seconds)...'])
             pause(0.1)
         end
-        lmask = (lmask | lmask2);
+        
+        lmask(lmask2) = i;
+%         lmask = (lmask | lmask2);
+%         lmask_temp(:,:,:,i)=lmask2.*i; % CJG 20160304 used for generating label
+%         lmask_label=sum(lmask_temp,4); % CJG 20160304 sum lung masks.
     end
+    lmask = lungSubDiv(lmask);
     disp(['Ended after ' num2str(toc) ' seconds'])
 end

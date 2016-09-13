@@ -54,7 +54,8 @@ if (nargin==6) % need all inputs
                 
                 if np > self.SPopts.Nmax
                     % Need to down-sample for large data sets
-                    ind = round(1:(np/self.SPopts.Nmax):np);
+                    ind = randperm(np,self.SPopts.Nmax);
+%                     ind = round(1:(np/self.SPopts.Nmax):np);
                 else
                     ind = 1:np;
                 end

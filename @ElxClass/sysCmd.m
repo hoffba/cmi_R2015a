@@ -27,45 +27,45 @@ p.addParameter('outfn',{},@(x)ischar(x)||iscellstr(x));
 % Parse inputs:
 parse(p,odir,varargin{:});
 iflds = setdiff(p.Parameters,p.UsingDefaults);
+p = p.Results;
 
 % Need to remove trailing "\" on directories in Windows:
-odir = p.Results.odir;
-if strcmp(odir(end),filesep)
-    odir(end) = [];
+if strcmp(p.odir(end),filesep)
+    p.odir(end) = [];
 end
 
 % Generate Elastix call:
 if all(ismember({'f','m'},iflds))
-    str = {self.elxCmd(p.Results.f,...
-                       p.Results.m,...
-                       odir,...
-               'fMask',p.Results.fMask,...
-               'mMask',p.Results.mMask,...
-             'threads',p.Results.threads)};
+    str = {self.elxCmd(p.f,...
+                       p.m,...
+                       p.odir,...
+               'fMask',p.fMask,...
+               'mMask',p.mMask,...
+             'threads',p.threads)};
 end
 % Generate Transformix call:
 ii = ismember({'tp','in','jac','jacmat','def'},iflds);
 if ii(1) && any(ii(2:end))
-    str = [str;self.tfxCmd(odir,...
-                        'in',p.Results.in,...
-                     'outfn',p.Results.outfn,...
-                        'tp',p.Results.tp,...
-                       'jac',p.Results.jac,...
-                    'jacmat',p.Results.jacmat,...
-                       'def',p.Results.def)];
+    str = [str;self.tfxCmd(p.odir,...
+                        'in',p.in,...
+                     'outfn',p.outfn,...
+                        'tp',p.tp,...
+                       'jac',p.jac,...
+                    'jacmat',p.jacmat,...
+                       'def',p.def)];
 end
 if ~isempty(str)
     % Cleanup string:
-    if p.Results.cleanup
+    if p.cleanup
         if ispc
             tstr = {}; % not programmed yet
         else
-            tstr = {['find ',odir,' -name "elxtemp-*" -exec rm -f {} \;']};
+            tstr = {['find ',p.odir,' -name "elxtemp-*" -exec rm -f {} \;']};
         end
         str = [str;tstr];
     end
     % Option to keep terminal window open:
-    if ~p.Results.wait
+    if ~p.wait
         if ispc
             tstr = {};
         else
@@ -79,8 +79,8 @@ if ~isempty(str)
     % Concatenate system calls:
     str = sprintf(['%s',repmat([self.sepstr,'%s'],1,numel(str)-1)],str{:});
     if ispc
-        str = [self.xtstr,'title ',p.Results.title,self.sepstr,str,wstr];
+        str = [self.xtstr,'title ',p.title,self.sepstr,str,wstr];
     else
-        str = [self.xtstr,'-T "',p.Results.title,'" -e ''',str,'''',wstr];
+        str = [self.xtstr,'-T "',p.title,'" -e ''',str,'''',wstr];
     end
 end

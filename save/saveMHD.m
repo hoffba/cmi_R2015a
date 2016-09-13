@@ -1,10 +1,22 @@
-function status = saveMHD(fname,img,labels,max_ext,~)
+function status = saveMHD(fname,img,labels,fov,info)
 % Save as MHD file for Elastix
 % * Automatically adds label to name if dim(4) > 1
 
+% Determine image info:
+reqflds = {};
+defval = {};
+if nargin<5
+    info = struct();
+end
+for i = 1:length(reqflds)
+    if ~isfield(info,reqflds{i})
+        info.(reqflds{i}) = defval{i};
+    end
+end
+
 % Permute from YXZ to XYZ:
 img = permute(img,[2,1,3,4]);
-max_ext = max_ext([2,1,3]);
+fov = fov([2,1,3]);
 
 [d(1),d(2),d(3),nv] = size(img);
 [pathstr, fname, ~] = fileparts(fname);
@@ -36,7 +48,7 @@ if ~isa(img,'double')
 end
 NDims = length(d);
 % ElementNumberOfChannels = 1;
-voxsz = max_ext./d;
+voxsz = fov./d;
 if ischar(ofnames)
     ofnames = {ofnames};
 end
@@ -50,6 +62,11 @@ for ifn = 1:nv
 
     % write *.mhd file
     fid = fopen(mhfname,'w');
+    
+    % UMich header:
+    fprintf(fid,'%% *****************************************************\n');
+    
+    
     fprintf(fid,'ObjectType = Image\n');
     fprintf(fid,'NDims = %u\n',NDims);
     fprintf(fid,'BinaryData = %s\n','True');

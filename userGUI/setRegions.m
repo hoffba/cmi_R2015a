@@ -22,7 +22,7 @@ function varargout = setRegions(varargin)
 
 % Edit the above text to modify the response to help setRegions
 
-% Last Modified by GUIDE v2.5 25-Sep-2014 14:30:33
+% Last Modified by GUIDE v2.5 01-Aug-2016 10:04:02
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -51,6 +51,9 @@ handles.cuti = [];
 handles.normchk = true;
 handles.Ci = [];
 handles.maxnp = [];
+handles.filtchk = true;
+handles.filttype = 'Wiener';
+handles.filtstr = [3,3];
 handles.SPopts = struct('Xvec',{nan},'Yvec',{nan},'Xmin',{nan},'Ymin',{nan},...
                         'Xmax',{nan},'Ymax',{nan});
 
@@ -448,8 +451,28 @@ else
     set(hObject,'String',str);
 end
 
-
-% --- Executes on button press in checkbox_VolNorm.
-function checkbox_VolNorm_Callback(hObject, ~, handles)
-handles.normchk = logical(get(hObject,'Value'));
+% --- Executes on button press in checkbox_filtChk.
+function checkbox_filtChk_Callback(hObject, ~, handles)
+handles.filtchk = logical(get(hObject,'Value'));
 guidata(gcbo,handles);
+
+% Select pre-filter type
+function popup_filt_Callback(hObject,~,handles)
+str = get(hObject,'String');
+handles.filttype = str{get(hObject,'Value')};
+guidata(gcbo,handles);
+
+% Size of filter window/strength
+function edit_filtSize_Callback(hObject, ~, handles)
+val = sscanf(get(hObject,'String'),'%f %f %f');
+nv = length(val);
+if any(nv==(1:2))
+    if nv==1
+        val = [val,val];
+    end
+    handles.filtstr = val;
+    guidata(gcbo,handles);
+else
+    warning('Invalid filter strength.')
+    set(hObject,'String',sprintf('% .1f % .1f',handles.filtstr));
+end

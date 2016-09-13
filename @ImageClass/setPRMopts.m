@@ -13,7 +13,9 @@ if (nargin==2) && isnumeric(cvec)
     h.cutoff = self.prm.cutoff;
     h.cmap = self.prm.cmap;
     h.prmmap = self.prm.prmmap;
-    h.normchk = self.prm.normchk;
+    h.filtchk = self.prm.filtchk;
+    h.filttype = self.prm.filttype;
+    h.filtstr = self.prm.filtstr;
     h.SPopts = self.prm.SPopts;
     guidata(hf,h);
     
@@ -30,7 +32,9 @@ if (nargin==2) && isnumeric(cvec)
     set(h.table_thresh,'Data',num2cell(self.prm.thresh));
     set(h.table_C,'Data',num2cell(self.prm.prmmap{h.i,1})');
     set(h.table_crop,'Data',num2cell(self.prm.cutoff));
-    set(h.checkbox_VolNorm,'Value',self.prm.normchk);
+    set(h.checkbox_filtChk,'Value',self.prm.filtchk);
+    set(h.popup_filt,'Value',find(strcmpi(h.popup_filt.String,self.prm.filttype)));
+    set(h.edit_filtSize,'String',sprintf('% .1f % .1f',self.prm.filtstr));
     set(h.edit_SPmaxX,'String',self.prm.SPopts.Xmax);
     set(h.edit_SPmaxY,'String',self.prm.SPopts.Ymax);
     set(h.edit_SPminX,'String',self.prm.SPopts.Xmin);
@@ -61,7 +65,9 @@ if (nargin==2) && isnumeric(cvec)
                                 'cmap',h.cmap,...
                                 'prmmap',h.prmmap,...
                                 'labels',labels,...
-                                'normchk',h.normchk,...
+                                'filtchk',h.filtchk,...
+                                'filttype',h.filttype,...
+                                'filtstr',h.filtstr,...
                                 'SPopts',h.SPopts);
     end
 end

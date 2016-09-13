@@ -21,7 +21,6 @@ if all(isfield(info,nfields))
     nd = [info.Rows,info.Columns];
     if isfield(info,'PixelSpacing')
         voxsz = info.PixelSpacing(:)';
-%     elseif isfield(info,
     else
         voxsz = [1,1];
     end

@@ -30,4 +30,7 @@ classdef ElxClass < handle
             end
         end
     end
+    methods (Static)
+        pname = copyTfxChain(odir,fnames,itname)
+    end
 end

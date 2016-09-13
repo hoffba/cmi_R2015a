@@ -4,6 +4,7 @@ img = []; label = {}; fov = [];
 
 % Read info from .mhd file
 fname = varargin{1};
+origD = varargin{2};
 [path,bname,~] = fileparts(fname);
 rawfname = fullfile(path,[bname,'.raw']);
 hchk = false;
@@ -83,7 +84,9 @@ else
 end
 
 % Read in the .raw file
-if hchk && exist(rawfname,'file')
+if ~isempty(origD) && ((length(origD)~=length(d)) || ~all(origD==d([2,1,3])))
+    warning('Dimensions do not match: current[%u %u %u] ~= new[%u %u %u]',origD,d([2,1,3]));
+elseif hchk && exist(rawfname,'file')
     fid = fopen(rawfname, 'r');
     if fid>2
         img = fread(fid,inf,Etype);

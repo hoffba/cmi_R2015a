@@ -52,53 +52,68 @@ if ns~=0
         str = [str,' -threads ',num2str(pp.threads)];
     end
     
-    % Save initial transform:
+%     % Save initial transform:
+%     pstr = '';
+%     if self.T0check && ~isempty(self.Tx0)
+%         pstr = self.saveTx0(fullfile(pp.odir,'InitialTransform.txt'));
+%     end
+    
+%     % Copy and adjust secondary initial transform guess:
+%     if ~isempty(self.Tx0guess)
+%         self.copyTfxChain
+        
+        
+%         C = struct2cell(self.Tx0guess);
+%         i = [C{1,:}];
+%         fnames = cellfun(@(x,y)fullfile(x,y),C(3,i),C(2,i),'UniformOutput',false)';
+%         nf = length(fnames);
+%         for i = 1:nf
+%             
+%             % Read parameter file:
+%             if exist(fnames{i},'file')
+%                 fid = fopen(fnames{i},'rt');
+%                 txt = fread(fid,inf,'*char')';
+%                 fclose(fid);
+%             else
+%                 error(['Missing transform file: ',fname]);
+%             end
+%             
+%             % Change initial transform file name:
+%             ext = regexp(txt,'\(InitialTransformParametersFileName \"(.*?)\"\)','tokenExtents');
+%             if (i==nf)
+%                 if isempty(itname)
+%                     % No initial transform
+%                     igname = 'NoInitialTransform';
+%                 else
+%                     igname = itname;
+%                 end
+%             else
+%                 igname = fullfile(pp.odir,sprintf('InitialGuess_%u.txt',i+1));
+%             end
+%             txt = [ txt(1:ext{1}(1)-1) , igname , txt(ext{1}(2)+1:end) ];
+%             
+%             % Save copy into new output directory for this optimization:
+%             igname = fullfile(pp.odir,sprintf('InitialGuess_%u.txt',i));
+%             if i==1
+%                 itname = pstr;
+%                 pstr = igname;
+%             end
+%             fid = fopen(igname,'wt');
+%             fwrite(fid,txt,'char');
+%             fclose(fid);
+%         end
+%     end
+    
+    % Save Initial Transforms:
     pstr = '';
     if self.T0check && ~isempty(self.Tx0)
         pstr = self.saveTx0(fullfile(pp.odir,'InitialTransform.txt'));
     end
-    
-    % Copy and adjust secondary initial transform guess:
     if ~isempty(self.Tx0guess)
-        C = struct2cell(self.Tx0guess);
-        i = [C{1,:}];
-        fnames = cellfun(@(x,y)fullfile(x,y),C(3,i),C(2,i),'UniformOutput',false)';
-        nf = length(fnames);
-        for i = 1:nf
-            
-            % Read parameter file:
-            if exist(fnames{i},'file')
-                fid = fopen(fnames{i},'rt');
-                txt = fread(fid,inf,'*char')';
-                fclose(fid);
-            else
-                error(['Missing transform file: ',fname]);
-            end
-            
-            % Change initial transform file name:
-            ext = regexp(txt,'\(InitialTransformParametersFileName \"(.*?)\"\)','tokenExtents');
-            if (i==nf)
-                if isempty(itname)
-                    % No initial transform
-                    igname = 'NoInitialTransform';
-                else
-                    igname = itname;
-                end
-            else
-                igname = fullfile(pp.odir,sprintf('InitialGuess_%u.txt',i+1));
-            end
-            txt = [ txt(1:ext{1}(1)-1) , igname , txt(ext{1}(2)+1:end) ];
-            
-            % Save copy into new output directory for this optimization:
-            igname = fullfile(pp.odir,sprintf('InitialGuess_%u.txt',i));
-            if i==1
-                itname = pstr;
-                pstr = igname;
-            end
-            fid = fopen(igname,'wt');
-            fwrite(fid,txt,'char');
-            fclose(fid);
-        end
+        fnames = fullfile({self.Tx0guess(:).fpath},...
+                          {self.Tx0guess(:).fname})';
+        pstr = self.copyTfxChain(pp.odir,[fnames,strcat('InitialGuess.',...
+            cellfun(@num2str,num2cell(1:length(fnames)),'UniformOutput',false),'.txt')'],pstr);
     end
     
     % Set initial transform for this elastix call:

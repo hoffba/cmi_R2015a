@@ -13,7 +13,9 @@ p.addOptional('prmmap',nan,@(x) iscell(x) && (size(x,2)==2) ...
                 && iscellstr(x(:,2)));
 p.addOptional('cmap'  ,nan,@(x) isnumeric(x) && (size(x,2)==3));
 p.addOptional('labels',nan,@(x) iscellstr(x));
-p.addOptional('normchk',nan,@(x) islogical(x) && length(x)==1);
+p.addOptional('filtchk',nan,@(x) islogical(x) && length(x)==1);
+p.addOptional('filttype',nan,@(x) ischar(x));
+p.addOptional('filtstr',nan,@(x) isvector(x) && length(x)==2);
 p.addOptional('SPopts',nan,@isstruct);
 p.parse(varargin{:});
 opts = rmfield(p.Results,p.UsingDefaults);
@@ -73,8 +75,19 @@ if isfield(opts,'labels') && (length(p.Results.labels)==length(self.dvec))
     stat = true;
 end
 
-if isfield(opts,'normchk')
-    self.normchk = opts.normchk;
+if isfield(opts,'filtchk')
+    self.filtchk = opts.filtchk;
+    stat = true;
+end
+
+ftypes = {'wiener','gauss','median','average'};
+if isfield(opts,'filttype') && ismember(lower(opts.filttype),ftypes)
+    self.filttype = opts.filttype;
+    stat = true;
+end
+
+if isfield(opts,'filtstr')
+    self.filtstr = opts.filtstr;
     stat = true;
 end
 

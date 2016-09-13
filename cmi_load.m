@@ -1,5 +1,5 @@
 function [img,label,fov,fnameOut] = cmi_load(imgflag,d,fullname)
-%% loads images for umich2 program
+% loads images for umich2 program
 % Inputs: imflag -   type of load request: 0=mask, 1=image, 2=image appended
 %         d -        optional input for dimensions if loading a mask
 %         fullname - cell array of file names to load
@@ -28,6 +28,7 @@ dtypes = {...
             {'.jpg'},                   'JPG';...       % 12
             {'.mat'},                   'MAT';...       % 13
             {'.fid'},                   'FID';...       % 14
+            {'.vox'},                   'VOX';...       % 15
          };
 imggp = true(13,1); imggp(10) = false;
 maskgp = false(13,1); maskgp([1:3,6,7,10,12]) = true;

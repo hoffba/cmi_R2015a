@@ -10,13 +10,21 @@ if self.check && self.mask.check
         tvec = self.prm.dvec;
         tvec(tvec==0) = vec;
         tvec = unique(tvec);
+        nvec = length(tvec);
         
-        if self.prm.normchk
-            self.imgFilt(tvec,'median',[3,3]);
+        % Optional pre-filter of image, then grab masked values:
+        if self.prm.filtchk
+            timg = ImageClass;
+            timg.setMat(self.mat(:,:,:,tvec),...
+                cellfun(@num2str,num2cell(tvec),'UniformOutput',false),...
+                self.voxsz.*self.dims(1:3));
+            timg.mask.merge('replace',self.mask.mat);
+            timg.imgFilt(1:nvec,self.prm.filttype,{self.prm.filtstr});
+            vals = timg.getMaskVals;
+            delete(timg);
+        else
+            vals = self.getMaskVals(tvec);
         end
-        
-        % extract image values
-        vals = self.getMaskVals(tvec);
 
         % Finally, calculate the PRM
         [labels,vals] = self.prm.calcPRM(vals,tvec,vec,self.labels(tvec),self.mask.mat);

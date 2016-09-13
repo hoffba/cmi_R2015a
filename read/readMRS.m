@@ -1,4 +1,4 @@
-function [img,label,fov] = readMRS(varargin)
+function [img,label,fov,par] = readMRS(varargin)
 % .MRD = Raw k-space data
 % .SUR = Reconstructed images
 
@@ -32,33 +32,35 @@ if ischar(fname)
         
         % Rearrange and sort:
         [~,ind] = sortrows(pos);
-        img = reshape(img(:,:,ind),par.IM_RESOLUTION(1),...
-            par.IM_RESOLUTION(2),par.IM_TOTAL_SLICES,[]);
+        img = permute(reshape(img(:,:,ind),par.IM_RESOLUTION(2),...
+            par.IM_RESOLUTION(1),par.IM_TOTAL_SLICES,[]),[2,1,3,4]);
         
-        fov = par.IM_FOV;
+        fov = par.IM_FOV(1:2);
         
     elseif strcmpi(ext,'.MRD') % Complex k-space data
         
         % Read all k-space data
         [img,par] = Get_mrd_3D1(fullfile(fpath,fname));
         
-        % Rearrange into 4D:
-        [d(1),d(2),d(3),d(4)] = size(img);
-        img = reshape(img,d);
+%         % Rearrange into 4D:
+%         [d(1),d(2),d(3),d(4)] = size(img);
+%         img = reshape(img,d);
         
-        fov = par.FOV;
+        fov = par.FOV*[1,1];
     else
         error('Invalid file name.');
     end
     
     % Determine FOV:
-    if isfield(par,'no_views_2') && (par.no_views_2>1) % 3D acquisition
+    if isfield(par,'no_views_2') && (par.no_views_2>1) 
+        % 3D acquisition
         fovz = par.SLICE_THICKNESS;
     else
+        % multi-slice acquisition
         fovz = max(par.FOV_OFFSETS(:,3)) - min(par.FOV_OFFSETS(:,3))...
             + diff(par.FOV_OFFSETS(1:2,3));
     end
-    fov = [ fov , fov , fovz ];
+    fov = [ fov(1:2) fovz ];
     
     % Determine labels:
     d4 = size(img,4);

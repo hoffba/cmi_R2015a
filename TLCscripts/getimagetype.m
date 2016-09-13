@@ -3,7 +3,7 @@ function imty = getimagetype(info)
 % TLChenevert, UMICH    Feb 2006
 % TLChenevert, UMICh Feb 2009:  Update to read bvalue from GE and SIEMENS dicom.
 % TLC 7/22/2011 GE bvalues on new platform may have 1e9 DC added for some reason.
-% TLC 8/15/2011.  Temporarily hardcode manufacturer = 'GE' to read De-ID HFH GE data Search by "8/15/2011".
+% TLC 8/15/2011.  Temporarily hardcode manufacturer = 'GE' to read De-ID HFH GE data Sdi1earch by "8/15/2011".
 % TLC 5/30/2012.  Changes to handle uint8 GE bvalues.
 % TLC 20140221: Need image type (egs, Mag, Real, Phase, ADC, FA, Velocity, ... for proper 4th dimension sorting.
 %               Returns a numerical value associated with image type:
@@ -26,6 +26,7 @@ function imty = getimagetype(info)
 %                   16 = SECONDARY
 %                   17 = FF         Philips Fat Fraction
 %                   18 = T2_STAR    Philips T2*
+%                   19 = B0         Philips B0 Map in Hz
 %                   ... add more as needed
 %                   99 = currently anthing else
 % TLC 20140707: Add Agilent
@@ -34,6 +35,7 @@ function imty = getimagetype(info)
 % TLC 20150827.  Switch to tryGetField(info, 'Manufacturer','UNK')
 % TLC 20150904.  Add manufacturer = Imaging Biometrics LLC.
 % TLC 20151218.  Needed work-around for Siemens "ImageType", when they add 4th backslash.
+% TLC 20160404.  Add Philips B0 Map
 
 % % Initialize all manufacturer flags to 0:
 % isPhilips = 0;
@@ -151,6 +153,8 @@ else
     imagetype = 'UNK';
 end % if numel
 
+% imagetype
+
 switch imagetype % Most of these are based on Philips, add more as discovered.  Some strings are assumed - fix later when correct string found.
     case 'UNK'          % Default in event "ImageType" tag is not present
         imty = 0; 
@@ -190,6 +194,8 @@ switch imagetype % Most of these are based on Philips, add more as discovered.  
         imty = 17;
     case 'T2_STAR'      % Philips T2* from Quantitative mDixon.  *** Read as 'dv' in ms ***.  
         imty = 18;
+    case 'B0'           % Philips B0 map in Hz  *** Read as EITHER AS 'dv' OR 'fp' ***. 20160404  
+        imty = 19;      % 20160404
     % Add more cases as discovered....    
     otherwise
         imty = 99;

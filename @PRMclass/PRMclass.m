@@ -10,9 +10,11 @@ classdef PRMclass < Mat3Dclass
                                %       evaluated: d2 > m*d1 + b
         cutoff = zeros(0,3);   % [n x 3] matrix : row = [vec min max]
         
-        % Commented out by CJG 20151103: using for Wiener2 filter
-%         normchk = false; % Normalize PRM volumes by cropped volume if true
-        normchk = false; % Turn on Wiener2([3 3]) before PRM analysis. Added by CJG 20151103
+        % Pre-filtering for PRM:
+        %   ** Default to [3x3] Wiener filter
+        filtchk = true;
+        filttype = 'wiener';
+        filtstr = [3,3];
         
         cmap     % RGB columns
         prmmap   % {n x 2} cell array:

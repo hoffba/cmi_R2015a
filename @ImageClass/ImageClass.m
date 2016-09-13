@@ -6,9 +6,14 @@ classdef ImageClass < Mat3Dclass
         %   voxsz       % Voxel size [dx dy dz]
         %   check       % Check that matrix is available
         
+        % Image Info:
+        fnames = {}; % File names of data {1 x n4D}
+            % info is found for first image loaded only
+        info % Overall image info necessary for CMI program
+        natInfo % Cell array of structures containing image original info
+        iind % Vector of indices connecting each 4D image with its info
+        
         % Image properties
-        info                    % All image info
-        fnames                  % File names of data {1 x n4D}
         valExt                  % Min/Max of each image [n4D x 2]
         mask                    % Mask to fit current image
         prm                     % PRM image class
@@ -23,6 +28,7 @@ classdef ImageClass < Mat3Dclass
         model           % Fitting object: FitClass or DCEclass or DiffClass
         
         % I/O options
+        io                      % ImageIO object
         name                    % Name of image set
         dir                     % Current image's directory
         h                       % Structure containing ImageClass-relevant handles
@@ -36,6 +42,7 @@ classdef ImageClass < Mat3Dclass
             self.mask = MaskClass(self);
             self.prm = PRMclass(self);
             self.model = FitClass;
+            self.io = ImageIO;
         end
         % ImageClass destructor
         function delete(self)

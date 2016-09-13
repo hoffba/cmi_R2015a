@@ -29,6 +29,7 @@ D = {};
 F = {};
 if ~isempty(filt)
     [~,dname] = fileparts(tpath);
+    disp(dname);
     waitbar(0,h,dname);
     tD = dir(tpath);
     % Match file filters in this path:
@@ -36,19 +37,19 @@ if ~isempty(filt)
         fnames = {};
         for i = 1:length(filt)
             tfnames = dir(fullfile(tpath,filt{i}));
+            % Ignore directories
+            tfnames([tfnames(:).isdir]) = [];
+            tfnames = {tfnames(:).name};
+            % Ignore DICOMDIR
+            tfnames(cellfun(@(x)strcmp(x,'DICOMDIR'),tfnames)) = [];
             if isempty(filt{i})
-                % Ignore '.' and '..'
-                tfnames(1:2) = [];
-                % Ignore directories
-                tfnames([tfnames(:).isdir]) = [];
                 % Ignore files with extensions
-                tfnames(cellfun(@(x)ismember('.',x),{tfnames(:).name})) = [];
-                tfnames = tfnames(1); % assume DICOM, only list first one
-            elseif any(strcmp(filt{i},{'.dcm','.1'}))
-                tfnames = tfnames(1);
+                tfnames(cellfun(@(x)ismember('.',x),tfnames)) = [];
             end
-            fnames = [fnames;{tfnames(:).name}'];
-            fchk = fchk || ~isempty(tfnames);
+            if ~isempty(tfnames)
+                fnames = [fnames;tfnames'];
+                fchk = true;
+            end
         end
     if fchk
         D = {tpath};

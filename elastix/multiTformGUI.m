@@ -82,7 +82,7 @@ if ischar(fname)
 end
 
 function button_TFremove_Callback(~, ~, handles)
-i = getappdata(handles.figure1,'sel');
+i = getappdata(handles.figure1,'tsel');
 if i
     tp = getappdata(handles.figure1,'tp');
     tp(i) = [];
@@ -98,14 +98,17 @@ if i
         if ischar(fname)
             fname = {fname};
         end
+        % Determine if interp should be nearest neighbor:
+        nn = cellfun(@(x)~isempty(regexp(x,'VOI|ADC','Once')),fname)';
         tp = getappdata(handles.figure1,'tp');
-        j = size(tp(i).im,1)+1;
-        tp(i).im = [tp(i).im;cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false),...
-                    {sprintf('TransformedImage.%02u.%02u.%02u.mhd',tp(i).chain,i,j)}];
+        j = size(tp(i).im,1)+(1:length(fname));
+        im = [tp(i).im;num2cell(nn),...
+              cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false)',...
+              cellfun(@(x){sprintf('TransformedImage.%02u.%02u.%02u.mhd',tp(i).chain,i,x)},num2cell(j))'];
+        tp(i).im = im;
         setappdata(handles.figure1,'tp',tp);
-        im = tp(i).im;
         if ~isempty(im)
-            im(:,1) = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],im(:,1),'UniformOutput',false);
+            im(:,2) = cellfun(@(x)['... ',x(max(1,length(x)-80):end)],im(:,2),'UniformOutput',false);
         end
         set(handles.table_im,'Data',im);
     end
@@ -120,7 +123,7 @@ if i
     setappdata(handles.figure1,'tp',tp);
     im = tp(i).im;
     if ~isempty(im)
-        im(:,1) = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],im(:,1),'UniformOutput',false);
+        im(:,2) = cellfun(@(x)['... ',x(max(1,length(x)-80):end)],im(:,2),'UniformOutput',false);
     end
     set(handles.table_im,'Data',im);
 end
@@ -133,7 +136,7 @@ if i
     setappdata(handles.figure1,'tp',tp);
     handles.table_TF.Data([i-1,i],:) = handles.table_TF.Data([i,i-1],:);
     pause(0.1);
-    setappdata(handles.figure1,'sel',i-1);
+    setappdata(handles.figure1,'tsel',i-1);
 end
 
 function button_TFdown_Callback(~, ~, handles)
@@ -144,7 +147,7 @@ if i
     setappdata(handles.figure1,'tp',tp);
     handles.table_TF.Data([i,i+1],:) = handles.table_TF.Data([i+1,i],:);
     pause(0.1);
-    setappdata(handles.figure1,'sel',i+1);
+    setappdata(handles.figure1,'tsel',i+1);
 end
 
 function button_clear_Callback(~, ~, handles)
@@ -207,7 +210,7 @@ if ~isempty(i)
     tp = getappdata(handles.figure1,'tp');
     im = tp(i).im;
     if ~isempty(im)
-        im(:,1) = cellfun(@(x)['... ',x(max(1,length(x)-100):end)],im(:,1),'UniformOutput',false);
+        im(:,2) = cellfun(@(x)['... ',x(max(1,length(x)-80):end)],im(:,2),'UniformOutput',false);
     end
     set(handles.table_im,'Data',im);
 end
@@ -233,16 +236,20 @@ end
 setappdata(handles.figure1,'tp',tp);
 
 function table_im_CellEditCallback(hObject, eventdata, handles)
-row = eventdata.Indices(1);
-str = eventdata.NewData;
-if ~strcmp(str(end-3:end),'.mhd')
-    str = [str,'.mhd'];
-end
-i = getappdata(handles.figure1,'tsel');
 tp = getappdata(handles.figure1,'tp');
-tp(i).im{row,2} = str;
+i = getappdata(handles.figure1,'tsel');
+ind = eventdata.Indices;
+if ind(2)==1 % NN check
+    tp(i).im{ind(1),1} = eventdata.NewData;
+elseif ind(2)==3 % Output name
+    str = eventdata.NewData;
+    if ~strcmp(str(end-3:end),'.mhd')
+        str = [str,'.mhd'];
+    end
+    tp(i).im{ind(1),3} = str;
+    hObject.Data{ind(1),3} = str;
+end
 setappdata(handles.figure1,'tp',tp);
-hObject.Data{row,2} = str;
 
 function table_im_CellSelectionCallback(~, eventdata, handles)
 i = eventdata.Indices;
@@ -256,4 +263,3 @@ multiTform(getappdata(handles.figure1,'tp'),...
     getappdata(handles.figure1,'odir'));
 
     
-

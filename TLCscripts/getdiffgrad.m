@@ -9,6 +9,7 @@ function [diffdir, diffdircosines] = getdiffgrad(info)
 % TLC 20150827 Ancient GE data has ptag as 2-vector.
 % TLC 20150827.  Switch to tryGetField(info, 'Manufacturer','UNK')
 % TLC 20150904.  Add manufacturer = Imaging Biometrics LLC.
+% TLC 20160208.  Change logic for Siemens directional dwi
 
 % % Initialize all manufacturer flags to 0:
 % isPhilips = 0;
@@ -119,32 +120,42 @@ switch mfg
         if (bvalue == 0)
            diffdir = 0;
            diffdircosines = [0; 0; 0];
-        else
-           % Set default diffdir = 1 for Isotropic, but may redefine later below:
-           diffdir = 1; % Default isotropic
-           diffdircosines = [0; 0; 0];
-           
-           % Check for "Private_0019_100e", suggesting directionality.
+        else % Then non-zero bvalue ...
+           % 20160208 start ...
+           % Check public tag ImageType for evidence of TRACEW
+           % di.ImageType = DERIVED\PRIMARY\DIFFUSION\NONE\TRACEW\NORM\DIS2D
            % FYI: Siemens does NOT also include the trace DWI with directional ones.
            % The trace DWI is probably in the subsequent series.
-           if (isfield(info,'Private_0019_100e'))
-               diffdir = 2; % Then is directional
-               ptag = info.Private_0019_100e;
-               if(isa(ptag,'uint8'))
-                   lnptag = length(ptag);
-                   if (lnptag >= 24)
-                       diffvector = [typecast(ptag(1:8),'double'); typecast(ptag(9:16),'double'); typecast(ptag(17:24),'double')];
-                   else
-                       disp('Opps - something wrong in DICOM. ... ');
-                   end % if lnptag
-               else % Then ptag is likely already class "double"
-                   diffvector = ptag;
-               end % if isa ptag
-               
-               diffmagn = sqrt( sum(diffvector.^2) );
-               diffdircosines = diffvector/diffmagn;
-               
-           end % if isfield
+           targetstring{1} = 'TRACEW'; 
+           imgtypstr = tryGetField(info, 'ImageType','UNK');
+           imgtyp{1} = char(imgtypstr);
+           
+           isatrace = length(findstr(imgtyp{1},targetstring{1})); % 0 = not trace, 1 = is trace
+
+           if (isatrace)
+               diffdir = 1; % 1 = isotropic
+               diffdircosines = [0; 0; 0];
+           else
+               diffdir = 2; % 2 = directional
+               diffdircosines = [0; 0; 0]; % just a placeholder.  will fill-in below.
+               if (isfield(info,'Private_0019_100e'))
+                   ptag = info.Private_0019_100e;
+                   if(isa(ptag,'uint8'))
+                       lnptag = length(ptag);
+                       if (lnptag >= 24)
+                           diffvector = [typecast(ptag(1:8),'double'); typecast(ptag(9:16),'double'); typecast(ptag(17:24),'double')];
+                       else
+                           disp('Opps - something wrong in DICOM. ... ');
+                       end % if lnptag
+                   else % Then ptag is likely already class "double"
+                       diffvector = ptag;
+                   end % if isa ptag
+                   diffmagn = sqrt( sum(diffvector.^2) );
+                   diffdircosines = diffvector/diffmagn;       
+                end % if isfield 'Private_0019_100e'
+            end % if isatrace 
+           % ... end 20160208
+           
         end % if bvalue
         % ... End 20141008.
         
