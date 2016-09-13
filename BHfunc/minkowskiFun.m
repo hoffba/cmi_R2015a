@@ -115,7 +115,7 @@ for ith = 1:nth
             p.wnum(i) = nnz(wmask);
         end
         normval = p.wnum(i)*voxvol*ones(1,nmf); % For normalizing V, S, B
-        normval(p.ord==p.nD) = p.wnum(i);
+        normval(p.ord==p.nD) = p.wnum(i); % For normalizing X and alpha
         
         % Calculate MF values:
         if nmf
