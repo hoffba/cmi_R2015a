@@ -76,7 +76,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             end
         end
         
-        % Read final image geometry from transform:
+        % Read transformed image geometry for interpolation:
         if i==1
             fid = fopen(C{1},'r');
             sz = []; sp = []; orig = [];

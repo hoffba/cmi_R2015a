@@ -25,6 +25,8 @@ if ishandle(hObject)
             else
                 self.clamp(row,:) = sort(i);
             end
+        case 'checkbox_histeq'
+            self.histeq = get(hObject,'Value');
         otherwise
             warning(['Unknown tag:',tag])
     end

@@ -101,16 +101,7 @@ if stat
         end
         % Apply histogram equalization:
         if self.histeq
-            if self.cmiObj(2).img.mask.check
-                tmask = self.cmiObj(2).img.mask.mat;
-            else
-                tmask = 1;
-            end
-            timg(~tmask) = 0;
-            for i = 1:size(timg,3)
-                timg(:,:,i) = adapthisteq(timg(:,:,i)) * 10000;
-            end
-            timg(~tmask) = 0;
+            timg = reshape
         end
         % Apply image crops:
         timg(timg>self.clamp(2,2)) = self.clamp(2,2);
@@ -133,19 +124,6 @@ if stat
                     waitbar(islc/size(timg,3),hw);
                 end
             end
-        end
-        % Apply histogram equalization:
-        if self.histeq
-            if self.cmiObj(1).img.mask.check
-                tmask = self.cmiObj(1).img.mask.mat;
-            else
-                tmask = 1;
-            end
-            timg(~tmask) = 0;
-            for i = 1:size(timg,3)
-                timg(:,:,i) = adapthisteq(timg(:,:,i)) * 10000;
-            end
-            timg(~tmask) = 0;
         end
         % Apply image crops:
         timg(timg>self.clamp(1,2)) = self.clamp(1,2);

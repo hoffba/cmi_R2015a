@@ -75,6 +75,7 @@ if go
     end
     close(hw);
     fov = dims.*[dmult,zstep]*voxsz/1000;
+    fov = fov([2,1,3]);
 end
 
 

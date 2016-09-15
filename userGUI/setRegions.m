@@ -22,7 +22,7 @@ function varargout = setRegions(varargin)
 
 % Edit the above text to modify the response to help setRegions
 
-% Last Modified by GUIDE v2.5 01-Aug-2016 10:04:02
+% Last Modified by GUIDE v2.5 14-Sep-2016 11:39:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -320,6 +320,7 @@ if ~isempty(handles.prmmap)
             cmap = handles.cmap;
             prmmap = handles.prmmap;
             SPopts = handles.SPopts;
+            PPopts = handles.PPopts;
             save(fpath,'name','thresh','cutoff','cmap','prmmap','SPopts');
         end
     end

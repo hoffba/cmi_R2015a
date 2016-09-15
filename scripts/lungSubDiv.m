@@ -12,6 +12,8 @@ elseif isa(obj,'CMIclass') && obj.img.mask.check
 elseif isa(obj,'ImageClass') && obj.mask.check
     iflag = 1;
     mask = obj.mask.mat;
+else
+    mask = obj;
 end
 
 ni = max(mask(:));
