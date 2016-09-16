@@ -101,7 +101,19 @@ if stat
         end
         % Apply histogram equalization:
         if self.histeq
-            timg = reshape
+            if self.cmiObj(2).img.mask.check
+                tmask = self.cmiObj(2).img.mask.mat;
+            else
+                tmask = 1;
+            end
+            timg(~tmask) = 0;
+            mmin = min(timg(:));
+            mmax = max(timg(:));
+            timg = (timg-mmin)/(mmax-mmin);
+            for i = 1:size(timg,3)
+                timg(:,:,i) = adapthisteq(timg(:,:,i)) * 10^4 * tmask(:,:,;
+            end
+            timg(~tmask) = 0;
         end
         % Apply image crops:
         timg(timg>self.clamp(2,2)) = self.clamp(2,2);
@@ -124,6 +136,22 @@ if stat
                     waitbar(islc/size(timg,3),hw);
                 end
             end
+        end
+        % Apply histogram equalization:
+        if self.histeq
+            if self.cmiObj(1).img.mask.check
+                tmask = self.cmiObj(1).img.mask.mat;
+            else
+                tmask = 1;
+            end
+            timg(~tmask) = 0;
+            mmin = min(timg(:));
+            mmax = max(timg(:));
+            timg = (timg-mmin)/(mmax-mmin);
+            for i = 1:size(timg,3)
+                timg(:,:,i) = adapthisteq(timg(:,:,i)) * 10000;
+            end
+            timg(~tmask) = 0;
         end
         % Apply image crops:
         timg(timg>self.clamp(1,2)) = self.clamp(1,2);
@@ -256,7 +284,7 @@ function mask = voiDilate(mask,r)
             rt = min(r,5);
             r = r - rt;
             se = bwellipsoid(rt);
-            timg = imdilate(timg,se);
+            mask = imdilate(mask,se);
         end
     end
 end

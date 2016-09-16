@@ -99,6 +99,9 @@ if stat
                 end
             end
         end
+        % Apply image crops:
+        timg(timg>self.clamp(2,2)) = self.clamp(2,2);
+        timg(timg<self.clamp(2,1)) = self.clamp(2,1);
         % Apply histogram equalization:
         if self.histeq
             if self.cmiObj(2).img.mask.check
@@ -106,15 +109,14 @@ if stat
             else
                 tmask = 1;
             end
-            timg(~tmask) = 0;
+            timg = timg.*tmask;
+            mmin = min(timg(:));
+            mmax = max(timg(:));
+            timg = (timg-mmin)/(mmax-mmin);
             for i = 1:size(timg,3)
-                timg(:,:,i) = adapthisteq(timg(:,:,i)) * 10000;
+                timg(:,:,i) = adapthisteq(timg(:,:,i)).*tmask(:,:,i)*10^4;
             end
-            timg(~tmask) = 0;
         end
-        % Apply image crops:
-        timg(timg>self.clamp(2,2)) = self.clamp(2,2);
-        timg(timg<self.clamp(2,1)) = self.clamp(2,1);
         % Save moving image:
         waitbar(0.35,hw,'Saving Processed Moving Image ...');
         stat = saveMHD(mname,timg,[],mfov);
@@ -134,6 +136,9 @@ if stat
                 end
             end
         end
+        % Apply image crops:
+        timg(timg>self.clamp(1,2)) = self.clamp(1,2);
+        timg(timg<self.clamp(1,1)) = self.clamp(1,1);
         % Apply histogram equalization:
         if self.histeq
             if self.cmiObj(1).img.mask.check
@@ -141,15 +146,14 @@ if stat
             else
                 tmask = 1;
             end
-            timg(~tmask) = 0;
+            timg = timg.*tmask;
+            mmin = min(timg(:));
+            mmax = max(timg(:));
+            timg = (timg-mmin)/(mmax-mmin);
             for i = 1:size(timg,3)
-                timg(:,:,i) = adapthisteq(timg(:,:,i)) * 10000;
+                timg(:,:,i) = adapthisteq(timg(:,:,i)).*tmask(:,:,i)*10^4;
             end
-            timg(~tmask) = 0;
         end
-        % Apply image crops:
-        timg(timg>self.clamp(1,2)) = self.clamp(1,2);
-        timg(timg<self.clamp(1,1)) = self.clamp(1,1);
         % Save fixed image:
         waitbar(0.6,hw,'Saving Processed Fixed Image ...');
         stat = saveMHD(fname,timg,[],ffov);
@@ -278,7 +282,7 @@ function mask = voiDilate(mask,r)
             rt = min(r,5);
             r = r - rt;
             se = bwellipsoid(rt);
-            timg = imdilate(timg,se);
+            mask = imdilate(mask,se);
         end
     end
 end
