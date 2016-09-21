@@ -44,8 +44,9 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         % Concatenate transform chain:
         nextname = tp(i).fname;
         bdir = fileparts(nextname);
-        C{end+1} = nextname;
+%         C{end+1} = nextname;
         go = true;
+        tC = {nextname};
         while go
             % Read txt file:
             disp(nextname);
@@ -72,9 +73,10 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
                         error('Could not find next transform file: %s',tname);
                     end
                 end
-                C{end+1} = nextname;
+                tC{end+1} = nextname;
             end
         end
+        C = [C,fliplr(tC)];
         
         % Read transformed image geometry for interpolation:
         if i==1
@@ -120,15 +122,15 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             logperm = 'at'; % change to append after first
         end
         
-        % Set initial transform in previous step to final transform in current step:
-        if prev>0
-            copytp(tpfname(odir,prev,intrp(i-1,1)),odir,prev,false,intrp(i,:),sz,sp,orig);
-        end
-        
         % Generate copies of all transforms in chain:
         ntot = length(C);
-        for j = prev+1:ntot
-            copytp(C{j},odir,mod(j-1,ntot)+1,j==ntot,intrp(i,:),sz,sp,orig);
+        for j = 1:ntot
+            if j==ntot
+                % Only need to set in transformix input TP file:
+                copytp(C{j},odir,j,intrp(i,:),sz,sp,orig);
+            else
+                copytp(C{j},odir,j,intrp(i,:));
+            end
         end
         pause(0.1);
         
@@ -151,7 +153,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
                 inputs = {'in',tp(i).im{j,2},'outfn',outfn};
             end
             
-            tpcall = tpfname(odir,1,tp(i).im{j,1});
+            tpcall = tpfname(odir,ntot,tp(i).im{j,1});
             [~,str,~] = fileparts(outfn);
             fprintf('   Transforming: %s\n',str);
             
@@ -175,10 +177,10 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         end
         
         % Prep for new chain:
-        if (i==ntp) || (tp(i+1).chain~=tp(i).chain)
-            C = {};
-            delete(fullfile(odir,'MultiTransPar.*.txt'));
-        end
+%         if (i==ntp) || (tp(i+1).chain~=tp(i).chain)
+%             C = {};
+%             delete(fullfile(odir,'MultiTransPar.*.txt'));
+%         end
         
     end
     fixMHDnames(odir);
@@ -192,7 +194,8 @@ if nn
 end
 str = fullfile(odir,sprintf('MultiTransPar.%02u%s.txt',i,nnstr));
 
-function copytp(fname,odir,i,fin,nn,sz,sp,orig)
+function copytp(fname,odir,i,nn,sz,sp,orig)
+% Copies transform parameter file to new directory and adjust relevant parameters:
 % Inputs:
 %   fname   = transform parameter file to copy
 %   odir    = directory to copy file to
@@ -205,31 +208,42 @@ function copytp(fname,odir,i,fin,nn,sz,sp,orig)
 
 % Read file:
 fid = fopen(fname,'r'); str = fread(fid,'*char')'; fclose(fid);
-if nn(1) || nn(2)
-    if fin
-        itname = 'NoInitialTransform';
-    else
-        itname = tpfname(odir,i+1,nn(1));
-    end
-    str = regexprep(str,'\(InitialTransformParametersFileName "([^"]*)',...
-        ['\(InitialTransformParametersFileName "',itname]);
+% Temporary fix for previous coregistrations:
+% * (found that HowToCombineTransforms is case sensitive)
+str = regexprep(str,'\(HowToCombineTransforms ([^)]*)',...
+    '\(HowToCombineTransforms "Compose"');
+if nargin==7 % Only needs to be done on parameter file that is called
     str = regexprep(str,'\(Size ([^)]*)',...
         ['\(Size ',sprintf('%u %u %u',sz)]);
     str = regexprep(str,'\(Spacing ([^)]*)',...
-        ['\(Spacing ',sprintf('%.8f %.8f %.8f',sp)]);
+        ['\(Spacing ',sprintf('%.6f %.6f %.6f',sp)]);
     str = regexprep(str,'\(Origin ([^)]*)',...
-        ['\(Origin ',sprintf('%.8f %.8f %.8f',orig)]);
+        ['\(Origin ',sprintf('%.10f %.10f %.10f',orig)]);
 end
 if nn(1) % Nearest Neighbor flag
-    str = regexprep(str,'\(ResampleInterpolator "([^"]*)',...
-        ['\(ResampleInterpolator "','FinalNearestNeighborInterpolator']);
+    if i==1
+        itname = 'NoInitialTransform';
+    else
+        itname = tpfname(odir,i-1,true);
+    end
+    str = regexprep(str,'\(InitialTransformParametersFileName "([^"]*)',...
+        ['\(InitialTransformParametersFileName "',itname]);
+    str = regexprep(str,'\(ResampleInterpolator ([^)]*)',...
+        '\(ResampleInterpolator "FinalNearestNeighborInterpolator"');
     fid = fopen(tpfname(odir,i,true),'w');
     fwrite(fid,str,'char');
     fclose(fid);
 end
 if nn(2) % Linear flag
-    str = regexprep(str,'\(ResampleInterpolator "([^"]*)',...
-        ['\(ResampleInterpolator "','FinalBSplineInterpolator']);
+    if i==1
+        itname = 'NoInitialTransform';
+    else
+        itname = tpfname(odir,i-1,false);
+    end
+    str = regexprep(str,'\(InitialTransformParametersFileName "([^"]*)',...
+        ['\(InitialTransformParametersFileName "',itname]);
+    str = regexprep(str,'\(ResampleInterpolator ([^)]*)',...
+        '\(ResampleInterpolator "FinalBSplineInterpolator"');
     fid = fopen(tpfname(odir,i,false),'w');
     fwrite(fid,str,'char');
     fclose(fid);

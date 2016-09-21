@@ -51,7 +51,7 @@ elseif (nargin>3)
         end
     end
     t.InitialTransformParametersFileName = 'NoInitialTransform';
-    t.HowToCombineTransforms = 'compose';
+    t.HowToCombineTransforms = 'Compose';
     t.FixedImageDimension = 3;
     t.MovingImageDimension = 3;
     t.Size = p.Results.Size;
