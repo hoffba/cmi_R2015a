@@ -1,4 +1,4 @@
-function [img,label,fov] = readMHD(varargin)
+function [img,label,fov,info] = readMHD(varargin)
 % Reads .mhd and associated .raw files into the cmi program
 img = []; label = {}; fov = [];
 
@@ -52,6 +52,12 @@ if fid>2
         label = regexp(hstr{ind+1},'\"(.*?)\"','tokens');
         label = [label{:}];
     end
+    ind = find(strcmp('CompressedData',hstr),1);
+    if isempty(ind)
+        zp = false;
+    else
+        zp = strcmpi(hstr{ind+1},'true');
+    end
 %     ind = find(strcmp('ElementMin',hstr),1);
 %     if ~isempty(ind)
 %         emin = str2double(hstr{ind+1});
@@ -60,22 +66,22 @@ if fid>2
 %     if ~isempty(ind)
 %         emax = str2double(hstr{ind+1});
 %     end
-    switch Etype
-        case 'MET_DOUBLE'
+    switch lower(Etype(5:end))
+        case 'double'
             Etype = 'double';
-        case 'MET_FLOAT'
-            Etype = 'float';
-        case 'MET_CHAR'
+        case 'float'
+            Etype = 'single';
+        case 'char'
             Etype = 'int8';
-        case 'MET_UCHAR'
+        case 'uchar'
             Etype = 'uint8';
-        case 'MET_SHORT'
+        case 'short'
             Etype = 'int16';
-        case 'MET_USHORT'
+        case 'ushort'
             Etype = 'uint16';
-        case 'MET_INT'
+        case 'int'
             Etype = 'int32';
-        case 'MET_UINT'
+        case 'uint'
             Etype = 'uint32';
     end
     hchk = true;
@@ -89,12 +95,22 @@ if ~isempty(origD) && ((length(origD)~=length(d)) || ~all(origD==d([2,1,3])))
 elseif hchk && exist(rawfname,'file')
     fid = fopen(rawfname, 'r');
     if fid>2
-        img = fread(fid,inf,Etype);
+        % Check if zipped:
+        if zp
+            img = fread(fid,inf,'uchar=>uint8');
+            import com.mathworks.mlwidgets.io.InterruptibleStreamCopier
+            b = java.util.zip.InflaterInputStream(java.io.ByteArrayInputStream(img));
+            isc = InterruptibleStreamCopier.getInterruptibleStreamCopier;
+            c = java.io.ByteArrayOutputStream;
+            isc.copyStream(b,c);
+            img = double(typecast(c.toByteArray,Etype));
+        else
+            img = fread(fid,inf,Etype);
+        end
         img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
         img = permute(reshape(img,[d,nv]),[2,1,3,4]);
-%         img = permute(reshape(fread(fid,inf,Etype),[d,nv]),[2,1,3,4]);
-        fclose(fid);
         fov = d.*voxsz;
+        fclose(fid);
     else
         disp('File could not be read correctly. Heartbreaker.');
     end

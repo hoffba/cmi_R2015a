@@ -39,12 +39,9 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
     % Loop over transform parameter steps, transform all images at each step
     for i = 1:ntp
         
-        prev = length(C);
-        
         % Concatenate transform chain:
         nextname = tp(i).fname;
         bdir = fileparts(nextname);
-%         C{end+1} = nextname;
         go = true;
         tC = {nextname};
         while go
@@ -177,10 +174,10 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         end
         
         % Prep for new chain:
-%         if (i==ntp) || (tp(i+1).chain~=tp(i).chain)
-%             C = {};
-%             delete(fullfile(odir,'MultiTransPar.*.txt'));
-%         end
+        if (i==ntp) || (tp(i+1).chain~=tp(i).chain)
+            C = {};
+            delete(fullfile(odir,'MultiTransPar.*.txt'));
+        end
         
     end
     fixMHDnames(odir);
