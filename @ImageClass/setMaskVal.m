@@ -16,9 +16,6 @@ if (nargin==4) && isnumeric(vec) && (isnumeric(mval) || islogical(mval)) ...
             timg = self.mat(:,:,:,i);
             timg(self.mask.mat==mval) = ival(i);
             self.mat(:,:,:,i) = timg;
-%             tmask = repmat(self.mask.mat,1,1,1,d4);
-%             tmask(:,:,:,~ismember(1:d4,vec)) = false;
-%             self.mat(tmask==mval) = ival;
         end
     else
         error(['Invalid image index: ',num2str(vec)]);

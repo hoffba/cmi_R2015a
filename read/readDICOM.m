@@ -130,11 +130,11 @@ for ifn = 1:nf
                 diffN = str2double(char(tinfo.DiffusionBValue'));
             end
         elseif isfield(tinfo,'Private_DiffusionBValue')
-            nv = length(tinfo.DiffusionBValue);
+            nv = length(tinfo.Private_DiffusionBValue);
             if nv==1
-                diffN = tinfo.DiffusionBValue;
-            elseif isa(tinfo.DiffusionBValue,'uint8')
-                diffN = str2double(char(tinfo.DiffusionBValue'));
+                diffN = tinfo.Private_DiffusionBValue;
+            elseif isa(tinfo.Private_DiffusionBValue,'uint8')
+                diffN = str2double(char(tinfo.Private_DiffusionBValue'));
             end
         elseif isfield(tinfo,'B_value') && (length(tinfo.B_value)==1)
             diffN = tinfo.B_value;
