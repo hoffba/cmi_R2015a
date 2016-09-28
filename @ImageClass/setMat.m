@@ -30,9 +30,12 @@ if all(d>0) && (length(d)>2)
     self.voxsz = ivoxsz;
     if (nargin<5) || ~ischar(iname)
         iname = 'User-Input Image';
+        idir = '';
+    else
+        [idir,iname] = fileparts(iname);
     end
     self.name = iname;
-    self.dir = '';
+    self.dir = idir;
     self.mask.initialize(d(1:3));
     self.prm.initialize;
 end
