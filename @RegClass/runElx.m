@@ -181,31 +181,6 @@ if stat
         end
     end
     
-%     % Dilate Masks 
-%     if stat
-%         str = {'fMask','mMask'};
-%         r = self.dilateN;
-%         for i = 1:2
-%             waitbar(0.75,hw,['Dilating and Saving VOI ...',str{i}]);
-%             if self.cmiObj(i).img.mask.check
-%                 timg = self.cmiObj(i).img.mask.mat;
-%                 if any(r)
-%                     ni = max(ceil(r/5));
-%                     for j = 1:ni
-%                         rt = min(r,5);
-%                         r = r - rt;
-%                         se = bwellipsoid(rt);
-%                         timg = imdilate(timg,se);
-%                         waitbar(i/ni,hw);
-%                     end
-%                 end
-%                 fname = fullfile(self.odir,['elxtemp-',str{i},'.mhd']);
-%                 elxC = [elxC,str(i),{fname}];
-%                 stat = saveMHD(fname,timg,[],fov(i,:));
-%             end
-%         end
-%     end
-    
 end
 
 if stat

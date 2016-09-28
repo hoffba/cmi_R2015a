@@ -44,7 +44,7 @@ if iscellstr(fnames)
             fclose(fid);
             
             % Find ElementDataFile tag and replace file name:
-            str = regexprep(str,'ElementDataFile = (\w+).raw',...
+            str = regexprep(str,'ElementDataFile = (.*).raw',...
                 ['ElementDataFile = ',bname,'.raw']);
             
             % Write out new file:

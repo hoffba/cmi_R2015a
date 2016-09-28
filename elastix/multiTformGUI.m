@@ -101,10 +101,12 @@ if i
         % Determine if interp should be nearest neighbor:
         nn = cellfun(@(x)~isempty(regexp(x,'VOI|ADC','Once')),fname)';
         tp = getappdata(handles.figure1,'tp');
-        j = size(tp(i).im,1)+(1:length(fname));
+        %j = size(tp(i).im,1)+(1:length(fname));
+        % Set output file names:
+        oname = cellfun(@(x)[x(1:end-4),'_mR',x(end-3:end)],fname,'UniformOutput',false);
         im = [tp(i).im;num2cell(nn),...
-              cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false)',...
-              cellfun(@(x){sprintf('TransformedImage.%02u.%02u.%02u.mhd',tp(i).chain,i,x)},num2cell(j))'];
+              fullfile(fdir,fname),...cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false)',...
+              oname];%cellfun(@(x){sprintf('TransformedImage.%02u.%02u.%02u.mhd',tp(i).chain,i,x)},num2cell(j))'];
         tp(i).im = im;
         setappdata(handles.figure1,'tp',tp);
         if ~isempty(im)

@@ -55,7 +55,7 @@ p.MF = nan(nth,nmf+p.calcConfl,ni);
 
 % Convert percentiles to threshold values:
 if p.pchk
-    p.thresh = prctile(p.img(p.mask),p.thresh);
+    p.thresh = prctile(img(p.mask),p.thresh);
 end
 
 if p.prog, hw = waitbar(0,'Processing Minkowski Functional Analysis ...'); end

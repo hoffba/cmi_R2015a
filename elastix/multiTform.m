@@ -159,7 +159,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             system(str);
             
             if jac
-                jac = false;
+                jac = false; % only calculate once per transform
                 movefile(fullfile(odir,'spatialJacobian.mhd'),...
                     fullfile(odir,sprintf('spatialJacobian.%02u.%02u.mhd',...
                     chain,chlink)));
@@ -171,6 +171,10 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             if exist(fullfile(odir,'result.mhd'),'file')
                 delete(fullfile(odir,'result.mhd'),fullfile(odir,'result.raw'));
             end
+            % Copy log file:
+            movefile(fullfile(odir,'transformix.log'),...
+                fullfile(odir,sprintf('transformix.%02u.%02u.%02u.log',...
+                chain,chlink,j)));
         end
         
         % Prep for new chain:
