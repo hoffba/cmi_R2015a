@@ -109,7 +109,7 @@ if stat
             else
                 tmask = [];
             end
-            if ~isempty(timg)
+            if ~isempty(tmask)
                 timg = timg.*tmask;
             end
             mmin = min(timg(:));
@@ -151,7 +151,7 @@ if stat
             else
                 tmask = [];
             end
-            if ~isempty(timg)
+            if ~isempty(tmask)
                 timg = timg.*tmask;
             end
             mmin = min(timg(:));
