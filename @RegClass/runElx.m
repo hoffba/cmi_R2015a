@@ -109,13 +109,15 @@ if stat
             else
                 tmask = [];
             end
-            timg = timg.*tmask;
+            if ~isempty(timg)
+                timg = timg.*tmask;
+            end
             mmin = min(timg(:));
             mmax = max(timg(:));
             timg = (timg-mmin)/(mmax-mmin);
             for i = 1:size(timg,3)
                 timg(:,:,i) = adapthisteq(timg(:,:,i))*10^4;
-                if ~isemtpy(tmask)
+                if ~isempty(tmask)
                     timg(:,:,i) = timg(:,:,i).*tmask(:,:,i);
                 end
             end
@@ -149,13 +151,15 @@ if stat
             else
                 tmask = [];
             end
-            timg = timg.*tmask;
+            if ~isempty(timg)
+                timg = timg.*tmask;
+            end
             mmin = min(timg(:));
             mmax = max(timg(:));
             timg = (timg-mmin)/(mmax-mmin);
             for i = 1:size(timg,3)
                 timg(:,:,i) = adapthisteq(timg(:,:,i))*10^4;
-                if ~isemtpy(tmask)
+                if ~isempty(tmask)
                     timg(:,:,i) = timg(:,:,i).*tmask(:,:,i);
                 end
             end
