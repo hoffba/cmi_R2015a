@@ -107,14 +107,17 @@ if stat
             if self.cmiObj(2).img.mask.check
                 tmask = self.cmiObj(2).img.mask.mat;
             else
-                tmask = 1;
+                tmask = [];
             end
             timg = timg.*tmask;
             mmin = min(timg(:));
             mmax = max(timg(:));
             timg = (timg-mmin)/(mmax-mmin);
             for i = 1:size(timg,3)
-                timg(:,:,i) = adapthisteq(timg(:,:,i)).*tmask(:,:,i)*10^4;
+                timg(:,:,i) = adapthisteq(timg(:,:,i))*10^4;
+                if ~isemtpy(tmask)
+                    timg(:,:,i) = timg(:,:,i).*tmask(:,:,i);
+                end
             end
         end
         % Save moving image:
@@ -144,14 +147,17 @@ if stat
             if self.cmiObj(1).img.mask.check
                 tmask = self.cmiObj(1).img.mask.mat;
             else
-                tmask = 1;
+                tmask = [];
             end
             timg = timg.*tmask;
             mmin = min(timg(:));
             mmax = max(timg(:));
             timg = (timg-mmin)/(mmax-mmin);
             for i = 1:size(timg,3)
-                timg(:,:,i) = adapthisteq(timg(:,:,i)).*tmask(:,:,i)*10^4;
+                timg(:,:,i) = adapthisteq(timg(:,:,i))*10^4;
+                if ~isemtpy(tmask)
+                    timg(:,:,i) = timg(:,:,i).*tmask(:,:,i);
+                end
             end
         end
         % Save fixed image:

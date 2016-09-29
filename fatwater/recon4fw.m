@@ -29,8 +29,9 @@ switch fname(end-2:end)
             k = readFID(fdir,info);
             % Organize complex k-space data into 4D format
             k = permute(k,[1,2,5,3,4]);
-            % Assume equally spaced echoes:
-            imdata.TE = (0:(info.ne-1))*info.te2 + info.te;
+%             % Assume equally spaced echoes:
+%             imdata.TE = (0:(info.ne-1))*info.te2 + info.te;
+            imdata.TE = info.TE;
             imdata.FieldStrength = info.B0/10000; % convert Gauss to Tesla
         else
             error('Invalid acquisition protocol. Must be mge3d.');
