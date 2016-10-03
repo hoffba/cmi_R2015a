@@ -72,6 +72,7 @@ if ~isempty(self.h)
     set(self.h.image_smooth,     'Callback',@self.imgSmooth);
     set(self.h.image_interp,     'Callback',@self.imgInterp);
     set(self.h.image_delete4D,   'Callback',@self.imgDelete);
+    set(self.h.image_reorder,    'Callback',@self.imgOrder);
     set(self.h.image_subsamp,    'Callback',@self.imgSubsample);
     set(self.h.image_scale,      'Callback',@self.imgScale);
     set(self.h.image_scaleHU,    'Callback',@(varargin)self.scale2HU);
