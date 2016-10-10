@@ -4,7 +4,11 @@ img = []; label = {}; fov = [];
 
 % Read info from .mhd file
 fname = varargin{1};
-origD = varargin{2};
+if nargin==2
+    origD = varargin{2};
+else
+    origD = [];
+end
 [path,bname,~] = fileparts(fname);
 rawfname = fullfile(path,[bname,'.raw']);
 hchk = false;

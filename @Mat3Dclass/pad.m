@@ -37,8 +37,12 @@ if ~isempty(self.mat) && isnumeric(dim) && isnumeric(r) && iscell(val)
         
         % Loop over each image:
         tmat = nan(dout);
+        try
         for i = 1:d4
             tmat(:,:,:,i) = padarray(self.mat(:,:,:,i),padsize,val{i});
+        end
+        catch err
+            disp('check')
         end
         
         % Set new properties:
