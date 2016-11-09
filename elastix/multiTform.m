@@ -18,7 +18,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
     
     % Determine which TP steps need nearest neighbor / linear:
     intrp = cell2mat(cellfun(@(x)[ (~isempty(x)&&any([x{:,1}])),...
-                                   (~isempty(x)&&any(~[x{:,1}])) ] ,...
+                                   (isempty(x)||any(~[x{:,1}])) ] ,...
                              {tp(:).im}','UniformOutput',false));
     nx = find(intrp(:,1),1,'last');
     if ~isempty(nx)
@@ -123,7 +123,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         ntot = length(C);
         for j = 1:ntot
             if j==ntot
-                % Only need to set in transformix input TP file:
+                % Only need to set geometry in transformix input TP file:
                 copytp(C{j},odir,j,intrp(i,:),sz,sp,orig);
             else
                 copytp(C{j},odir,j,intrp(i,:));
@@ -148,10 +148,15 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
                     outfn = fullfile(odir,tp(i).im{j,3});
                 end
                 inputs = {'in',tp(i).im{j,2},'outfn',outfn};
+                nn = tp(i).im{j,1};
+                [~,str,~] = fileparts(outfn);
+            else
+                nn = false;
+                str = 'spatialJacobian';
+                inputs = {};
             end
             
-            tpcall = tpfname(odir,ntot,tp(i).im{j,1});
-            [~,str,~] = fileparts(outfn);
+            tpcall = tpfname(odir,ntot,nn);
             fprintf('   Transforming: %s\n',str);
             
             str = elxobj.sysCmd(odir,inputs{:},'tp',tpcall,'jac',jac,...

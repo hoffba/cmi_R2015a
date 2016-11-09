@@ -1,8 +1,16 @@
 % CMIclass function
 % Create Montage of current image
-function genMontage(self,~,~)
+function genMontage(self,x,~)
+% Inputs:
+%   
 if self.img.check && self.dispcheck
-    F = self.grabFrames;
+    if isa(x,'')
+    	F = self.grabFrames;
+    elseif isstruct(x) && all(isfield(x,{}))
+        F = self.grabFrames(x);
+    else
+        error('CMIclass/genMontage : Invalid inputs.')
+    end
     if ~isempty(F)
         nf = length(F);
         timg = zeros(size(F(1).cdata,1),size(F(1).cdata,2),3,nf);
