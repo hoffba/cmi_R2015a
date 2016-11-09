@@ -6,7 +6,7 @@ function genMontage(self,x,~)
 if self.img.check && self.dispcheck
     if isa(x,'')
     	F = self.grabFrames;
-    elseif isstruct(x) && all(isfield(x,{}))
+    elseif isstruct(x) && all(isfield(x,{'vdim','mdim','mind'}))
         F = self.grabFrames(x);
     else
         error('CMIclass/genMontage : Invalid inputs.')

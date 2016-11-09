@@ -905,7 +905,6 @@
 (0019,100E)	FD	DiffusionGradientOrientation	1-n
 (0019,100F)	SH	GradientMode	1-n
 (0019,1011)	SH	FlowCompensation_Private	1-n
-(0019,1012)	SL	TablePositionOrigin	1-n
 (0019,1013)	SL	ImaAbsTablePosition	1-n
 (0019,1014)	IS	ImaRelTablePosition	1-n
 (0019,1015)	FD	SlicePosition_PCS	1-n

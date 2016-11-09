@@ -9,8 +9,8 @@ oview = self.orient;
 oslc = self.slc(oview);
 ovec = self.vec;
 F = struct('cdata',{},'colormap',{}); % initialize the frame structure
-opts = struct('vdim',{},'mdim',{},'mind',{});
 if nargin == 1 % Ask user to input required parameters
+	opts = struct('vdim',{},'mdim',{},'mind',{});
     prompt = {'View dimension:',...
               'Increment dimension:',...
               'Increment indexes ("start":"increment":"end"):'};
@@ -56,7 +56,7 @@ if ~isempty(opts) && isstruct(opts) && all(isfield(opts,{'vdim','mdim','mind'}))
         npos(3:4) = npos(3:4)-2;
         for i = 1:length(opts.mind)
             % Change to next slice/vec
-            if (mdim == 4)
+            if (opts.mdim == 4)
                 self.setVec(opts.mind(i));
             else
                 self.setSlice(opts.mind(i));
