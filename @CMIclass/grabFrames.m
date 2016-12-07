@@ -10,7 +10,7 @@ oslc = self.slc(oview);
 ovec = self.vec;
 F = struct('cdata',{},'colormap',{}); % initialize the frame structure
 if nargin == 1 % Ask user to input required parameters
-	opts = struct('vdim',{},'mdim',{},'mind',{});
+	opts = struct('vdim',{[]},'mdim',{[]},'mind',{[]});
     prompt = {'View dimension:',...
               'Increment dimension:',...
               'Increment indexes ("start":"increment":"end"):'};

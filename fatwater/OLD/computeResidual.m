@@ -42,11 +42,10 @@
 function residual = computeResidual(imData,algPar)
 
 % Size should be [ sx,sy,sz, C coils , N echoes , a acquisitions ]
-d = size(imData.images);
-d(end:6) = 1;
+[d(1),d(2),d(3),d(4),d(5),d(6)] = size(imData.images);
 
 % If precession is clockwise (positive fat frequency) simply conjugate data
-if isfield(imData,'PrecessionIsClockwise') && (precessionIsClockwise <= 0)
+if isfield(imData,'PrecessionIsClockwise') && (imData.PrecessionIsClockwise <= 0)
     imData.images = conj(imData.images);
     imData.PrecessionIsClockwise = 1;
 end
@@ -74,6 +73,7 @@ for kr = 1:algPar.NUM_R2STARS
     for k = 1:algPar.NUM_FMS
         Psi = diag(exp(1j*2*pi*psis(k)*imData.TE - abs(imData.TE)*r2s(kr)));
         P1 = [P1;(eye(d(2))-Psi*Phi*pinv(Psi*Phi))];
+%         P1 = [P1;(eye(d(5))-Psi*Phi*pinv(Psi*Phi))];
     end
     P(:,:,kr) = P1;
 end
