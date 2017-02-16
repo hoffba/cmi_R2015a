@@ -1,5 +1,5 @@
 % CMIclass function
-% Scale current image values (y = m*x + b)
+% Scale original image values (y = m*x + b)
 function imgScale(self,x,~)
 % Inputs:
 %   x = [vec(:) M(:) B(:)];
@@ -18,13 +18,12 @@ if self.img.check
             tB = str2num(answer{3});
         end
     else
-        tvec = x(:,1);
-        tM = x(:,2);
-        tB = x(:,3);
+        tvec = x(:,1)';
+        tM = x(:,2)';
+        tB = x(:,3)';
     end
-    if (length(tvec)==length(tM)) && (length(tB)==length(tvec)) &&...
-            ~any(isnan([tvec tM tB]))&& ~any(isempty([tvec tM tB]))
-        if (tvec==0)
+    if (length(tvec)==length(tM)) && (length(tB)==length(tvec)) && ~any(isnan([tvec tM tB]))
+        if (length(tvec)==1) && (tvec==0)
             tvec = 1:nvec;
             tM = tM.*ones(1,nvec);
             tB = tB.*ones(1,nvec);
@@ -35,6 +34,7 @@ if self.img.check
         tM = tM'*[1 1];
         tB = tB'*[1 1];
         self.clim(tvec,:) = tM./oM .* (self.clim(tvec,:) - oB) + tB;
+        
         self.dispUDview;
         self.dispUDhist;
         if self.prmcheck

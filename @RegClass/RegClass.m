@@ -42,9 +42,14 @@ classdef RegClass < handle
     end
     methods
         % RegClass constructor
-        function self = RegClass
-            self.cmiObj = CMIclass;
-            self.cmiObj(2) = CMIclass;
+        function self = RegClass(guicheck)
+            if nargin==0 || isempty(guicheck)
+                self.guicheck = true;
+            else
+                self.guicheck = logical(guicheck);
+            end
+            self.cmiObj = CMIclass(self.guicheck);
+            self.cmiObj(2) = CMIclass(self.guicheck);
             self.elxObj = ElxClass;
             
             % Default queue file location:

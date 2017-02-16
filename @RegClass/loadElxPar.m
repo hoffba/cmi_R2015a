@@ -21,7 +21,9 @@ if stat
         end
         str{i} = tstr;
     end
-    set(self.h.listbox_Tforms,'String',str,'Enable','on');
-    % Snap to last step on the list and update GUI:
-    self.selectTform(ns);
+    if self.guicheck
+        set(self.h.listbox_Tforms,'String',str,'Enable','on');
+        % Snap to last step on the list and update GUI:
+        self.selectTform(ns);
+    end
 end

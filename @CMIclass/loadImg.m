@@ -11,10 +11,10 @@ if (nargin==3) && isa(x,'matlab.ui.container.Menu')
         case 'file_append'
             appcheck = true;
     end
-elseif (nargin>=2) && ~ishandle(x) && (isnumeric(x) || islogical(x))
+elseif (nargin>=2) && (isnumeric(x) || islogical(x))
     appcheck = logical(x); % input overrides property
 else
-    appcheck = self.appendcheck;
+    appcheck = false;
 end
 if (nargin<3) || ~(iscellstr(fname) || ischar(fname))
     fname = {};

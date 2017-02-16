@@ -28,7 +28,6 @@ classdef CMIclass < handle
         checkerM = [];          % Checkerboard logical matrix
         
         % Display handles
-        guicheck = false;       % Check whether GUI was loaded
         h                       % Handles to main figure (including children)
         hfig                    % Handle to display figure
         haxes                   % Handle of image axes
@@ -40,13 +39,13 @@ classdef CMIclass < handle
         haplot                  % Handle of extra axes for plotting various data
         
         % Display parameters
+        guicheck = false;       % Check whether GUI is displayed
         applyallcheck = false;  % Check for adjust all image colors
-        dispcheck = true;       % Determines whether to display the image
         histcheck = false;      % Determines whether to display histogram plots
         overcheck = false;      % Check for overlay display
         bgcheck = false;        % Check for adjusting background image
         prmcheck = false;       % Check to display PRM overlay
-        appendcheck = false;    % Check for whether to append new images
+%         appendcheck = false;    % Check for whether to append new images
         
         % Other options
         chk2D = false; % Connectivity check (2D or 3D)
@@ -81,8 +80,10 @@ classdef CMIclass < handle
         function delete(self)
             % Clean-up for all related figures, GUI, and member classes
             % Close figures
-            hfs = [self.hfig,self.h.mainFig];
-            delete(hfs(ishghandle(hfs)));
+            if self.guicheck
+                hfs = [self.hfig,self.h.mainFig];
+                delete(hfs(ishghandle(hfs)));
+            end
             % Delete member objects
             if isa(self.histObj,'HistogramClass') && isvalid(self.histObj)
                 delete(self.histObj)
@@ -164,7 +165,7 @@ classdef CMIclass < handle
         end
         % Update background image
         function dispUDbg(self)
-            if self.img.check && self.dispcheck
+            if self.img.check && self.guicheck
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 % only update if background overlay is activated
@@ -179,7 +180,7 @@ classdef CMIclass < handle
         end
         % Update foreground image
         function dispUDimg(self)
-            if self.img.check && self.dispcheck
+            if self.img.check && self.guicheck
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 else
@@ -226,7 +227,7 @@ classdef CMIclass < handle
         end
         % Update ROI
         function dispUDroi(self)
-            if self.img.check && self.dispcheck
+            if self.img.check && self.guicheck
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 else
@@ -261,7 +262,7 @@ classdef CMIclass < handle
         end
         % Update threshold plot
         function dispUDthreshplot(self)
-            if self.img.check && self.dispcheck
+            if self.img.check && self.guicheck
                 if ~ishandle(self.hfig)
                     self.dispUDview;
                 else
@@ -311,7 +312,7 @@ classdef CMIclass < handle
         end
         % Update display view
         function dispUDview(self)
-            if isa(self.img,'ImageClass') && self.img.check && self.dispcheck
+            if isa(self.img,'ImageClass') && self.img.check && self.guicheck
                 self.dispFigs;
                 set(self.hfig,'Name',self.img.name)
                 self.dispUDslice;

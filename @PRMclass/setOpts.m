@@ -17,6 +17,7 @@ p.addOptional('filtchk',nan,@(x) islogical(x) && length(x)==1);
 p.addOptional('filttype',nan,@(x) ischar(x));
 p.addOptional('filtstr',nan,@(x) isvector(x) && length(x)==2);
 p.addOptional('SPopts',nan,@isstruct);
+p.addOptional('guicheck',nan,@isscalar);
 p.parse(varargin{:});
 opts = rmfield(p.Results,p.UsingDefaults);
 
@@ -99,4 +100,7 @@ if isfield(opts,'SPopts')
     end
 end
         
-
+if isfield(opts,'guicheck')
+    self.guicheck = opts.guicheck;
+    stat = true;
+end

@@ -178,18 +178,21 @@ if fid
     if dim(3)>1 % 3D acquisition
         img = permute(img,[1,3,2,4]);
     end
+    
 
     [~,~,ext] = fileparts(filename);
     if strcmp(ext,'.MRD') % k-space data
         % Re-order matrix dimentions for centric acquisitions:
         if isfield(par,'centric_on') && par.centric_on
             n = size(img,2);
-            ind = [n:-2:1,1:2:n];
+            ind = [n:-2:1;1:2:n];
+%             ind = [ n/2+1:n ; n/2:-1:1 ];
             img = img(:,ind(:),:,:);
         end
         if isfield(par,'pe2_centric_on') && par.pe2_centric_on
             n = size(img,3);
             ind = [n:-2:1,1:2:n];
+%             ind = [ n/2+1:n ; n/2:-1:1 ];
             img = img(:,:,ind(:),:);
         end
     end

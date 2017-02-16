@@ -35,17 +35,25 @@ function [amps,remerror] = decomposeGivenFieldMapAndDampings( imDataParams,algoP
 
 gyro = 42.58;
 
+
+
 try
-    ampW = algoParams.species(1).relAmps;
+  precessionIsClockwise = imDataParams.PrecessionIsClockwise;
 catch
-    fprintf('Setting ampW = 1 (default)');
-    ampW = 1.0;
+  precessionIsClockwise = 1;
 end
 
+try 
+  ampW = algoParams.species(1).relAmps;
+catch
+  ampW = 1.0
+end
+
+  
 % If precession is clockwise (positive fat frequency) simply conjugate data
-if ~isfield(imDataParams,'precessionIsClockwise') || (imDataParams.PrecessionIsClockwise <= 0)
-    imDataParams.images = conj(imDataParams.images);
-    imDataParams.PrecessionIsClockwise = 1;
+if precessionIsClockwise <= 0 
+  imDataParams.images = conj(imDataParams.images);
+  imDataParams.PrecessionIsClockwise = 1;
 end
 
 deltaF = [0 ; gyro*(algoParams.species(2).frequency(:) - algoParams.species(1).frequency(1))*(imDataParams.FieldStrength)];
@@ -53,58 +61,34 @@ relAmps = algoParams.species(2).relAmps;
 images = imDataParams.images;
 t = imDataParams.TE;
 
-[sx,sy,sz,C,N,~] = size(images);
-images = reshape(imDataParams.images,[],N).';
-
-% Apply only to masked indices:
-if isfield(imDataParams,'mask')
-    mchk = true;
-    fieldmap = fieldmap(imDataParams.mask);
-    images = images(:,imDataParams.mask);
-else
-    mchk = false;
-    fieldmap = fieldmap(:);
-end
-np = length(fieldmap); % Number of spatial points being calculated
+sx = size(images,1);
+sy = size(images,2);
+N = size(images,5);
+C = size(images,4);
 
 relAmps = reshape(relAmps,1,[]);
+
 
 B1 = zeros(N,2);
 B = zeros(N,2);
 for n=1:N
-    B1(n,:) = [ampW*exp(1i*2*pi*deltaF(1)*t(n)),sum(relAmps(:).*exp(1i*2*pi*deltaF(2:end)*t(n)))];
+  B1(n,:) = [ampW*exp(j*2*pi*deltaF(1)*t(n)),sum(relAmps(:).*exp(j*2*pi*deltaF(2:end)*t(n)))];
 end
 
-A = B\images;
-
-if mchk
-    amps = zeros();
-    amps() = amps
-else
-    amps = reshape(A,sx,sy,sz,C,2);
-end
-
-
-
-% !! OLD !!
-
-remerror = zeros(sx,sy,sz);
-amps = nan(sx,sy,sz,2);
+remerror = zeros(sx,sy);
 for kx =1:sx
-    for ky=1:sy
-        for kz=1:sz
-            s = reshape( squeeze(images(kx,ky,kz,:,:)), [C N]).';
+  for ky=1:sy
+    s = reshape( squeeze(images(kx,ky,:,:,:)), [C N]).';
 
-            B(:,1) = B1(:,1).*exp(1i*2*pi*fieldmap(kx,ky,kz)*t(:) - r2starWater(kx,ky,kz)*t(:));
-            B(:,2) = B1(:,2).*exp(1i*2*pi*fieldmap(kx,ky,kz)*t(:) - r2starFat(kx,ky,kz)*t(:));
+    B(:,1) = B1(:,1).*exp(j*2*pi*fieldmap(kx,ky)*t(:) - r2starWater(kx,ky)*t(:));
+    B(:,2) = B1(:,2).*exp(j*2*pi*fieldmap(kx,ky)*t(:) - r2starFat(kx,ky)*t(:));
 
-            amps(kx,ky,kz,:) = B\s;
+    amps(kx,ky,:,:) = B\s;
 
-            if nargout == 2
-                remerror(kx,ky) = norm(s - B*squeeze(amps(kx,ky,:,:)),'fro');
-            end
-        end
+    if nargout > 1
+      remerror(kx,ky) = norm(s - B*squeeze(amps(kx,ky,:,:)),'fro');
     end
+  end
 end
 
 

@@ -7,12 +7,16 @@ tclim = [];
 % Determine input value:
 if nargin>1
     if (nargin==3) && ishghandle(x) % input from GUI  
-        if self.bgcheck && ~self.applyallcheck
+        if self.applyallcheck
+            tvec = 0;
+            tclim = self.clim(self.vec,:);
+        elseif self.bgcheck
             tvec = self.bgvec;
+            tclim = self.clim(tvec,:);
         else
             tvec = self.vec;
+            tclim = self.clim(tvec,:);
         end
-        tclim = self.clim(tvec,:);
         if strcmp(x.Tag(end-2:end),'min')
             ind = 1;
         else % 'max'
@@ -23,22 +27,24 @@ if nargin>1
         else % 'slider'
             tclim(ind) = x.Value;
         end
-    elseif isnumeric(x) && (numel(x)==2)
-        tclim = x(:)';
+    elseif isnumeric(x) && (size(x,2)==3) && ismember(x(1),0:self.img.dims(4))
+        tvec = x(:,1);
+        tclim = x(:,2:3);
     end
 end
 % If valid, set properties
-if ~isempty(tclim) && ~any(isnan(tclim))
+if ~isempty(tclim) && ~any(isnan(tclim(:)))
     % Update CMIclass properties & display
-    if self.applyallcheck % update foreground & background images
-        self.clim(:,ind) = (tclim(ind)'*ones(1,size(self.clim,1)))';
+    if tvec==0 % update foreground & background images
+        self.clim = ones(self.img.dims(4),1)*tclim;
+%         self.clim(:,ind) = (tclim(ind)'*ones(1,size(self.clim,1)))';
         self.dispUDbg;
         self.dispUDimg;
     elseif self.bgcheck % update background image
-        self.clim(self.bgvec,:) = tclim;
+        self.clim(tvec,:) = tclim;
         self.dispUDbg;
     else % only update foreground image
-        self.clim(self.vec,:) = tclim;
+        self.clim(tvec,:) = tclim;
         self.dispUDimg;
     end
     % Update GUI properties

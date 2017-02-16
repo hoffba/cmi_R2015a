@@ -2,7 +2,7 @@
 function UDpreproc(self,varargin)
 % Handle Callbacks from 
 
-if (nargin>1) && ishandle(varargin{1}(1))
+if self.guicheck && (nargin>1) && ishandle(varargin{1}(1))
     h = varargin{1}(1);
     tag = get(h,'Tag');
     switch tag
@@ -51,12 +51,16 @@ elseif (nargin>=3) && ischar(varargin{1})
                 end
             case 'filtN'
                 if isnumeric(val) && (length(val)==3) && ~any(isnan(val)|isinf(val))
-                    set(self.h.edit_preFilter,'String',num2str(val));
+                    if self.guicheck
+                        set(self.h.edit_preFilter,'String',num2str(val));
+                    end
                     self.filtN = val;
                 end
             case 'dilateN'
                 if isnumeric(val) && (length(val)==3) && ~any(isnan(val)|isinf(val))
-                    set(self.h.edit_VOIdilate,'String',num2str(val));
+                    if self.guicheck
+                        set(self.h.edit_VOIdilate,'String',num2str(val));
+                    end
                     self.dilateN = val;
                 end
             case {'clampRef','clampHom'}
@@ -69,12 +73,16 @@ elseif (nargin>=3) && ischar(varargin{1})
                         ind = 2;
                         str = 'edit_clampHom';
                     end
-                    set(self.h.(str),'String',num2str(val));
+                    if self.guicheck
+                        set(self.h.(str),'String',num2str(val));
+                    end
                     self.clamp(ind,:) = val;
                 end
             case 'histeq'
                 if islogical(val)
-                    set(self.h.checkbox_histeq,'Value',val);
+                    if self.guicheck
+                        set(self.h.checkbox_histeq,'Value',val);
+                    end
                     self.histeq = val;
                 end
             otherwise

@@ -32,8 +32,8 @@ if ischar(fname)
         
         % Rearrange and sort:
         [~,ind] = sortrows(pos);
-        img = permute(reshape(img(:,:,ind),par.IM_RESOLUTION(2),...
-            par.IM_RESOLUTION(1),par.IM_TOTAL_SLICES,[]),[2,1,3,4]);
+        img = permute(reshape(img(:,:,ind),par.IM_FFT(2),...
+            par.IM_FFT(1),par.IM_TOTAL_SLICES,[]),[2,1,3,4]);
         
         fov = par.IM_FOV(1:2);
         
@@ -46,7 +46,7 @@ if ischar(fname)
 %         [d(1),d(2),d(3),d(4)] = size(img);
 %         img = reshape(img,d);
         
-        fov = par.FOV*[1,1];
+        fov = par.FOV*[ 1 , par.FOVf/8 ];
     else
         error('Invalid file name.');
     end

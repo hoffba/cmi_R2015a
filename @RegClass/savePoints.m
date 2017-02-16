@@ -16,9 +16,14 @@ function fname = savePoints(self,i,fname)
 %       fname = RegObj.savePoints(i);
 %       fname = RegObj.savePoints(i,fname);
 
-if ((nargin==3) && ishandle(i)) || (nargin==1)
+if nargin==1
+    i = [1,2];
+end
+
+if ((nargin==3) && isa(i,'matlab.ui.control.UIControl'))
     i = find(cell2mat(get([self.h.radRef,self.h.radHom],'Value')),1);
 end
+
 p = self.ctrpts(i);
 if ~isempty(p)
     if (nargin<3) || ~ischar(fname)

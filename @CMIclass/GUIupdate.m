@@ -59,9 +59,9 @@ if self.guicheck
         [vext,clim,cthr] = self.getProp('ValLim','cLim','thresh');
         cpad = diff(vext) / 2;
         set(self.h.slider_cmin,'Min',(vext(1)-cpad),'Max',(vext(2)+cpad),...
-                                'Value',clim(1),'Enable','On');
+                                'Value',max(clim(1),vext(1)-cpad),'Enable','On');
         set(self.h.slider_cmax,'Min',(vext(1)-cpad),'Max',(vext(2)+cpad),...
-                                'Value',clim(2),'Enable','On');
+                                'Value',min(clim(2),vext(2)+cpad),'Enable','On');
         set(self.h.edit_cmin,'String',num2str(clim(1)),'Enable','On');
         set(self.h.edit_cmax,'String',num2str(clim(2)),'Enable','On');
     

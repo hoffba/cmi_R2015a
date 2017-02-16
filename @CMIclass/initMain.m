@@ -76,6 +76,7 @@ if ~isempty(self.h)
     set(self.h.image_subsamp,    'Callback',@self.imgSubsample);
     set(self.h.image_scale,      'Callback',@self.imgScale);
     set(self.h.image_scaleHU,    'Callback',@(varargin)self.scale2HU);
+    set(self.h.image_scaleSNR,   'Callback',@self.scale2SNR);
     set(self.h.image_autoScale,  'Callback',@self.autoScale);
     set(self.h.image_threshmask, 'Callback',@self.thresh2mask);
     set(self.h.image_thresh,     'Callback',@self.imgThreshold);

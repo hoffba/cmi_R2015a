@@ -28,6 +28,7 @@ classdef ImageClass < Mat3Dclass
         model           % Fitting object: FitClass or DCEclass or DiffClass
         
         % I/O options
+        guicheck = true;        % Flag to display GUI figures
         io                      % ImageIO object
         name                    % Name of image set
         dir                     % Current image's directory
@@ -38,9 +39,11 @@ classdef ImageClass < Mat3Dclass
         function self = ImageClass(hObj)
             if nargin && ~isempty(hObj) && isa(hObj,'CMIclass')
                 addlistener(hObj,'ChangeView',@self.viewListen);
+                self.guicheck = hObj.guicheck;
             end
             self.mask = MaskClass(self);
             self.prm = PRMclass(self);
+            self.prm.setOpts('guicheck',self.guicheck);
             self.model = FitClass;
             self.io = ImageIO;
         end

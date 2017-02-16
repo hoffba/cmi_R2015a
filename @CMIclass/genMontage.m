@@ -1,6 +1,6 @@
 % CMIclass function
 % Create Montage of current image
-function genMontage(self,x,~)
+function hf = genMontage(self,x,~)
 % Inputs:
 %   
 if self.img.check && self.dispcheck
@@ -22,7 +22,8 @@ if self.img.check && self.dispcheck
             timg(:,:,:,i) = double(im);
         end
         warning('off','Images:initSize:adjustingMag');
-        dim = sqrt(size(timg,4));
-        figure;montage(timg/255,'Size',[round(dim),ceil(dim)]);
+        dim = round(sqrt(size(timg,4)));
+        dim = round(str2double(inputdlg('Desired number of rows:','Rows',1,{num2str(dim)})));
+        hf = figure;montage(timg/255,'Size',[dim,NaN]);
     end
 end

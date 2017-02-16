@@ -1,4 +1,4 @@
-function pp = readPROCPAR(tdir,pstrs)
+function pp = readPROCPAR(tdir,pstrs,fstr)
 % Reads parameters from Varian procpar file
 % Format: pp = readPROCPAR(tdir)
 %         pp = readPROCPAR(tdir,cellstr)
@@ -7,8 +7,12 @@ function pp = readPROCPAR(tdir,pstrs)
 % Output: pp = structure with fields of all or specified parameters
 %                   * specified pars not found are returned as empty fields
 
+if nargin<3 || isempty(fstr) || ~ischar(fstr)
+    fstr = 'procpar';
+end
+
 pp = struct;
-procfid = fopen(fullfile(tdir,'procpar'),'r','ieee-be');
+procfid = fopen(fullfile(tdir,fstr),'r','ieee-be');
 if procfid>0
     if (nargin<2) || ~iscellstr(pstrs)
         strchk = false;
@@ -46,7 +50,8 @@ if procfid>0
                         val = str2num(rem);
                 end
                 if ~isvarname(str)
-                    str = genvarname(str);
+%                     str = genvarname(str);
+                    str = matlab.lang.makeValidName(str);
                 end
                 pp.(str) = val;
                 fgetl(procfid);

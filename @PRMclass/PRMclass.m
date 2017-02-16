@@ -35,6 +35,7 @@ classdef PRMclass < Mat3Dclass
                  
         prmdir   % Directory storing PRM default settings
         
+        guicheck = true;       % Flag to display results
         hfscatter               % Handle to PRM scatterplot figure
         hascatter               % Handle to PRM scatterplot axes
         hsscatter               % Handle to PRM scatterplot object
