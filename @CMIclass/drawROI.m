@@ -8,7 +8,7 @@ function drawROI(self,~,~)
 %       = 'Add'
 %       = 'Intersect'
 %       = 'Remove'
-if self.img.check && self.dispcheck
+if self.img.check && self.guicheck
     % Make sure there is an image showing
     if ~ishandle(self.haxes)
         self.dispUDview; % if not, rei-initialize the figure
