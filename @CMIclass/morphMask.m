@@ -22,10 +22,11 @@ if self.img.mask.check % First make sure there's something to morph
         else
             mtype = validatestring(answer{1},{'dilate','erode','open','close'});
             xyR = str2double(answer{2});
-            zR = str2double(answer{2});
+            zR = str2double(answer{3});
             if isnan(xyR) || isnan(zR)
                 error('Invalid morph radius.')
             end
+            R = [xyR,zR];
         end
     elseif nargin==3 && ischar(varargin{1}) && isvector(varargin{2})
         mtype = varargin{1};
