@@ -33,6 +33,5 @@ if (nargin >= 3) && ~isempty(d) && isnumeric(d) ...
         [tmask,~] = cmi_load(0,d,fname);
         % Perform mask math
         self.merge(opts{sel},tmask);
-        end
     end
 end

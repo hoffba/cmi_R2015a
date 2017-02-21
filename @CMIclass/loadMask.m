@@ -1,8 +1,9 @@
 % CMIclass function
 % Load mask
 function stat = loadMask(self,x,optsel)
-if (nargin==1) || (isnumeric(x) && ishandle(x)) || ~ischar(x)
+if (nargin==1) || isa(x,'matlab.ui.container.Menu') || ~ischar(x)
     x = '';
+    optsel = '';
 end
 if nargin<3
     optsel = '';
