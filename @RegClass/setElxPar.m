@@ -22,13 +22,19 @@ if (nargin>1) && isnumeric(i) && ~isempty(i) ...
                 case 'jac'
                     tval = logical(tval);
                     self.jac = tval;
-                    set(self.h.checkbox_jac,'Value',tval);
+                    if self.guicheck
+                        set(self.h.checkbox_jac,'Value',tval);
+                    end
                 case 'jacmat'
                     self.jacmat = logical(tval);
-                    set(self.h.checkbox_jacmat,'Value',tval);
+                    if self.guicheck
+                        set(self.h.checkbox_jacmat,'Value',tval);
+                    end
                 case 'def'
                     self.def = logical(tval);
-                    set(self.h.checkbox_def,'Value',tval);
+                    if self.guicheck
+                        set(self.h.checkbox_def,'Value',tval);
+                    end
                 case 'FixedImagePyramidSchedule'
                     if isnumeric(tval) && (length(tval)==3*nres) && all(tval>0)
                         tC = [pname(ipar),{tval}];

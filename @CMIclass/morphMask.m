@@ -29,7 +29,7 @@ if self.img.mask.check % First make sure there's something to morph
             R = [xyR,zR];
         end
     elseif nargin==3 && ischar(varargin{1}) && isvector(varargin{2})
-        mtype = varargin{1};
+        mtype = validatestring(varargin{1},{'dilate','erode','open','close'});
         R = varargin{2};
     else
         error('Invalid inputs.')

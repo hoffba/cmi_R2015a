@@ -43,26 +43,61 @@ classdef RegClass < handle
     methods
         % RegClass constructor
         function self = RegClass(guicheck)
-            if nargin==0 || isempty(guicheck)
-                self.guicheck = true;
-            else
-                self.guicheck = logical(guicheck);
+            
+            % Default queue file location:
+            self.qfile = fullfile(fileparts(which('cmi')),'elastix','qfile.txt');
+           
+            % Validate inputs:
+            if nargin
+                if ischar(guicheck)
+                    switch guicheck
+                        case 'qfile'
+                            if exist(self.qfile,'file')
+                                fid = fopen(self.qfile);
+                                if fid>0
+                                    go = true;
+                                    ct = 0;
+                                    while go
+                                        tline = fgets(fid);
+                                        if tline==-1
+                                            fprintf('Number of registrations in queue = %u\n',ct);
+                                            go = false;
+                                        else
+                                            disp(tline);
+                                            ct = ct+1;
+                                        end
+                                    end
+                                    fclose(fid);
+                                else
+                                    fprintf('Could not open qfile.txt\n');
+                                end
+                            else
+                                fprintf('Qfile does not exist.\n');
+                            end
+                    end
+                    delete(self);
+                    return;
+                elseif ~isempty(guicheck)
+                    self.guicheck = logical(guicheck);
+                end
             end
             self.cmiObj = CMIclass(self.guicheck);
             self.cmiObj(2) = CMIclass(self.guicheck);
             self.elxObj = ElxClass;
             
-            % Default queue file location:
-            self.qfile = fullfile(fileparts(which('cmi')),'elastix','qfile.txt');
             
             %main Callback set function
             self.initMain;
         end
         % RegClass destructor
         function delete(self)
-            delete(self.cmiObj(isvalid(self.cmiObj)));
-            delete(self.elxObj);
-            if isfield(self.h,'regFig') && ishandle(self.h.regFig)
+            if ~isempty(self.cmiObj) && isa(self.cmiObj,'CMIclass')
+                delete(self.cmiObj(isvalid(self.cmiObj)));
+            end
+            if ~isempty(self.elxObj) && isa(self.elxObj,'ElxClass')
+                delete(self.elxObj);
+            end
+            if isfield(self.h,'regFig') && ishghandle(self.h.regFig)
                 delete(self.h.regFig)
             end
         end

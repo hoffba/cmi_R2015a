@@ -1,9 +1,16 @@
-function reg
+function reg(opt)
 %REG Summary of this function goes here
 %   Detailed explanation goes here
 go = true;
 onum = 0;
+
+if nargin==0
+    opt = [];
+end
+
+% Find existing RegObj instances:
 curobjs = evalin('base','who(''RegObj*'')');
+
 if ~isempty(curobjs)
     no = length(curobjs);
     for i = 1:length(curobjs)
@@ -28,8 +35,10 @@ if ~isempty(curobjs)
 end
 if go
     oname = ['RegObj' num2str(onum)];
-    RegObj = RegClass;
-    assignin('base',oname,RegObj);
+    RegObj = RegClass(opt);
+    if isvalid(RegObj)
+        assignin('base',oname,RegObj);
+    end
 end
 
 end
