@@ -35,9 +35,16 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
     logfname = fullfile(odir,'MultiTform.log');
     
     ntp = length(tp);
-    C = {};
     % Loop over transform parameter steps, transform all images at each step
     for i = 1:ntp
+        
+        % Prep for new chain:
+        chain = tp(i).chain;
+        if (i==1) || (tp(i-1).chain~=chain)
+            C = {};
+            delete(fullfile(odir,'MultiTransPar.*.txt'));
+            geochk = true;
+        end
         
         % Concatenate transform chain:
         nextname = tp(i).fname;
@@ -76,7 +83,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         C = [C,fliplr(tC)];
         
         % Read transformed image geometry for interpolation:
-        if i==1
+        if geochk % Do this for each chain
             fid = fopen(C{1},'r');
             sz = []; sp = []; orig = [];
             while isempty(sz) || isempty(sp) || isempty(orig)
@@ -94,6 +101,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
                 end
             end
             fclose(fid);
+            geochk = false;
         end
         
         % Write to log file:
@@ -135,8 +143,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         jac = tp(i).jac;
         for j = 1:ncalls
             
-            chain = tp(i).chain;
-            chlink = sum([tp(1:i).chain]==tp(i).chain);
+            chlink = sum([tp(1:i).chain]==chain);
             
             if ~isempty(tp(i).im)
                 % Fix MHD in case copied:
@@ -180,12 +187,6 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             movefile(fullfile(odir,'transformix.log'),...
                 fullfile(odir,sprintf('transformix.%02u.%02u.%02u.log',...
                 chain,chlink,j)));
-        end
-        
-        % Prep for new chain:
-        if (i==ntp) || (tp(i+1).chain~=tp(i).chain)
-            C = {};
-            delete(fullfile(odir,'MultiTransPar.*.txt'));
         end
         
     end
