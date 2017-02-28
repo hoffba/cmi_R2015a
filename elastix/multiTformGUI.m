@@ -78,6 +78,18 @@ if ischar(fname)
     handles.table_TF.Data = [handles.table_TF.Data;
         {tval,['... ',tp(i).fname(dind:end)],tp(i).jac}];
     
+    % Find default value in file:
+    fid = fopen(fullfile(fdir,fname),'rt');
+    defVal = fread(fid,'*char');
+    fclose(fid);
+    defVal = regexp(defVal','\(DefaultPixelValue ([^)]*)','tokens');
+    if isempty(defVal)
+        defVal = 0;
+    else
+        defVal = str2double(defVal{1}{1});
+    end
+    tp(i).defOrig = defVal;
+    
     setappdata(handles.figure1,'tp',tp);
 end
 
@@ -98,15 +110,14 @@ if i
         if ischar(fname)
             fname = {fname};
         end
+        nf = length(fname);
         % Determine if interp should be nearest neighbor:
         nn = cellfun(@(x)~isempty(regexp(x,'VOI|ADC','Once')),fname)';
         tp = getappdata(handles.figure1,'tp');
-        %j = size(tp(i).im,1)+(1:length(fname));
         % Set output file names:
         oname = cellfun(@(x)[x(1:end-4),'_mR',x(end-3:end)],fname,'UniformOutput',false)';
-        im = [tp(i).im;num2cell(nn),...
-              fullfile(fdir,fname)',...cellfun(@(x)fullfile(fdir,x),fname,'UniformOutput',false)',...
-              oname];%cellfun(@(x){sprintf('TransformedImage.%02u.%02u.%02u.mhd',tp(i).chain,i,x)},num2cell(j))'];
+        defVal = num2cell(tp(i).defOrig*ones(nf,1));
+        im = [tp(i).im ; num2cell(nn),fullfile(fdir,fname)',oname,defVal];
         tp(i).im = im;
         setappdata(handles.figure1,'tp',tp);
         if ~isempty(im)
@@ -241,15 +252,23 @@ function table_im_CellEditCallback(hObject, eventdata, handles)
 tp = getappdata(handles.figure1,'tp');
 i = getappdata(handles.figure1,'tsel');
 ind = eventdata.Indices;
-if ind(2)==1 % NN check
-    tp(i).im{ind(1),1} = eventdata.NewData;
-elseif ind(2)==3 % Output name
-    str = eventdata.NewData;
-    if ~strcmp(str(end-3:end),'.mhd')
-        str = [str,'.mhd'];
-    end
-    tp(i).im{ind(1),3} = str;
-    hObject.Data{ind(1),3} = str;
+switch ind(2)
+    case 1 % NN check
+        tp(i).im{ind(1),1} = eventdata.NewData;
+    case 3 % Output name
+        str = eventdata.NewData;
+        if ~strcmp(str(end-3:end),'.mhd')
+            str = [str,'.mhd'];
+        end
+        tp(i).im{ind(1),3} = str;
+        hObject.Data{ind(1),3} = str;
+    case 4 % Default Value
+        val = str2double(eventdata.NewData);
+        if isnan(val)
+            hObject.Data{ind(1),4} = num2str(tp(i).im{ind(1),4});
+        else
+            tp(i).im{ind(1),4} = val;
+        end
 end
 setappdata(handles.figure1,'tp',tp);
 

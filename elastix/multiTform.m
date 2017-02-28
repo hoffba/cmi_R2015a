@@ -37,7 +37,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
     ntp = length(tp);
     % Loop over transform parameter steps, transform all images at each step
     for i = 1:ntp
-        
+    
         % Prep for new chain:
         chain = tp(i).chain;
         if (i==1) || (tp(i-1).chain~=chain)
@@ -164,6 +164,8 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             end
             
             tpcall = tpfname(odir,ntot,nn);
+            setDefVal(tpcall,tp(i).im{j,4});
+            
             fprintf('   Transforming: %s\n',str);
             
             str = elxobj.sysCmd(odir,inputs{:},'tp',tpcall,'jac',jac,...
@@ -256,3 +258,12 @@ if nn(2) % Linear flag
     fclose(fid);
 end
     
+% Set DefaultPixelValue for existing parameter file:
+function setDefVal(fname,defVal)
+% Read current parameter file:
+fid = fopen(fname,'rt');str = fread(fid,'*char')';fclose(fid);
+% Change DefaultPixelValue to desired value:
+str = regexprep(str,'\(DefaultPixelValue ([^)]*)',...
+    ['\(DefaultPixelValue ',sprintf('%.6f',defVal)]);
+% Re-write file:
+fid = fopen(fname,'wt');fwrite(fid,str,'char');fclose(fid);
