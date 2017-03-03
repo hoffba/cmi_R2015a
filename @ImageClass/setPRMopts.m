@@ -17,6 +17,7 @@ if (nargin==2) && isnumeric(cvec)
     h.filttype = self.prm.filttype;
     h.filtstr = self.prm.filtstr;
     h.SPopts = self.prm.SPopts;
+    h.imgObj = self;
     guidata(hf,h);
     
     % Set GUI object properties

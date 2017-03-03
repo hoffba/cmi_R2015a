@@ -22,7 +22,7 @@ function varargout = setRegions(varargin)
 
 % Edit the above text to modify the response to help setRegions
 
-% Last Modified by GUIDE v2.5 14-Sep-2016 11:39:22
+% Last Modified by GUIDE v2.5 02-Mar-2017 16:10:54
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -477,3 +477,29 @@ else
     warning('Invalid filter strength.')
     set(hObject,'String',sprintf('% .1f % .1f',handles.filtstr));
 end
+
+
+% For calculation of Stanford QAT thesholds on lung data
+function button_QATcalc_Callback(~, ~, handles)
+if handles.imgObj.dims(4)>1  && handles.imgObj.mask.check
+    iexp = 1;
+    iins = 2;
+    disp('Calculating thresholds on images ...');
+    T = Stanford_GT_cmi(handles.imgObj.mat(:,:,:,iexp),...
+                        handles.imgObj.mat(:,:,:,iins),...
+                        handles.imgObj.mask.mat);
+    % Update PRM settings and GUI objects:
+    i = find(strcmp({handles.defs(:).name},'COPD (7)'),1) +1;
+    set(handles.popup_defs,'Value',i);
+    popup_defs_Callback([],[],handles);
+    % Update thresholds with new:
+    i = find(cell2mat(get(handles.uibuttongroup1.Children(2:4),'Value')),1);
+    Tins = handles.thresh(2,4);
+    T = T(i);
+    m = Tins/T;
+    handles.thresh(1,4) = T;
+    handles.thresh(3,3) = m;
+    handles.thresh(3,4) = Tins + T*m;
+    set(handles.table_thresh,'Data',handles.thresh);
+end
+

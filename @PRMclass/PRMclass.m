@@ -11,9 +11,9 @@ classdef PRMclass < Mat3Dclass
         cutoff = zeros(0,3);   % [n x 3] matrix : row = [vec min max]
         
         % Pre-filtering for PRM:
-        %   ** Default to [3x3] Wiener filter
+        %   ** Default to [3x3] Median filter
         filtchk = true;
-        filttype = 'wiener';
+        filttype = 'median';
         filtstr = [3,3];
         
         cmap     % RGB columns
