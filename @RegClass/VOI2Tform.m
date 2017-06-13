@@ -31,6 +31,8 @@ if self.cmiObj(1).img.mask.check && self.cmiObj(2).img.mask.check
     self.elxObj.setTx0(x,voxsz1,d1,'DefaultPixelValue',self.T0defVal);
     self.setTchk(true);
     
-    set(self.h.popup_Transforms,'Value',5); % Set to Affine
-    self.showTx0;
+    if self.guicheck
+        set(self.h.popup_Transforms,'Value',5); % Set to Affine
+        self.showTx0;
+    end
 end

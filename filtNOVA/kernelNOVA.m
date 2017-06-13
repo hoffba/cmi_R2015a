@@ -20,4 +20,4 @@ m = -1/(d-p);
 b = -m*d;
 W = m*abs(imgDiff./sdev) + b;
 W(W>1) = 1;
-W(W<0) = 0;
+W((W<0)|isnan(W)) = 0;

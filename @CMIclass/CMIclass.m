@@ -354,31 +354,33 @@ classdef CMIclass < handle
             % opt = 0: Volume
             %       1: Slice
             %       []: Both
-            tcheck = self.histcheck && self.img.mask.check;
-            if (tcheck ~= self.histObj.active)
-                self.histObj.setActive(tcheck);
+            if self.guicheck
+                tcheck = self.histcheck && self.img.mask.check;
+                if (tcheck ~= self.histObj.active)
+                    self.histObj.setActive(tcheck);
+                end
+                if (self.histObj.active && self.img.mask.check)
+                    tvec = self.vec;
+                    tmin = self.clim(tvec,1);
+                    tmax = self.clim(tvec,2);
+                    self.histObj.initialize(tmin,tmax,prod(self.img.voxsz));
+                    if (nargin == 1)
+                        opt = [0 1]; % No input means update both
+                    end
+                    if any(opt == 0) % Volume
+                        timg = self.img.mat(:,:,:,tvec);
+                        timg = timg(self.img.getThreshMask(tvec));
+                        self.histObj.replaceVals('Volume',timg);
+                    end
+                    if any(opt == 1) % Slice
+                        tslc = self.slc(self.orient);
+                        timg = self.img.getSlice(self.orient,self.vec,tslc);
+                        timg = timg(self.img.getThreshMask(tvec,self.orient,tslc));
+                        self.histObj.replaceVals('Slice',timg);
+                    end
+                end
+                figure(self.h.mainFig);
             end
-            if (self.histObj.active && self.img.mask.check)
-                tvec = self.vec;
-                tmin = self.clim(tvec,1);
-                tmax = self.clim(tvec,2);
-                self.histObj.initialize(tmin,tmax,prod(self.img.voxsz));
-                if (nargin == 1)
-                    opt = [0 1]; % No input means update both
-                end
-                if any(opt == 0) % Volume
-                    timg = self.img.mat(:,:,:,tvec);
-                    timg = timg(self.img.getThreshMask(tvec));
-                    self.histObj.replaceVals('Volume',timg);
-                end
-                if any(opt == 1) % Slice
-                    tslc = self.slc(self.orient);
-                    timg = self.img.getSlice(self.orient,self.vec,tslc);
-                    timg = timg(self.img.getThreshMask(tvec,self.orient,tslc));
-                    self.histObj.replaceVals('Slice',timg);
-                end
-            end
-            figure(self.h.mainFig);
         end
 
     end

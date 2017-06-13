@@ -122,6 +122,8 @@ elseif ishghandle(hObject)
             self.jacmat = logical(get(hObject,'Value'));
         case 'checkbox_def'
             self.def = logical(get(hObject,'Value'));
+        case 'checkbox_wait'
+            self.waitchk = logical(hObject.Value);
         otherwise
             warning(['Unknown tag:',tag])
     end
@@ -129,6 +131,19 @@ elseif ishghandle(hObject)
     % Set ElxClass properties - Name/Value pairs in C{}
     if ~isempty(C)
         self.setElxPar(self.ind,C{:});
+    end
+elseif (nargin==3) && ischar(hObject)
+    switch hObject
+        case 'jac'
+            self.jac = logical(edata);
+        case 'jacmat'
+            self.jacmat = logical(edata);
+        case 'def'
+            self.def = logical(edata);
+        case 'waitchk'
+            self.waitchk = logical(edata);
+        otherwise
+            warning(['Unknown tag:',tag])
     end
 else
     warning('RegClass.UDschedule() : Invalid inputs');

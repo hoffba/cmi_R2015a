@@ -482,24 +482,59 @@ end
 % For calculation of Stanford QAT thesholds on lung data
 function button_QATcalc_Callback(~, ~, handles)
 if handles.imgObj.dims(4)>1  && handles.imgObj.mask.check
+%     iexp = 1;
+%     iins = 2;
+%     disp('Calculating thresholds on images ...');
+%     T = Stanford_GT_cmi(handles.imgObj.mat(:,:,:,iexp),...
+%                         handles.imgObj.mat(:,:,:,iins),...
+%                         handles.imgObj.mask.mat);
+%     % Update PRM settings and GUI objects:
+%     i = find(strcmp({handles.defs(:).name},'COPD (7)'),1) +1;
+%     set(handles.popup_defs,'Value',i);
+%     popup_defs_Callback([],[],handles);
+%     % Update thresholds with new:
+%     i = find(cell2mat(get(handles.uibuttongroup1.Children(2:4),'Value')),1);
+%     Tins = handles.thresh(2,4);
+%     T = T(i);
+%     m = Tins/T;
+%     handles.thresh(1,4) = T;
+%     handles.thresh(3,3) = m;
+%     handles.thresh(3,4) = Tins - T*m;
+%     set(handles.table_thresh,'Data',handles.thresh);
+    
+    % NEW
     iexp = 1;
     iins = 2;
     disp('Calculating thresholds on images ...');
     T = Stanford_GT_cmi(handles.imgObj.mat(:,:,:,iexp),...
                         handles.imgObj.mat(:,:,:,iins),...
                         handles.imgObj.mask.mat);
-    % Update PRM settings and GUI objects:
-    i = find(strcmp({handles.defs(:).name},'COPD (7)'),1) +1;
-    set(handles.popup_defs,'Value',i);
-    popup_defs_Callback([],[],handles);
-    % Update thresholds with new:
+    % Find selected value:
     i = find(cell2mat(get(handles.uibuttongroup1.Children(2:4),'Value')),1);
-    Tins = handles.thresh(2,4);
     T = T(i);
-    m = Tins/T;
-    handles.thresh(1,4) = T;
-    handles.thresh(3,3) = m;
-    handles.thresh(3,4) = Tins + T*m;
-    set(handles.table_thresh,'Data',handles.thresh);
+    % Update options:
+    i = find(strcmp({handles.defs(:).name},'COPD-QAT'),1) +1;
+    if isempty(i)
+        i = length(handles.defs(:))+1;
+        handles.defs(i) = struct('name',{'COPD-QAT'},...
+            'thresh',{[2 1 0 -T ; 1 2 0 -950 ; 1 2 1 (-950-T(i))]},...
+            'cutoff',{[1 -1000 -500 ; 2 -1000 -500]},...
+            'cmap',{[1 0 1;0 1 1;1 1 0;1 1 1;0 1 0;0 0 1;1 0 0]},...
+            'prmmap',{{logical([0 0 0]),'Magenta';
+                       logical([0 0 1]),'Cyan';...   
+                       logical([0 1 0;1 0 1]),'Yellow';...
+                       logical([0 1 1]),'White';...
+                       logical([1 0 0]),'Green';...
+                       logical([1 1 0]),'Blue';...
+                       logical([1 1 1]),'Red'}},...
+            'SPopts',{struct('Xvec',nan,'Yvec',nan,...
+                             'Xmin',nan,'Ymin',nan,...
+                             'Xmax',nan,'Ymax',nan,...
+                             'show',1,'Nmax',5000)});
+    else
+        handles.defs(i).thresh(2:3,4) = [ T , -950-T ];
+    end
+    % Update selection and GUI objects:
+    popup_defs_Callback([],[],handles);
 end
 

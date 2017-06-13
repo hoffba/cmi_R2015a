@@ -242,7 +242,7 @@ for ifn = 1:nf
             end
         end
         k = size(dcmdata(j).SlicePos,1)+1;
-        if isempty(tinfo.AcquisitionNumber)
+        if ~isfield(tinfo,'AcquisitionNumber') || isempty(tinfo.AcquisitionNumber)
             val = 0;
         else
             val = tinfo.AcquisitionNumber;

@@ -24,21 +24,24 @@ if (nargin==1) || ischar(x) || (isa(x,'matlab.ui.control.UIControl') && strcmp(x
         fclose(fid);
     % Find file name
         tok = regexp(tstr,'\(InitialTransformParametersFileName \"(.*?)\"\)','tokens');
-    % Assume all initial transform files are in same folder (corrects for copied files)
-        [~,tname,ext] = fileparts(tok{1}{1});
-        if ~isempty(ext)
-            tname = fullfile(fpath,[tname,ext]);
-        end
+        tname = tok{1}{1};
+%     % Assume all initial transform files are in same folder (corrects for copied files)
+%         [~,tname,ext] = fileparts(tok{1}{1});
+%         if ~isempty(ext)
+%             tname = fullfile(fpath,[tname,ext]);
+%         end
     end
 
     % Check that files exist:
     chk = cellfun(@(x)exist(x,'file'),allnames);
     if all(chk)
-        % Update queue table:
         [fpath,fname,ext] = cellfun(@(x)fileparts(x),allnames,'UniformOutput',false);
         nt = length(fpath);
         C = [num2cell(true(nt,1)),strcat(fname,ext),fpath];
-        set(self.h.table_Tguess,'Data',C);
+        if self.guicheck
+            % Update queue table:
+            set(self.h.table_Tguess,'Data',C);
+        end
 
         % Set ElxClass:
         self.elxObj.setT0guess(cell2struct(C',{'i','fname','fpath'}));

@@ -9,6 +9,7 @@ classdef RegClass < handle
         elxObj  % ElxClass object for storing/executing Elastix commands
         ind     % Selected schedule step
         odir = '';    % Elastix/Transformix Output directory
+        waitchk = false; % default to run independently
         
         % Warping Extras:
         jac     = false; % Spatial |Jacobian| map

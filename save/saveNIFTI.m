@@ -2,7 +2,7 @@ function status = saveNIFTI(fname,img,~,max_ext,info)
 % Save as NIFTI-1 file format
 %  - .nii OR .nii.gz
 
-datatypes = 
+% datatypes = 
 
 %  Save NIFTI dataset. Support both *.nii and *.hdr/*.img file extension.
 %  If file extension is not provided, *.hdr/*.img will be used as default.

@@ -203,10 +203,7 @@ if stat
         num2str(length(self.elxObj.Schedule)-1),'.txt']);
                     
     % Waiting for completion / running independently:
-    waitchk = qchk;
-    if self.guicheck
-        waitchk = waitchk || ~self.h.checkbox_wait.Value;
-    end
+    waitchk = qchk || self.waitchk;
     
     % Use all cores (max number of threads):
     ncores = feature('numCores');

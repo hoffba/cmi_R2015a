@@ -3,7 +3,7 @@
 function hf = genMontage(self,x,~)
 % Inputs:
 %   
-if self.img.check && self.dispcheck
+if self.img.check && self.guicheck
     if isa(x,'matlab.ui.container.Menu')
     	F = self.grabFrames;
     elseif isstruct(x) && all(isfield(x,{'vdim','mdim','mind'}))

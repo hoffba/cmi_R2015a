@@ -38,7 +38,7 @@ if (nargin>1) && ismember(Tflag,0:3) && (size(Y,1)==size(X,1))
         
         if Tflag==0
             A = eye(ndim);
-            T = (xbar-ybar)';
+            T = (ybar-xbar)';
         else
             
             % Determine rotation matrix via SVD:

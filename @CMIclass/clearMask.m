@@ -16,6 +16,8 @@ if self.img.mask.check
             sview = self.orient;
             slc = self.slc(sview);
         end
+    elseif nargin==1
+        allchk = true;
     end
     if (nargin<3) || isempty(sview)
         sview = self.orient;
