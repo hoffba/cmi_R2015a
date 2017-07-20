@@ -27,9 +27,10 @@ classdef RegClass < handle
         % Pre-processing Options:
         clamp = [ -inf , inf ; -inf , inf ];
         ftype = 'Median';
-        filtN = zeros(1,3);
-        dilateN = zeros(1,3);
-        histeq = true;
+        filtN = zeros(2,3);
+        dilateN = zeros(2,3);
+        unmaskval = nan(1,2);
+        histeq = false;
         
         % Transformix options:
         Tfx = struct('out',{''},'par',{''},'jac',{false},'jacmat',{false},'def',{false},...

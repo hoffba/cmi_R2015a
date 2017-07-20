@@ -9,25 +9,45 @@ if self.guicheck && (nargin>1) && ishandle(varargin{1}(1))
         case 'popup_filterType'
             str = get(h,'String');
             self.ftype = str{get(h,'Value')};
-        case {'edit_preFilter','edit_VOIdilate'}
-            str = {'filtN','dilateN'};
-            fldni = strcmp(tag,'edit_VOIdilate')+1;
-            i = str2num(get(h,'String'));
-            if isempty(i) || (length(i)~=3) || any(isnan(i)|isinf(i))
-                set(h,'String',num2str(self.(str{fldni})));
-            else
-                self.(str{fldni}) = i;
-            end
-        case {'edit_clampRef','edit_clampHom'}
-            row = strcmp(tag,'edit_clampHom')+1;
-            i = str2num(get(h,'String'));
-            if isempty(i) || (length(i)~=2) || any(isnan(i))
-                set(x,'String',num2str(self.clamp(row,:)));
-            else
-                self.clamp(row,:) = sort(i);
-            end
         case 'checkbox_histeq'
             self.histeq = get(h,'Value');
+        case 'table_opts'
+            irow = varargin{2}.Indices(1);
+            icol = varargin{2}.Indices(2);
+            val = varargin{2}.NewData;
+            oldval = varargin{2}.PreviousData;
+            switch irow
+                case 1 % min
+                    if isscalar(val) && (val<self.clamp(icol,2))
+                        self.clamp(icol,1) = val;
+                    else
+                        h.Data{irow,icol} = oldval;
+                    end
+                case 2 % max
+                    if isscalar(val) && (val>self.clamp(icol,1))
+                        self.clamp(icol,2) = val;
+                    else
+                        h.Data{irow,icol} = oldval;
+                    end
+                case {3,4,5} % filtX, filtY, filtZ
+                    if isscalar(val) && (val>=0)
+                        self.filtN(icol,irow-2) = val;
+                    else
+                        h.Data{irow,icol} = oldval;
+                    end
+                case {6,7,8} % DilateX, DilateY, DilateZ
+                    if isscalar(val) && (val>=0)
+                        self.dilateN(icol,irow-5) = val;
+                    else
+                        h.Data{irow,icol} = oldval;
+                    end
+                case 9 % UnMaskVal
+                    if isscalar(val) && ~isinf(val)
+                        self.unmaskval(icol) = val;
+                    else
+                        h.Data{irow,icol} = oldval;
+                    end
+            end
         otherwise
             warning(['Unknown tag:',tag])
     end
@@ -40,7 +60,7 @@ elseif (nargin>=3) && ischar(varargin{1})
     end
     for i = 1:length(f)
         val = v{i};
-        switch f{i}
+        switch lower(f{i})
             case 'ftype'
                 h = self.h.popup_filterType;
                 str = get(h,'String');
@@ -49,34 +69,27 @@ elseif (nargin>=3) && ischar(varargin{1})
                     set(h,'Value',ind);
                     self.ftype = val;
                 end
-            case 'filtN'
-                if isnumeric(val) && (length(val)==3) && ~any(isnan(val)|isinf(val))
+            case 'filtn'
+                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==3) && ~any(isnan(val)|isinf(val))
                     if self.guicheck
-                        set(self.h.edit_preFilter,'String',num2str(val));
+                        self.h.table_opts.Data(3:5,:) = num2cell(val');
                     end
                     self.filtN = val;
                 end
-            case 'dilateN'
-                if isnumeric(val) && (length(val)==3) && ~any(isnan(val)|isinf(val))
+            case 'dilaten'
+                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==3) && ~any(isnan(val)|isinf(val))
                     if self.guicheck
-                        set(self.h.edit_VOIdilate,'String',num2str(val));
+                        self.h.table_opts.Data(6:8,:) = num2cell(val');
                     end
                     self.dilateN = val;
                 end
-            case {'clampRef','clampHom'}
-                if isnumeric(val) && (length(val)==2)
-                    val = sort(val); % Make sure it's in ascending order
-                    if strcmp(f{i},'clampRef');
-                        ind = 1;
-                        str = 'edit_clampRef';
-                    else
-                        ind = 2;
-                        str = 'edit_clampHom';
-                    end
+            case 'clamp'
+                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==2) && ~any(isnan(val))
+                    val = sort(val,2);
                     if self.guicheck
-                        set(self.h.(str),'String',num2str(val));
+                        self.h.table_opts.Data(1:2,:) = num2cell(val');
                     end
-                    self.clamp(ind,:) = val;
+                    self.clamp = val;
                 end
             case 'histeq'
                 if islogical(val)
@@ -84,6 +97,13 @@ elseif (nargin>=3) && ischar(varargin{1})
                         set(self.h.checkbox_histeq,'Value',val);
                     end
                     self.histeq = val;
+                end
+            case 'unmaskval'
+                if isnumeric(val) && (numel(val)==2) && ~any(isinf(val))
+                    if self.guicheck
+                        self.h.table_opts.Data(9,:) = num2cell(val);
+                    end
+                    self.unmaskval = val;
                 end
             otherwise
                 warning('Property "%s" not set',f{i});

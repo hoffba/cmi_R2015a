@@ -70,11 +70,11 @@ if stat
         switch self.ftype
             case 'Gaussian'
                 filtN = self.filtN/3;
-                func = @(x)imfilter(x,gaussND(filtN));
+                func = @(x,f)imfilter(x,gaussND(f));
             case 'Median'
-                func = @(x)medfilt2(x,filtN(1:2));
+                func = @(x,f)medfilt2(x,f(1:2));
             case 'Wiener'
-                func = @(x)wiener2(x,filtN(1:2));
+                func = @(x,f)wiener2(x,f(1:2));
         end
     else
         filtN = [];
@@ -87,14 +87,14 @@ if stat
     
     % Moving Image:
     if stat
-        if ~isempty(filtN) && any(filtN)
+        if ~isempty(filtN) && any(filtN(2,:))
             % Apply image filter
             waitbar(0.25,hw,'Filtering Moving Image ...');
             if strcmp(self.ftype,'Gaussian')
-                timg = feval(func,timg);
+                timg = feval(func,timg,filtN(2,:));
             else
                 for islc = 1:size(timg,3)
-                    timg(:,:,islc) = feval(func,timg(:,:,islc));
+                    timg(:,:,islc) = feval(func,timg(:,:,islc),filtN(2,:));
                     waitbar(islc/size(timg,3),hw);
                 end
             end
@@ -102,6 +102,10 @@ if stat
         % Apply image crops:
         timg(timg>self.clamp(2,2)) = self.clamp(2,2);
         timg(timg<self.clamp(2,1)) = self.clamp(2,1);
+        % Set values outside of mask:
+        if ~isnan(self.unmaskval(2)) && self.cmiObj(2).img.mask.check
+            timg(~self.cmiObj(2).img.mask.mat) = self.unmaskval(2);
+        end
         % Apply histogram equalization:
         if self.histeq
             if self.cmiObj(2).img.mask.check
@@ -130,13 +134,13 @@ if stat
     % Fixed Image:
     if stat
         timg = self.cmiObj(1).img.mat(:,:,:,self.cmiObj(1).vec);
-        if ~isempty(filtN) && any(filtN)
+        if ~isempty(filtN) && any(filtN(1,:))
             waitbar(0.5,hw,'Filtering Fixed Image ...');
             if strcmp(self.ftype,'Gaussian')
-                timg = feval(func,timg);
+                timg = feval(func,timg,filtN(2,:));
             else
                 for islc = 1:size(timg,3)
-                    timg(:,:,islc) = feval(func,timg(:,:,islc));
+                    timg(:,:,islc) = feval(func,timg(:,:,islc),filtN(1,:));
                     waitbar(islc/size(timg,3),hw);
                 end
             end
@@ -144,6 +148,10 @@ if stat
         % Apply image crops:
         timg(timg>self.clamp(1,2)) = self.clamp(1,2);
         timg(timg<self.clamp(1,1)) = self.clamp(1,1);
+        % Set values outside of mask:
+        if ~isnan(self.unmaskval(1)) && self.cmiObj(1).img.mask.check
+            timg(~self.cmiObj(1).img.mask.mat) = self.unmaskval(1);
+        end
         % Apply histogram equalization:
         if self.histeq
             if self.cmiObj(1).img.mask.check
@@ -175,7 +183,7 @@ if stat
             waitbar(0.75,hw,['Dilating and Saving Moving VOI ...',mmskname]);
             elxC = [elxC,'mMask',mmskname];
             stat = saveMHD(mmskname,...
-                           voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN),...
+                           voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
                            [],mfov);
         end
     end
@@ -186,7 +194,7 @@ if stat
             waitbar(0.85,hw,['Dilating and Saving Moving VOI ...',fmskname]);
             elxC = [elxC,'fMask',fmskname];
             stat = saveMHD(fmskname,...
-                           voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN),...
+                           voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
                            [],ffov);
         end
     end

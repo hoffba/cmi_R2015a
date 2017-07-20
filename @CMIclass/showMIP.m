@@ -17,7 +17,8 @@ if self.overcheck
         (squeeze(max(self.img.mat(:,:,:,self.vec).*self.img.mask.mat,[],self.orient)) ...
                         - tclim(1)) / diff(tclim);
     timg(timg<1) = 1;
-    adata = 0.4*squeeze(max(self.img.mask.mat,[],self.orient));
+    alpha = 1;
+    adata = alpha*squeeze(max(self.img.mask.mat,[],self.orient));
     cshift = self.ncolors;
 else
     tclim = self.clim(self.vec,:);

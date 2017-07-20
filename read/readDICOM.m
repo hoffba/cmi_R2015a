@@ -337,13 +337,12 @@ if ~isempty(dcmdata)
     ct = 0;
     for i = 1:n
         ii = i+ct;
-        ns = length(dcmdata(ii).AcquisitionNumber);
+        ns = size(dcmdata(ii).SlicePos,1);
         uS = unique(dcmdata(ii).SlicePos,'rows');
         nuS = length(uS);
-%         uA = unique([dcmdata(ii).SlicePos,dcmdata(ii).AcquisitionNumber'],'rows');
         uA = unique(dcmdata(ii).AcquisitionNumber);
         nuA = length(uA);
-        if (nuS~=ns)
+        if (nuA>1) && (nuA<ns)% (nuS~=ns) && (nuA~=ns)
             if (nuA>1)
                 disp('Separating images by AcquisitionNumber');
                 A = dcmdata(ii).AcquisitionNumber;
@@ -435,10 +434,12 @@ if ~isempty(dcmdata)
     end
 
     % User GUI to select single acquisition from set:
-    if (length(dcmdata)>1)
+    ndd = length(dcmdata);
+    if (ndd>1)
         dd = cellfun(@size,{dcmdata(:).img},'UniformOutput',false);
         ld = cellfun(@length,dd);
         if all(ld==ld(1)) && all(cellfun(@(x)all(x==dd{1}),dd))
+            % Concatenate in 4D:
             dcmdata(1).img = cat(4,dcmdata(:).img);
             dcmdata(1).Label = [dcmdata(:).Label];
             dcmdata(1).AcquisitionNumber = ...
@@ -454,8 +455,18 @@ if ~isempty(dcmdata)
             str = strcat('(',cellfun(@(x)num2str(size(x,1)),{dcmdata(:).SlicePos},...
                                      'UniformOutput',false),...
                          ' Slices)',[dcmdata(:).Label]);
+            % Show saggital preview for each:
+            hf = figure('Colormap',gray);
+            nrow = round(sqrt(ndd));
+            ncol = ceil(ndd/nrow);
+            for imont = 1:ndd
+                subplot(nrow,ncol,imont),
+                imshow(squeeze(max(dcmdata(imont).img,[],2)),[]);
+                title(str{imont});
+            end
             answer = listdlg('ListString',str,'SelectionMode','single',...
                              'ListSize',[300,300]);
+            delete(hf);
             if isempty(answer)
                 return % User cancelled the load
             else

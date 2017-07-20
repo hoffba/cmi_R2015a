@@ -2,17 +2,28 @@
 function setOdir(self,x,~)
 % Set Output directory for all Elastix/Transformix files
 
-if (nargin==1) || (~isempty(x) && ishandle(x(1)))
-    odir = uigetdir(self.odir,'Select output directory');
-    if ischar(odir)
-        str = odir;
-    else
-        str = '';
-    end
-elseif ischar(x)
+if nargin==1
+    x = self.h.button_odir;
+end
+
+if ischar(x)
     str = x;
+elseif ishandle(x(1))
+    switch x(1).Tag
+        case 'button_odir'
+            odir = uigetdir(self.odir,'Select output directory');
+            if ischar(odir)
+                str = odir;
+            else
+                str = '';
+            end
+        case 'edit_odir'
+            str = x.String;
+        otherwise
+            str = '';
+    end
 else
-    warning('Input is not a directory path.');
+    warning('RegClass/setOdir: Invalid input.');
 end
 
 if ~isempty(str)

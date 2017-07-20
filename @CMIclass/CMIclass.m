@@ -10,7 +10,7 @@ classdef CMIclass < handle
         vec = 1;                % 4D index to show
         bgvec = 1;              % 4D index for background image
         roifun = 'Auto';        % Function for new ROIs
-        drawMode = 0;           % VOI drawing function (0=roipoly, 1=imfreehand)
+        drawMode = 1;           % VOI drawing function (0=roipoly, 1=imfreehand)
         
         histObj                 % HistogramClass object (created in constructor)
         
