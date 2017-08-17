@@ -11,7 +11,10 @@ if (nargin > 2)
                 self.nbins = nbins;
             end
         end
-        self.binLocs = (xmin:((xmax-xmin)/(self.nbins-1)):xmax)';
+        % histogram bin locations are center, so include one more on each
+        % side to exclude from plot:
+        dbin = ((xmax-xmin)/(self.nbins-1));
+        self.binLocs = ((xmin-dbin):dbin:(xmax+dbin))';
         % Set plot x-axis limits
         set(self.haPlot,'XLim',[xmin xmax]);
     end

@@ -21,12 +21,13 @@ if fid>2
     if isempty(ind) || ~strcmp(bname(end-2:end),'rec') % Acquisition -- for projections
         str2 = strsplit(info{strncmp('Image Pixel Size',info,16)},'=');
         voxsz = str2double(str2{2});
-        str2 = strsplit(info{strncmp('Number Of Rows',info,14)},'=');
+        str2 = strsplit(info{strncmpi('Number Of Rows',info,14)},'=');
         dims(1) = str2double(str2{2});
-        str2 = strsplit(info{strncmp('Number Of Columns',info,17)},'=');
+        str2 = strsplit(info{strncmpi('Number Of Columns',info,17)},'=');
         dims(2) = str2double(str2{2});
-        str2 = strsplit(info{strncmp('Number Of Files',info,15)},'=');
+        str2 = strsplit(info{strncmpi('Number Of Files',info,15)},'=');
         dims(3) = str2double(str2{2});
+        ext = '.tif';
         istart = 0;
     else % Reconstruction -- for reconstructed images
         info(1:ind-1) = [];

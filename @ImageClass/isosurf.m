@@ -22,6 +22,6 @@ if self.check && nargin==3 && isnumeric(vec) && isnumeric(val) && vec>=0
         end
         daspect(1./self.voxsz);
         camlight
-        view(122,16); axis tight off
+        view(70,0); axis tight off
     end
 end

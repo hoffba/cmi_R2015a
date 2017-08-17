@@ -70,21 +70,21 @@ elseif (nargin>=3) && ischar(varargin{1})
                     self.ftype = val;
                 end
             case 'filtn'
-                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==3) && ~any(isnan(val)|isinf(val))
+                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==3) && ~any(isnan(val(:))|isinf(val(:)))
                     if self.guicheck
                         self.h.table_opts.Data(3:5,:) = num2cell(val');
                     end
                     self.filtN = val;
                 end
             case 'dilaten'
-                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==3) && ~any(isnan(val)|isinf(val))
+                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==3) && ~any(isnan(val(:))|isinf(val(:)))
                     if self.guicheck
                         self.h.table_opts.Data(6:8,:) = num2cell(val');
                     end
                     self.dilateN = val;
                 end
             case 'clamp'
-                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==2) && ~any(isnan(val))
+                if isnumeric(val) && (size(val,1)==2) && (size(val,2)==2) && ~any(isnan(val(:)))
                     val = sort(val,2);
                     if self.guicheck
                         self.h.table_opts.Data(1:2,:) = num2cell(val');

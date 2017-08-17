@@ -41,7 +41,7 @@ if fid>2
             error('This datatype is not supported'); 
     end
     fseek(fid,info.dim.vox_offset,'bof');
-    img = reshape(fread(fid,inf,precision),info.dim.dim(2:4));
+    img = permute(reshape(fread(fid,inf,precision),info.dim.dim(2:4)),[2,1,3]);
     fclose(fid);
     dorder = [3,2,4];
     fov = info.dim.dim(dorder).*info.dim.pixdim(dorder);

@@ -1,4 +1,4 @@
-% CMIcalss function
+% CMIclass function
 % Delete Image
 function imgDelete(self,~,~)
 nvec = self.img.dims(4);

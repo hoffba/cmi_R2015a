@@ -19,7 +19,8 @@ if (nargin > 2)
         thistn = hist(vals(:),self.binLocs)';
         self.binVals(:,n) = thistn;
         set(self.hLines(n),'DisplayName',newLabel,...
-            'YData',thistn/max(thistn),'XData',self.binLocs);
+            'YData',thistn(2:end-1)/max(thistn(2:end-1)),...
+            'XData',self.binLocs(2:end-1));
         self.means(n) = mean(vals(:));
         self.stdevs(n) = std(vals(:));
         self.meds(n) = median(vals(:));

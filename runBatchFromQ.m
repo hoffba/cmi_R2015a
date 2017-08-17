@@ -12,7 +12,7 @@ if nargin<2
 elseif varargin{1}==1
     
     go = true;
-    while go
+    while go && exist(fname,'file')
         % Grab next command from queue file:
         tname = fullfile(fileparts(fname),'temp.txt');
         ifid = fopen(fname,'rt');

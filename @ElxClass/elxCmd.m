@@ -125,6 +125,7 @@ if ns~=0
     for i = 1:ns
         if strcmp(self.getPar(i,'ImageSampler'),'RandomSparseMask') && ~mchk
             % Can't use RandomSparseMask if no mask was loaded.
+            warning('No mask loaded, changing sampler to RandomCoordinate.');
             self.setPar(i,'ImageSampler','RandomCoordinate');
         end
     end

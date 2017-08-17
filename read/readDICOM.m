@@ -67,7 +67,7 @@ dcmdata = struct('SeriesInstanceUID',{},... % for sorting multiple images
 %       CT  - kV, ...
              
 % Read in all DICOM slices:
-hp = waitbar(0,'','WindowStyle','modal',...
+hp = waitbar(0,'','Name','Loading DICOM image ...','WindowStyle','modal',...
     'CreateCancelBtn','setappdata(gcbf,''canceling'',1)'); % Option to cancel load midway
 setappdata(hp,'canceling',0)
 try
@@ -451,6 +451,12 @@ if ~isempty(dcmdata)
             dcmdata(1).TE = [dcmdata(:).TE];
             dcmdata(1).TR = [dcmdata(:).TR];
             dcmdata(2:end) = [];
+%         elseif all(cellfun(@(x)all(x(1:2)==dd{1}(1:2)),dd))
+%             % Concatenate in 3D:
+%             dcmdata(1).img = cat(3,dcmdata(:).img);
+%             dcmdata(1).SlicePos = cat(1,dcmdata(:).SlicePos);
+%             dcmdata(1).AcquisitionNumber = cat(2,dcmdata(:).AcquisitionNumber);
+%             dcmdata(2:end) = [];
         else
             str = strcat('(',cellfun(@(x)num2str(size(x,1)),{dcmdata(:).SlicePos},...
                                      'UniformOutput',false),...
@@ -496,6 +502,10 @@ if ~isempty(dcmdata)
         else
             error('Matrix cannot be separated into 4D.')
         end
+    else
+        dcmdata.img = dcmdata.img(:,:,ix);
+        dcmdata.SlicePos = dcmdata.SlicePos(ix,:);
+        dcmdata.AcquisitionNumber = dcmdata.AcquisitionNumber(ix);
     end
     if (n4d>1) && (d(3)==(n4d*nnz(uind==1)))
         ns = d(3)/n4d;

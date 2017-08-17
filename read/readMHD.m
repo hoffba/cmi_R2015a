@@ -48,13 +48,13 @@ if fid>2
     if isempty(ind)
         if nv>1
             label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
-                                         'UniformOutput',false));
+                                         'UniformOutput',false))';
         else
             label = {bname};
         end
     else
         label = regexp(hstr{ind+1},'\"(.*?)\"','tokens');
-        label = [label{:}];
+        label = [label{:}]';
     end
     ind = find(strcmp('CompressedData',hstr),1);
     if isempty(ind)
@@ -112,7 +112,8 @@ elseif hchk && exist(rawfname,'file')
             img = fread(fid,inf,Etype);
         end
         img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
-        img = permute(reshape(img,[d,nv]),[2,1,3,4]);
+%         img = permute(reshape(img,[d,nv]),[2,1,3,4]);
+        img = permute(reshape(img,[nv,d]),[3,2,4,1]);
         fov = d.*voxsz;
         fclose(fid);
     else
