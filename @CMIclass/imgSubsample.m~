@@ -11,8 +11,8 @@ if isa(x,'matlab.ui.container.Menu')
         x = cellfun(@str2num,answer,'UniformOutput',false);
     end
 end
-if iscell(x) && (length(x)==3)
-    stat = self.img.subsample(x{:});
+if length(x)
+    stat = self.img.subsample(answer{:});
     self.slc = round(self.img.dims(1:3)/2);
     if stat
         self.setView(self.orient);

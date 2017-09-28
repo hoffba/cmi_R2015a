@@ -77,7 +77,7 @@ info(:,ind) = [];
 sn = 73400000 + round(rand(1)*10^5);
 p = inputParser;
 p.KeepUnmatched = true;
-addParameter(p,'Modality','OT',@ischar);
+addParameter(p,'Modality','CT',@ischar);
 addParameter(p,'ImageType','ORIGINAL\PRIMARY\AXIAL',@ischar);
 addParameter(p,'PatientPosition','HFS',@ischar);
 addParameter(p,'PatientID','Unknown',@ischar);

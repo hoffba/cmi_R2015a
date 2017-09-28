@@ -9,6 +9,8 @@ else
     str = hObject(end-1:end);
     if ~strcmp(str(1),'t')
         tstr = 'a';
+    else
+        tstr = '';
     end
     hObject = findobj('Tag',['edit_',tstr,str]);
 end

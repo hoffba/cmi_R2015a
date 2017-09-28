@@ -14,8 +14,8 @@ else
     str = 'Mask';
 end
 dtypes = {...
-            {'.hdr','.img'},            'ANALYZE';...   % 1
-            {'.mhd','.raw'},            'MHD';...       % 2
+            {'.hdr'},            'ANALYZE';...   % 1
+            {'.mhd'},            'MHD';...       % 2
             {'.fld'},                   'FLD';...       % 3
             {'.fdf'},                   'FDF';...       % 4
             {'.vff'},                   'VFF';...       % 5
@@ -66,7 +66,8 @@ if gopt
     % User selects file(s)
     filter = [{[filter{:,1},'.gz'],'All Images'};filter];
     filter(:,1) = cellfun(@(x)sprintf('*%s;',x{:}),filter(:,1),'UniformOutput',false);
-    [fullname,fpath,findex] = uigetfile([{'*','All'};filter],['Load ',str,':'],'MultiSelect',str);
+%     [fullname,fpath,findex] = uigetfile([{'*','All'};filter],['Load ',str,':'],'MultiSelect',str);
+    [fullname,fpath,findex] = uigetfile(filter,['Load ',str,':'],'MultiSelect',str);
     if fpath
         if ischar(fullname) % single selection
             fullname = {[fpath,fullname]};

@@ -25,7 +25,7 @@ if procfid>0
     go = true;
     while go
         line = fgetl(procfid);
-        if ~ischar(line)
+        if ~ischar(line) || isempty(line)
             go = false;
         else
             [str,rem] = strtok(line);

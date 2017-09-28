@@ -16,6 +16,12 @@ else
     qchk = false;
 end
 
+% Check for mask if RandomSparseMask is selected:
+isamp = cellfun(@(x)x.ImageSampler,self.elxObj.Schedule,'UniformOutput',false);
+if any(strcmp(isamp,'RandomSparseMask')) && ~self.cmiObj(1).img.mask.check
+    error('RandomSparseMask image sampling requires a mask on the fixed image.');
+end
+
 stat = self.cmiObj(1).img.check && self.cmiObj(2).img.check;
 hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
 
