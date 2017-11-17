@@ -29,14 +29,17 @@ end
 if ~isempty(str)
     % Check for ouput directory:
     if self.guicheck
-%         if ~exist(str,'dir')
-%             answer = questdlg(['Directory does not exist. Create directory: ',str,'?']);
-%             if strcmp(answer,'Yes')
-%                 mkdir(str);
-%             else
-%                 str = '';
-%             end
-%         end
+        if ~exist(str,'dir')
+            answer = questdlg(['Directory does not exist. Create directory: ',str,'?']);
+            if strcmp(answer,'Yes')
+                mkdir(str);
+            else
+                str = uigetdir(pwd,'Select output directory:');
+                if str==0
+                    str = '';
+                end
+            end
+        end
         set(self.h.edit_Odir,'String',str);
     end
     self.odir = str;

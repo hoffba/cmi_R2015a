@@ -3,8 +3,8 @@
 % Inputs: tp = structure containging:
 %               .fname  = string file name of TransformParameters.*.txt
 %               .chain  = chain number (see below)
-%               .im     = {nx3} cell array of image file names and output names
-%                           * { NN , fname , outname }
+%               .im     = {nx4} cell array of image file names and output names
+%                           * { NN , fname , outname , defVal }
 %               .jac    = logical, to spit out SpatialJacobian
 %         odir = directory for outputs
 % 

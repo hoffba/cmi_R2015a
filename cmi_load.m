@@ -64,7 +64,7 @@ if gopt
         str = 'off';
     end
     % User selects file(s)
-    filter = [{[filter{:,1},'.gz'],'All Images'};filter];
+    filter = [{[filter{:,1},'.gz'],'All Images'};filter;{{''},'All Files'}];
     filter(:,1) = cellfun(@(x)sprintf('*%s;',x{:}),filter(:,1),'UniformOutput',false);
 %     [fullname,fpath,findex] = uigetfile([{'*','All'};filter],['Load ',str,':'],'MultiSelect',str);
     [fullname,fpath,findex] = uigetfile(filter,['Load ',str,':'],'MultiSelect',str);
