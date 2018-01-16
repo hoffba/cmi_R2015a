@@ -19,9 +19,10 @@ dtypes = {...
             {'.fld'},                   'FLD';...       % 3
             {'.fdf'},                   'FDF';...       % 4
             {'.vff'},                   'VFF';...       % 5
+            {'fid','2dseq'},            'BrukerMRI';...  %
+            {'.log'},                   'BrukerCT';...    % 8
             {'.dcm','.1','DICOMDIR'},   'DICOM';...     % 6
             {'.nii'},                   'NIFTI';...     % 7
-            {'.log'},                   'Bruker';...    % 8
             {'.sur','.mrd'},            'MRS';...       % 9
             {'.mask'},                  'MASK';...      % 10
             {'.tif'},                   'TIFF';...      % 11
@@ -93,7 +94,7 @@ if ~isempty(fullname)
     for i = 1:nf
         if ok
             % Evaluate format-relevant load function
-            [fpath,~,ext] = fileparts(fullname{i});
+            [fpath,tname,ext] = fileparts(fullname{i});
             % If GNU zipped, unzip to same folder:
             if strcmp(ext,'.gz')
                 if ~exist(fullname{i}(1:end-3),'file')
@@ -102,6 +103,9 @@ if ~isempty(fullname)
                 end
                 fullname{i} = fullname{i}(1:end-3);
                 [~,~,ext] = fileparts(fullname{i});
+            end
+            if any(strcmp(tname,{'2dseq','fid'}))
+                ext = tname;
             end
             if isempty(ext)
                 datatype = 'DICOM';

@@ -17,6 +17,8 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
         if ~isempty(ftype)
             ftype = filts{ftype};
             go = true;
+        else
+            return;
         end
     elseif ~ischar(ftype) || ~any(strcmpi(ftype,filts))
         error('ImageClass::imgFilt - Invalid filter type input.')

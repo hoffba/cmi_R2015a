@@ -342,7 +342,7 @@ if ~isempty(dcmdata)
         nuS = length(uS);
         uA = unique(dcmdata(ii).AcquisitionNumber);
         nuA = length(uA);
-        if (nuA>1) && (nuA<ns)% (nuS~=ns) && (nuA~=ns)
+        if (nuA>1) && (nuA<ns) && (nuS~=ns)
             if (nuA>1)
                 disp('Separating images by AcquisitionNumber');
                 A = dcmdata(ii).AcquisitionNumber;

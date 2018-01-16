@@ -34,7 +34,7 @@ function [flowval cut R F] = max_flow(A,u,v,varargin)
 % David Gleich
 % Copyright, Stanford University, 2006-2008
 
-%% History
+% History
 %  2006-04-16: Initial version
 %  2006-05-31: Added full2sparse check
 %  2007-07-08: Added additional algname
@@ -44,7 +44,7 @@ function [flowval cut R F] = max_flow(A,u,v,varargin)
 %  2008-09-23: Fixed "check" changing the input (Bug #273796)
 %  2008-10-07: Changed options parsing
 %    Added fix_diag option
-%%
+%
 
 [trans check full2sparse] = get_matlab_bgl_options(varargin{:});
 if full2sparse && ~issparse(A), A = sparse(A); end
