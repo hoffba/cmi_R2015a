@@ -71,7 +71,7 @@ if stat
     mmskname = fullfile(self.odir,'elxtemp-mMask.mhd');
     
     % Filter settings:
-    if any(self.filtN>0)
+    if any(self.filtN(:)>0)
         filtN = 2*self.filtN + 1;
         switch self.ftype
             case 'Gaussian'

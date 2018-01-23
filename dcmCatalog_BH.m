@@ -1,4 +1,4 @@
-function C = dcmCatalog_BH
+function C = dcmCatalog_BH(filt)
 % Catalogs desired DICOM header values
 % Inputs (optional):
 %       extout = extension of files to save
@@ -7,7 +7,11 @@ function C = dcmCatalog_BH
 % Input: filt = string or cell array of strings for file name filters
 %               e.g. '*.dcm' or {'*.1','*.dcm'}
 
-filt = {'*.1','*.dcm',''};
+if nargin==0 || ~(iscellstr(filt) || ischar(filt))
+    filt = {'*.1','*.dcm',''};
+elseif ischar(filt)
+    filt = {filt};
+end
 
 dcmtags = {'PatientID','StudyID','StudyDate','SeriesNumber','AcquisitionNumber',...
     'StudyDescription','SeriesDescription','ScanOptions',...

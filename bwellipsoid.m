@@ -16,3 +16,7 @@ end
                        ze );
 se = zeros(d);
 se(sqrt(xe.^2 + ye.^2 + ze.^2) <= 1.1) = 1;
+
+if nnz(se)==0
+    se = se+1;
+end

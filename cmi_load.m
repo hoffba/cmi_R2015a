@@ -112,7 +112,7 @@ if ~isempty(fullname)
             else
                 idt = find(cellfun(@(x)any(strcmpi(ext,x)),dtypes(:,1)),1);
                 if isempty(idt) && isdicom(fullname{i})
-                    idt = 6;
+                    idt = 8;
                 end
                 datatype = dtypes{idt,2};
             end
