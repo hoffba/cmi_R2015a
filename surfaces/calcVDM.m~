@@ -1,27 +1,13 @@
-function [vdm,h] = calcVDM(method,mask,voxsz,dt,elxdir)
-% Method:
-%   1 = linear |J|
-%   2 = exponential |J|
-%   3 = Surface tangent |J|
-%   4 = d|J|/dt
-%   5 = dA
+function [vdm,h] = calcVDM(mask,voxsz,dt,elxdir)
 
-
-% method = 5;
+method = 1;
 logchk = true;
-if logchk
-%     V = log(V);
-%     clim = 0.8 * [-1,1];
-    clim = [0.5,2.25];
-else
-    clim = 1 + 0.4*[-1,1];
-end
 
 % Check for existing results:
 vdmname = fullfile(elxdir,'VDM.mat');
 if exist(vdmname,'file')
     vdm = load(vdmname);
-    d = size(mask);
+    d = size(BW);
     lims = (d-1).*voxsz/2;
     [x,y,z] = meshgrid(-lims(2):voxsz(2):lims(2),...
                        -lims(1):voxsz(1):lims(1),...
@@ -39,7 +25,7 @@ else
     end
     fclose(fid);
 
-    vdm = struct('voxsz',voxsz,'vertices',fv.vertices,'faces',fv.faces,...
+    vdm = struct('vertices',fv.vertices,'faces',fv.faces,...
         'map_linJ',[],'map_expJ',[],'map_tanJ',[],'map_dJdt',[],'map_dA',[]);
     clear fv;
 end
@@ -48,24 +34,13 @@ end
 % Generate surface map based on method:
 switch method
     case 1 % linear |J|
-        
         label = 'map_linJ';
-        str = 'Linear |J|';
-        
         V = (surfVal(loadData(elxdir,'jdet'),x,y,z,vdm.vertices)-1)/dt +1;
-        
     case 2 % exponential |J|
-        
         label = 'map_expJ';
-        str = 'Exponential |J|';
-        
         V = surfVal(loadData(elxdir,'jdet'),x,y,z,vdm.vertices).^(1/dt);
-        
     case 3 % surface tangent |J|
-        
         label = 'map_tanJ';
-        str = 'Surface Tangent |J|';
-        
         M = permute(reshape(surfVal(loadData(elxdir,'jmat'),x,y,z,vdm.vertices)',3,3,[]),[2,1,3]);
 
         % Determine planar Jacobian from isonormals:
@@ -80,43 +55,18 @@ switch method
         V = V.^(1/dt);
 
     case 4 % d|J|/dt
-        
         label = 'map_dJdt';
-        str = 'd|J|/dt';
         
-        dX = loadData(elxdir,'def');
-        fprintf('Calculating spatial Jacobian ...\n');
-        F = surfVal(def2jac(dX,voxsz),x,y,z,vdm.vertices(:,:,1));
-        fprintf('Calculating spatial rate Jacobian ...\n');
-        FF = surfVal(def2jac(dX/dt,voxsz),x,y,z,vdm.vertices(:,:,1));
-
-        np = size(F,1);
-        V = zeros(np,1);
-        f = zeros(3); % J
-        ff = zeros(3);% dJ/dt
-        gi = mod(1:np,round(np/20))==0;
-        fprintf('Calculating Jacobian rate determinant ...\n');
-        for i = 1:np
-            f(:) = F(i,:);
-            ff(:) = FF(i,:);
-            V(i) = det(f) * trace( ff / f )/3;
-            if gi(i)
-                fprintf('%u%% Complete\n',sum(gi(1:i))*5);
-            end
-        end
         
     case 5 % dA
-        
         label = 'map_dA';
-        str = 'Relative Surface Area';
-        
         p = loadData(elxdir,'pts');
         vdm.vertices = p;
-        nf = size(vdm.faces,1);
+        nf = size(results.faces,1);
         V = zeros(nf,1);
         fprintf('Calculating face areas ...\n');
         for i = 1:nf
-            V(i) = area3D(p(vdm.faces(i,:),:,:));
+            V(i) = area3D(p(results.faces(i,:),:,:));
         end
         V = V.^(1/dt);
 end
@@ -127,8 +77,13 @@ vdm.(label) = V;
 save(vdmname,'-struct','vdm');
 
 % Generate VDM figure:
-h = savesurf(2,vdm.faces,vdm.vertices(:,:,end),V,clim,str,logchk,...
-    fullfile(elxdir,sprintf('VDM_%s',label)));
+if logchk
+    V = log(V);
+    clim = 0.8 * [-1,1];
+else
+    clim = 1 + 0.4*[-1,1];
+end
+h = savesurf(1,vdm.faces,vdm.vertices,V,clim,fullfile(elxdir,sprintf('VDM_%s',label)));
 
 
 function V = surfVal(M,x,y,z,p)

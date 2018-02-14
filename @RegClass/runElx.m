@@ -69,6 +69,7 @@ if stat
     mname = fullfile(self.odir,'elxtemp-m.mhd');
     fmskname = fullfile(self.odir,'elxtemp-fMask.mhd');
     mmskname = fullfile(self.odir,'elxtemp-mMask.mhd');
+    tmskname = fullfile(self.odir,'elxtemp-tMask.mhd');
     
     % Filter settings:
     if any(self.filtN(:)>0)
@@ -183,27 +184,40 @@ if stat
         stat = saveMHD(fname,timg,[],ffov);
     end
     
+    % Moving VOI to transform along with image:
+    addstr = '';
+    if stat && self.Tvoi
+        waitbar(0.65,hw,'Saving moving VOI for transform ...');
+        stat = saveMHD(tmskname,self.cmiObj(2).img.mask.mat,[],mfov);
+        elxC = [elxC,'tMask',tmskname];
+        addstr = strcat(addstr,...
+            '; sed ''s/Final[A-Za-z]*Interpolator/FinalNearestNeighborInterpolator/'' <',...
+            test.txt,' >test2.txt');
+        fullfile(self.odir,[self.cmiObj(2).img.name,'_VOI_R.mhd'])
+    end
+    
+    % Fixed VOI surface mesh points to transform:
+    if stat && self.Tsurf
+    end
+    
     % Dilate and save moving mask:
-    if stat
-        if self.cmiObj(2).img.mask.check
-            waitbar(0.75,hw,['Dilating and Saving Moving VOI ...',mmskname]);
-            elxC = [elxC,'mMask',mmskname];
-            stat = saveMHD(mmskname,...
-                           voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
-                           [],mfov);
-        end
+    if stat && self.cmiObj(2).img.mask.check
+        waitbar(0.75,hw,['Dilating and Saving Moving VOI ...',mmskname]);
+        elxC = [elxC,'mMask',mmskname];
+        stat = saveMHD(mmskname,...
+                       voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
+                       [],mfov);
     end
     
     % Dilate and save fixed mask:
-    if stat
-        if self.cmiObj(1).img.mask.check
-            waitbar(0.85,hw,['Dilating and Saving Moving VOI ...',fmskname]);
-            elxC = [elxC,'fMask',fmskname];
-            stat = saveMHD(fmskname,...
-                           voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
-                           [],ffov);
-        end
+    if stat && self.cmiObj(1).img.mask.check
+        waitbar(0.85,hw,['Dilating and Saving Moving VOI ...',fmskname]);
+        elxC = [elxC,'fMask',fmskname];
+        stat = saveMHD(fmskname,...
+                       voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
+                       [],ffov);
     end
+    
     
 end
 

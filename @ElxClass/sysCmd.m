@@ -24,6 +24,7 @@ p.addParameter('jac',false,@islogical);
 p.addParameter('jacmat',false,@islogical);
 p.addParameter('def',false,@islogical);
 p.addParameter('outfn',{},@(x)ischar(x)||iscellstr(x));
+p.addParameter('tMask','',@ischar);
 % Parse inputs:
 parse(p,odir,varargin{:});
 iflds = setdiff(p.Parameters,p.UsingDefaults);
@@ -54,6 +55,10 @@ if ii(1) && any(ii(2:end))
                     'jacmat',p.jacmat,...
                        'def',p.def)];
 end
+% Transformix call for moving VOI:
+if ii(1) && ismember('tMask',iflds)
+end
+
 if ~isempty(str)
     % Cleanup string:
     if p.cleanup

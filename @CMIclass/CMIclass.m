@@ -270,10 +270,15 @@ classdef CMIclass < handle
                         tmask = self.getImgSlice('img');
                         tmask = (tmask>=self.img.thresh(self.vec,1)) ...
                               & (tmask<=self.img.thresh(self.vec,2));
-                        [voir,voic] = find(edge(tmask,'Canny'));
-                        tsz = self.img.voxsz; tsz(self.orient) = [];
-                        voir = tsz(1) * voir - tsz(1)/2;
-                        voic = tsz(2) * voic - tsz(2)/2;
+                        if nnz(tmask)==numel(tmask)
+                            voir = [];
+                            voic = [];
+                        else
+                            [voir,voic] = find(edge(tmask,'Canny'));
+                            tsz = self.img.voxsz; tsz(self.orient) = [];
+                            voir = tsz(1) * voir - tsz(1)/2;
+                            voic = tsz(2) * voic - tsz(2)/2;
+                        end
                     else
                         voir = [];
                         voic = [];

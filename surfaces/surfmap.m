@@ -1,11 +1,17 @@
-function [h,fv] = surfmap(varargin)
-% h = surfmap(BW,voxsz)
-% h = surfmap(BW,voxsz,V,clim)
-% h = surfmap(fv,V,clim)
-% h = surfmap(fv,clim)
+function [h,fv] = surfmap(n,varargin)
+% h = surfmap(n,BW,voxsz)
+% h = surfmap(n,BW,voxsz,V,clim)
+% h = surfmap(n,fv,V,clim)
+% h = surfmap(n,fv,clim)
+% 
+% n =   2 (dual axes for snapshot)
+%    OR 1 (single axes for movie)
 
 V = [];
-switch nargin
+if ~ismember(n,[1,2])
+    error('Invalid flag input.');
+end
+switch length(varargin)
     case 2
         if isstruct(varargin{1})
             fv = varargin{1};
@@ -49,21 +55,25 @@ else
     error('Invalid CData input length.');
 end
 
-hf = figure('Colormap',jet(128),'Position',[500 500 1200 800],'Units','normalized');
-ha1 = axes(hf,'Position',[0 0 0.5 1],'CLim',clim);
+hf = figure('Colormap',jet(128),'Position',[500 500 600*n 800],'Units','normalized');
+ha1 = axes(hf,'Position',[0 0 1/n 1],'CLim',clim);
 la1 = lightangle(60,-30);
-ha2 = axes(hf,'Position',[0.5 0 0.5 1],'CLim',clim);
-la2 = lightangle(240,-30);
-
 p1 = patch(ha1,'Vertices',fv.vertices,'Faces',fv.faces,opts{:});
 axis(ha1,'equal','off','tight');
 view(ha1,90,0);
 
-p2 = patch(ha2,'Vertices',fv.vertices,'Faces',fv.faces,opts{:});
-axis(ha2,'equal','off','tight');
-view(ha2,270,0);
+h = struct('hfig',hf,'axes1',ha1,'lightAngle1',la1,'patch1',p1);
 
-h = struct('hfig',hf,'axes1',ha1,'axes2',ha2,...
-    'lightAngle1',la1,'lightAngle2',la2,'patch1',p1,'patch2',p2);
+if n==2
+    ha2 = axes(hf,'Position',[0.5 0 0.5 1],'CLim',clim);
+    la2 = lightangle(240,-30);
+    p2 = patch(ha2,'Vertices',fv.vertices,'Faces',fv.faces,opts{:});
+    axis(ha2,'equal','off','tight');
+    view(ha2,270,0);
+    h.axes2 = ha2;
+    h.lightAngle2 = la2;
+    h.patch2 = p2;
+end
+
 
 

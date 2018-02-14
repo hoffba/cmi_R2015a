@@ -16,6 +16,10 @@ classdef RegClass < handle
         jacmat  = false; % Jacobian Matrices
         def     = false; % Deformation Maps
         
+        % Transform Extras:
+        Tvoi    = false; % Transform moving VOI
+        Tsurf   = false; % Transform fixed VOI surface mesh points
+        
         % Image interface
         cmiObj           % set of two CMIclass objects (constructor)
                          %       (1) Reference Image

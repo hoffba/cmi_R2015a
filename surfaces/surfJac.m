@@ -1,13 +1,16 @@
-function h = surfJac(mask,voxsz,jac,clim,dt)
+function h = surfJac(N,mask,voxsz,jac,clim,dt)
 % Generate surface from mask with Jacobian map overlaid
 
 nd = size(jac,4);
+if nargin<6
+    dt = 1;
+end
 
 if nd==1
     
     % 3D Jacobian determinant:
-    h = surfmap(mask,voxsz,jac.^(1/dt),clim);
-    savesurf(h,1:2);
+    h = surfmap(N,mask,voxsz,jac.^(1/dt),clim);
+%     savesurf(h,1:2);
     
 elseif nd==9
     
@@ -26,14 +29,18 @@ elseif nd==9
     n = isonormals(x,y,z,mask,fv.vertices);
     pjac = zeros(nv,1);
     for i = 1:size(n,1)
+        try
         R = vrrotvec2mat(vrrotvec([0,1,0],n(i,:)));
+        catch err
+            disp(num2str(i))
+        end
         tjac = R*ijac(:,:,i)*R';
         pjac(i) = det(tjac(1:2,1:2));
     end
     pjac = pjac.^(1/dt);
     
     % Generate surface figure:
-    h = surfmap(fv,pjac,clim);
+    h = surfmap(N,fv,pjac,clim);
     
     % Add normal vectors:
 %     isub = round(linspace(1,length(n),1000));

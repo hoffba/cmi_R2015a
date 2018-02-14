@@ -30,8 +30,8 @@ if ischar(fullname) && exist(fullname,'file') && strcmp(fullname(end-3:end),'.mh
         E = eig3d(J);
         saveMHD(fullfile(fpath,[fname(8:end),'.mhd']),E,{'E1','E2','E3'},fov);
         % Calculate shape indices:
-%         label = {'Det','CL','CP','CS','ADI','FA'};
-        label = {'ADI','FA'};
+        label = {'Det','CL','CP','CS','ADI','FA'};
+%         label = {'ADI','FA'};
         A = tensorShape(E,label);
         saveMHD(fullfile(fpath,[fname(8:end),'.mhd']),A,label,fov);
     end

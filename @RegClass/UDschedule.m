@@ -122,6 +122,10 @@ elseif ishghandle(hObject)
             self.jacmat = logical(get(hObject,'Value'));
         case 'checkbox_def'
             self.def = logical(get(hObject,'Value'));
+        case 'checkbox_Tvoi'
+            self.Tvoi = logical(get(hObject,'Value'));
+        case 'checkbox_Tsurf'
+            self.Tsurf = logical(get(hObject,'Value'));
         case 'checkbox_wait'
             self.waitchk = logical(hObject.Value);
         otherwise
@@ -142,6 +146,10 @@ elseif (nargin==3) && ischar(hObject)
             self.def = logical(edata);
         case 'waitchk'
             self.waitchk = logical(edata);
+        case 'Tvoi'
+            self.Tvoi = logical(edata);
+        case 'Tsurf'
+            self.Tsurf = logical(edata);
         otherwise
             warning(['Unknown tag:',tag])
     end
