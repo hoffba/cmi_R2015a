@@ -14,9 +14,6 @@ V = [];
 
 if nJ==9
     
-    E = nan([d,3]);
-    V = nan([d,3,3]);
-    
     % Factor out rotational tensor (makes it symmetrical):
     % (Amelon et al. 2011)
     % F = J'*J
@@ -28,6 +25,7 @@ if nJ==9
     F(:,:,:,4) = sum(J(:,:,:,[2,5,8]).^2,4);
     F(:,:,:,5) = sum(J(:,:,:,[2,5,8]).*J(:,:,:,[3,6,9]),4);
     F(:,:,:,6) = sum(J(:,:,:,[3,6,9]).^2,4);
+    clear J
         
     % Derive invariants:
     disp('Deriving invariants ...')
@@ -36,23 +34,28 @@ if nJ==9
             -(F(:,:,:,2).^2+F(:,:,:,3).^2+F(:,:,:,5).^2);
     I3 = F(:,:,:,1).*F(:,:,:,4).*F(:,:,:,6)+2*F(:,:,:,2).*F(:,:,:,3).*F(:,:,:,5) ...
             -(F(:,:,:,6).*F(:,:,:,2).^2+F(:,:,:,4).*F(:,:,:,3).^2+F(:,:,:,1).*F(:,:,:,5).^2);
-                
+        
     % Calculate characteristics:
     disp('Calculating characteristics ...')
-    v = I1.^2 - I2/3;
     s = I1.^3 - I1.*I2/2 + I3/2;
+    clear I3
+    v = I1.^2 - I2/3;
+    clear I2
     phi = acos(s./v.*sqrt(1./v))/3;
     
     % Generate eigenvalues:
     disp('Generating eigenvalues ...')
     v = 2*sqrt(v);
-    E(:,:,:,1) = sqrt(I1 + v.*cos(phi));
-    E(:,:,:,2) = sqrt(I1 - v.*cos(pi/3+phi));
-    E(:,:,:,3) = sqrt(I1 - v.*cos(pi/3-phi));
+    E = nan([d,3]);
+    E(:,:,:,1) = real(sqrt(I1 + v.*cos(phi)));
+    E(:,:,:,2) = real(sqrt(I1 - v.*cos(pi/3+phi)));
+    E(:,:,:,3) = real(sqrt(I1 - v.*cos(pi/3-phi)));
+    clear I1
     
     % Generate eigenvectors:
-    if nargout==2
+    if nargout==2        
         disp('Generating eigenvectors ...')
+        V = nan([d,3,3]);
         for i = 1:2
             A = F(:,:,:,1) - E(:,:,:,i);
             B = F(:,:,:,4) - E(:,:,:,i);

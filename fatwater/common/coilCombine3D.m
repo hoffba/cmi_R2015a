@@ -21,7 +21,7 @@ function im2 = coilCombine3D( im1 )
 [sx,sy,sz,C,N] = size(im1);
 
 % Maintain the data type (e.g., single, double) of the input data
-ims = zeros([sx,sy,sz,1,N],class(im1));
+im2 = zeros([sx,sy,sz,1,N],class(im1));
 for kz=1:sz
   im2(:,:,kz,1,:) = coilCombine(im1(:,:,kz,:,:));
 end

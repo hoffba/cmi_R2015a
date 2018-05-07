@@ -1,7 +1,7 @@
 % CMIclass function
 % Create Movie of current image
 function genMovie(self,~,~)
-if self.img.check && self.dispcheck
+if self.img.check && self.guicheck
     F = self.grabFrames;
     if ~isempty(F)
         % Write each padded frame to the video file

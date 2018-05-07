@@ -14,25 +14,25 @@ else
     str = 'Mask';
 end
 dtypes = {...
-            {'.hdr'},            'ANALYZE';...   % 1
-            {'.mhd'},            'MHD';...       % 2
+            {'.hdr'},                   'ANALYZE';...   % 1
+            {'.mhd'},                   'MHD';...       % 2
             {'.fld'},                   'FLD';...       % 3
             {'.fdf'},                   'FDF';...       % 4
             {'.vff'},                   'VFF';...       % 5
-            {'fid','2dseq'},            'BrukerMRI';...  %
-            {'.log'},                   'BrukerCT';...    % 8
-            {'.dcm','.1','DICOMDIR'},   'DICOM';...     % 6
-            {'.nii'},                   'NIFTI';...     % 7
-            {'.sur','.mrd'},            'MRS';...       % 9
-            {'.mask'},                  'MASK';...      % 10
-            {'.tif'},                   'TIFF';...      % 11
-            {'.jpg'},                   'JPG';...       % 12
-            {'.mat'},                   'MAT';...       % 13
-            {'.fid'},                   'FID';...       % 14
-            {'.vox'},                   'VOX';...       % 15
+            {'fid','2dseq'},            'BrukerMRI';... % 6
+            {'.log'},                   'BrukerCT';...  % 7
+            {'.dcm','.1','DICOMDIR'},   'DICOM';...     % 8
+            {'.nii'},                   'NIFTI';...     % 9
+            {'.sur','.mrd'},            'MRS';...       % 10
+            {'.mask'},                  'MASK';...      % 11
+            {'.tif'},                   'TIFF';...      % 12
+            {'.jpg'},                   'JPG';...       % 13
+            {'.mat'},                   'MAT';...       % 14
+            {'.fid'},                   'FID';...       % 15
+            {'.vox'},                   'VOX';...       % 16
          };
 imggp = true(13,1); imggp(10) = false;
-maskgp = false(13,1); maskgp([1:3,6,7,10,12]) = true;
+maskgp = false(13,1); maskgp([1:3,6,7,9,10,12]) = true;
 
 if (nargin == 0)
     imgflag = 1;
@@ -65,7 +65,7 @@ if gopt
         str = 'off';
     end
     % User selects file(s)
-    filter = [{[filter{:,1},'.gz'],'All Images'};filter;{{''},'All Files'}];
+    filter = [{[filter{:,1},'.gz'],'All Images'};{{''},'All Files'};filter];
     filter(:,1) = cellfun(@(x)sprintf('*%s;',x{:}),filter(:,1),'UniformOutput',false);
 %     [fullname,fpath,findex] = uigetfile([{'*','All'};filter],['Load ',str,':'],'MultiSelect',str);
     [fullname,fpath,findex] = uigetfile(filter,['Load ',str,':'],'MultiSelect',str);

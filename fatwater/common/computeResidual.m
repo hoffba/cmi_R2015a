@@ -94,7 +94,11 @@ for kr=1:NUM_R2STARS
   P1 = [];
   for k=1:NUM_FMS
     Psi = diag(exp(1i*2*pi*psis(k)*t - abs(t)*r2s(kr)));
+    try
     P1 = [P1;(eye(N)-Psi*Phi*pinv(Psi*Phi))];
+    catch
+        disp('')
+    end
   end
   P(:,:,kr) = P1;
 end

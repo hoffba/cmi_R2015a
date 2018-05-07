@@ -24,6 +24,7 @@ im1 = permute(im1,[1 2 3 5 4]);
 
 % Set filter size
 filtsize = 7;
+fkern = ones(([sx,sy,sz]>filtsize)*(filtsize-1) + 1);
 
 % Initialize
 im2 = zeros(sx,sy,sz,1,N);
@@ -33,28 +34,30 @@ Rs = zeros(sx,sy,sz,C,C);
 for kc1=1:C
     for kc2=1:C
         for kn=1:N
-            Rs(:,:,:,kc1,kc2) = Rs(:,:,:,kc1,kc2) + filter2(ones(filtsize),im1(:,:,kn,kc1).*conj(im1(:,:,kn,kc2)),'same');
+            Rs(:,:,:,kc1,kc2) = Rs(:,:,:,kc1,kc2) + convn(im1(:,:,:,kn,kc1).*conj(im1(:,:,:,kn,kc2)),fkern,'same');
         end
     end
 end
 
 % Compute and apply filter at each voxel
-for kx=1:sx
-    for ky=1:sy
-        % $$$     [U,S] = eig(squeeze(Rs(kx,ky,:,:)));
-        % $$$     s = diag(S);
-        % $$$     [maxval,maxind] = max(abs(s));
-        % $$$     myfilt = U(:,maxind);
-        % $$$     im2(kx,ky,:) = myfilt'*reshape(squeeze(im1(kx,ky,:,:)).',[C N]);
-        
-        % Change suggested by Mark Bydder
-        [U,S] = svd(squeeze(Rs(kx,ky,:,:)));
-        myfilt = U(:,1);
-        im2(kx,ky,1,1,:) = myfilt'*reshape(squeeze(im1(kx,ky,:,:)).',[C N]);
+for kx = 1:sx
+    for ky = 1:sy
+        for kz = 1:sz
+            % $$$     [U,S] = eig(squeeze(Rs(kx,ky,:,:)));
+            % $$$     s = diag(S);
+            % $$$     [maxval,maxind] = max(abs(s));
+            % $$$     myfilt = U(:,maxind);
+            % $$$     im2(kx,ky,:) = myfilt'*reshape(squeeze(im1(kx,ky,:,:)).',[C N]);
+
+            % Change suggested by Mark Bydder
+            [U,~] = svd(squeeze(Rs(kx,ky,kz,:,:)));
+            myfilt = U(:,1);
+            im2(kx,ky,kz,1,:) = myfilt'*reshape(squeeze(im1(kx,ky,kz,:,:)).',[C N]);
+        end
     end
 end
 
 % In case the input data are single
-if strcmp(class(im1),'single')
+if isa(im1,'single')
     im2 = single(im2);
 end

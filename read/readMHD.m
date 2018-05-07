@@ -111,8 +111,9 @@ elseif hchk && exist(rawfname,'file')
         else
             img = fread(fid,inf,Etype);
         end
-        img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
-%         img = permute(reshape(img,[d,nv]),[2,1,3,4]);
+        if numel(img)~=prod([d,nv])
+            img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
+        end
         img = permute(reshape(img,[nv,d]),[3,2,4,1]);
         fov = d.*voxsz;
         fclose(fid);

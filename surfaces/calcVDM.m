@@ -1,188 +1,238 @@
-function [vdm,h] = calcVDM(method,mask,voxsz,dt,elxdir)
-% Method:
-%   1 = linear |J|
-%   2 = exponential |J|
-%   3 = Surface tangent |J|
-%   4 = d|J|/dt
-%   5 = dA
+function [vdm,h] = calcVDM(varargin)
+% [vdm,h] = calcVDM(elxdir,'Name',Value,...)
+% [vdm,h] = calcVDM(vdm,elxdir,'Name',Value,...)
+%
+% Inputs:
+%   vdm = VDM results structure
+%   elxdir = elxreg_ directory
+%   'Name'/Value options [default]:
+%       'scale'     [1]
+%       'mask'
+%       'voxsz'     [ones(1,3)]
+%       'clim'      [auto]
+%       'logdisp'	[true]
+%       'units'     ['yr']
+%       'faces'
+%       'vertices'
+% Outputs:
+%   vdm = struct with fields:
+%       .mask       = binary image segmentation
+%       .voxsz      = voxel dimensions
+%       .faces      = surface mesh faces
+%       .vertices   = surface mesh vertices
+%       .vals       = surface color values
+%       .units      = string describing normalization units (yr, mmHg, etc.)
+%       .elxdir     = elxreg_ directory
+%       .scale      = normalization scale factor
+%       .clim       = color limits for display
+%       .logdisp    = T/F display colors in log scale?
 
+[vdm,flag,x,y,z] = parseinputs(varargin{:});
 
-% method = 5;
-logchk = true;
-if logchk
-%     V = log(V);
-%     clim = 0.8 * [-1,1];
-    clim = [0.5,2.25];
-else
-    clim = 1 + 0.4*[-1,1];
-end
-
-% Check for existing results:
-vdmname = fullfile(elxdir,'VDM.mat');
-if exist(vdmname,'file')
-    vdm = load(vdmname);
-    d = size(mask);
-    lims = (d-1).*voxsz/2;
-    [x,y,z] = meshgrid(-lims(2):voxsz(2):lims(2),...
-                       -lims(1):voxsz(1):lims(1),...
-                       -lims(3):voxsz(3):lims(3));
-else
-    [fv,x,y,z] = mask2surf(mask,voxsz);
-    
-    % Save points:
-    ptsname = fullfile(elxdir,'inputPoints.txt');
-    fid = fopen(ptsname,'w');
-    nv = size(fv.vertices,1);
-    fprintf(fid,'point\n%u\n',nv);
-    for i = 1:nv
-        fprintf(fid,'%f %f %f\n',fv.vertices(i,:));
-    end
-    fclose(fid);
-
-    vdm = struct('voxsz',voxsz,'vertices',fv.vertices,'faces',fv.faces,...
-        'map_linJ',[],'map_expJ',[],'map_tanJ',[],'map_dJdt',[],'map_dA',[]);
-    clear fv;
-end
-
-
-% Generate surface map based on method:
-switch method
-    case 1 % linear |J|
-        
-        label = 'map_linJ';
-        str = 'Linear |J|';
-        
-        V = (surfVal(loadData(elxdir,'jdet'),x,y,z,vdm.vertices)-1)/dt +1;
-        
-    case 2 % exponential |J|
-        
-        label = 'map_expJ';
-        str = 'Exponential |J|';
-        
-        V = surfVal(loadData(elxdir,'jdet'),x,y,z,vdm.vertices).^(1/dt);
-        
-    case 3 % surface tangent |J|
-        
-        label = 'map_tanJ';
-        str = 'Surface Tangent |J|';
-        
-        M = permute(reshape(surfVal(loadData(elxdir,'jmat'),x,y,z,vdm.vertices)',3,3,[]),[2,1,3]);
-
-        % Determine planar Jacobian from isonormals:
-        n = isonormals(x,y,z,mask,fv.vertices);
-        V = zeros(nv,1);
-        for i = 1:size(n,1)
-            R = vrrotvec2mat(vrrotvec([0,1,0],n(i,:)));
-            tjac = R * M(:,:,i) * R';
-            V(i) = det(tjac(1:2,1:2));
-        end
-        clear M;
-        V = V.^(1/dt);
-
-    case 4 % d|J|/dt
-        
-        label = 'map_dJdt';
-        str = 'd|J|/dt';
-        
-        dX = loadData(elxdir,'def');
-        fprintf('Calculating spatial Jacobian ...\n');
-        F = surfVal(def2jac(dX,voxsz),x,y,z,vdm.vertices(:,:,1));
-        fprintf('Calculating spatial rate Jacobian ...\n');
-        FF = surfVal(def2jac(dX/dt,voxsz),x,y,z,vdm.vertices(:,:,1));
-
-        np = size(F,1);
-        V = zeros(np,1);
-        f = zeros(3); % J
-        ff = zeros(3);% dJ/dt
-        gi = mod(1:np,round(np/20))==0;
-        fprintf('Calculating Jacobian rate determinant ...\n');
-        for i = 1:np
-            f(:) = F(i,:);
-            ff(:) = FF(i,:);
-            V(i) = det(f) * trace( ff / f )/3;
-            if gi(i)
-                fprintf('%u%% Complete\n',sum(gi(1:i))*5);
-            end
-        end
-        
-    case 5 % dA
-        
-        label = 'map_dA';
-        str = 'Relative Surface Area';
-        
-        p = loadData(elxdir,'pts');
-        vdm.vertices = p;
-        nf = size(vdm.faces,1);
-        V = zeros(nf,1);
-        fprintf('Calculating face areas ...\n');
-        for i = 1:nf
-            V(i) = area3D(p(vdm.faces(i,:),:,:));
-        end
-        V = V.^(1/dt);
-end
-clear x y z;
-vdm.(label) = V;
-
-% Save resulting maps:
-save(vdmname,'-struct','vdm');
-
-% Generate VDM figure:
-h = savesurf(2,vdm.faces,vdm.vertices(:,:,end),V,clim,str,logchk,...
-    fullfile(elxdir,sprintf('VDM_%s',label)));
-
-
-function V = surfVal(M,x,y,z,p)
-nv = size(M,4);
-V = zeros(size(p,1),nv);
-for i = 1:nv
-    V(:,i) = interp3(x,y,z,M(:,:,:,i),p(:,1),p(:,2),p(:,3));
-end
-
-function A = loadData(elxdir,opt)
-C = {'def'  ,'deformationField.mhd'     ,'-def all';...
-     'jdet' ,'SpatialJacobian.mhd'      ,'-jac all';...
-     'jmat' ,'FullSpatialJacobian.mhd'  ,'-jacmat all';...
-     'pts'  ,'outputpoints.txt'         ,'-def "./inputPoints.txt"'};
-i = find(strcmp(opt,C(:,1)),1);
-if isempty(i)
-    error('Invalid input.')
-end
-fname = fullfile(elxdir,C{i,2});
+% Load Jacobian map:
+fname = fullfile(vdm.elxdir,'SpatialJacobian.mhd');
 if ~exist(fname,'file')
     % Need to generate from transform:
     parname = dir(fullfile(elxdir,'TransformParameters.*.txt'));
     ind = max(cellfun(@(x)str2double(x(21)),{parname(:).name}));
     str = sprintf(['/opt/X11/bin/xterm -geometry 170x50 -T "(Transformix)" -e ''',...
              'cd %s ; /usr/local/bin/transformix -out "./" -tp ',...
-             '"./TransformParameters.%u.txt" %s'''],elxdir,ind,C{i,3});
+             '"./TransformParameters.%u.txt" %s'''],vdm.elxdir,ind,'-jac all');
     system(str);
 end
-if i==4
-    A = readPtsFile(fname);
+J = readMHD(fname);
+
+% Generate surface map of linearly scaled Jacobian:
+vdm.label = sprintf('$$({J}-1)/{%s}+1$$',vdm.units);
+vdm.vals = (interp3(x,y,z,J,vdm.vertices(:,1),vdm.vertices(:,2),vdm.vertices(:,3))-1)/vdm.scale +1;
+
+% Save resulting maps:
+svname = fullfile(vdm.elxdir,'VDM.mat');
+[fname,fdir] = uiputfile('*.mat','Save VDM as:',svname);
+if ischar(fname)
+    save(fullfile(fdir,fname),'-struct','vdm');
+end
+
+% Generate VDM figure:
+h = savesurf(vdm,flag);
+
+function [vdm,flag,x,y,z] = parseinputs(varargin)
+x=[];y=[];z=[];
+if isstruct(varargin{1}) && all(isfield(varargin{1},{'mask','voxsz','vertices','faces'}))
+    vdm = varargin{1};
+    varargin(1) = [];
 else
-    A = readMHD(fname);
+    vdm = struct('mask',[],'voxsz',[],'vertices',[],'faces',[]);
+end
+p = inputParser;
+addRequired(p,'elxdir',@(x)ischar(x)&&exist(x,'dir'));
+addParameter(p,'scale',1,@isscalar);
+addParameter(p,'mask',[],@(x)islogical(x));
+addParameter(p,'voxsz',[],@(x)isvector(x)&&(numel(x)==3));
+addParameter(p,'clim',[],@(x)isvector(x)&&(numel(x)==2));
+addParameter(p,'logdisp',true,@islogical);
+addParameter(p,'units','yr',@ischar)
+addParameter(p,'faces',[],@islogical);
+addParameter(p,'vertices',[],@islogical);
+addParameter(p,'disp',1,@(x)all(ismember(x,0:4)));
+parse(p,varargin{:});
+if isempty(vdm.vertices) && ismember('mask',p.UsingDefaults) && any(ismember({'faces','vertices'},p.UsingDefaults))
+    error('Cannot calculate VDM without segmentation surface.');
+end
+if ~isempty(p.Results.mask)
+    if isempty(vdm.vertices)
+        answer = 'Yes';
+    else
+        answer = questdlg('Replace existing surface mesh?','Yes','No','Yes');
+    end
+    if strcmp(answer,'Yes')
+        vdm.mask = p.Results.mask;
+        if ~ismember('voxsz',p.UsingDefaults)
+            vdm.voxsz = p.Results.voxsz;
+        elseif isempty(vdm.voxsz)
+            warning('Voxel dimensions not input, using ones.');
+            vdm.voxsz = ones(1,3);
+        end
+        [fv,x,y,z] = mask2surf(vdm.mask,vdm.voxsz);
+        vdm.faces = fv.faces;
+        vdm.vertices = fv.vertices;
+    end
+end
+vdm.elxdir = p.Results.elxdir;
+vdm.scale = p.Results.scale;
+vdm.clim = p.Results.clim;
+vdm.logdisp = p.Results.logdisp;
+vdm.units = p.Results.units;
+flag = p.Results.disp;
+
+function h = savesurf(vdm,flag,fname)
+h = [];
+opts = {'EdgeColor','none',...
+        'FaceLighting','gouraud',...
+        'AmbientStrength',0.5,...
+        'DiffuseStrength',0.5,...
+        'SpecularStrength',0.3,...
+        'SpecularExponent',50,...
+        'BackFaceLighting','reverselit'};
+V = vdm.vals;
+nv = length(V);
+if isempty(vdm.clim)
+    clim = prctile(V,[5,95]);
+else
+    clim = vdm.clim;
+end
+if vdm.logdisp
+    V = real(log(V));
+end
+if nv == 0
+    opts = [{'Facecolor','flat'},opts];
+elseif nv == size(vdm.faces,1)
+    opts = [{'FaceVertexCData',V,'Facecolor','flat'},opts];
+elseif nv == size(vdm.vertices,1)
+    opts = [{'FaceVertexCData',V,'Facecolor','interp'},opts];
+else
+    error('Invalid CData input length.');
+end
+opts = [{'Vertices',vdm.vertices,'Faces',vdm.faces},opts];
+
+if nargin==3
+    [fdir,fname,~] = fileparts(fname);
+else
+    fname = '';
 end
 
-function p = readPtsFile(fname)
-% Vertex points: [nv x (x/y/z) x (in/out)]
-disp('Reading points from file ...')
-fid = fopen(fname,'r');
-str = fread(fid,'*char')';
-fclose(fid);
-pat = ' = \[ (\S+) (\S+) (\S+) ]';
-tok = cellfun(@(x)str2double(x)',regexp(str,['InputPoint',pat],'tokens'),'UniformOutput',false);
-p = [tok{:}]';
-tok = cellfun(@(x)str2double(x)',regexp(str,['OutputPoint',pat],'tokens'),'UniformOutput',false);
-p(:,:,2) = [tok{:}]';
-
-function A = area3D(p)
-A = [0,0];
-for i = 1:2
-    a = norm(p(1,:,i)-p(2,:,i));
-    b = norm(p(2,:,i)-p(3,:,i));
-    c = norm(p(3,:,i)-p(1,:,i));
-    s = (a+b+c)/2;
-    A(i) = sqrt(s*(s-a)*(s-b)*(s-c));
+% Generate figure, but don't save
+if any(flag==0)
+    h = genFig(1,clim,opts,vdm.label,vdm.logdisp);
 end
-A = A(2)/A(1);
+
+% Save figure as JPEG:
+if any(flag==1)
+    if isempty(fname)
+        [fname,fdir] = uiputfile('*.jpg','Save figure as:',fullfile(vdm.elxdir,'VDM.jpg'));
+        if ~ischar(fname)
+            fname = '';
+        end
+    else
+        fname = [fname,'.jpg'];
+    end
+    if ~isempty(fname)
+        h = genFig(2,clim,opts,vdm.label,vdm.logdisp);
+        saveas(h.hfig,fullfile(fdir,fname));
+    end
+end
+
+% Save object rotation movie:
+if any(flag==2)
+    if isempty(fname)
+        [fname,fdir] = uiputfile('*.mp4','Save video as:',fullfile(vdm.elxdir,'VDM.mp4'));
+        if ~ischar(fname)
+            fname = '';
+        end
+    else
+        fname = [fname,'.mp4'];
+    end
+    if ~isempty(fname)
+        hh = genFig(1,clim,opts,vdm.label,vdm.logdisp);
+        a = 0:4:359;
+        v = VideoWriter(fullfile(fdir,fname),'MPEG-4');
+        open(v);
+        for i = 1:length(a)
+            view(hh.plot(1).axes,90+a(i),0);
+            lightangle(hh.plot(1).lightAngle,60+a(i),-30);
+            writeVideo(v,getframe(hh.hfig));
+        end
+        close(v);
+        h = [h,hh];
+    end
+end
+
+% Save patch object as WRL:
+if any(flag==3)
+    if isempty(fname)
+        [fname,fdir] = uiputfile('*.wrl','Save surface as:',fullfile(vdm.elxdir,'VDM.wrl'));
+        if ~ischar(fname)
+            fname = '';
+        end
+    else
+        fname = [fname,'.wrl'];
+    end
+    if ~isempty(fname)
+        if isempty(h)
+            h = genFig(1,clim,opts,vdm.label,vdm.logdisp);
+        end
+        vrml(h.plot(1).axes,fullfile(fdir,fname),'noedgelines');
+    end
+end
+
+
+function h = genFig(n,clim,opts,label,logdisp)
+h.hfig = figure('Colormap',jet(128),'Position',[500 500 600*n 800],'Units','normalized');
+for i = 1:n
+    h.plot(i).axes = axes(h.hfig,'Position',[(i-1)/2 0 1/n 1],'CLim',clim);
+    h.plot(i).lightAngle = lightangle(60+180*(i-1),-30);
+    h.plot(i).patch = patch(h.plot(i).axes,opts{:});
+    axis(h.plot(i).axes,'equal','off','tight');
+    view(h.plot(i).axes,90+180*(i-1),0);
+    if logdisp
+        caxis(h.plot(i).axes,log(clim));
+    end
+end
+h.cbar = colorbar(h.plot(1).axes,'FontSize',20,'AxisLocation','in',...
+    'Position',[ 1/n + (n-2)*0.05 , 0.2 , 1/(n*40) , 0.6 ]);
+yt = linspace(clim(1),clim(2),6);
+if logdisp
+    h.cbar.YTick = log(yt);
+    h.cbar.YTickLabel = yt;
+else
+    h.cbar.YTick = yt;
+end
+ht = title(h.cbar,['\fontsize{30}{0}\selectfont',label],'Interpreter','latex','Units','normalized','Position',[0.5,1.2,0]);
+if n==1
+    ht.HorizontalAlignment = 'right';
+end
+
+
+
+
     

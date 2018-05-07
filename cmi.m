@@ -1,4 +1,4 @@
-function cmi
+function cmiObj = cmi
 go = true;
 onum = 0;
 curobjs = evalin('base','who(''cmiObj*'')');

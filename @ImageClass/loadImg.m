@@ -24,6 +24,9 @@ if ~isempty(img)
 %     end
 
     dd = size(img);
+    if length(dd)<3
+        dd(3) = 1;
+    end
     
     % If reading in a complex image, separate into real and imaginary
     % components

@@ -8,65 +8,77 @@ switch tname
     
     case '2dseq' % Recontructed image
 
-        imageObj = ImageDataObject(fdir);
-        imageObj.readVisu;
-        p = imageObj.Visu;
-        img = imageObj.data;
-        d = size(img);
-        fov = p.VisuCoreExtent;
-        
-        if ndims(img)>3
-            labels4d = cellfun(@(x)strsplit(x,'_'),imageObj.dataDimensions,'UniformOutput',false);
-            labels4d = cellfun(@(x)x{end},labels4d,'UniformOutput',false);
-        else
-            labels4d = {};
+        sdir = fileparts(fileparts(fdir));
+        [~,id] = fileparts(sdir);
+        p = readBrukerMRIpar(fullfile({fdir,sdir,sdir},{'reco','acqp','method'}));
+        label = {strcat(id,'_',p.ACQ_protocol_name(2:end-1))};
+        fov = p.RECO_fov * 10;
+
+        switch p.RECO_wordtype
+            case '_32BIT_SGN_INT'
+                f = 'int32';
+            case '_16BIT_SGN_INT'
+                f = 'int16';
+            case '_32BIT_FLOAT'
+                f = 'float32';
+            case '_8BIT_UNSGN_INT'
+                f = 'uint8';
+            otherwise
+                error('Data-Format not correct specified!')
         end
-        
-        clear imageObj;
-        
-        if p.VisuCoreDim==2
-            ind = find(strcmp(labels4d,'SLICE'),1);
-            ord = 1:length(d);
-            ord([3,ind+4]) = [ind+4,3];
-            img = permute(img,ord);
-            d = d(ord);
-            fov(3) = d(3)*p.VisuCoreSlicePacksSliceDist;
-            labels4d(ind) = [];
+
+        fid = fopen(imname,'r');
+        [img,n] = fread(fid,f);
+        fclose(fid);
+
+        if strcmp(p.RECO_image_type,'COMPLEX_IMAGE')
+            n = n/2;
+            img = complex(img(1:n),img(n+(1:n)));
         end
-        img = permute(reshape(img,[d(1:3),prod(d(4:end))]),[2,1,3,4]);
-        
-        if isempty(labels4d)
-            label = {p.VisuAcquisitionProtocol};
+
+        d = p.RECO_size;
+        if isfield(p,'RecoNumRepetitions')
+            d(4) = p.RecoNumRepetitions; % repetitions
         else
-            label = {''};
-            for i = 1:length(labels4d)
-                switch labels4d{i}
-                    case 'DIFFUSION'
-                        lval = reshape(p.VisuAcqDiffusionBMatrix',3,3,[]);
-                        nb = size(lval,3);
-                        for j = 1:nb
-                            lval(j) = trace(lval(:,:,j));
-                        end
-                        lval = lval(1:nb);
-                        lstr = strcat('b',cellfun(@num2str,num2cell(lval),'UniformOutput',false)');
-                    case 'ECHO'
-                        lstr = strcat('TE',cellfun(@num2str,num2cell(p.VisuAcqEchoTime)',...
-                            'UniformOutput',false));
-                    otherwise
-                        lstr = cellfun(@num2str,num2cell(1:d(i+4)),'UniformOutput',false)';
+            d(4) = 1;
+        end
+        if isfield(p,'PVM_NEchoImages')
+            d(5) = p.PVM_NEchoImages; % echoes
+        else
+            d(5) = 1;
+        end
+        if strcmp(p.RecoCombineMode,'ShuffleImages')
+            d(6) = p.RecoNumInputChan; % coils
+        else
+            d(6) = 1;
+        end
+        if d(3)==0
+            d(3) = p.PVM_SPackArrNSlices;
+            fov(3) = (p.PVM_SliceThick+p.PVM_SPackArrSliceGap)*d(3);
+        end
+%         nvec = prod(d(4:6));
+
+        img = permute(reshape(img,d(2),d(1),d(3),[]),[2,1,3,4]);
+        fov = fov([2,1,3]);
+        m = p.RECO_map_slope;
+        b = p.RECO_map_offset;
+        
+        if p.RecoDim==2
+            m = reshape(m,d(3),[]);
+            b = reshape(b,d(3),[]);
+            for islc = 1:d(3)
+                for i4d = 1:d(4)
+                    img(:,:,islc,i4d) = img(:,:,islc,i4d) / m(islc,i4d) - b(islc,i4d);
                 end
-                nstr = repmat(lstr',length(label),1);
-                label = strcat(repmat(label,length(lstr),1),'_',nstr(:));
+            end
+        elseif p.RecoDim==3
+            for i4d = 1:d(4)
+                img(:,:,:,i4d) = img(:,:,:,i4d) / m(i4d) - b(i4d);
             end
         end
         
     case 'fid'  % Raw k-space data
 
-        
-        
-        
-        
-        
         [~,id] = fileparts(fdir);
         p = readBrukerMRIpar(fullfile(fdir,{'acqp','method'}));
         fov = p.PVM_Fov; % mm
@@ -188,18 +200,18 @@ switch tname
 end
 
 % Fix to 4D and adjust labels:
-% if d(4)>1
-%     ladd = cellfun(@num2str,num2cell(1:d(4)),'UniformOutput',false)';
-%     label = strcat(repmat(label,d(4),1),'_rep',ladd);
-% end
-% if d(5)>1
-%     ladd = repmat(cellfun(@num2str,num2cell(1:d(5)),'UniformOutput',false),length(label),1);
-%     label = strcat(repmat(label,d(5),1),'_echo',ladd(:));
-% end
-% if d(6)>1
-%     ladd = repmat(cellfun(@num2str,num2cell(1:d(6)),'UniformOutput',false),length(label),1);
-%     label = strcat(repmat(label,d(6),1),'_chan',ladd(:));
-% end
+if d(4)>1
+    ladd = cellfun(@num2str,num2cell(1:d(4)),'UniformOutput',false)';
+    label = strcat(repmat(label,d(4),1),'_rep',ladd);
+end
+if d(5)>1
+    ladd = repmat(cellfun(@num2str,num2cell(1:d(5)),'UniformOutput',false),length(label),1);
+    label = strcat(repmat(label,d(5),1),'_echo',ladd(:));
+end
+if d(6)>1
+    ladd = repmat(cellfun(@num2str,num2cell(1:d(6)),'UniformOutput',false),length(label),1);
+    label = strcat(repmat(label,d(6),1),'_chan',ladd(:));
+end
             
 % Image scaling
 % for i = 1:nvec
