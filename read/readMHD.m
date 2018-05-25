@@ -37,6 +37,8 @@ if fid>2
     ind = find(strcmp('ElementType',hstr),1);
     if ~isempty(ind)
         Etype = hstr{ind+1};
+    else
+        Etype = 'Unknown';
     end
     if ~exist(rawfname,'file')
         ind = find(strcmp('ElementDataFile',hstr),1);
@@ -87,6 +89,8 @@ if fid>2
             Etype = 'int32';
         case 'uint'
             Etype = 'uint32';
+        otherwise
+            Etype = 'single';
     end
     hchk = true;
 else

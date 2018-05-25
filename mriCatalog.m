@@ -1,9 +1,28 @@
-function C = mriCatalog(studydir)
+function C = mriCatalog(studydir,svchk)
 % Catalog Bruker MRI study data and convert to MHD
 
-hdr = {'Convert','Series','Protocol','Method','TR','TE','NE','Matrix','Thk','Nslc','MT','MToff'};
+if nargin<2
+    svchk = true;
+end
+
+hdr = {'Convert','Series','Protocol','Method','TR','TE','NE','Matrix','Thk','Nslc','MToff','MT'};
 nlab = length(hdr);
 
+% Find subject ID:
+subjfname = fullfile(studydir,'subject');
+if exist(subjfname,'file')
+    fid = fopen(subjfname,'r');
+    str = fread(fid,inf,'*char')';
+    fclose(fid);
+    tok = regexp(str,'##\$SUBJECT_id=[^<]*<(\w*)>','tokens');
+    subjectID = tok{1}{1};
+else
+    error('Not a Bruker MRI study folder: %s',studydir);
+end
+[~,str] = fileparts(studydir);
+dateString = str(1:8);
+
+% Find acquisitions:
 dnames = dir(studydir);
 dnames(1:2) = [];
 nd = length(dnames);
@@ -18,17 +37,10 @@ for i = 1:nd
             if exist(fullfile(studydir,dnames(i).name,'acqp'),'file')
                 pnames{2} = fullfile(studydir,dnames(i).name,'acqp');
             end
-%             protname = '';
             p = readBrukerMRIpar(pnames);
-%             if isfield(p,'ACQ_scan_name')
-%                 protname = p.ACQ_scan_name;
-%             end
-            C(i,:) = [{true,dnames(i).name},parsePars(p,{'ACQ_scan_name','Method',...
+            C(i,:) = [{false,dnames(i).name},parsePars(p,{'ACQ_scan_name','Method',...
                 'PVM_RepetitionTime','PVM_EchoTime','PVM_NEchoImages','PVM_Matrix',...
-                'PVM_SliceThick','PVM_SPackArrNSlices','PVM_MagTransOnOff','PVM_MagTransOffset'})];
-%             C(i,:) = {true,dnames(i).name,protname,p.Method,p.PVM_RepetitionTime,p.PVM_EchoTime,...
-%                 p.PVM_NEchoImages,p.PVM_Matrix,p.PVM_SliceThick,p.PVM_SPackArrNSlices,...
-%                 p.PVM_MagTransOnOff,p.PVM_MagTransOffset};
+                'PVM_SliceThick','PVM_SPackArrNSlices','PVM_MagTransOffset','PVM_MagTransOnOff'})];
             stat(i) = true;
         end
     end
@@ -36,20 +48,35 @@ end
 C = C(stat,:);
 [~,ord] = sort(str2double(C(:,2)));
 C = C(ord,:);
-saveCell2Txt([hdr;C],fullfile(studydir,'Catalog.tsv'));
+mti = ~strcmp(C(:,12),'On');
+C(mti,11) = {'off'};
+C(:,12) = [];
+hdr(end) = [];
+saveCell2Txt([hdr;C],fullfile(studydir,sprintf('%s_%s_Catalog.tsv',dateString,subjectID)));
 
 % UI for converting to MHD:
+CC = C;
 ind = cellfun(@(x)~ischar(x)&&(numel(x)>1),C);
-C(ind) = cellfun(@num2str,C(ind),'UniformOutput',false);
+CC(ind) = cellfun(@num2str,CC(ind),'UniformOutput',false);
 hf = figure('Position',[900,500,800,700],'MenuBar','none','ToolBar','none',...
     'Name','Close to convert selected images to MHD ...',...
-    'ToolBar','none','CloseRequestFcn','uiresume');
+    'ToolBar','none');
 ht = uitable(hf,'Units','normalized','Position',[0,0,1,1],'ColumnName',hdr,...
     'ColumnWidth',{50,50,100,100,50,50,50,80,50,50,50,50},...
-    'ColumnEditable',[true,false(1,nlab-1)],'Data',C);
-uiwait;
-stat = cell2mat(ht.Data(:,1));
-delete(hf);
+    'ColumnEditable',[true,false(1,nlab-1)],'Data',CC);
+
+if svchk
+    hf.CloseRequestFcn = 'uiresume';
+    uiwait;
+    stat = cell2mat(ht.Data(:,1));
+    delete(hf);
+
+    % Save selected images as MHD:
+    C = C(stat,:);
+    for i = 1:size(C,1)
+        saveImg(studydir,dateString,subjectID,C{i,2});
+    end
+end
 
 function v = parsePars(p,fieldnames)
 nf = length(fieldnames);
@@ -57,33 +84,36 @@ v = cell(1,nf);
 for i = 1:nf
     if isfield(p,fieldnames{i})
         v{i} = p.(fieldnames{i});
+        if strcmp(fieldnames{i},'Method')
+            tok = regexp(v{i},'<\w*:(\w*)>','tokens');
+            v{i} = tok{1}{1};
+        elseif strcmp(fieldnames{i},'ACQ_scan_name')
+            tok = regexp(v{i},'<(\w*)','tokens');
+            if isempty(tok)
+                disp('');
+            end
+            v{i} = tok{1}{1};
+        end
     end
 end
 
-% Save selected images as MHD:
-% ind = find(stat);
-% if ~isempty(ind)
-%     odir = fullfile(studydir,'MHDs');
-%     if ~exist(odir,'dir')
-%         mkdir(odir);
-%     end
-%     ni = length(ind);
-%     for i = 1:ni
-%         fprintf('Processing: %u of %u\n',i,ni);
-%         N = C{ind(i),2};
-%         protname = regexp(C{ind(i),3},'<(\w*)','tokens');
-%         protname = protname{1}{1};
-%         tag = strsplit(protname,'_');
-%         tag = tag{end};
-%         if strcmp(tag,'Localizer')
-%             %skip
-%         elseif strcmp(tag,'Fat')
-% %             fnout = fullfile(odir,sprintf('%s_%s_TE_%.0fus',N,protname,C{ind(i),5}*1000));
-% %             [img,label,fov] = readBrukerMRI(fullfile());
-%         elseif strcmp(tag,'MT')
-%             fnout = fullfile(odir,sprintf('%s_%s_Offset_%.0fHz.mhd',N,protname,C{ind(i),12}));
-%             [img,label,fov] = readBrukerMRI(fullfile(studydir,N,'pdata','1','2dseq'));
-%             saveMHD(fnout,img,label,fov);
-%         end
-%     end
-% end
+function saveImg(studydir,dateString,subjectID,ser)
+svdir = fullfile(studydir,'MHD');
+if ~isdir(svdir)
+    mkdir(svdir);
+end
+p = readBrukerMRIpar(fullfile(studydir,ser,{'method','acqp'}));
+if isempty(strfind(p.ACQ_scan_name,'_Fat'))
+    [img,label,fov] = readBrukerMRI(fullfile(studydir,ser,'pdata','1','2dseq'));
+    for i = 1:size(img,4)
+        saveMHD(fullfile(svdir,sprintf('%s_%s_%s.mhd',dateString,subjectID,label{i})),img(:,:,:,i),{''},fov);
+    end
+else
+    [img,label,fov] = readBrukerMRI(fullfile(studydir,ser,'fid'));
+    save(fullfile(svdir,sprintf('%s_%s_%s_%s.mat',dateString,subjectID,ser)),'img','label','fov');
+    % Perform Fat/Water separation:
+    p = readBrukerMRIpar(fullfile(studydir,ser,'method'));
+    [FF,W,F,R2s,fmap] = fwi2(permute(coilCombine(img),[1,3,2,4,5]),p.EffectiveTE,p.PVM_FrqRef(1));
+    saveMHD(fullfile(svdir,sprintf('%s_%s.mhd',dateString,subjectID)),...
+        cat(4,FF*100,abs(W),abs(F),R2s,fmap),{'FatPct','Water','Fat','R2star','FieldMap'},fov([2,3,1]));
+end

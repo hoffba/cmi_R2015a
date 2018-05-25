@@ -68,9 +68,9 @@ dcmdata = struct('SeriesInstanceUID',{},... % for sorting multiple images
              
 % Read in all DICOM slices:
 hp = waitbar(0,'','Name','Loading DICOM image ...','WindowStyle','modal',...
+    'Interpreter','none',...
     'CreateCancelBtn','setappdata(gcbf,''canceling'',1)'); % Option to cancel load midway
 setappdata(hp,'canceling',0)
-set(hp.Children(2).Title,'Interpreter','none');
 try
 for ifn = 1:nf
     
@@ -505,8 +505,8 @@ if ~isempty(dcmdata)
         else
             error('Matrix cannot be separated into 4D.')
         end
-    elseif ~issorted(ix)
-        dcmdata.img = dcmdata.img(:,:,ix,:);
+    else
+        dcmdata.img = dcmdata.img(:,:,ix);
         dcmdata.SlicePos = dcmdata.SlicePos(ix,:);
         dcmdata.AcquisitionNumber = dcmdata.AcquisitionNumber(ix);
     end

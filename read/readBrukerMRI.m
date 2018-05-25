@@ -61,127 +61,19 @@ switch tname
         end
         
     case 'fid'  % Raw k-space data
-
+        % * returns img as 5D matrix: [d1,d2,d3,ncoils,d4]
         
-        
-        
-        
-        
-        [~,id] = fileparts(fdir);
-        p = readBrukerMRIpar(fullfile(fdir,{'acqp','method'}));
-        fov = p.PVM_Fov; % mm
-        
-        switch p.AQ_mod
-            case ('qf')
-                isComplex = false;
-            case ('qseq')
-                isComplex = true;
-            case ('qsim')
-                isComplex = true;
-            case ('qdig')
-                isComplex = true;
-            otherwise
-                error('The value of parameter AQ_mod is not supported');
-        end
-        
-        % [ RO x Nphase x Nslices x Nreps x Nechoes x Ncoils ]
-        ncoils = p.PVM_EncNReceivers;
-        d = p.PVM_Matrix;
-        a = p.ACQ_size;
-        nechoes = p.PVM_NEchoImages;
-        nrep = p.PVM_NRepetitions;
-        d(4) = nechoes * nrep * ncoils;
-        if d(3)==0
-            chk3d = false;
-            d(3) = p.PVM_SPackArrNSlices;
-            a(3) = d(3);
-            fov(3) = (p.PVM_SliceThick+p.PVM_SPackArrSliceGap)*d(3);
+        recopart = {'quadrature','phase_rotate','zero_filling','FT'};
+        kObj = CKDataObject(fullfile(fdir,'pdata','1'));
+        kObj.readReco;
+        imObj = kObj.reco(recopart,'image');
+        img = flip(permute(imObj.data,[3,1,2,5,6,4]),1);
+        fov = imObj.Reco.RECO_fov*10; % mm
+        if length(imObj.Method.EffectiveTE)>1
+            label = strcat('TE',cellfun(@num2str,num2cell(round(imObj.Method.EffectiveTE*1000)),'UniformOutput',false));
         else
-            chk3d = true;
+            label = cellfun(@num2str,num2cell(1:size(img,5)),'UniformOutput',false);
         end
-
-        switch p.GO_raw_data_format
-            case 'GO_32BIT_SGN_INT'
-                f = 'int32';
-                bits = 32;
-            case 'GO_16BIT_SGN_INT'
-                f = 'int16';
-                bits = 16;
-            case 'GO_32BIT_FLOAT'
-                f = 'float32';
-                bits = 32;
-            otherwise
-                f = 'int32';
-                bits = 32;
-        end
-        
-        switch p.BYTORDA
-            case 'little'
-                bo = 'l';
-            case 'big'
-                bo = 'b';
-            otherwise
-                bo = 'n';
-        end
-        
-        switch p.GO_block_size
-            case 'continuous'
-                sz = bits * prod(d) * (1+isComplex);
-            case 'Standard_KBlock_Format'
-                fact = bits/8 / 1024; % padded to 1kB blocks
-                blksz = ceil(a(1)*ncoils*fact)/fact;
-                sz = [ blksz , prod(a(2:end))*nrep*nechoes ];
-            otherwise
-        end
-        
-        % Read binary data file:
-        fid = fopen(imname,'r');
-        img = fread(fid,sz,f,0,bo);
-        fclose(fid);
-        
-        % Remove zero-lines:
-        if blksz ~= a(1)*ncoils
-            img = reshape(img(1:(a(1)*ncoils),:),[]);
-        else
-        end
-        
-        if isComplex
-            img = complex(img(1:2:end,:),img(2:2:end,:));
-            a(1) = a(1)/2;
-        end
-        
-        % Adjust to image matrix:
-        img = reshape(permute(reshape(img,[a(1),ncoils,nechoes,a(2:3),nrep]),[1,4,5,2,3,6]),[a,d(4)]);
-        padsz = zeros(1,4);
-        % Partial Fourier on PE
-        [~,ix] = sort(p.ACQ_spatial_phase_1);
-        img = img(:,ix,:,:);
-        padsz(2) = d(2) - a(2);
-        % Partial Fourier on PE2
-        [~,ix] = sort(p.ACQ_spatial_phase_2);
-        img = img(:,:,ix,:);
-        padsz(3) = d(3) - a(3);
-        if any(padsz>0)
-            img = padarray(img,padsz,0,'pre');
-        end
-        
-        if chk3d
-            for i = 1:d(4)
-                img(:,:,:,i) = fftshift(fftn(img(:,:,:,i)));
-            end
-        else
-            for i = 1:d(3)
-                for j = 1:d(4)
-                    img(:,:,i,j) = fftshift(fft2(img(:,:,i,j)));
-                end
-            end
-            if strcmp(p.PVM_ObjOrderScheme,'Interlaced')
-                img = img(:,:,p.PVM_ObjOrderList+1,:);
-            end
-        end
-
-        label = strcat(id,'_',p.ACQ_protocol_name(2:end-1),'_',...
-            cellfun(@num2str,num2cell(1:d(4)),'UniformOutput',false));
         
     otherwise
         error('Invalid input file.')
