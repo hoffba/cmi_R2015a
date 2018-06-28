@@ -7,13 +7,13 @@ imname = varargin{1};
 switch tname
     
     case '2dseq' % Recontructed image
-
+        sdir = fileparts(fileparts(fdir));
+        p = readBrukerMRIpar([fullfile(sdir,{'method','acqp'}),{fullfile(fdir,'reco')}]);
         imageObj = ImageDataObject(fdir);
         imageObj.readVisu;
-        p = imageObj.Visu;
         img = imageObj.data;
         d = size(img);
-        fov = p.VisuCoreExtent;
+        fov = p.PVM_Fov; %mm
         
         if ndims(img)>3
             labels4d = cellfun(@(x)strsplit(x,'_'),imageObj.dataDimensions,'UniformOutput',false);
@@ -24,34 +24,27 @@ switch tname
         
         clear imageObj;
         
-        if p.VisuCoreDim==2
+        if strcmp(p.PVM_SpatDimEnum,'<2D>')
             ind = find(strcmp(labels4d,'SLICE'),1);
             ord = 1:length(d);
             ord([3,ind+4]) = [ind+4,3];
             img = permute(img,ord);
             d = d(ord);
-            fov(3) = d(3)*p.VisuCoreSlicePacksSliceDist;
+            fov(3) = d(3)*p.PVM_SPackArrSliceDistance;
             labels4d(ind) = [];
         end
         img = permute(reshape(img,[d(1:3),prod(d(4:end))]),[2,1,3,4]);
         
         if isempty(labels4d)
-            label = {p.VisuAcquisitionProtocol};
+            label = {p.PULPROG(2:end-5)};
         else
             label = {''};
             for i = 1:length(labels4d)
                 switch labels4d{i}
                     case 'DIFFUSION'
-                        lval = reshape(p.VisuAcqDiffusionBMatrix',3,3,[]);
-                        nb = size(lval,3);
-                        for j = 1:nb
-                            lval(j) = trace(lval(:,:,j));
-                        end
-                        lval = lval(1:nb);
-                        lstr = strcat('b',cellfun(@num2str,num2cell(lval),'UniformOutput',false)');
+                        lstr = strcat('b',cellfun(@num2str,num2cell(p.PVM_DwEffBval),'UniformOutput',false)');
                     case 'ECHO'
-                        lstr = strcat('TE',cellfun(@num2str,num2cell(p.VisuAcqEchoTime)',...
-                            'UniformOutput',false));
+                        lstr = strcat('TE',cellfun(@num2str,num2cell(p.Visu.VisuAcqEchoTime)','UniformOutput',false));
                     otherwise
                         lstr = cellfun(@num2str,num2cell(1:d(i+4)),'UniformOutput',false)';
                 end
@@ -66,14 +59,16 @@ switch tname
         recopart = {'quadrature','phase_rotate','zero_filling','FT'};
         kObj = CKDataObject(fullfile(fdir,'pdata','1'));
         kObj.readReco;
-        imObj = kObj.reco(recopart,'image');
-        img = flip(permute(imObj.data,[3,1,2,5,6,4]),1);
-        fov = imObj.Reco.RECO_fov*10; % mm
-        if length(imObj.Method.EffectiveTE)>1
-            label = strcat('TE',cellfun(@num2str,num2cell(round(imObj.Method.EffectiveTE*1000)),'UniformOutput',false));
+        imageObj = kObj.reco(recopart,'image');
+        img = flip(permute(imageObj.data,[3,1,2,5,6,4]),1);
+        fov = imageObj.Reco.RECO_fov*10; % mm
+        if length(imageObj.Method.EffectiveTE)>1
+            label = strcat('TE',cellfun(@num2str,num2cell(round(imageObj.Method.EffectiveTE*1000)),'UniformOutput',false));
         else
             label = cellfun(@num2str,num2cell(1:size(img,5)),'UniformOutput',false);
         end
+        p.Method = imageObj.Method;
+        p.Reco = imageObj.Reco;
         
     otherwise
         error('Invalid input file.')

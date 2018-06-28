@@ -1,11 +1,11 @@
-function C = mriCatalog(studydir,svchk)
+function [C,hfig] = mriCatalog(studydir,displaycheck)
 % Catalog Bruker MRI study data and convert to MHD
 
 if nargin<2
-    svchk = true;
+    displaycheck = false;
 end
 
-hdr = {'Convert','Series','Protocol','Method','TR','TE','NE','Matrix','Thk','Nslc','MToff','MT'};
+hdr = {'Series','Protocol','Method','TR','TE','NE','Matrix','Thk','Nslc','MToff','MT'};
 nlab = length(hdr);
 
 % Find subject ID:
@@ -19,8 +19,8 @@ if exist(subjfname,'file')
 else
     error('Not a Bruker MRI study folder: %s',studydir);
 end
-[~,str] = fileparts(studydir);
-dateString = str(1:8);
+[~,studyname] = fileparts(studydir);
+dateString = studyname(1:8);
 
 % Find acquisitions:
 dnames = dir(studydir);
@@ -38,7 +38,7 @@ for i = 1:nd
                 pnames{2} = fullfile(studydir,dnames(i).name,'acqp');
             end
             p = readBrukerMRIpar(pnames);
-            C(i,:) = [{false,dnames(i).name},parsePars(p,{'ACQ_scan_name','Method',...
+            C(i,:) = [{dnames(i).name},parsePars(p,{'ACQ_scan_name','Method',...
                 'PVM_RepetitionTime','PVM_EchoTime','PVM_NEchoImages','PVM_Matrix',...
                 'PVM_SliceThick','PVM_SPackArrNSlices','PVM_MagTransOffset','PVM_MagTransOnOff'})];
             stat(i) = true;
@@ -46,37 +46,27 @@ for i = 1:nd
     end
 end
 C = C(stat,:);
-[~,ord] = sort(str2double(C(:,2)));
+[~,ord] = sort(str2double(C(:,1)));
 C = C(ord,:);
-mti = ~strcmp(C(:,12),'On');
-C(mti,11) = {'off'};
-C(:,12) = [];
+mti = ~strcmp(C(:,11),'On');
+C(mti,10) = {'off'};
+C(:,11) = [];
 hdr(end) = [];
 saveCell2Txt([hdr;C],fullfile(studydir,sprintf('%s_%s_Catalog.tsv',dateString,subjectID)));
 
-% UI for converting to MHD:
-CC = C;
-ind = cellfun(@(x)~ischar(x)&&(numel(x)>1),C);
-CC(ind) = cellfun(@num2str,CC(ind),'UniformOutput',false);
-hf = figure('Position',[900,500,800,700],'MenuBar','none','ToolBar','none',...
-    'Name','Close to convert selected images to MHD ...',...
-    'ToolBar','none');
-ht = uitable(hf,'Units','normalized','Position',[0,0,1,1],'ColumnName',hdr,...
-    'ColumnWidth',{50,50,100,100,50,50,50,80,50,50,50,50},...
-    'ColumnEditable',[true,false(1,nlab-1)],'Data',CC);
-
-if svchk
-    hf.CloseRequestFcn = 'uiresume';
-    uiwait;
-    stat = cell2mat(ht.Data(:,1));
-    delete(hf);
-
-    % Save selected images as MHD:
-    C = C(stat,:);
-    for i = 1:size(C,1)
-        saveImg(studydir,dateString,subjectID,C{i,2});
-    end
+% Display catalog as table figure:
+if displaycheck
+    CC = C;
+    ind = cellfun(@(x)~ischar(x)&&(numel(x)>1),C);
+    CC(ind) = cellfun(@num2str,CC(ind),'UniformOutput',false);
+    hfig = figure('Position',[900,500,800,700],'MenuBar','none','ToolBar','none',...
+        'Name',sprintf('Study: %s',studyname),...
+        'ToolBar','none');
+    uitable(hfig,'Units','normalized','Position',[0,0,1,1],'ColumnName',hdr,...
+        'ColumnWidth',{50,100,100,50,50,50,80,50,50,50,50},...
+        'ColumnEditable',[true,false(1,nlab-1)],'Data',CC);
 end
+
 
 function v = parsePars(p,fieldnames)
 nf = length(fieldnames);
