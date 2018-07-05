@@ -125,7 +125,7 @@ if ~isempty(answer{3})
     [img(:,:,:,2),~] = readBrukerMRI(fullfile(studydir,ser{2},'pdata','1','2dseq'));
     d = size(img);
     MTR = img(:,:,:,~MTi)./img(:,:,:,MTi);
-    MTR(img<NoiseLevel(img(:,:,round(d(3)/2),MTi))) = 0; % Mask to SNR>10
+    MTR(img(:,:,:,MTi)<NoiseLevel(img(:,:,round(d(3)/2),MTi))) = 0; % Mask to SNR>10
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
         permute(cat(4,img(:,:,:,MTi),img(:,:,:,~MTi),MTR),[3,1,2,4]),...
         strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov([3,1,2]));
