@@ -19,6 +19,7 @@ answer = inputdlg({'Fat:','Diffusion:','MT'},'MF processing',1,cellfun(@num2str,
 delete(hfig);
 
 %% Fat:
+% 3D saggital
 ser = C(str2double(strsplit(answer{1})),1);
 for i = 1:length(ser)
     fprintf('Loading series: %s\n',ser{i});
@@ -93,8 +94,8 @@ FF = computeFF(W,F);
 % Save results:
 save(fullfile(svdir,sprintf('%s_Fat.mat',fnout)),'img','te','fov','params');
 saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
-    cat(4,FF,abs(W),abs(F),R2s,fmap,mean(abs(img),5)),...
-    strcat('FWI_',{'FatPct','Water','Fat','R2star','FieldMap','MGEmean'}),fov([3,1,2]));
+    permute(cat(4,FF,abs(W),abs(F),R2s,fmap,mean(abs(img),5)),[1,3,2,4]),...
+    strcat('FWI_',{'FatPct','Water','Fat','R2star','FieldMap','MGEmean'}),fov([3,2,1]));
 
 %% Determine interpolation image geometry:
 % Assumes all images use the same offsets
@@ -102,6 +103,7 @@ saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
 
 
 %% Diffusion:
+% assumes acquired in coronal
 if ~isempty(answer{2})
     ser = C(str2double(strsplit(answer{2})),1);
     [img,~,fov,p] = readBrukerMRI(fullfile(studydir,ser{1},'pdata','1','2dseq'));
@@ -112,11 +114,12 @@ if ~isempty(answer{2})
         adc = adc + log(img(:,:,:,1)./img(:,:,:,i+1)) / (diff(p.PVM_DwEffBval([1,i+1]))) / 3;
     end
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
-        flip(permute(cat(4,img(:,:,:,1),mean(img(:,:,:,2:end),4),adc),[3,2,1,4]),1),...
+        flip(permute(cat(4,img(:,:,:,1),mean(img(:,:,:,2:end),4),adc),[3,1,2,4]),1),...
         strcat('DWI_',{'T2w','HighB','ADC'}),fov([3,1,2]));
 end
 
 %% MT
+% assume acquired in saggital
 if ~isempty(answer{3})
     ser = C(str2double(strsplit(answer{3})),1);
     MToff = C(str2double(strsplit(answer{3})),10);
@@ -127,8 +130,8 @@ if ~isempty(answer{3})
     MTR = img(:,:,:,~MTi)./img(:,:,:,MTi);
     MTR(img(:,:,:,MTi)<NoiseLevel(img(:,:,round(d(3)/2),MTi))) = 0; % Mask to SNR>10
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
-        permute(cat(4,img(:,:,:,MTi),img(:,:,:,~MTi),MTR),[3,1,2,4]),...
-        strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov([3,1,2]));
+        permute(cat(4,img(:,:,:,MTi),img(:,:,:,~MTi),MTR),[3,2,1,4]),...
+        strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov([1,3,2]));
 end
 
 
