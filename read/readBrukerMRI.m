@@ -53,9 +53,12 @@ switch tname
             end
         end
         
+        fov = fov([2,1,3]);
+        
     case 'fid'  % Raw k-space data
         % * returns img as 5D matrix: [d1,d2,d3,ncoils,d4]
         
+        p = readBrukerMRIpar(fullfile(fdir,{'method','acqp'}));
         recopart = {'quadrature','phase_rotate','zero_filling','FT'};
         kObj = CKDataObject(fullfile(fdir,'pdata','1'));
         kObj.readReco;
@@ -67,8 +70,6 @@ switch tname
         else
             label = cellfun(@num2str,num2cell(1:size(img,5)),'UniformOutput',false);
         end
-        p.Method = imageObj.Method;
-        p.Reco = imageObj.Reco;
         
     otherwise
         error('Invalid input file.')

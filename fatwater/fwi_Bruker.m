@@ -27,12 +27,12 @@ for i = 1:length(ser)
     if i==1
         img = coilCombine(timg);
         fov = tfov;
-        te = p.Method.EffectiveTE;
-        f0 = p.Method.PVM_FrqRef(1);
+        te = p.EffectiveTE;
+        f0 = p.PVM_FrqRef(1);
         d = td;
     elseif all(d==td)
         img = cat(5,img,coilCombine(timg));
-        te = cat(2,te,p.Method.EffectiveTE);
+        te = cat(2,te,p.EffectiveTE);
     else
         fprintf('Dimensions mismatch - Series %s - ( %u %u %u ) ~= Orig( %u %u %u )\n',ser{i},td,d);
     end
@@ -96,6 +96,10 @@ saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
     cat(4,FF,abs(W),abs(F),R2s,fmap,mean(abs(img),5)),...
     strcat('FWI_',{'FatPct','Water','Fat','R2star','FieldMap','MGEmean'}),fov([3,1,2]));
 
+%% Determine interpolation image geometry:
+% Assumes all images use the same offsets
+% [] = meshgrid();
+
 
 %% Diffusion:
 if ~isempty(answer{2})
@@ -119,7 +123,9 @@ if ~isempty(answer{3})
     MTi = strcmp(MToff,'off');
     [img,~,fov] = readBrukerMRI(fullfile(studydir,ser{1},'pdata','1','2dseq'));
     [img(:,:,:,2),~] = readBrukerMRI(fullfile(studydir,ser{2},'pdata','1','2dseq'));
+    d = size(img);
     MTR = img(:,:,:,~MTi)./img(:,:,:,MTi);
+    MTR(img<NoiseLevel(img(:,:,round(d(3)/2),MTi))) = 0; % Mask to SNR>10
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
         permute(cat(4,img(:,:,:,MTi),img(:,:,:,~MTi),MTR),[3,1,2,4]),...
         strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov([3,1,2]));
