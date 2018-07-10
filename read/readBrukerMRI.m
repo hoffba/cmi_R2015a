@@ -33,7 +33,7 @@ switch tname
             fov(3) = d(3)*p.PVM_SPackArrSliceDistance;
             labels4d(ind) = [];
         end
-        img = permute(reshape(img,[d(1:3),prod(d(4:end))]),[2,1,3,4]);
+        img = flip(permute(reshape(img,[d(1:3),prod(d(4:end))]),[2,1,3:length(d)]),1);
         
         if isempty(labels4d)
             label = {p.PULPROG(2:end-5)};
@@ -53,7 +53,7 @@ switch tname
             end
         end
         
-        fov = fov([2,1,3]);
+%         fov = fov([2,1,3]);
         
     case 'fid'  % Raw k-space data
         % * returns img as 5D matrix: [d1,d2,d3,ncoils,d4]
@@ -63,7 +63,7 @@ switch tname
         kObj = CKDataObject(fullfile(fdir,'pdata','1'));
         kObj.readReco;
         imageObj = kObj.reco(recopart,'image');
-        img = flip(permute(imageObj.data,[3,1,2,5,6,4]),1);
+        img = flip(permute(imageObj.data,[1,2,3,5,6,4]),1);
         fov = imageObj.Reco.RECO_fov*10; % mm
         if length(imageObj.Method.EffectiveTE)>1
             label = strcat('TE',cellfun(@num2str,num2cell(round(imageObj.Method.EffectiveTE*1000)),'UniformOutput',false));

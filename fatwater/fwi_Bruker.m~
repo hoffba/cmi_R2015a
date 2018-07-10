@@ -163,9 +163,9 @@ if ~isempty(answer{3})
         Isave = I;
     end
     MTR = Isave(:,:,:,~MTi)./Isave(:,:,:,MTi);
-    MTR(Isave(:,:,:,MTi)<(NoiseLevel(Isave(:,:,round(d(3)/2),MTi))*20)) = 0; % Mask to SNR>20
+    MTR(Isave(:,:,:,MTi)<(NoiseLevel(Isave(:,:,round(d(3)/2),MTi))*10)) = 0; % Mask to SNR>10
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
-        flip(cat(4,Isave(:,:,:,MTi),Isave(:,:,:,~MTi),MTR),3),...
+        cat(4,Isave(:,:,:,MTi),Isave(:,:,:,~MTi),MTR),...
         strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov);
 end
 
