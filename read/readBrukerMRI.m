@@ -44,7 +44,7 @@ switch tname
                     case 'DIFFUSION'
                         lstr = strcat('b',cellfun(@num2str,num2cell(p.PVM_DwEffBval),'UniformOutput',false)');
                     case 'ECHO'
-                        lstr = strcat('TE',cellfun(@num2str,num2cell(p.Visu.VisuAcqEchoTime)','UniformOutput',false));
+                        lstr = strcat('TE',cellfun(@num2str,num2cell(p.EffectiveTE)','UniformOutput',false));
                     otherwise
                         lstr = cellfun(@num2str,num2cell(1:d(i+4)),'UniformOutput',false)';
                 end
@@ -53,7 +53,7 @@ switch tname
             end
         end
         
-%         fov = fov([2,1,3]);
+        fov = fov([2,1,3]);
         
     case 'fid'  % Raw k-space data
         % * returns img as 5D matrix: [d1,d2,d3,ncoils,d4]

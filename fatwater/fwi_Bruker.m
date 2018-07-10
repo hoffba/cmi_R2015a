@@ -100,8 +100,8 @@ FF = computeFF(W,F);
 % Save results:
 save(fullfile(svdir,sprintf('%s_Fat.mat',fnout)),'I','te','fov','params');
 saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
-    cat(4,FF,abs(W),abs(F),R2s,fmap,mean(abs(I),5)),...
-    strcat('FWI_',{'FatPct','Water','Fat','R2star','FieldMap','MGEmean'}),fov);
+    flip(cat(4,FF,abs(W),abs(F),R2s,fmap,mean(abs(I),5)),1),...
+    strcat('FWI_',{'FatPct','Water','Fat','R2star','FieldMap','MGEmean'}),fov([2,1,3]));
 
 %% Determine interpolation image geometry:
 % Assumes all images use the same offsets
@@ -138,7 +138,8 @@ if ~isempty(answer{2})
     end
     adc(isnan(adc)) = 0;
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
-        cat(4,Isave(:,:,:,1),mean(Isave(:,:,:,2:end),4),adc),strcat('DWI_',{'T2w','HighB','ADC'}),fov);
+        flip(cat(4,Isave(:,:,:,1),mean(Isave(:,:,:,2:end),4),adc),1),...
+        strcat('DWI_',{'T2w','HighB','ADC'}),fov([2,1,3]));
 end
 
 %% MT
@@ -165,8 +166,8 @@ if ~isempty(answer{3})
     MTR = Isave(:,:,:,~MTi)./Isave(:,:,:,MTi);
     MTR(Isave(:,:,:,MTi)<(NoiseLevel(Isave(:,:,round(d(3)/2),MTi))*20)) = 0; % Mask to SNR>20
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
-        flip(cat(4,Isave(:,:,:,MTi),Isave(:,:,:,~MTi),MTR),3),...
-        strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov);
+        flip(flip(cat(4,Isave(:,:,:,MTi),Isave(:,:,:,~MTi),MTR),3),1),...
+        strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov([2,1,3]));
 end
 
 
