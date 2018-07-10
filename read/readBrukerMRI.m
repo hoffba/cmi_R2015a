@@ -70,6 +70,7 @@ switch tname
         else
             label = cellfun(@num2str,num2cell(1:size(img,5)),'UniformOutput',false);
         end
+        fov = fov([2,1,3]);
         
     otherwise
         error('Invalid input file.')

@@ -33,7 +33,7 @@ for i = 1:length(ser)
     [td(1),td(2),td(3),~] = size(timg);
     if i==1
         I = coilCombine(timg);
-        fov = tfov;
+        fov = tfov([2,1,3]);
         te = p.EffectiveTE;
         f0 = p.PVM_FrqRef(1);
         d = td;
@@ -101,7 +101,7 @@ FF = computeFF(W,F);
 save(fullfile(svdir,sprintf('%s_Fat.mat',fnout)),'I','te','fov','params');
 saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
     flip(cat(4,FF,abs(W),abs(F),R2s,fmap,mean(abs(I),5)),1),...
-    strcat('FWI_',{'FatPct','Water','Fat','R2star','FieldMap','MGEmean'}),fov([2,1,3]));
+    strcat('FWI_',{'FatPct','Water','Fat','R2star','FieldMap','MGEmean'}),fov);
 
 %% Determine interpolation image geometry:
 % Assumes all images use the same offsets
@@ -118,6 +118,7 @@ end
 if ~isempty(answer{2})
     ser = C(str2double(strsplit(answer{2})),1);
     [I,~,fov,p] = readBrukerMRI(fullfile(studydir,ser{1},'pdata','1','2dseq'));
+    fov = fov([2,1,3]);
 %     I = permute(I,[2,1,3,4]);
     [d(1),d(2),d(3),nvec] = size(I);
     if interpchk
@@ -139,7 +140,7 @@ if ~isempty(answer{2})
     adc(isnan(adc)) = 0;
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
         flip(cat(4,Isave(:,:,:,1),mean(Isave(:,:,:,2:end),4),adc),1),...
-        strcat('DWI_',{'T2w','HighB','ADC'}),fov([2,1,3]));
+        strcat('DWI_',{'T2w','HighB','ADC'}),fov);
 end
 
 %% MT
@@ -150,6 +151,7 @@ if ~isempty(answer{3})
     MTi = strcmp(MToff,'off');
     [I,~,fov] = readBrukerMRI(fullfile(studydir,ser{1},'pdata','1','2dseq'));
     [I(:,:,:,2),~] = readBrukerMRI(fullfile(studydir,ser{2},'pdata','1','2dseq'));
+    fov = fov([2,1,3]);
     [d(1),d(2),d(3),nvec] = size(I);
     if interpchk
         v = fov./d;
@@ -167,7 +169,7 @@ if ~isempty(answer{3})
     MTR(Isave(:,:,:,MTi)<(NoiseLevel(Isave(:,:,round(d(3)/2),MTi))*20)) = 0; % Mask to SNR>20
     saveMHD(fullfile(svdir,sprintf('%s.mhd',fnout)),...
         flip(flip(cat(4,Isave(:,:,:,MTi),Isave(:,:,:,~MTi),MTR),3),1),...
-        strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov([2,1,3]));
+        strcat('MT_',{sprintf('%i',MToff{~MTi}),'off','MTR'}),fov);
 end
 
 
