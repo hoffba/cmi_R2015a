@@ -1,7 +1,9 @@
 % ImageClass function
 % Re-orient image based on Eigenvector analysis of current VOI (for CT bone)
 function eigOrient(self)
-    dorder = [3 2 1];
+        fov = self.voxsz.*self.dims(1:3);
+        [~,dorder] = sort(fov,'descend');
+%     dorder = [3 2 1];
     %% VOI -> indices
         [X,Y,Z] = self.getImageCoords;
         pcain = [X(self.mask.mat),Y(self.mask.mat),Z(self.mask.mat)];
