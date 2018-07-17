@@ -115,7 +115,7 @@ if i
         nn = cellfun(@(x)~isempty(regexp(x,'VOI|ADC','Once')),fname)';
         tp = getappdata(handles.figure1,'tp');
         % Set output file names:
-        oname = cellfun(@(x)[x(1:end-4),'_mR',x(end-3:end)],fname,'UniformOutput',false)';
+        oname = cellfun(@(x)[x(1:end-4),'_R',x(end-3:end)],fname,'UniformOutput',false)';
         defVal = num2cell(tp(i).defOrig*ones(nf,1));
         im = [tp(i).im ; num2cell(nn),fullfile(fdir,fname)',oname,defVal];
         tp(i).im = im;

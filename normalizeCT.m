@@ -1,29 +1,21 @@
-function Inorm = normalizeCT(I,varargin)
+function Inorm = normalizeCT(I,BW,voxsz)
 % Normalization function based on Gallardo-Estrella et al. 2016
-% Inorm = normalizeCT(I)
-% Inorm = normalizeCT(I,voxsz)
-% Inorm = normalizeCT(I,BW)
-% Inorm = normalizeCT(I,voxsz,BW)
 
-BW = true;
 n = 6;
-if nargin>1
-    if isscalar(varargin{1}) && isnumeric(varargin{1})
-        n = varargin{1};
-    elseif islogical(varargin{1}) && all(size(I)==size(varargin{1}))
-        BW = varargin{1};
-        if (nargin==3) && isscalar(varargin{2}) && isnumeric(varargin{2})
-            n = varargin{2};
-        end
-    else
-        error('Invalid input.');
-    end
-end
+s = 2.^(0:(n-2));
+r = [70.34, 67.54, 60.90, 51.45, 36.14];
 
-sig = [0,2.^(0:(n-2))];
-d = size(I);
-Inorm = I;
-for i = 1:n % Loop over kernels
-    
-    Inorm = Inorm + lam*F;
+% Initialize to F^n:
+Inorm = imgaussfilt(I,s(end)./voxsz(1:2));
+
+% L_0 is original image:
+Lprev = I;
+
+for i = 1:n-1 % Loop over kernels
+    L = imgaussfilt(I,s(i)./voxsz(1:2));
+    F = Lprev - L;
+    Inorm = Inorm + r(i)/std(F(BW))*F;
+    if i<n-1
+        Lprev = L;
+    end
 end

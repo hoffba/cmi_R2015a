@@ -12,6 +12,7 @@ if all(ismember(v,1:self.dims(4)))
     self.scaleB = self.scaleB(v);
     self.thresh = self.thresh(v,:);
     self.labels = self.labels(v);
+    self.valExt = self.valExt(v,:);
     stat = true;
 else
     warning('Input indices are outside image limits.');

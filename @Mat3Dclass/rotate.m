@@ -5,6 +5,12 @@ function rotate(self,dim,a)
 % ** Assumes equal voxel spacing within slice plane (otherwise may distort the image)
 if (nargin == 3) && self.check && ~isempty(a) && isnumeric(a) && (a~=0) && ismember(dim,1:3)
     
+    if isa(self,'ImageClass')
+        interpm = 'cubic';
+    else
+        interpm = 'nearest';
+    end
+    
     % Determine rotational dimension order:
     switch dim
         case 1 % Row
@@ -17,7 +23,7 @@ if (nargin == 3) && self.check && ~isempty(a) && isnumeric(a) && (a~=0) && ismem
     
     % Create transform matrix:
     fov = (self.dims(1:3)-1).*self.voxsz/2;
-    R = imref3d(self.dims(1:3),fov(1)*[-1,1],fov(2)*[-1,1],fov(3)*[-1,1]);
+    R = imref3d(self.dims(1:3),fov(2)*[-1,1],fov(1)*[-1,1],fov(3)*[-1,1]);
     A = [ cosd(a) , -sind(a) , 0 , 0 ;...
           sind(a) , cosd(a)  , 0 , 0 ;...
           0       , 0        , 1 , 0 ;...
@@ -29,8 +35,8 @@ if (nargin == 3) && self.check && ~isempty(a) && isnumeric(a) && (a~=0) && ismem
     nvec = self.dims(4);
     h = waitbar(0,sprintf('Rotating each image: 0 (/%u)',nvec));
     for ivec = 1:nvec
-        self.mat(:,:,:,ivec) = imwarp(self.mat(:,:,:,ivec),R,tform,'OutputView',R);
-        waitbar(ivec/nvec,h,sprintf('Rotating each slice: %u (/%u)',ivec,nvec));
+        self.mat(:,:,:,ivec) = imwarp(self.mat(:,:,:,ivec),R,tform,interpm,'OutputView',R);
+        waitbar(ivec/nvec,h,sprintf('Rotating each image: %u (/%u)',ivec,nvec));
     end
     close(h)
     
