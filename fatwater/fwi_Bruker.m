@@ -9,7 +9,7 @@ interpm = 'cubic';
 [~,studystr] = fileparts(studydir);
 studystr = strsplit(studystr,'_');
 fnout = strjoin(studystr([3:end-2,1]),'_');
-svdir = fullfile(studydir,'MHD');
+svdir = fullfile(studydir,studystr(1:8));
 if ~isdir(svdir)
     mkdir(svdir);
 end
