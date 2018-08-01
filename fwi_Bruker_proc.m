@@ -15,17 +15,17 @@ for i = 1:nt
         labi(ii) = i;
         if ~isempty(tags{2,i})
             clim(ii,:) = repmat(tags{2,i},length(ii),1);
-        else
-            for j = 1:length(ii)
-                tvals = reshape(cmiObj0.img.mat(:,:,:,ii(j)),[],1);
-                tvals(tvals==0) = [];
-                edges = linspace(0,max(tvals)/2,101);
-                N = histcounts(tvals,edges);
-                NN = gradient(gradient(N));
-                mi = max(find(NN==max(NN),1)-5,1);
-                tmin = mean(edges([mi,mi+1]));
-                clim(ii(j),:) = [tmin,3.5*median(tvals)];
-            end
+%         else
+%             for j = 1:length(ii)
+%                 tvals = reshape(cmiObj0.img.mat(:,:,:,ii(j)),[],1);
+%                 tvals(tvals==0) = [];
+%                 edges = linspace(0,max(tvals)/2,101);
+%                 N = histcounts(tvals,edges);
+%                 NN = gradient(gradient(N));
+%                 mi = max(find(NN==max(NN),1)-5,1);
+%                 tmin = mean(edges([mi,mi+1]));
+%                 clim(ii(j),:) = [tmin,3.5*median(tvals)];
+%             end
         end
     end
 end
