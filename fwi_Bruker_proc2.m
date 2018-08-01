@@ -1,32 +1,39 @@
-function cmiObj0 = fwi_Bruker_proc(cmiObj0)
+function cmiObj0 = fwi_Bruker_proc2(pdir)
+
+cmiObj0 = CMIclass;
+tags = {'T2w', 'HighB', 'ADC',           'FatPct', 'R2star', 'MTR';
+        [],    [],      [0.2,0.6]*10^-3, [2,12],   [0,400],  [0.3,0.5] };
+nt = size(tags,2);
+
+pstr = 
+
+% Find imaging dates:
+dateDir = dir(pdir);
+dateDir(1:2) = [];
+dateDir = {dateDir([dateDir.isdir]).name};
+dateDir(cellfun(@length,dateDir)~=8) = [];
+
+% Find images to load:
+fnames = {};
+for i = 1:length(dateDir)
+    tnames = dir(fullfile(pdir,dateDir,'*.mhd'));
+    
+end
 
 % Sort images and set up contrast:
 tags = {'T2w', 'HighB', 'ADC',           'FatPct', 'R2star', 'MTR';
-        [],    [],      [0,1]*10^-3, [2,12],   [0,400],  [0.5,0.8] };
+        [],    [],      [0.2,0.6]*10^-3, [2,12],   [0,400],  [0.3,0.5] };
 nt = size(tags,2);
 [vmin,vmax] = cmiObj0.img.getColorMinMax;
-clim = [vmin,vmax/2];
+clim = [vmin,vmax];
 nvec = cmiObj0.img.dims(4);
 labels = cmiObj0.img.labels';
 labi = zeros(nvec,1);
 for i = 1:nt
-    ii = find(~cellfun(@isempty,strfind(labels,strcat('_',tags{1,i}))));
-    if ~isempty(ii)
-        labi(ii) = i;
-        if ~isempty(tags{2,i})
-            clim(ii,:) = repmat(tags{2,i},length(ii),1);
-        else
-            for j = 1:length(ii)
-                tvals = reshape(cmiObj0.img.mat(:,:,:,ii(j)),[],1);
-                tvals(tvals==0) = [];
-                edges = linspace(0,max(tvals)/2,101);
-                N = histcounts(tvals,edges);
-                NN = gradient(gradient(N));
-                mi = max(find(NN==max(NN),1)-5,1);
-                tmin = mean(edges([mi,mi+1]));
-                clim(ii(j),:) = [tmin,3.5*median(tvals)];
-            end
-        end
+    ii = ~cellfun(@isempty,strfind(labels,strcat('_',tags{1,i})));
+    labi(ii) = i;
+    if ~isempty(tags{2,i})
+        clim(ii,:) = repmat(tags{2,i},nnz(ii),1);
     end
 end
 
@@ -57,10 +64,6 @@ cmiObj0.morphMask('close',[3,3]);
 % Find slice to display:
 N = squeeze(sum(sum(cmiObj0.img.mask.mat,1),2));
 cmiObj0.setSlice(round(sum( (1:D(3))' .* N / sum(N) )));
-
-% Adjust anatomical images to be similar contrast
-hd = uiwait(msgbox('Adjust anatomical contrast.','Contrast'));
-wait
 
 % Generate montages and results:
 mask = cmiObj0.img.mask.mat;

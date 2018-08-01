@@ -22,10 +22,10 @@ if self.img.check && self.guicheck
             timg(:,:,:,i) = double(im);
         end
         warning('off','Images:initSize:adjustingMag');
-        if nargin<3 || isa(x,'matlab.ui.containter.Menu')
+        if nargin<3 || isa(x,'matlab.ui.container.Menu')
             dim = round(sqrt(size(timg,4)));
             dim = round(str2double(inputdlg('Desired number of rows:','Rows',1,{num2str(dim)})));
-        elseif ~isscalar(dim)
+        elseif ~(isnumeric(dim) && isscalar(dim))
             dim = round(sqrt(size(timg,4)));
         end
         hf = figure;montage(timg/255,'Size',[dim,NaN]);
