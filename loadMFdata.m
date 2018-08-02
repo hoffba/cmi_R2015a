@@ -1,5 +1,6 @@
-function loadMFdata(cmiObj,subjdir)
+function [stat,datestrs] = loadMFdata(cmiObj,subjdir)
 
+stat = true;
 dnames = dir(subjdir);
 dnames = {dnames([dnames.isdir]).name}';
 datenums = cellfun(@(x)datenum(x,'yyyymmdd'),dnames);
@@ -10,8 +11,12 @@ datestrs = cellfun(@(x)datestr(x,'yyyymmdd'),num2cell(datenums),'UniformOutput',
 
 % Load baseline images and VOI:
 tags = {'MT_MTR';'FWI_FatPct';'FWI_R2star';'DWI_T2w';'DWI_HighB';'DWI_ADC'};
+rnames = fullfile(subjdir,datestrs{1},...
+    strcat(subjID,'_',datestrs{1},'_',[{'MT_off'};tags],'_R.mhd'));
 fnames = fullfile(subjdir,datestrs{1},...
     strcat(subjID,'_',datestrs{1},'_',[{'MT_off'};tags],'.mhd'));
+ri = logical(cellfun(@(x)exist(x,'file'),rnames));
+fnames(ri) = rnames(ri);
 vi = logical(cellfun(@(x)exist(x,'file'),fnames));
 if all(vi)
     
@@ -35,10 +40,14 @@ if all(vi)
         else
             fprintf('\nFiles not found:\n');
             fprintf('%s\n',fnames{~vi});
+            datestrs{i} = '';
         end
     end
     
 else
     fprintf('\nFiles not found:\n');
     fprintf('%s\n',fnames{~vi});
+    stat = false;
+    datestrs = {};
 end
+datestrs = datestrs(~cellfun(@isempty,datestrs));

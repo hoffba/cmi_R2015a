@@ -2,7 +2,7 @@ function cmiObj0 = fwi_Bruker_proc(cmiObj0)
 
 % Sort images and set up contrast:
 tags = {'T2w', 'HighB', 'ADC',           'FatPct', 'R2star', 'MTR';
-        [],    [],      [0,1]*10^-3, [2,12],   [0,400],  [0.5,0.8] };
+        [],    [],      [0,1]*10^-3, [2,12],   [0,600],  [0.5,0.8] };
 nt = size(tags,2);
 [vmin,vmax] = cmiObj0.img.getColorMinMax;
 clim = [vmin,vmax/2];
@@ -15,17 +15,6 @@ for i = 1:nt
         labi(ii) = i;
         if ~isempty(tags{2,i})
             clim(ii,:) = repmat(tags{2,i},length(ii),1);
-%         else
-%             for j = 1:length(ii)
-%                 tvals = reshape(cmiObj0.img.mat(:,:,:,ii(j)),[],1);
-%                 tvals(tvals==0) = [];
-%                 edges = linspace(0,max(tvals)/2,101);
-%                 N = histcounts(tvals,edges);
-%                 NN = gradient(gradient(N));
-%                 mi = max(find(NN==max(NN),1)-5,1);
-%                 tmin = mean(edges([mi,mi+1]));
-%                 clim(ii(j),:) = [tmin,3.5*median(tvals)];
-%             end
         end
     end
 end
@@ -64,15 +53,17 @@ uiwait(msgbox('Adjust anatomical contrast.','Contrast'));
 % Generate montages and results:
 mask = cmiObj0.img.mask.mat;
 opts = struct('vdim',{3},'mdim',{4},'mind',{[]});
-for i = 1:nt
+for i = 3:nt % only quantitative maps for now
     opts.mind = find(labi==i)';
     chk = isempty(tags{2,i});
     cmiObj0.setOverCheck(~chk);
     if chk
         cmiObj0.clearMask;
         cmiObj0.setCMap('gray');
-    elseif ~cmiObj0.img.mask.check
-        cmiObj0.img.mask.merge('replace',mask);
+    else
+        if ~cmiObj0.img.mask.check
+            cmiObj0.img.mask.merge('replace',mask);
+        end
         cmiObj0.setSlice(cmiObj0.slc(cmiObj0.orient));
         cmiObj0.setCMap('jet');
     end
