@@ -16,6 +16,7 @@ if exist(subjfname,'file')
     fclose(fid);
     tok = regexp(str,'##\$SUBJECT_id=[^<]*<([^>]*)','tokens');
     subjectID = tok{1}{1};
+    subjectID(strfind(subjectID,'_')) = [];
 else
     error('Not a Bruker MRI study folder: %s',studydir);
 end
