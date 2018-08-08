@@ -8,6 +8,7 @@ if nargin<2
 end
 
 % Load images:
+[~,subjID] = fileparts(subjdir);
 [stat,datestrs] = loadMFdata(cmiObj0,subjdir);
 
 % Sort images and set up contrast:
@@ -51,9 +52,12 @@ uiwait(msgbox('Adjust anatomical contrast/view/alignment.','Adjust Image'));
 d = cmiObj0.img.dims(1:3);
 D = d*2;
 fprintf('Interpolating image from (%u %u %u) to (%u %u %u)\n',d,D);
-slc = cmiObj0.slc(cmiObj0.orient);
+orient = cmiObj0.orient;
+slc = cmiObj0.slc(orient);
 cmiObj0.imgInterp(D);
+cmiObj0.setView(orient);
 cmiObj0.setSlice(slc*2);
+pause(0.01);
 
 % Adjust VOI:
 cmiObj0.morphMask('close',[3,3]);
@@ -62,7 +66,7 @@ cmiObj0.morphMask('open',[1,1]);
 cmiObj0.morphMask('close',[3,3]);
 
 mask = cmiObj0.img.mask.mat;
-opts = struct('vdim',{3},'mdim',{4},'mind',{[]});
+opts = struct('vdim',{orient},'mdim',{4},'mind',{[]});
 
 % Montage anatomical images (T2w/HighB):
 cmiObj0.setOverCheck(false);
@@ -85,8 +89,10 @@ for i = 3:nt
     addLabels(hf,tags{1,i},...
         [[datestrs';cellfun(@(x)num2str(x,3),num2cell(vmeans(opts.mind)),'UniformOutput',false)],...
         {'Date:';'Mean:'}]);
+    print(hf,fullfile(subjdir,sprintf('%s_%s_montageOverlays.jpg',subjID,tags{1,i})),'-djpeg');
 end
 cmiObj0.setOverCheck(false);
+cmiObj0.setCMap('gray');
 
 % Generate PRM montages and scatterplots:
 cmiObj0.img.prm.setOpts('cmap',flip(eye(3),2),'filtchk',false,...
@@ -115,9 +121,11 @@ for i = 3:nt
     addLabels(hf,tags{1,i},...
         [[datestrs';cellfun(@(x)num2str(x,3),num2cell(V),'UniformOutput',false)],...
         {'Date:';'PRM+(%):';'PRM-(%):'}]);
+    print(hf,fullfile(subjdir,sprintf('%s_%s_PRMoverlays.jpg',subjID,tags{1,i})),'-djpeg');
 end
-cmiObj0.activatePRM(false);
 
+% Set back to normal modes:
+cmiObj0.activatePRM(false);
 
 
 function addLabels(hf,titleString,labels)
