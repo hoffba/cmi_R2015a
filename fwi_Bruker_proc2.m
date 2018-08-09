@@ -65,7 +65,7 @@ cmiObj0.morphMask('erode',[1,1]);
 cmiObj0.morphMask('open',[1,1]);
 cmiObj0.morphMask('close',[3,3]);
 
-mask = cmiObj0.img.mask.mat;
+% mask = cmiObj0.img.mask.mat;
 opts = struct('vdim',{orient},'mdim',{4},'mind',{[]});
 
 % Montage anatomical images (T2w/HighB):
@@ -74,10 +74,11 @@ cmiObj0.clearMask;
 cmiObj0.setCMap('gray');
 opts.mind = find(ismember(labi,1:2))';
 hf = cmiObj0.genMontage(opts,2);
-addLabels(hf,'DWI',[datestrs',{'Date:'}])
+addLabels(hf,'DWI',[datestrs',{'Date:'}]);
+print(hf,fullfile(subjdir,sprintf('%s_DWI_montage.jpg',subjID)),'-djpeg');
+cmiObj0.img.mask.merge('replace',mask);
 
 % Generate overlay montages and results:
-cmiObj0.img.mask.merge('replace',mask);
 cmiObj0.setOverCheck(true);
 cmiObj0.setCMap('jet');
 for i = 3:nt
@@ -143,4 +144,5 @@ for i = 1:ntp
     annotation(hf,'textbox',[posx(i),1-H,W,H],'string',labels(:,i),aopts{:});
 end
 aopts{2} = 'right';
-annotation(hf,'textbox',[0,1-H,Wl,H],'string',labels(:,end),aopts{:});
+a = annotation(hf,'textbox',[0,1-H,Wl,H],'string',labels(:,end),'Units','characters',aopts{:});
+a.Position(3) = 15;
