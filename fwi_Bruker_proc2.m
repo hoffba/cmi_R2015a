@@ -37,16 +37,46 @@ cmiObj0.imgOrder(xi);
 cmiObj0.setClim([(1:nvec)',clim]);
 vmeans = mean(cmiObj0.img.getMaskVals);
 
-% User sets alignment and view:
-cmiObj0.setVec(1);
-uiwait(msgbox('Adjust anatomical contrast/view/alignment.','Adjust Image'));
+% Set color limits for DWI:
+ntp = length(datestrs);
+fname = fullfile(subjdir,'clim.mat');
+if exist(fname,'file')
+    t = load(fname,'clim');
+    tclim = t.clim;
+else
+    tclim = zeros(0,2);
+end
+ntpt = round(size(tclim,1)/2);
+itp = ntpt+1:1:ntp;
+clim((1:ntpt)+1,:) = tclim(1:ntpt,:);
+clim((1:ntpt)+1+ntp,:) = tclim((1:ntpt)+ntpt,:);
+cmiObj0.setClim([(1:nvec)',clim]);
+cmiObj0.h.slider_4D.Enable = 'off'; pause(0.01);
+for i = 1:length(itp)
+    cmiObj0.setVec(itp(i));
+    uiwait(msgbox('Adjust contrast.','Adjust Contrast'));
+end
+cmiObj0.h.slider_4D.Enable = 'on'; pause(0.01);
+clim = cmiObj0.clim(1+(1:ntp*2),:);
+save(fullfile(subjdir,'clim.mat'),'clim');
 
-% % Eigen-Transform:
-% fprintf('Aligning image to axes ...\n');
-% cmiObj0.eigOrient;
-% cmiObj0.setView(1);
-% cmiObj0.imgRotate(-15);
-% cmiObj0.setView(3);
+% Load position parameters previously saved by user:
+cmiObj0.setVec(1);
+if exist(fullfile(subjdir,'position.mat'),'file')
+    pos = load(fullfile(subjdir,'position.mat'));
+    if ~all(ismember({'rot','orient','slc','cropz'},fieldnames(pos)))
+        error('Missing position information.');
+    end
+    for i = 1:size(pos.rot,1)
+        cmiObj0.setView(pos.rot(i,1));
+        cmiObj0.imgRotate(pos.rot(i,2));
+    end
+    cmiObj0.setView(pos.orient);
+    cmiObj0.setSlice(pos.slc);
+    cmiObj0.imgCrop(1,pos.cropz);
+else
+    error('Position info not saved.');
+end
 
 % Interpolate x2
 d = cmiObj0.img.dims(1:3);
@@ -64,6 +94,7 @@ cmiObj0.morphMask('close',[3,3]);
 cmiObj0.morphMask('erode',[1,1]);
 cmiObj0.morphMask('open',[1,1]);
 cmiObj0.morphMask('close',[3,3]);
+mask = cmiObj0.img.mask.mat;
 
 % mask = cmiObj0.img.mask.mat;
 opts = struct('vdim',{orient},'mdim',{4},'mind',{[]});
