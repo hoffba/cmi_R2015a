@@ -47,7 +47,7 @@ else
     tclim = zeros(0,2);
 end
 ntpt = round(size(tclim,1)/2);
-itp = ntpt+1:1:ntp;
+itp = (ntpt+1:ntp)+1;
 clim((1:ntpt)+1,:) = tclim(1:ntpt,:);
 clim((1:ntpt)+1+ntp,:) = tclim((1:ntpt)+ntpt,:);
 cmiObj0.setClim([(1:nvec)',clim]);
