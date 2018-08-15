@@ -14,11 +14,11 @@ if (nargin == 3) && self.check && ~isempty(a) && isnumeric(a) && (a~=0) && ismem
     % Determine rotational dimension order:
     switch dim
         case 1 % Row
-            p = [1,3,2,4];
+            p = [2,3,1,4];
         case 2 % Col
-            p = [3,1,2,4];
+            p = [1,3,2,4];
         case 3 % Slc
-            p = [2,1,3,4];
+            p = [1,2,3,4];
     end
     
     % Create transform matrix:
