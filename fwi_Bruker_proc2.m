@@ -12,9 +12,9 @@ end
 [stat,datestrs] = loadMFdata(cmiObj0,subjdir);
 
 % Sort images and set up contrast:
-tags = {'T2w', 'HighB', 'ADC',       'FatPct', 'R2star', 'MTR' ;
-        [],    [],      [0,1]*10^-3, [2,12],   [0,600],  [0.5,0.8] ;
-        [],    [],      1e-4,        3,        50,       0.04 };
+tags = {'T2w', 'HighB', 'ADC',  'FatPct', 'R2star', 'MTR' ;
+        [],    [],      [0,1],  [2,12],   [0,600],  [0.5,0.8] ;
+        [],    [],      0.1,   3,        50,       0.04 };
 nt = size(tags,2);
 [vmin,vmax] = cmiObj0.img.getColorMinMax;
 clim = [vmin,vmax/2];
