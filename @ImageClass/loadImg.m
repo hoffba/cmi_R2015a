@@ -14,7 +14,7 @@ d = [];
 if appendcheck
     d = self.dims(1:3);
 end
-[img,label,fov,fnameOut] = cmi_load(1,d,fname);
+[img,label,fov,fnameOut,info] = cmi_load(1,d,fname);
 % img(isnan(img)) = 0;
 if ~isempty(img)
 %     if size(img,3)==1
@@ -48,6 +48,7 @@ if ~isempty(img)
         self.valExt = [self.valExt ; [squeeze(min(min(min(img,[],1),[],2),[],3)),...
                                       squeeze(max(max(max(img,[],1),[],2),[],3))]];
     else
+        self.info = info;
         self.prmBaseVec = 1;
         [self.dir,self.name] = fileparts(fnameOut);
         [d(1),d(2),d(3),d(4)] = size(img);
@@ -61,7 +62,9 @@ if ~isempty(img)
         self.scaleB = zeros(1,d(4));
         self.valExt = [squeeze(min(min(min(img,[],1),[],2),[],3)),...
                        squeeze(max(max(max(img,[],1),[],2),[],3))];
-        self.mask.initialize(d(1:3));
+        self.dircos = info.SliceOrient;
+        self.slcpos = info.SlicePos;
+        self.mask.initialize(d(1:3),self.voxsz,self.dircos,self.slcpos);
         self.prm.initialize;
     end
     self.check = true; % Image is now available

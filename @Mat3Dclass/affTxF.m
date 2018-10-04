@@ -25,7 +25,8 @@ if self.check && (nargin>1)
         tmin = min(timg(:));
         [X,Y,Z] = self.getImageCoords;
         C=[X(:)';Y(:)';Z(:)';ones(1,n)];
-        Ci=T\C;
+%         Ci=T\C;
+        Ci = (C' * T)';
         Xi=reshape(Ci(1,:),d(1:3));
         Yi=reshape(Ci(2,:),d(1:3));
         Zi=reshape(Ci(3,:),d(1:3));

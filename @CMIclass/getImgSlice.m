@@ -1,4 +1,4 @@
-% CMIcalss function
+% CMIclass function
 % Retrieve current slice
 function islc = getImgSlice(self,chk,vec)
 % Inputs: chk = 'mask', 'img', or 'prm'

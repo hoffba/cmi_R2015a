@@ -141,6 +141,7 @@ classdef CMIclass < handle
                                    'CloseRequestFcn','');
                 self.haxes = axes('Visible','Off','Parent',self.hfig,'YDir','reverse',...
                                   'Position',[0,0,1,1]);
+                view(self.haxes,-90,90);
                 self.hibg = image('Parent',self.haxes,'CData',[]);
                 self.hiover = image('Parent',self.haxes,'CData',[]);
                 % Update data cursor text function
@@ -234,9 +235,8 @@ classdef CMIclass < handle
                     % Find ROI outline
                     if ~(self.overcheck || self.prmcheck)
                         [voir,voic] = find(edge(self.getImgSlice('mask'),'Canny'));
-                        tsz = self.img.voxsz; tsz(self.orient) = [];
-                        voir = tsz(1) * voir - tsz(1)/2;
-                        voic = tsz(2) * voic - tsz(2)/2;
+                        voir = voir - 0.5;
+                        voic = voic - 0.5;
                     else
                         voir = [];
                         voic = [];
@@ -275,9 +275,8 @@ classdef CMIclass < handle
                             voic = [];
                         else
                             [voir,voic] = find(edge(tmask,'Canny'));
-                            tsz = self.img.voxsz; tsz(self.orient) = [];
-                            voir = tsz(1) * voir - tsz(1)/2;
-                            voic = tsz(2) * voic - tsz(2)/2;
+                            voir = voir - 0.5;
+                            voic = voic - 0.5;
                         end
                     else
                         voir = [];
@@ -322,13 +321,12 @@ classdef CMIclass < handle
                 set(self.hfig,'Name',self.img.name)
                 self.dispUDslice;
                 self.setChecker;
-                dpix = self.img.voxsz(1:3); dpix(self.orient) = [];
-                tdims = self.img.dims(1:3); tdims(self.orient) = [];
-                fov = dpix .* tdims;
-                set(self.haxes,'XLim',[0 fov(2)-dpix(2)/8],'YLim',[0 fov(1)-dpix(1)/8],...
-                    'DataAspectRatio',[1 1 1]);
-                set([self.hiover self.hibg],'XData',[dpix(2) fov(2)]-dpix(2)/2,...
-                                            'YData',[dpix(1) fov(1)]-dpix(1)/2);
+                v = self.img.voxsz; v(4) = v(self.orient); v(self.orient) = [];
+                d = self.img.dims(1:3); d(self.orient) = [];
+                tx = [1,d(2)]-0.5;
+                ty = [1,d(1)]-0.5;
+                set(self.haxes,'XLim',tx,'YLim',ty,'DataAspectRatio',v);
+                set([self.hiover self.hibg],'XData',tx,'YData',ty);
             end
         end
         % Update display colormap

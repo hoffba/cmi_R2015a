@@ -32,7 +32,8 @@ else % If Homologous image was loaded, reset output directory based on name
     self.setOdir(fullfile(tdir,['elxreg_',tname,filesep]));
     
     % Initializes the transform
-    self.elxObj.setTx0([1 0 0 0 1 0 0 0 1 0 0 0],fvoxsz,fdims);
+    self.elxObj.setTx0([1 0 0 0 1 0 0 0 1 0 0 0],fvoxsz,fdims,...
+        self.cmiObj(1).img.dircos,self.cmiObj(1).img.slcpos);
     
     % Update GUI objects:
     self.showTx0;

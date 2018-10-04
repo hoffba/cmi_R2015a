@@ -16,6 +16,9 @@ if (nargin > 2)
         dbin = ((xmax-xmin)/(self.nbins-1));
         self.binLocs = ((xmin-dbin):dbin:(xmax+dbin))';
         % Set plot x-axis limits
+        if ~ishandle(self.hfPlot)
+            self.initPlotFig;
+        end
         set(self.haPlot,'XLim',[xmin xmax]);
     end
 end

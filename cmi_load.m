@@ -1,4 +1,4 @@
-function [img,label,fov,fnameOut] = cmi_load(imgflag,d,fullname)
+function [img,label,fov,fnameOut,info] = cmi_load(imgflag,d,fullname)
 % loads images for umich2 program
 % Inputs: imflag -   type of load request: 0=mask, 1=image, 2=image appended
 %         d -        optional input for dimensions if loading a mask
@@ -6,7 +6,11 @@ function [img,label,fov,fnameOut] = cmi_load(imgflag,d,fullname)
 % Outputs: img - double array of image pixel values
 %          label - cell array of strings for each vector
 %          fov - spatial extents of the image, [1x3] for 3D images
+%          fnameOut
+%          info - structure containing image metadata
 
+
+info = [];
 % Accepted file types:
 if imgflag
     str = 'Image';
@@ -122,7 +126,7 @@ if ~isempty(fullname)
                 end
                 cd(fpath);
             end
-            [timg,tlabel,tfov] = feval(['read' datatype],fullname{i},d);
+            [timg,tlabel,tfov,info] = feval(['read' datatype],fullname{i},d);
             [dt(1),dt(2),dt(3),dt(4)] = size(timg);
             % Choose images to load from the 4D set
             if gopt && (dt(4) > 1)
@@ -164,9 +168,6 @@ if ~isempty(fullname)
         end
     end
     label = [alabel{:}];
-    if ~isempty(fov)
-        fov = fov([2,1,3]); % change to matlab coordinates: [y,x,z]
-    end
 else
     img = [];
     label = {};

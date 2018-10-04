@@ -14,11 +14,11 @@ if (nargin == 3) && self.check && ~isempty(a) && isnumeric(a) && (a~=0) && ismem
     % Determine rotational dimension order:
     switch dim
         case 1 % Row
-            p = [2,3,1,4];
-        case 2 % Col
             p = [1,3,2,4];
+        case 2 % Col
+            p = [3,1,2,4];
         case 3 % Slc
-            p = [1,2,3,4];
+            p = [2,1,3,4];
     end
     
     % Create transform matrix:
@@ -28,8 +28,7 @@ if (nargin == 3) && self.check && ~isempty(a) && isnumeric(a) && (a~=0) && ismem
           sind(a) , cosd(a)  , 0 , 0 ;...
           0       , 0        , 1 , 0 ;...
           0       , 0        , 0 , 1 ];
-    A = A(p,p);
-    tform = affine3d(A');
+    tform = affine3d(A(p,p));
     
     % Loop over 4D:
     nvec = self.dims(4);

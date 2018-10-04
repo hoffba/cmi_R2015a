@@ -24,6 +24,7 @@ if (nargin == 3) && all(ismember(dim,1:3)) ...
             end
         end
         self.mat = self.mat(iy,ix,iz,:);
+        self.slcpos = self.getPosition('Coordinates',[iy(1),ix(1),iz(1)]);
     end
     self.dims(dim) = diff(lims,1,2)+1;
     if isprop(self,'mask') && isa(self.mask,'MaskClass') && isvalid(self.mask)

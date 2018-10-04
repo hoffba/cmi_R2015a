@@ -38,8 +38,8 @@ classdef HistogramClass < handle
                 addlistener(self.hfPlot,'LocationChanged',@self.changeDispPos);
                 self.dispUDvisible;
                 if ~isempty(self.hLines)
-                    self.hLines = plot(self.binLocs,self.binVals,...
-                        'Parent',self.haPlot,'DisplayName',self.labels);
+                    self.hLines = plot(self.haPlot,self.binLocs,self.binVals/diag(max(self.binVals)));
+                    legend(self.haPlot,self.labels);
                 end
             end
         end

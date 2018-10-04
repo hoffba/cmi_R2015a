@@ -12,7 +12,7 @@ classdef PRMclass < Mat3Dclass
         
         % Pre-filtering for PRM:
         %   ** Default to [3x3] Median filter
-        filtchk = true;
+        filtchk = false;
         filttype = 'median';
         filtstr = [3,3];
         
@@ -32,6 +32,7 @@ classdef PRMclass < Mat3Dclass
         SPopts = struct('Xvec',{nan},'Yvec',{nan},'Xmin',{nan},'Ymin',{nan},...
                         'Xmax',{nan},'Ymax',{nan},'show',{true},'Nmax',{5000});
         mask     % MaskClass associated with PRM selections
+        results  % PRM results in % of VOI
                  
         prmdir   % Directory storing PRM default settings
         

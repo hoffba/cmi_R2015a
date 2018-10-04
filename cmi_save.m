@@ -1,4 +1,4 @@
-function status = cmi_save(maskflag,img,label,fov,fname)
+function status = cmi_save(img,label,fov,fname,info)
 %% Save image data from umich2 GUI as various data types
 % Includes FLD, DICOM, TIFF, MASK, MAT
 
@@ -8,6 +8,7 @@ if nargin > 1
         fname = '';
     end
     [pname,name,ext] = fileparts(fname);
+    maskflag = islogical(img);
     if isempty(pname) % Ask user how to save data
         if maskflag % save mask
             [fname,pname] = uiputfile({'*.mhd','MHD';'*.mask','MASK';'*.fld','FLD';'*.hdr','ANALYZE'},...
@@ -58,7 +59,7 @@ if nargin > 1
             case 'dcm'
                 status = saveDICOM(fullfile(pname,fname),img,label,fov);
             case 'mhd'
-                status = saveMHD(fullfile(pname,fname),img,label,fov);
+                status = saveMHD(fullfile(pname,fname),img,label,fov,info);
             case 'hdr'
                 status = saveANALYZE(fullfile(pname,fname),img,label,fov);
         end

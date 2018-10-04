@@ -1,9 +1,10 @@
-function [img,label,fov] = readANALYZE(varargin)
+function [img,label,fov,info] = readANALYZE(varargin)
 % Read ANALYZE 7.5 file format
 %  - .hdr file contains header info
 %  - .img file contains image data
 
 img = []; label = {}; fov = [];
+info = struct('SlicePos',{[0,0,0]},'SliceOrient',{[1,0,0,0,1,0]});
 
 % Determine relevant image/file attributes:
 fname = varargin{1};
@@ -25,65 +26,65 @@ if fid>2
         fclose(fid);
         machstr = 'b';
         fid = fopen(hdrname,'r',machstr);
-        hdrsz = fread(fid,1,'int32');
+        info.hdrsz = fread(fid,1,'int32');
     end
 
     % ****** Header Key:
-    hkDataType      = fread(fid,10,'uchar=>char');
-    dbname          = fread(fid,18,'uchar=>char');
-    hkExtent        = fread(fid,1 ,'int32'); % Should = 16384
-    Session_Error   = fread(fid,1 ,'int16');
-    hkreg           = fread(fid,1 ,'uchar=>char');
-    hkey_un0        = fread(fid,1 ,'uchar=>char');
+    info.hkDataType      = fread(fid,10,'uchar=>char');
+    info.dbname          = fread(fid,18,'uchar=>char');
+    info.hkExtent        = fread(fid,1 ,'int32'); % Should = 16384
+    info.Session_Error   = fread(fid,1 ,'int16');
+    info.hkreg           = fread(fid,1 ,'uchar=>char');
+    info.hkey_un0        = fread(fid,1 ,'uchar=>char');
 
     % ****** Image Dimensions
     % dim: [ #dimensions , x-dim , y-dim , z-dim , #volumes , undoc , undoc , undoc ]
-    dim             = fread(fid,8 ,'int16')';
-    vox_units       = fread(fid,4 ,'uchar=>char')';
-    cal_units       = fread(fid,8 ,'uchar=>char')';
-    unused1         = fread(fid,1 ,'int16');
-    DataType        = fread(fid,1 ,'int16');
-    bitpix          = fread(fid,1 ,'int16');
-    dim_un0         = fread(fid,1 ,'int16');
-    voxsz           = fread(fid,8 ,'float')';
-    vox_offset      = fread(fid,1 ,'float');
-    sclM            = fread(fid,1 ,'float');
-    sclB            = fread(fid,1 ,'float');
-    funused3        = fread(fid,1 ,'float');
-    cal_max         = fread(fid,1 ,'float');
-    cal_min         = fread(fid,1 ,'float');
-    compressed      = fread(fid,1 ,'float');
-    verified        = fread(fid,1 ,'float');
-    glmax           = fread(fid,1 ,'int32');
-    glmin           = fread(fid,1 ,'int32');
+    info.dim             = fread(fid,8 ,'int16')';
+    info.vox_units       = fread(fid,4 ,'uchar=>char')';
+    info.cal_units       = fread(fid,8 ,'uchar=>char')';
+    info.unused1         = fread(fid,1 ,'int16');
+    info.DataType        = fread(fid,1 ,'int16');
+    info.bitpix          = fread(fid,1 ,'int16');
+    info.dim_un0         = fread(fid,1 ,'int16');
+    info.voxsz           = fread(fid,8 ,'float')';
+    info.vox_offset      = fread(fid,1 ,'float');
+    info.sclM            = fread(fid,1 ,'float');
+    info.sclB            = fread(fid,1 ,'float');
+    info.funused3        = fread(fid,1 ,'float');
+    info.cal_max         = fread(fid,1 ,'float');
+    info.cal_min         = fread(fid,1 ,'float');
+    info.compressed      = fread(fid,1 ,'float');
+    info.verified        = fread(fid,1 ,'float');
+    info.glmax           = fread(fid,1 ,'int32');
+    info.glmin           = fread(fid,1 ,'int32');
 
     % ****** Data History (optional info)
-    descrip         = fread(fid,80,'uchar=>char')';
-    aux_file        = fread(fid,24,'uchar=>char')';
-    orient          = fread(fid,1 ,'uchar');
-    originator      = fread(fid,10,'uchar=>char')';
-    generated       = fread(fid,10,'uchar=>char')';
-    scannum         = fread(fid,10,'uchar=>char')';
-    patient_id      = fread(fid,10,'uchar=>char')';
-    exp_date        = fread(fid,10,'uchar=>char')';
-    exp_time        = fread(fid,10,'uchar=>char')';
-    hist_un0        = fread(fid,3 ,'uchar=>char')';
-    views           = fread(fid,1,'int32');
-    vols_added      = fread(fid,1,'int32');
-    start_field     = fread(fid,1,'int32');
-    field_skip      = fread(fid,1,'int32');
-    omax            = fread(fid,1,'int32');
-    omin            = fread(fid,1,'int32');
-    smax            = fread(fid,1,'int32');
-    smin            = fread(fid,1,'int32');
+    info.descrip         = fread(fid,80,'uchar=>char')';
+    info.aux_file        = fread(fid,24,'uchar=>char')';
+    info.orient          = fread(fid,1 ,'uchar');
+    info.originator      = fread(fid,10,'uchar=>char')';
+    info.generated       = fread(fid,10,'uchar=>char')';
+    info.scannum         = fread(fid,10,'uchar=>char')';
+    info.patient_id      = fread(fid,10,'uchar=>char')';
+    info.exp_date        = fread(fid,10,'uchar=>char')';
+    info.exp_time        = fread(fid,10,'uchar=>char')';
+    info.hist_un0        = fread(fid,3 ,'uchar=>char')';
+    info.views           = fread(fid,1,'int32');
+    info.vols_added      = fread(fid,1,'int32');
+    info.start_field     = fread(fid,1,'int32');
+    info.field_skip      = fread(fid,1,'int32');
+    info.omax            = fread(fid,1,'int32');
+    info.omin            = fread(fid,1,'int32');
+    info.smax            = fread(fid,1,'int32');
+    info.smin            = fread(fid,1,'int32');
     stat = fclose(fid);
 end
 
 % Read .img file:
 if stat==0
     estr = ''; 
-    d = prod(dim(2:(dim(1)+1)));
-    switch DataType
+    d = prod(info.dim(2:(info.dim(1)+1)));
+    switch info.DataType
         case 0 % DT_NONE or DT_UNKNOWN
             estr = 'DT_NONE / DT_UNKNOWN';
         case 1 % DT_BINARY
@@ -106,22 +107,22 @@ if stat==0
         case 255 % DT_ALL
             estr = 'DT_ALL';
         otherwise
-            estr = ['DataType = ',num2str(DataType)];
+            estr = ['DataType = ',num2str(info.DataType)];
     end
     if isempty(estr)
         fid = fopen(imgname,'r',machstr);
         if fid>2
             img = fread(fid,d,precision);
             fclose(fid);
-            if DataType==32 % complex
+            if info.DataType==32 % complex
                 img = complex(img(1:2:end),img(2:2:end));
             end
-            img = reshape(img,dim(2:(dim(1)+1)));
+            img = reshape(img,info.dim(2:(info.dim(1)+1)));
             img = permute(img,[2,1,3,4]);
-            fov = voxsz(2:4).*dim(2:4);
-            label = strrep(regexp(descrip,'"(.[^"]*)"','match'),'"','');
-            if length(label)~=dim(5)
-                label = strcat('img',cellfun(@(x)sprintf('%02u',x),num2cell((1:dim(5))'),'UniformOutput',false)');
+            fov = info.voxsz(2:4).*info.dim(2:4);
+            label = strrep(regexp(info.descrip,'"(.[^"]*)"','match'),'"','');
+            if length(label)~=info.dim(5)
+                label = strcat('img',cellfun(@(x)sprintf('%02u',x),num2cell((1:info.dim(5))'),'UniformOutput',false)');
             end
         else
             error('IMG file not found!');

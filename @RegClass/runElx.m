@@ -60,7 +60,9 @@ if stat
     
     % Get FOV for both images:
     ffov = self.cmiObj(1).img.dims(1:3).*self.cmiObj(1).img.voxsz;
+    forient = struct('dircos',self.cmiObj(1).img.dircos,'slcpos',self.cmiObj(1).img.slcpos);
     mfov = self.cmiObj(2).img.dims(1:3).*self.cmiObj(2).img.voxsz;
+    morient = struct('dircos',self.cmiObj(2).img.dircos,'slcpos',self.cmiObj(2).img.slcpos);
        
     % Set filenames:
     outfn = fullfile(self.odir,[self.cmiObj(2).img.name,'_R.mhd']);
@@ -90,7 +92,7 @@ if stat
     % Save original moving image:
     waitbar(0.1,hw,'Saving Original Moving Image ...');
     timg = self.cmiObj(2).img.mat(:,:,:,self.cmiObj(2).vec);
-    stat = saveMHD(origfn,timg,[],mfov);
+    stat = saveMHD(origfn,timg,[],mfov,morient);
     
     % Moving Image:
     if stat
@@ -135,7 +137,7 @@ if stat
         end
         % Save moving image:
         waitbar(0.35,hw,'Saving Processed Moving Image ...');
-        stat = saveMHD(mname,timg,[],mfov);
+        stat = saveMHD(mname,timg,[],mfov,morient);
     end
         
     % Fixed Image:
@@ -181,14 +183,14 @@ if stat
         end
         % Save fixed image:
         waitbar(0.6,hw,'Saving Processed Fixed Image ...');
-        stat = saveMHD(fname,timg,[],ffov);
+        stat = saveMHD(fname,timg,[],ffov,forient);
     end
     
     % Moving VOI to transform along with image:
     addstr = '';
     if stat && self.Tvoi
         waitbar(0.65,hw,'Saving moving VOI for transform ...');
-        stat = saveMHD(tmskname,self.cmiObj(2).img.mask.mat,[],mfov);
+        stat = saveMHD(tmskname,self.cmiObj(2).img.mask.mat,[],mfov,morient);
         elxC = [elxC,'tMask',tmskname];
         addstr = strcat(addstr,...
             '; sed ''s/Final[A-Za-z]*Interpolator/FinalNearestNeighborInterpolator/'' <',...
@@ -206,7 +208,7 @@ if stat
         elxC = [elxC,'mMask',mmskname];
         stat = saveMHD(mmskname,...
                        voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
-                       [],mfov);
+                       [],mfov,morient);
     end
     
     % Dilate and save fixed mask:
@@ -215,7 +217,7 @@ if stat
         elxC = [elxC,'fMask',fmskname];
         stat = saveMHD(fmskname,...
                        voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
-                       [],ffov);
+                       [],ffov,forient);
     end
     
     

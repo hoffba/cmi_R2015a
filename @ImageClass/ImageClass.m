@@ -4,6 +4,9 @@ classdef ImageClass < Mat3Dclass
         %   mat         % Grayscale image (4D), inherited from Mat3Dclass
         %   dims        % Dimensions of img [rows cols slices n4D]
         %   voxsz       % Voxel size [dx dy dz]
+        %   voxsp       % Spacing between voxels
+        %   dircos      % Direction cosines for determining voxel location
+        %   slcpos      % First voxel location
         %   check       % Check that matrix is available
         
         % Image Info:

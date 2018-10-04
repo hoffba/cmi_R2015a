@@ -14,9 +14,9 @@ for i = 1:length(reqflds)
     end
 end
 
-% Permute from YXZ to XYZ:
-img = permute(img,[2,1,3,4]);
-fov = fov([2,1,3]);
+% % Permute from YXZ to XYZ:
+% img = permute(img,[2,1,3,4]);
+% fov = fov([2,1,3]);
 
 [d(1),d(2),d(3),nv] = size(img);
 [pathstr, fname, ~] = fileparts(fname);
@@ -53,6 +53,8 @@ if ischar(ofnames)
     ofnames = {ofnames};
 end
 
+info.dircos = [info.dircos,cross(info.dircos(1:3),info.dircos(4:6))];
+
 legalchars = 'a-zA-Z0-9\-\_\.';
 for ifn = 1:nv
     % First check that the file name is correct
@@ -72,8 +74,8 @@ for ifn = 1:nv
     fprintf(fid,'BinaryData = %s\n','True');
     fprintf(fid,'BinaryDataByteOrderMSB = %s\n','False');
     fprintf(fid,'CompressedData = %s\n','False');
-    fprintf(fid,'TransformMatrix = %u %u %u %u %u %u %u %u %u\n',[ 1 0 0 0 1 0 0 0 1 ]);
-    fprintf(fid,['Position =',repmat(' %.10f',1,NDims),'\n'],(1-d).*voxsz/2);
+    fprintf(fid,'TransformMatrix = %u %u %u %u %u %u %u %u %u\n',info.dircos);
+    fprintf(fid,['Position =',repmat(' %.10f',1,NDims),'\n'],info.slcpos);
     fprintf(fid,'AnatomicalOrientation = %s\n','RAI');
     fprintf(fid,['ElementSpacing =',repmat(' %.6f',1,NDims),'\n'],voxsz);
     fprintf(fid,['DimSize =',repmat(' %u',1,NDims),'\n'],d);

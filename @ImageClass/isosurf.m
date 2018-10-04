@@ -1,27 +1,37 @@
 % ImageClass function
 % Displays isosurface of either image data or mask
-function isosurf(self,vec,val)
+function h = isosurf(self,vec,val)
 % vec = vector # of desired image (0 = mask)
 if self.check && nargin==3 && isnumeric(vec) && isnumeric(val) && vec>=0
     vec = round(vec);
-    ok = true;
+    fv = [];
+    [X,Y,Z] = self.getImageCoords;
     if vec
-        fv = isosurface(self.mat(:,:,:,vec),val);
+        fv = isosurface(X,Y,Z,self.mat(:,:,:,vec),val);
     elseif self.mask.check
-        fv = isosurface(self.mask.mat,0.2);
-    else % mask surface selected but no mask exists
-        ok = false;
+        fv = isosurface(X,Y,Z,self.mask.mat,0.2);
     end
-    if ok
-        figure;
-        p = patch(fv,'EdgeColor','none','FaceColor',[228 209 192]/255);
-        if vec
-            isonormals(self.mat(:,:,:,vec),p);
-        else
-            isonormals(self.mask.mat,p);
+    if ~isempty(fv)
+        fv = smoothpatch(fv,1,3,1,[]);
+        fprintf('[nf,nv] = [%u,%u]\n',size(fv.faces,1),size(fv.vertices,1));
+        if length(fv.faces)>500000
+            fv = reducepatch(fv,500000);
         end
-        daspect(1./self.voxsz);
-        camlight
-        view(70,0); axis tight off
+        h.fig = figure;
+        h.p = patch(fv,'EdgeColor','none','FaceColor',[228 209 192]/255);
+        h.ax = gca;
+        if vec
+            isonormals(self.mat(:,:,:,vec),h.p);
+        else
+            isonormals(self.mask.mat,h.p);
+        end
+        axis tight off
+        daspect(ones(1,3));
+        hr = rotate3d(h.fig);
+        set(hr,'Enable','on');
+        view(0,0); 
+        hl = camlight(50,30);
+        set(hr,'ActionPostCallback',{@(~,~,x)camlight(x,50,30),hl});
     end
 end
+
