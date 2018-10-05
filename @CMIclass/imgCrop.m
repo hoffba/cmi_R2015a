@@ -23,10 +23,8 @@ if self.img.check
         delete(hrect);
         
         if ~isempty(pos)
-            % convert spatial positions to matrix positions
-            pos = round(pos([2,1,4,3])+[0.5,0.5,0,0]);
-            lims = [ pos(1:2)           ;...
-                      pos(1:2)+pos(3:4)-1 ]';
+            lims = round(pos([2,1])')+1;
+            lims(:,2) = lims+round(pos([4,3])')-1;
             disp('Crop extents:');
             for i = 1:length(ind)
                 disp(['   Dim',num2str(ind(i)),' : ',...

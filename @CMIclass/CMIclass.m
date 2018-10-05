@@ -323,10 +323,10 @@ classdef CMIclass < handle
                 self.setChecker;
                 v = self.img.voxsz; v(4) = v(self.orient); v(self.orient) = [];
                 d = self.img.dims(1:3); d(self.orient) = [];
-                tx = [1,d(2)]-0.5;
-                ty = [1,d(1)]-0.5;
-                set(self.haxes,'XLim',tx,'YLim',ty,'DataAspectRatio',v);
-                set([self.hiover self.hibg],'XData',tx,'YData',ty);
+%                 tx = [1,d(2)]-0.5;
+%                 ty = [1,d(1)]-0.5;
+                set(self.haxes,'XLim',[0,d(2)],'YLim',[0,d(1)],'DataAspectRatio',v);
+                set([self.hiover self.hibg],'XData',[1,d(2)]-0.5,'YData',[1,d(1)]-0.5);
             end
         end
         % Update display colormap

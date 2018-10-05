@@ -137,7 +137,7 @@ h.hfig = figure('Colormap',jet(128),'Position',[500 500 600*n 800],'Units','norm
 pos = [-90,0;90,0];
 for i = 1:n
     h.plot(i).axes = axes(h.hfig,'Position',[(i-1)/2 0 1/n 1],'CLim',clim);
-    h.plot(i).lightAngle = lightangle(pos(i,1)-30,pos(i,2)-30);
+    h.plot(i).light = camlight(pos(i,1)-30,pos(i,2)-30);
     h.plot(i).patch = patch(h.plot(i).axes,opts{:});
     axis(h.plot(i).axes,'equal','off','tight');
     view(h.plot(i).axes,pos(i,1),pos(i,2));
