@@ -363,7 +363,8 @@ if ~isempty(dcmdata)
             rmslc = setxor(pind,1:nslc);
             dcmdata(i).img(:,:,rmslc) = [];
             dcmdata(i).AcquisitionNumber(rmslc) = [];
-            dcmdata(i).SlicePos(rmslc,:) = [];
+            dcmdata(i).SlicePos(
+
         else
             tdd = dcmdata(i);
             % Separate by AcquisitionNumber:
