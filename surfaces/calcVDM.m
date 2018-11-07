@@ -1,238 +1,132 @@
-function [vdm,h] = calcVDM(varargin)
-% [vdm,h] = calcVDM(elxdir,'Name',Value,...)
-% [vdm,h] = calcVDM(vdm,elxdir,'Name',Value,...)
-%
-% Inputs:
-%   vdm = VDM results structure
-%   elxdir = elxreg_ directory
-%   'Name'/Value options [default]:
-%       'scale'     [1]
-%       'mask'
-%       'voxsz'     [ones(1,3)]
-%       'clim'      [auto]
-%       'logdisp'	[true]
-%       'units'     ['yr']
-%       'faces'
-%       'vertices'
-% Outputs:
-%   vdm = struct with fields:
-%       .mask       = binary image segmentation
-%       .voxsz      = voxel dimensions
-%       .faces      = surface mesh faces
-%       .vertices   = surface mesh vertices
-%       .vals       = surface color values
-%       .units      = string describing normalization units (yr, mmHg, etc.)
-%       .elxdir     = elxreg_ directory
-%       .scale      = normalization scale factor
-%       .clim       = color limits for display
-%       .logdisp    = T/F display colors in log scale?
+function [vdm,h] = calcVDM_v2(segfname,elxdir,dt)
+% [vdm,h] = calcVDM_v1(segfname,elxdir,dt)
 
-[vdm,flag,x,y,z] = parseinputs(varargin{:});
-
-% Load Jacobian map:
-fname = fullfile(vdm.elxdir,'SpatialJacobian.mhd');
-if ~exist(fname,'file')
-    % Need to generate from transform:
-    parname = dir(fullfile(elxdir,'TransformParameters.*.txt'));
-    ind = max(cellfun(@(x)str2double(x(21)),{parname(:).name}));
-    str = sprintf(['/opt/X11/bin/xterm -geometry 170x50 -T "(Transformix)" -e ''',...
-             'cd %s ; /usr/local/bin/transformix -out "./" -tp ',...
-             '"./TransformParameters.%u.txt" %s'''],vdm.elxdir,ind,'-jac all');
-    system(str);
-end
-J = readMHD(fname);
-
-% Generate surface map of linearly scaled Jacobian:
-vdm.label = sprintf('$$({J}-1)/{%s}+1$$',vdm.units);
-vdm.vals = (interp3(x,y,z,J,vdm.vertices(:,1),vdm.vertices(:,2),vdm.vertices(:,3))-1)/vdm.scale +1;
-
-% Save resulting maps:
-svname = fullfile(vdm.elxdir,'VDM.mat');
-[fname,fdir] = uiputfile('*.mat','Save VDM as:',svname);
-if ischar(fname)
-    save(fullfile(fdir,fname),'-struct','vdm');
-end
-
-% Generate VDM figure:
-h = savesurf(vdm,flag);
-
-function [vdm,flag,x,y,z] = parseinputs(varargin)
-x=[];y=[];z=[];
-if isstruct(varargin{1}) && all(isfield(varargin{1},{'mask','voxsz','vertices','faces'}))
-    vdm = varargin{1};
-    varargin(1) = [];
-else
-    vdm = struct('mask',[],'voxsz',[],'vertices',[],'faces',[]);
-end
-p = inputParser;
-addRequired(p,'elxdir',@(x)ischar(x)&&exist(x,'dir'));
-addParameter(p,'scale',1,@isscalar);
-addParameter(p,'mask',[],@(x)islogical(x));
-addParameter(p,'voxsz',[],@(x)isvector(x)&&(numel(x)==3));
-addParameter(p,'clim',[],@(x)isvector(x)&&(numel(x)==2));
-addParameter(p,'logdisp',true,@islogical);
-addParameter(p,'units','yr',@ischar)
-addParameter(p,'faces',[],@islogical);
-addParameter(p,'vertices',[],@islogical);
-addParameter(p,'disp',1,@(x)all(ismember(x,0:4)));
-parse(p,varargin{:});
-if isempty(vdm.vertices) && ismember('mask',p.UsingDefaults) && any(ismember({'faces','vertices'},p.UsingDefaults))
-    error('Cannot calculate VDM without segmentation surface.');
-end
-if ~isempty(p.Results.mask)
-    if isempty(vdm.vertices)
-        answer = 'Yes';
-    else
-        answer = questdlg('Replace existing surface mesh?','Yes','No','Yes');
-    end
-    if strcmp(answer,'Yes')
-        vdm.mask = p.Results.mask;
-        if ~ismember('voxsz',p.UsingDefaults)
-            vdm.voxsz = p.Results.voxsz;
-        elseif isempty(vdm.voxsz)
-            warning('Voxel dimensions not input, using ones.');
-            vdm.voxsz = ones(1,3);
-        end
-        [fv,x,y,z] = mask2surf(vdm.mask,vdm.voxsz);
-        vdm.faces = fv.faces;
-        vdm.vertices = fv.vertices;
-    end
-end
-vdm.elxdir = p.Results.elxdir;
-vdm.scale = p.Results.scale;
-vdm.clim = p.Results.clim;
-vdm.logdisp = p.Results.logdisp;
-vdm.units = p.Results.units;
-flag = p.Results.disp;
-
-function h = savesurf(vdm,flag,fname)
 h = [];
-opts = {'EdgeColor','none',...
-        'FaceLighting','gouraud',...
-        'AmbientStrength',0.5,...
-        'DiffuseStrength',0.5,...
-        'SpecularStrength',0.3,...
-        'SpecularExponent',50,...
-        'BackFaceLighting','reverselit'};
-V = vdm.vals;
-nv = length(V);
-if isempty(vdm.clim)
-    clim = prctile(V,[5,95]);
-else
-    clim = vdm.clim;
-end
-if vdm.logdisp
-    V = real(log(V));
-end
-if nv == 0
-    opts = [{'Facecolor','flat'},opts];
-elseif nv == size(vdm.faces,1)
-    opts = [{'FaceVertexCData',V,'Facecolor','flat'},opts];
-elseif nv == size(vdm.vertices,1)
-    opts = [{'FaceVertexCData',V,'Facecolor','interp'},opts];
-else
-    error('Invalid CData input length.');
-end
-opts = [{'Vertices',vdm.vertices,'Faces',vdm.faces},opts];
+vdm = [];
 
-if nargin==3
-    [fdir,fname,~] = fileparts(fname);
-else
-    fname = '';
-end
-
-% Generate figure, but don't save
-if any(flag==0)
-    h = genFig(1,clim,opts,vdm.label,vdm.logdisp);
-end
-
-% Save figure as JPEG:
-if any(flag==1)
-    if isempty(fname)
-        [fname,fdir] = uiputfile('*.jpg','Save figure as:',fullfile(vdm.elxdir,'VDM.jpg'));
-        if ~ischar(fname)
-            fname = '';
-        end
+if nargin==0
+    [fname,fpath] = uigetfile('*.mhd','Select Segmentation:');
+    if ischar(fname)
+        segfname = fullfile(fpath,fname);
     else
-        fname = [fname,'.jpg'];
+        return;
     end
-    if ~isempty(fname)
-        h = genFig(2,clim,opts,vdm.label,vdm.logdisp);
-        saveas(h.hfig,fullfile(fdir,fname));
+end
+if nargin<2
+    elxdir = uigetdir(pwd,'Select Elastix directory:');
+    if ~ischar(elxdir)
+        return;
+    end
+end
+if nargin<3
+    dt = str2double(inputdlg('Scale factor:','VDM Scale',1,{'1'}));
+    if isempty(dt)
+        return;
+    elseif isnan(dt)
+        error('Invalid scale factor.');
     end
 end
 
-% Save object rotation movie:
-if any(flag==2)
-    if isempty(fname)
-        [fname,fdir] = uiputfile('*.mp4','Save video as:',fullfile(vdm.elxdir,'VDM.mp4'));
-        if ~ischar(fname)
-            fname = '';
-        end
-    else
-        fname = [fname,'.mp4'];
-    end
-    if ~isempty(fname)
-        hh = genFig(1,clim,opts,vdm.label,vdm.logdisp);
-        a = 0:4:359;
-        v = VideoWriter(fullfile(fdir,fname),'MPEG-4');
-        open(v);
-        for i = 1:length(a)
-            view(hh.plot(1).axes,90+a(i),0);
-            lightangle(hh.plot(1).lightAngle,60+a(i),-30);
-            writeVideo(v,getframe(hh.hfig));
-        end
-        close(v);
-        h = [h,hh];
-    end
-end
+units = 'yr';
+vdm = struct(...
+    'faces',{[]},'vertices',{[]},... % For plotting VDM
+    'vertices_orig',{[]},...         % Vertices at baseline
+    'map',{struct('method',{'dJ/dt','dSA/dt','GC','MC'},...
+                  'label',{sprintf('$$\\dot{J}(/%s)$$',units),...
+                           '$${\dot{A}(\%/yr)}$$',...
+                           '$${GC}$$',...
+                           '$${MC}$$'},...
+                  'clim',{exp([-1,1]),[-100,100],[-0.1,0.1],[-0.3,0.3]},...
+                  'logdisp',{true,false,false,false},...
+                  'vals',{[],[],[],[]})},...
+    'elxdir',{elxdir},...
+    'scale',{dt},...
+    'units',{units});
 
-% Save patch object as WRL:
-if any(flag==3)
-    if isempty(fname)
-        [fname,fdir] = uiputfile('*.wrl','Save surface as:',fullfile(vdm.elxdir,'VDM.wrl'));
-        if ~ischar(fname)
-            fname = '';
-        end
-    else
-        fname = [fname,'.wrl'];
-    end
-    if ~isempty(fname)
-        if isempty(h)
-            h = genFig(1,clim,opts,vdm.label,vdm.logdisp);
-        end
-        vrml(h.plot(1).axes,fullfile(fdir,fname),'noedgelines');
-    end
-end
+vdmfname = fullfile(elxdir,'vdm.mat');
 
+% Find transform parameter file:
+parname = dir(fullfile(elxdir,'TransformParameters.*.txt'));
+ind = max(cellfun(@(x)str2double(x(21)),{parname(:).name}));
+parname = sprintf('TransformParameters.%u.txt',ind);
 
-function h = genFig(n,clim,opts,label,logdisp)
-h.hfig = figure('Colormap',jet(128),'Position',[500 500 600*n 800],'Units','normalized');
-for i = 1:n
-    h.plot(i).axes = axes(h.hfig,'Position',[(i-1)/2 0 1/n 1],'CLim',clim);
-    h.plot(i).lightAngle = lightangle(60+180*(i-1),-30);
-    h.plot(i).patch = patch(h.plot(i).axes,opts{:});
-    axis(h.plot(i).axes,'equal','off','tight');
-    view(h.plot(i).axes,90+180*(i-1),0);
-    if logdisp
-        caxis(h.plot(i).axes,log(clim));
-    end
-end
-h.cbar = colorbar(h.plot(1).axes,'FontSize',20,'AxisLocation','in',...
-    'Position',[ 1/n + (n-2)*0.05 , 0.2 , 1/(n*40) , 0.6 ]);
-yt = linspace(clim(1),clim(2),6);
-if logdisp
-    h.cbar.YTick = log(yt);
-    h.cbar.YTickLabel = yt;
-else
-    h.cbar.YTick = yt;
-end
-ht = title(h.cbar,['\fontsize{30}{0}\selectfont',label],'Interpreter','latex','Units','normalized','Position',[0.5,1.2,0]);
-if n==1
-    ht.HorizontalAlignment = 'right';
-end
-
-
-
-
+% Find Jacobian rate:
+JRfname = fullfile(elxdir,'spatialJacobianRate.mhd');
+if exist(JRfname,'file')
     
+else
+end
+
+
+Dname = fullfile(elxdir,'deformationField.mhd');
+if ~exist(Dname,'file')
+    fprintf('Generating deformation fields...\n');
+    str = sprintf('cd %s ; /usr/local/bin/transformix -out ./ -tp ./%s -def all',elxdir,parname);
+    [stat,cmdout] = system(str,'-echo');
+    if stat
+        error(cmdout);
+    end
+end
+
+% Generate surface mesh:
+if exist(segfname,'file')
+    [mask,~,fov,info] = readMHD(segfname);
+    d = size(mask);
+    voxsz = fov./d;
+else
+    error('Could not find segmenation file: %s\n',segfname);
+end
+% Matrix space to real space:
+vdm.direction = info.SliceOrient;
+vdm.origin = info.SlicePos;
+moff = (d-1).*voxsz/2;
+n = cross(vdm.direction(1:3),vdm.direction(4:6));
+M = [ reshape(vdm.direction,3,2),n',round(vdm.origin+moff,3)' ; zeros(1,3),1];
+
+fprintf('Generating and transforming surface mesh ...\n');
+[fv,x,y,z] = mask2surf(mask,voxsz);
+vdm.vertices_orig = fv.vertices;
+vdm.faces = fv.faces;
+nv = size(fv.vertices,1);
+V = M * [fv.vertices,ones(nv,1)]';
+clear fv;
+V = transformMesh(V(1:3,:)',fullfile(elxdir,parname));
+V = (M \ [V';ones(1,nv)])';
+vdm.vertices = V(:,1:3);
+
+% Calculate VDM surface values:
+fprintf('Reading deformation fields ...\n');
+dX = readMHD(Dname);
+fprintf('Calculating spatial Jacobian ...\n');
+F = surfVal(def2jac(dX,voxsz),x,y,z,vdm.vertices_orig);
+fprintf('Calculating spatial rate Jacobian ...\n');
+FF = surfVal(def2jac(dX/dt,voxsz),x,y,z,vdm.vertices_orig);
+np = size(F,1);
+vdm.map(1).vals = zeros(np,1);
+f = zeros(3); % J
+ff = zeros(3);% dJ/dt
+gi = mod(1:np,round(np/20))==0;
+fprintf('Calculating Jacobian determinant rate ...\n');
+for i = 1:np
+    f(:) = F(i,:);
+    ff(:) = FF(i,:);
+    vdm.map(1).vals(i) = det(f) * trace( f \ ff )/3;
+    if gi(i)
+        fprintf('%u%% Complete\n',sum(gi(1:i))*5);
+    end
+end
+
+% Save results:
+save(vdmfname,'-struct','vdm');
+
+% Display VDM and save JPEG:
+[~,edirname] = fileparts(elxdir);
+edirname = edirname(8:end);
+h = savesurf(vdm,1,1,fullfile(elxdir,sprintf('%s_VDM_J.jpg',edirname)));
+
+function V = surfVal(M,x,y,z,p)
+nv = size(M,4);
+V = zeros(size(p,1),nv);
+for i = 1:nv
+    V(:,i) = interp3(y,x,z,M(:,:,:,i),p(:,2),p(:,1),p(:,3));
+end
