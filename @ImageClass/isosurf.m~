@@ -7,9 +7,9 @@ if self.check && nargin==3 && isnumeric(vec) && isnumeric(val) && vec>=0
     fv = [];
     xyz = self.getImageCoords;
     if vec
-        fv = isosurface(xyz(:,:,:,1),xyz(:,:,:,2),xyz(:,:,:,3),self.mat(:,:,:,vec),val);
+        fv = isosurface(xyz(:,:,:,1),Y,Z,self.mat(:,:,:,vec),val);
     elseif self.mask.check
-        fv = isosurface(xyz(:,:,:,1),xyz(:,:,:,2),xyz(:,:,:,3),self.mask.mat,0.2);
+        fv = isosurface(X,Y,Z,self.mask.mat,0.2);
     end
     if ~isempty(fv)
         fv = smoothpatch(fv,1,3,1,[]);
@@ -34,3 +34,4 @@ if self.check && nargin==3 && isnumeric(vec) && isnumeric(val) && vec>=0
         set(hr,'ActionPostCallback',{@(~,~,x)camlight(x,50,30),hl});
     end
 end
+

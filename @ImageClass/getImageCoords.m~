@@ -38,7 +38,7 @@ else
     
     if (size(ind,2)==3)
         xyz = (M \ [ ind' ; ones(1,size(ind,1)) ])';
-        xyz = xyz(:,1:3) / diag(self.voxsz) + 0.5;
+        xyz = xyz(:,1:3) / diag(self.voxsz);
     else
         error('Invalid index input.');
     end

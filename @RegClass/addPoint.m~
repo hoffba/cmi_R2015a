@@ -17,10 +17,12 @@ if nargin==3
                                 {self.cmiObj(:).hiover}),1);
             tObj = self.cmiObj(ci);
             
+            d = tObj.img.dims(1:3);
             i = 1:3;
             i(tObj.orient) = [];
-            pos = get(get(hObject,'Parent'),'CurrentPoint')+0.5;
-            ind([i,tObj.orient]) = [ pos(1,2) , pos(1,1) , tObj.slc(tObj.orient) ];
+            pos = get(get(hObject,'Parent'),'CurrentPoint') + 0.5;
+            pos = pos(1,1:2);
+            ind([i,tObj.orient]) = [ d(i(1))-pos(2)+1 , pos(1) , tObj.slc(tObj.orient) ];
             p = tObj.img.getImageCoords(ind);
 
         end

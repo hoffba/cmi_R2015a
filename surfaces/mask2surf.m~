@@ -1,35 +1,16 @@
-function [fv,x,y,z] = mask2surf(BW,voxsz,dircos,origin,V)
+function [fv,x,y,z] = mask2surf(BW,voxsz,dircos,origin,varargin)
 
-d = size(BW);
 if nargin<2
     voxsz = ones(1,3);
 end
-if nargin<3
-    dircos = [];
-end
-if nargin<4
-    origin = voxsz.*(1-d)/2;
-end
-if nargin<5
-    V = {};
-else
-    V = {V};
-end
 
-[y,x,z] = meshgrid((0:d(2)-1),(0:d(1)-1),(0:d(3)-1));
+% Center image at origin:
+d = size(BW);
+lims = (d-1).*voxsz/2;
+[y,x,z] = meshgrid(-lims(2):voxsz(2):lims(2),...
+                   -lims(1):voxsz(1):lims(1),...
+                   -lims(3):voxsz(3):lims(3));
 
-if ~isempty(dircos)
-n = cross(dircos(1:3),dircos(4:6));
-M = [reshape(dircos,3,2),n',origin';zeros(1,3),1];
-np = prod(d);
-ind = reshape(cat(4,x,y,z),np,3);
-
-p = reshape(M * [ (ind*diag(voxsz([2,1,3])))';ones(1,np)],[4,d]);
-x = squeeze(p(1,:,:,:));
-y = squeeze(p(2,:,:,:));
-z = squeeze(p(3,:,:,:));
-clear p
-
-fv = isosurface(x,y,z,smooth3(double(BW)*1000,'gaussian',5,1.5),500,V{:});
+fv = isosurface(x,y,z,smooth3(double(BW)*1000,'gaussian',5,1.5),500,varargin{:});
 fv = smoothpatch(fv,1,5,1,[]);
 fv = reducepatch(fv);
