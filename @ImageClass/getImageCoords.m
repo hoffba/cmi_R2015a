@@ -12,24 +12,18 @@ M = [reshape(self.dircos,3,2),n',self.slcpos';zeros(1,3),1];
 if nargin==1
     % Return all spatial coordinates of image:
     
-    [X,Y,Z] = meshgrid(flip((0:d(2)-1)*self.voxsz(2)),...
+    [X,Y,Z] = meshgrid((0:d(2)-1)*self.voxsz(2),...
                        (0:d(1)-1)*self.voxsz(1),...
                        (0:d(3)-1)*self.voxsz(3));
     xyz = M * [reshape(cat(4,X,Y,Z),prod(d),3)';ones(1,prod(d))];
     xyz = reshape(xyz(1:3,:),[d,3]);
-%     X = reshape(I(1,:),d);
-%     Y = reshape(I(2,:),d);
-%     Z = reshape(I(3,:),d);
 elseif (nargin==2) || ~iflag
     % Return only specified coordinates:
     
     if (size(ind,2)==3) && all(ind>0) && all(ind(:,1)<=d(1)) ...
             && all(ind(:,2)<=d(2)) && all(ind(:,3)<=d(3))
-        xyz = (M * [ ((ind-0.5) * diag(self.voxsz))' ; ones(1,size(ind,1)) ])';
+        xyz = (M * [ ((ind-1) * diag(self.voxsz))' ; ones(1,size(ind,1)) ])';
         xyz(4) = [];
-%         X = I(1);
-%         Y = I(2);
-%         Z = I(2);
     else
         error('Invalid index input.');
     end
@@ -38,7 +32,7 @@ else
     
     if (size(ind,2)==3)
         xyz = (M \ [ ind' ; ones(1,size(ind,1)) ])';
-        xyz = xyz(:,1:3) / diag(self.voxsz) + 0.5;
+        xyz = xyz(:,1:3) / diag(self.voxsz) + 1;
     else
         error('Invalid index input.');
     end
