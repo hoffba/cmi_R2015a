@@ -161,5 +161,10 @@ ht = title(h.cbar,['\fontsize{30}{0}\selectfont',label],'Interpreter','latex','U
 if n==1
     ht.HorizontalAlignment = 'right';
 end
+hr = rotate3d(h.hfig);
+set(hr,'ActionPostCallback',{@rotCallback});
 
+function rotCallback(~,ha)
+hl = findobj(ha.Axes,'Type','light');
+camlight(hl,50,30);
 

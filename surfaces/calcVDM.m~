@@ -181,7 +181,7 @@ title(h.cbar,['\fontsize{30}{0}\selectfont',vdm.map(dispmap).label],'Interpreter
     'Units','normalized','Position',[0.5,1.2,0],'HorizontalAlignment','right');
 % Plot centerline:
 h.axes(2) = axes(h.fig,'Position',[0,0,1,1]);
-plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r.');
+plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r');
 axis(h.axes(2),'off','equal');
 view(h.axes(2),-90,0)
 h.axes(2).XLim = h.axes(1).XLim;
@@ -197,13 +197,12 @@ saveas(h.fig,fullfile(elxdir,[edirname,'.jpg']));
 % Plot centerline results:
 y = surf2centerline(vdm.faces,vdm.vertices,vdm.map(dispmap).vals,...
     vdm.centerLine.tP,[vdm.centerLine.Tx,vdm.centerLine.Ty,vdm.centerLine.Tz]);
-x = cumsum([0;sqrt(sum(diff(vdm.centerLine.tP,1).^2,2))]);
-hf = figure;plot(x,y);ha = gca;
+x = cumsum([0;sqrt(sum(diff(centerLine.tP,1).^2,2))]);
+figure,plot(x,y);ha = gca;
 title(ha,'Mean surface value along centerline','FontSize',20);
 ylim(ha,vdm.map(dispmap).clim);
 xlabel(ha,'Location Along Aorta (mm)');
 ylabel(ha,['\fontsize{12}{0}\selectfont',vdm.map(dispmap).label],'Interpreter','latex')
-saveas(hf,fullfile(elxdir,[edirname,'_meanPlot.jpg']));
 
 function V = surfVal(M,x,y,z,p)
 nv = size(M,4);

@@ -481,7 +481,7 @@ if ~isempty(dcmdata)
     end
 
     % Prepare data to return:
-    img = flip(permute(dcmdata.img,[2,1,3,4]),2);
+    img = permute(dcmdata.img,[2,1,3,4]);
     dcmdata = rmfield(dcmdata,'img');
     [d(1),d(2),d(3),d(4)] = size(img);
     fov = dcmdata.PixelSpacing .* d(1:3);
