@@ -1,4 +1,4 @@
-% ImageClass function
+% Mat3Dclass function
 function xyz = getImageCoords(self,ind,iflag)
 % Inputs:
 %   ind = [n x 3] matrix of indices (x,y,z)

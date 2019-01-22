@@ -93,7 +93,12 @@ n = cross(vdm.direction(1:3),vdm.direction(4:6));
 M = [ reshape(vdm.direction,3,2),n',vdm.origin' ; zeros(1,3),1];
 
 fprintf('Generating and transforming surface mesh ...\n');
-[fv,x,y,z] = mask2surf(mask,voxsz);
+[y,x,z] = meshgrid((0:d(2)-1)*voxsz(2),...
+                   (0:d(1)-1)*voxsz(1),...
+                   (0:d(3)-1)*voxsz(3));
+fv = isosurface(x,y,z,smooth3(double(mask)*1000,'gaussian',5,1.5),500);
+fv = smoothpatch(fv,1,5,1,[]);
+fv = reducepatch(fv);
 nv = size(fv.vertices,1);
 vdm.vertices_orig = (M * [fv.vertices' ; ones(1,nv)])';
 vdm.vertices_orig(:,4) = [];
@@ -181,7 +186,7 @@ title(h.cbar,['\fontsize{30}{0}\selectfont',vdm.map(dispmap).label],'Interpreter
     'Units','normalized','Position',[0.5,1.2,0],'HorizontalAlignment','right');
 % Plot centerline:
 h.axes(2) = axes(h.fig,'Position',[0,0,1,1]);
-plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r.');
+h.cline = plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r.');
 axis(h.axes(2),'off','equal');
 view(h.axes(2),-90,0)
 h.axes(2).XLim = h.axes(1).XLim;

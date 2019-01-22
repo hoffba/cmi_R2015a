@@ -175,7 +175,7 @@ else
     fnameOut = [];
 end
 if (imgflag == 0)
-    img = logical(img);
+    img = img>min(img(:));%logical(img);
 end
 
 

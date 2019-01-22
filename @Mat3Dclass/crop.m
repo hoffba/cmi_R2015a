@@ -24,9 +24,7 @@ if (nargin == 3) && all(ismember(dim,1:3)) ...
             end
         end
         self.mat = self.mat(ix,iy,iz,:);
-        if isa(self,'ImageClass')
-            self.slcpos = self.getImageCoords([ix(1),iy(1),iz(1)]);
-        end
+        self.slcpos = self.getImageCoords([ix(1),iy(1),iz(1)]);
     end
     self.dims(dim) = diff(lims,1,2)+1;
     if isprop(self,'mask') && isa(self.mask,'MaskClass') && isvalid(self.mask)
