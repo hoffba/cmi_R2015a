@@ -184,17 +184,24 @@ else
 end
 title(h.cbar,['\fontsize{30}{0}\selectfont',vdm.map(dispmap).label],'Interpreter','latex',...
     'Units','normalized','Position',[0.5,1.2,0],'HorizontalAlignment','right');
-% Plot centerline:
-h.axes(2) = axes(h.fig,'Position',[0,0,1,1]);
-h.cline = plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r.');
-axis(h.axes(2),'off','equal');
-view(h.axes(2),-90,0)
-h.axes(2).XLim = h.axes(1).XLim;
-h.axes(2).YLim = h.axes(1).YLim;
-h.axes(2).ZLim = h.axes(1).ZLim;
+
 hr = rotate3d(h.fig);
-% set(hr,'ActionPostCallback',{@(~,~,x)camlight(x,50,30),h.light});
-set(hr,'ActionPostCallback',{@rotCallback,h});
+
+% Plot centerline:
+cplot = false;
+if cplot
+    h.axes(2) = axes(h.fig,'Position',[0,0,1,1]);
+    h.cline = plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r.');
+    axis(h.axes(2),'off','equal');
+    view(h.axes(2),-90,0)
+    h.axes(2).XLim = h.axes(1).XLim;
+    h.axes(2).YLim = h.axes(1).YLim;
+    h.axes(2).ZLim = h.axes(1).ZLim;
+    set(hr,'ActionPostCallback',{@rotCallback,h});
+else
+    set(hr,'ActionPostCallback',{@(~,~,x)camlight(x,50,30),h.light});
+end
+
 
 savefig(h.fig,fullfile(elxdir,[edirname,'.fig']));
 saveas(h.fig,fullfile(elxdir,[edirname,'.jpg']));
