@@ -93,7 +93,12 @@ n = cross(vdm.direction(1:3),vdm.direction(4:6));
 M = [ reshape(vdm.direction,3,2),n',vdm.origin' ; zeros(1,3),1];
 
 fprintf('Generating and transforming surface mesh ...\n');
-[fv,x,y,z] = mask2surf(mask,voxsz);
+[y,x,z] = meshgrid((0:d(2)-1)*voxsz(2),...
+                   (0:d(1)-1)*voxsz(1),...
+                   (0:d(3)-1)*voxsz(3));
+fv = isosurface(x,y,z,smooth3(double(mask)*1000,'gaussian',5,1.5),500);
+fv = smoothpatch(fv,1,5,1,[]);
+fv = reducepatch(fv);
 nv = size(fv.vertices,1);
 vdm.vertices_orig = (M * [fv.vertices' ; ones(1,nv)])';
 vdm.vertices_orig(:,4) = [];
@@ -125,9 +130,6 @@ end
 lineData = importCenterline(cfname);
 vdm.centerLine = lineData;
 vdm.centerLine.tP = transformMesh([lineData.Px,lineData.Py,lineData.Pz],fullfile(elxdir,parname));
-
-% Save results:
-save(vdmfname,'-struct','vdm');
 
 % Display VDM and save JPEG:
 dispmap = 1; % Display Jacobian determinant rate
@@ -179,30 +181,43 @@ else
 end
 title(h.cbar,['\fontsize{30}{0}\selectfont',vdm.map(dispmap).label],'Interpreter','latex',...
     'Units','normalized','Position',[0.5,1.2,0],'HorizontalAlignment','right');
-% Plot centerline:
-h.axes(2) = axes(h.fig,'Position',[0,0,1,1]);
-plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r');
-axis(h.axes(2),'off','equal');
-view(h.axes(2),-90,0)
-h.axes(2).XLim = h.axes(1).XLim;
-h.axes(2).YLim = h.axes(1).YLim;
-h.axes(2).ZLim = h.axes(1).ZLim;
+
 hr = rotate3d(h.fig);
-% set(hr,'ActionPostCallback',{@(~,~,x)camlight(x,50,30),h.light});
-set(hr,'ActionPostCallback',{@rotCallback,h});
+
+% Plot centerline:
+cplot = false;
+if cplot
+    h.axes(2) = axes(h.fig,'Position',[0,0,1,1]);
+    h.cline = plot3(h.axes(2),vdm.centerLine.tP(:,1),vdm.centerLine.tP(:,2),vdm.centerLine.tP(:,3),'r.');
+    axis(h.axes(2),'off','equal');
+    view(h.axes(2),-90,0)
+    h.axes(2).XLim = h.axes(1).XLim;
+    h.axes(2).YLim = h.axes(1).YLim;
+    h.axes(2).ZLim = h.axes(1).ZLim;
+    set(hr,'ActionPostCallback',{@rotCallback,h});
+else
+    set(hr,'ActionPostCallback',{@(~,~,x)camlight(x,50,30),h.light});
+end
+
 
 savefig(h.fig,fullfile(elxdir,[edirname,'.fig']));
 saveas(h.fig,fullfile(elxdir,[edirname,'.jpg']));
 
 % Plot centerline results:
-y = surf2centerline(vdm.faces,vdm.vertices,vdm.map(dispmap).vals,...
+vdm.centerLine = surf2centerline(vdm.faces,vdm.vertices,vdm.map(dispmap).vals,...
     vdm.centerLine.tP,[vdm.centerLine.Tx,vdm.centerLine.Ty,vdm.centerLine.Tz]);
-x = cumsum([0;sqrt(sum(diff(centerLine.tP,1).^2,2))]);
-figure,plot(x,y);ha = gca;
+x = cumsum([0;sqrt(sum(diff(vdm.centerLine.tP,1).^2,2))]);
+hf = figure;plot(x,y);ha = gca;
 title(ha,'Mean surface value along centerline','FontSize',20);
 ylim(ha,vdm.map(dispmap).clim);
 xlabel(ha,'Location Along Aorta (mm)');
 ylabel(ha,['\fontsize{12}{0}\selectfont',vdm.map(dispmap).label],'Interpreter','latex')
+saveas(hf,fullfile(elxdir,[edirname,'_meanPlot.jpg']));
+
+% Save results:
+save(vdmfname,'-struct','vdm');
+
+
 
 function V = surfVal(M,x,y,z,p)
 nv = size(M,4);

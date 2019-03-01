@@ -1,0 +1,24 @@
+classdef VDMclass < handle
+    properties (SetObservable, SetAccess=private, GetAccess=public)
+        faces    % [nf x 3] indices of vertices defining each face
+        vertices % [nv x 3 x 2] locations of vertices (baseline and transformed)
+        map = struct('method',{'dJ/dt','dSA/dt','GC','MC'},...
+                    'label',{sprintf('$$\\dot{J}(/%s)$$',units),...
+                             '$${\dot{A}(\%/yr)}$$',...
+                             '$${GC}$$',...
+                             '$${MC}$$'},...
+                    'clim',{exp([-1,1]),[-100,100],[-0.1,0.1],[-0.3,0.3]},...
+                    'logdisp',{true,false,false,false},...
+                    'vals',{[],[],[],[]});
+        segfname    % file name of segmentation (baseline geometry)
+        elxdir
+        cfname
+        scale
+        units
+        centerLine
+    end
+    events
+    end
+    methods
+    end
+end

@@ -1,4 +1,4 @@
-function [img,label,fov] = readBrukerCT(varargin)
+function [img,label,fov,info] = readBrukerCT(varargin)
 
 go = false;
 img = [];

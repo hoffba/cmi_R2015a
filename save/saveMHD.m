@@ -53,7 +53,9 @@ if ischar(ofnames)
     ofnames = {ofnames};
 end
 
-info.dircos = [info.dircos,cross(info.dircos(1:3),info.dircos(4:6))];
+if numel(info.dircos)==6
+    info.dircos(7:9) = cross(info.dircos(1:3),info.dircos(4:6));
+end
 
 legalchars = 'a-zA-Z0-9\-\_\.';
 for ifn = 1:nv
@@ -74,7 +76,7 @@ for ifn = 1:nv
     fprintf(fid,'BinaryData = %s\n','True');
     fprintf(fid,'BinaryDataByteOrderMSB = %s\n','False');
     fprintf(fid,'CompressedData = %s\n','False');
-    fprintf(fid,'TransformMatrix = %u %u %u %u %u %u %u %u %u\n',info.dircos);
+    fprintf(fid,'TransformMatrix = %u %u %u %u %u %u %u %u %u\n',info.dircos(1:9));
     fprintf(fid,['Position =',repmat(' %.10f',1,NDims),'\n'],info.slcpos);
     fprintf(fid,'AnatomicalOrientation = %s\n','RAI');
     fprintf(fid,['ElementSpacing =',repmat(' %.6f',1,NDims),'\n'],voxsz);

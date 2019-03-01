@@ -131,9 +131,6 @@ lineData = importCenterline(cfname);
 vdm.centerLine = lineData;
 vdm.centerLine.tP = transformMesh([lineData.Px,lineData.Py,lineData.Pz],fullfile(elxdir,parname));
 
-% Save results:
-save(vdmfname,'-struct','vdm');
-
 % Display VDM and save JPEG:
 dispmap = 1; % Display Jacobian determinant rate
 [~,edirname] = fileparts(elxdir);
@@ -207,15 +204,20 @@ savefig(h.fig,fullfile(elxdir,[edirname,'.fig']));
 saveas(h.fig,fullfile(elxdir,[edirname,'.jpg']));
 
 % Plot centerline results:
-y = surf2centerline(vdm.faces,vdm.vertices,vdm.map(dispmap).vals,...
+vdm.centerLine.surfMean = surf2centerline(vdm.faces,vdm.vertices,vdm.map(dispmap).vals,...
     vdm.centerLine.tP,[vdm.centerLine.Tx,vdm.centerLine.Ty,vdm.centerLine.Tz]);
 x = cumsum([0;sqrt(sum(diff(vdm.centerLine.tP,1).^2,2))]);
-hf = figure;plot(x,y);ha = gca;
+hf = figure;plot(x,vdm.centerLine.surfMean);ha = gca;
 title(ha,'Mean surface value along centerline','FontSize',20);
 ylim(ha,vdm.map(dispmap).clim);
 xlabel(ha,'Location Along Aorta (mm)');
 ylabel(ha,['\fontsize{12}{0}\selectfont',vdm.map(dispmap).label],'Interpreter','latex')
 saveas(hf,fullfile(elxdir,[edirname,'_meanPlot.jpg']));
+
+% Save results:
+save(vdmfname,'-struct','vdm');
+
+
 
 function V = surfVal(M,x,y,z,p)
 nv = size(M,4);

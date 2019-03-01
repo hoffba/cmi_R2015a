@@ -63,11 +63,10 @@ switch tname
         sporient = p.PVM_SPackArrGradOrient;
         dorder = ones(1,3);
         for i = 1:3
-            dorder(i) = find(sporient(:,:,i)==max(sporient(:,:,i)));
+            dorder(i) = find(sporient(:,:,i));
         end
-        p.SlicePos = p.SlicePos(dorder);
-        p.SliceOrient = reshape(p.PVM_SPackArrGradOrient(:,:,dorder),[],1);
-        img = permute(img,[dorder,4:length(d)]);
+        p.SlicePos = p.SlicePos(
+        p.SliceOrient = reshape(p.PVM_SPackArrGradOrient(),[],1);
         
         
     case 'fid'  % Raw k-space data

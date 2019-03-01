@@ -1,4 +1,4 @@
-function [img,label,fov] = readBrukerCT(varargin)
+function [img,label,fov,info] = readBruker(varargin)
 
 go = false;
 img = [];
@@ -6,6 +6,7 @@ label = {'CT'};
 fov = [];
 zstep = 1;
 dmult = [1,1];
+info = struct('voxsz',{},'dims',{},);
 
 % First determine basename and find all related files:
 fname = varargin{1};
@@ -19,13 +20,13 @@ if fid>2
     ind = find(strncmp('[Reconstruction]',info,16),1);
     if isempty(ind) || ~strcmp(bname(end-2:end),'rec') % Acquisition -- for projections
         str2 = strsplit(info{strncmp('Image Pixel Size',info,16)},'=');
-        voxsz = str2double(str2{2});
+        info.voxsz = str2double(str2{2});
         str2 = strsplit(info{strncmpi('Number Of Rows',info,14)},'=');
-        dims(1) = str2double(str2{2});
+        info.dims(1) = str2double(str2{2});
         str2 = strsplit(info{strncmpi('Number Of Columns',info,17)},'=');
-        dims(2) = str2double(str2{2});
+        info.dims(2) = str2double(str2{2});
         str2 = strsplit(info{strncmpi('Number Of Files',info,15)},'=');
-        dims(3) = str2double(str2{2});
+        info.dims(3) = str2double(str2{2});
         ext = '.tif';
         istart = 0;
     else % Reconstruction -- for reconstructed images

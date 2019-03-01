@@ -19,10 +19,10 @@ fclose(fid);
 
 % Generate call to transformix:
 if ispc
-    str = sprintf('cd %s ; /usr/local/bin/transformix -out ./ -tp ./%s.txt -def inputPoints.txt',tdir,tname);
+    
 else
-    str = sprintf('cd %s ; /usr/local/bin/transformix -out ./ -tp ./%s.txt -def inputPoints.txt',tdir,tname);
 end
+str = sprintf('cd %s ; /usr/local/bin/transformix -out ./ -tp ./%s.txt -def inputPoints.txt',tdir,tname);
 [stat,cmdout] = system(str,'-echo');
 if stat
     error(cmdout);

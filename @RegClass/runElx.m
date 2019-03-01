@@ -146,7 +146,7 @@ if stat
         if ~isempty(filtN) && any(filtN(1,:))
             waitbar(0.5,hw,'Filtering Fixed Image ...');
             if strcmp(self.ftype,'Gaussian')
-                timg = feval(func,timg,filtN(2,:));
+                timg = feval(func,timg,filtN(1,:));
             else
                 for islc = 1:size(timg,3)
                     timg(:,:,islc) = feval(func,timg(:,:,islc),filtN(1,:));
