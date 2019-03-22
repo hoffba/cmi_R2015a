@@ -323,7 +323,7 @@ if ~isempty(dcmdata)
     % Separate by orientation:
     ndd = length(dcmdata);
     for i = 1:length(dcmdata)
-        [SO,xi] = unique(dcmdata.SliceOrient,'rows');
+        [SO,xi] = unique(dcmdata(i).SliceOrient,'rows');
         N = size(SO,1);
         if N~=1
             ii = [i,ndd+(1:N-1)];

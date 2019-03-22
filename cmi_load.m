@@ -174,7 +174,7 @@ else
     fov = [];
     fnameOut = [];
 end
-if (imgflag == 0)
+if (imgflag == 0) && ~isempty(img)
     img = img>min(img(:));%logical(img);
 end
 

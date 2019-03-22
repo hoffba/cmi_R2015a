@@ -1,16 +1,28 @@
-function savePBS(fname,regname,username,N,P,GB,catalog_name)
-mpath = '/nfs/turbo/umms-cgalban/Matlab';
+function savePBS(fname,regname,username,catalog_name)
+% Inputs:
+%   fname = name of PBS script file
+%   regname = name of registration batch being run
+%   username = user's umich username
+%   N = number of nodes requested
+%   P = number of processers per node
+%   GB = amount of memory per processor
+%   catalog_name = name of catalog text file
+
+% Determine number of nodes:
+T = readtable(cname,'Format','%u%s%s');
+N = min(size(unique(T(:,1:2)),1),100);
+
 fid = fopen(fname,'w');
 if fid
     fprintf(fid,...
         ['####  PBS preamble\n\n',...
-         '#PBS -N lungReg_%s\n',...                     Job Name
-         '#PBS -M %s@umich.edu\n',...                   User email address
+         '#PBS -N lungReg_%1$s\n',...                   Job Name
+         '#PBS -M %2$s@umich.edu\n',...                 User email address
          '#PBS -m ae\n\n',...                           Notification option: n (none), b (begins), e (ends), a (aborts)
          '#PBS -A cgalban_fluxod\n',...                 Account
          '#PBS -l qos=flux\n',...                       Do not change
-         '#PBS -q flux\n',...                           Specifies which queue
-         '#PBS -l nodes=%u:ppn=%u,pmem=%ugb\n',...      nodes (machines), ppn (processors/node), pmem (memory/processor)
+         '#PBS -q fluxod\n',...                         Specifies which queue
+         '#PBS -l nodes=%3$u:ppn=4,pmem=8gb\n',...      nodes (machines), ppn (processors/node), pmem (memory/processor)
          '#PBS -l walltime=8:00:00\n',...               Maximum processing time (dd:hh:mm:ss)
          '#PBS -j oe\n',...                             Combines output and error streams
          '#PBS -V\n\n',...                              Sets node environment to current effective environment
@@ -24,12 +36,12 @@ if fid
          '    echo "Running from $PBS_O_WORKDIR"\n',...
          'fi\n\n',...
          '#  Put your job commands after this line\n',...
-         'matlab -nodisplay -r "addpath(genpath(''%s'')) ; batch_fluxLungReg(''%s'',''%s'') ; exit"'],....
-         regname,username,mpath,N,P,GB,username,fluxPath(catalog_name));
+         'module load matlab\n',...
+         'export PATH=$PATH":/home/%2$s/Elastix/bin"\n',...
+         'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH":/home/%2$s/Elastix/lib"',...
+         'matlab -nodisplay -r "addpath(genpath(''/home/%2$s/Matlab'')) ;',...
+                               'batch_fluxLungReg(''%2$s'',''%4$s'') ; exit"'],....
+         regname,username,N,pathFromFlux(catalog_name));
      fclose(fid);
 end
 
-function str = fluxPath(str)
-str = strsplit(str,filesep);
-i = find(strcmp('umms-cgalban',str),1);
-str = fullfile('/nfs/turbo/',str{i:end});

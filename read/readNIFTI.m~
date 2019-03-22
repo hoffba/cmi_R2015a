@@ -46,11 +46,10 @@ if fid>2
     d(1:info.dim.dim(1)) = info.dim.dim(2:info.dim.dim(1)+1);
     img = reshape(fread(fid,inf,precision),d);
     fclose(fid);
-    fov = d(1:3).*voxsz;
+    fov = d(1:3).*info.dim.pixdim(2:4);
     label = repmat({info.fname},1,d(4));
-    info.SliceOrient = [info.hist.srow_x(1:3)/voxsz(1),...
-                        -info.hist.srow_y(1:3)/voxsz(2)];
-    info.SlicePos = [info.hist.qoffset_x,-info.hist.qoffset_y,info.hist.qoffset_z];
+    info.SliceOrient = [1,0,0,0,1,0];
+    info.SlicePos = [];
 end
 
 

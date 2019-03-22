@@ -11,19 +11,23 @@ switch tname
     
     case '2dseq' % Recontructed image
         sdir = fileparts(fileparts(fdir));
-        p = readBrukerMRIpar([fullfile(sdir,{'method','acqp'}),{fullfile(fdir,'reco')}]);
+        pfnames = [fullfile(sdir,{'method','acqp'}),{fullfile(fdir,'reco')}];
+        pfnames(~cellfun(@exist,pfnames)) = [];
+        p = readBrukerMRIpar(pfnames);
         imageObj = ImageDataObject(fdir);
         imageObj.readVisu;
         img = imageObj.data;
         d = size(img);
         fov = p.PVM_Fov; %mm
         
-        if ndims(img)>3
-            labels4d = cellfun(@(x)strsplit(x,'_'),imageObj.dataDimensions,'UniformOutput',false);
-            labels4d = cellfun(@(x)x{end},labels4d,'UniformOutput',false);
-        else
-            labels4d = {};
-        end
+        labels4d = [imageObj.FrameGroupParams(:,1).VisuFGElemComment];
+        nlab = length(labels4d);
+%         if ndims(img)>3
+%             labels4d = cellfun(@(x)strsplit(x,'_'),imageObj.dataDimensions,'UniformOutput',false);
+%             labels4d = cellfun(@(x)x{end},labels4d,'UniformOutput',false);
+%         else
+%             labels4d = {};
+%         end
         
         clear imageObj;
         
@@ -40,20 +44,23 @@ switch tname
         
         if isempty(labels4d)
             label = {p.PULPROG(2:end-5)};
+%         elseif nlab~=d(4)
+%             label = {''};
+%             for i = 1:length(labels4d)
+%                 switch labels4d{i}
+%                     case 'DIFFUSION'
+%                         lstr = strcat('b',cellfun(@num2str,num2cell(p.PVM_DwEffBval),'UniformOutput',false)');
+%                     case 'ECHO'
+%                         lstr = strcat('TE',cellfun(@num2str,num2cell(p.EffectiveTE)','UniformOutput',false));
+%                     otherwise
+%                         lstr = labels4d{i};
+% %                         lstr = cellfun(@num2str,num2cell(1:d(i+4)),'UniformOutput',false)';
+%                 end
+%                 nstr = repmat(lstr',length(label),1);
+%                 label = strcat(repmat(label,length(lstr),1),'_',nstr(:));
+%             end
         else
-            label = {''};
-            for i = 1:length(labels4d)
-                switch labels4d{i}
-                    case 'DIFFUSION'
-                        lstr = strcat('b',cellfun(@num2str,num2cell(p.PVM_DwEffBval),'UniformOutput',false)');
-                    case 'ECHO'
-                        lstr = strcat('TE',cellfun(@num2str,num2cell(p.EffectiveTE)','UniformOutput',false));
-                    otherwise
-                        lstr = cellfun(@num2str,num2cell(1:d(i+4)),'UniformOutput',false)';
-                end
-                nstr = repmat(lstr',length(label),1);
-                label = strcat(repmat(label,length(lstr),1),'_',nstr(:));
-            end
+            label = labels4d;
         end
         
         % Bruker position listed as center of image, need change to corner:

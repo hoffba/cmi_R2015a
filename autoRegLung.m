@@ -1,4 +1,4 @@
-function autoRegLung(elxbindir,odir,workingdir,elxfname,f_name,fv_name,m_name,mv_name,varargin)
+function autoRegLung(odir,workingdir,elxfname,f_name,fv_name,m_name,mv_name,varargin)
 % Inputs:
 %   odir = elastix output directory
 %   elxfname = cell or char, Elastix parameter files to use:
@@ -51,7 +51,7 @@ function autoRegLung(elxbindir,odir,workingdir,elxfname,f_name,fv_name,m_name,mv
     end
     % Save original moving image for final transform:
     fprintf('Saving original moving image to directory ...\n');
-    saveMHD(mo_name,m_img,{'elxtemp-origm'},m_fov,m_info);
+    saveMHD(fullfile(workingdir,mo_name),m_img,{'elxtemp-origm'},m_fov,m_info);
 
 %% Preprocess and save to elastix directory:
 
@@ -78,7 +78,7 @@ function autoRegLung(elxbindir,odir,workingdir,elxfname,f_name,fv_name,m_name,mv
                    + (m_info.slcpos - f_info.slcpos);
     % Save to file:
     defVal = min(0,min(m_img(:)));
-    saveTform(t0_name,x,f_voxsz,f_d,f_info.dircos,f_info.slcpos,defVal);
+    saveTform(fullfile(workingdir,t0_name),x,f_voxsz,f_d,f_info.dircos,f_info.slcpos,defVal);
 
     % Fixed image:
     fprintf('Preprocessing fixed image ...\n');
@@ -95,7 +95,7 @@ function autoRegLung(elxbindir,odir,workingdir,elxfname,f_name,fv_name,m_name,mv
         f_img(f_img<opt.f_clim(1)) = opt.f_clim(1);
         f_img(f_img>opt.f_clim(2)) = opt.f_clim(2);
     end
-    saveMHD(ft_name,f_img,{'elxtemp-f'},f_fov,f_info);
+    saveMHD(fullfile(workingdir,ft_name),f_img,{'elxtemp-f'},f_fov,f_info);
     clear f_img
     
     % Moving image:
@@ -113,7 +113,7 @@ function autoRegLung(elxbindir,odir,workingdir,elxfname,f_name,fv_name,m_name,mv
         m_img(m_img<opt.m_clim(1)) = opt.m_clim(1);
         m_img(m_img>opt.m_clim(2)) = opt.m_clim(2);
     end
-    saveMHD(mt_name,m_img,{'elxtemp-m'},m_fov,m_info);
+    saveMHD(fullfile(workingdir,mt_name),m_img,{'elxtemp-m'},m_fov,m_info);
     clear m_img
 
     % Fixed mask:
@@ -128,7 +128,7 @@ function autoRegLung(elxbindir,odir,workingdir,elxfname,f_name,fv_name,m_name,mv
             f_mask = imdilate(f_mask,se);
         end
     end
-    saveMHD(fmask_name,f_mask,{'elxtemp-fmask'},f_fov,f_info);
+    saveMHD(fullfile(workingdir,fmask_name),f_mask,{'elxtemp-fmask'},f_fov,f_info);
     clear f_mask
 
 
@@ -150,19 +150,35 @@ if opt.def
     optstr = [optstr,' -def all'];
 end
 finalT_name = sprintf('TransformParameters.%u.txt',length(elxfname)-1);
+txferstr = '';
 if ~strcmp(odir,workingdir)
-    txferstr = sprintf(' cp -a %s/. %s',workingdir,odir);
+    txferstr = sprintf(' && cp -a %s/. %s',workingdir,odir);
 end
-str = strcat(sprintf('export PATH="$PATH:%s" ;',elxbindir),...
-             sprintf(' export odir=%s ;',workingdir),...
-             sprintf(' elastix -f $odir"/%s" -m $odir"/%s" -out $odir -fMask $odir"/%s" -threads %u -t0 $odir"/%s"',...
-                     ft_name,mt_name,fmask_name,opt.Nthreads,t0_name),...
-             sprintf(' -p $odir"/%s.txt"',elxfname{:}),...
-             sprintf(' ; transformix -out $odir -tp $odir"/%s" -in $odir"/%s" ',finalT_name,mo_name),optstr,' ;',...
-             sprintf(' cp $odir"/result.mhd" $odir"/%s.mhd" ; cp $odir"/result.raw" $odir"/%s.raw" ;',outfn,outfn),...
-             ' find $odir -name "elxtemp-*" -exec rm -f {} \; ;',...
-             txferstr,...
-             ' csh');
+
+% Set environment variables:
+str = sprintf('export odir="%s"',workingdir);
+% Call to Elastix:
+str = [str,sprintf(' && elastix -f $odir"/%s" -m $odir"/%s" -out $odir -fMask $odir"/%s" -t0 $odir"/%s"',...
+                   ft_name,mt_name,fmask_name,t0_name)];
+str = [str,sprintf(' -p $odir"/%s.txt"',elxfname{:})];
+% Call to Transformix for final transform:
+str = [str,sprintf(' && transformix -out $odir -tp $odir"/%s" -in $odir"/%s" ',finalT_name,mo_name),optstr];
+% Rename transformed result:
+str = [str,sprintf(' cp $odir"/result.mhd" $odir"/%1$s.mhd" && cp $odir"/result.raw" $odir"/%1$s.raw"',outfn)];
+% Delete temporary files:
+str = [str,' && find $odir -name "elxtemp-*" -exec rm -f {} \;'];
+str = [str,' && find $odir -name "result.*" -exec rm -f {} \;'];
+% Transfer back to Turbo:
+str = [str,txferstr];
+% Delete temporary scratch folder: 
+str = [str,' && rm -r $odir;'];
+
+% Save full command string for debug:
+fid = fopen(fullfile(workingdir,'elastixCMD.txt'),'w');
+if fid
+    fprintf(fid,'%s',str);
+    fclose(fid);
+end
 
 fprintf('Sending Elastix call ...\n');
 system(str);
@@ -195,7 +211,7 @@ addParameter(p,'m_filtN',zeros(1,3),@(x)isnumeric(x)&&numel(x)==3);
 addParameter(p,'jac',false,@(x)islogical(x)&&numel(x)==1);
 addParameter(p,'jacmat',false,@(x)islogical(x)&&numel(x)==1);
 addParameter(p,'def',false,@(x)islogical(x)&&numel(x)==1);
-addParameter(p,'Nthreads',1,@(x)isnumeric(x)&&numel(x)==1);
+addParameter(p,'Nthreads',4,@(x)isnumeric(x)&&numel(x)==1);
 
 parse(p,odir,workingdir,elxfname,f_name,fv_name,m_name,mv_name,opts{:});
 opt = p.Results;
