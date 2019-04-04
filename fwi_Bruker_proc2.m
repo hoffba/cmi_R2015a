@@ -22,7 +22,7 @@ nvec = cmiObj0.img.dims(4);
 labels = cmiObj0.img.labels';
 labi = zeros(nvec,1);
 for i = 1:nt
-    ii = find(~cellfun(@isempty,strfind(labels,strcat('_',tags{1,i}))));
+    ii = find(~cellfun(@isempty,strfind(labels,tags{1,i})));
     if ~isempty(ii)
         labi(ii) = i;
         if ~isempty(tags{2,i})
@@ -73,7 +73,8 @@ if exist(fullfile(subjdir,'position.mat'),'file')
     end
     cmiObj0.setView(pos.orient);
     cmiObj0.setSlice(pos.slc);
-    cmiObj0.imgCrop(1,pos.cropz);
+    ind = 1:3; ind(pos.orient) = [];
+    cmiObj0.imgCrop(ind(2),pos.cropz);
 else
     error('Position info not saved.');
 end
@@ -127,37 +128,39 @@ cmiObj0.setOverCheck(false);
 cmiObj0.setCMap('gray');
 
 % Generate PRM montages and scatterplots:
-cmiObj0.img.prm.setOpts('cmap',flip(eye(3),2),'filtchk',false,...
-    'prmmap',{false(1,2),'PRM_-';[true,false],'PRM_0';true(1,2),'PRM_+'});
-thresh = [1,0,1,-1;1,0,1,1];
-SPopts = struct('Xvec',1,'Yvec',0,'Xmin',0,'Ymin',1,'Xmax',0,'Ymax',1);
-for i = 3:nt
-    pth = tags{3,i};
-    opts.mind = find(labi==i)';
-    thresh(:,1) = opts.mind(1);
-    thresh(:,4) = [-1,1]*pth;
-    SPopts.Xvec = opts.mind(1);
-    SPopts.Xmin = tags{2,i}(1);
-    SPopts.Xmax = tags{2,i}(2);
-    SPopts.Ymin = tags{2,i}(1);
-    SPopts.Ymax = tags{2,i}(2);
-    cmiObj0.img.prm.setOpts('thresh',thresh,'SPopts',SPopts);
-    
-    cmiObj0.activatePRM(true);
-    hf = cmiObj0.genMontage(opts,1);
-    
-    V = cmiObj0.img.getMaskVals(opts.mind);
-    [np,ntp] = size(V);
-    V = V - repmat(V(:,1),1,ntp);
-    V = [ sum(V>=pth,1)/np*100 ; sum(V<-pth,1)/np*100 ];
-    addLabels(hf,tags{1,i},...
-        [[datestrs';cellfun(@(x)num2str(x,3),num2cell(V),'UniformOutput',false)],...
-        {'Date:';'PRM+(%):';'PRM-(%):'}]);
-    print(hf,fullfile(subjdir,sprintf('%s_%s_PRMoverlays.jpg',subjID,tags{1,i})),'-djpeg');
+if ntp>1
+    cmiObj0.img.prm.setOpts('cmap',flip(eye(3),2),'filtchk',false,...
+        'prmmap',{false(1,2),'PRM_-';[true,false],'PRM_0';true(1,2),'PRM_+'});
+    thresh = [1,0,1,-1;1,0,1,1];
+    SPopts = struct('Xvec',1,'Yvec',0,'Xmin',0,'Ymin',1,'Xmax',0,'Ymax',1);
+    for i = 3:nt
+        pth = tags{3,i};
+        opts.mind = find(labi==i)';
+        thresh(:,1) = opts.mind(1);
+        thresh(:,4) = [-1,1]*pth;
+        SPopts.Xvec = opts.mind(1);
+        SPopts.Xmin = tags{2,i}(1);
+        SPopts.Xmax = tags{2,i}(2);
+        SPopts.Ymin = tags{2,i}(1);
+        SPopts.Ymax = tags{2,i}(2);
+        cmiObj0.img.prm.setOpts('thresh',thresh,'SPopts',SPopts);
+
+        cmiObj0.activatePRM(true);
+        hf = cmiObj0.genMontage(opts,1);
+
+        V = cmiObj0.img.getMaskVals(opts.mind);
+        [np,ntp] = size(V);
+        V = V - repmat(V(:,1),1,ntp);
+        V = [ sum(V>=pth,1)/np*100 ; sum(V<-pth,1)/np*100 ];
+        addLabels(hf,tags{1,i},...
+            [[datestrs';cellfun(@(x)num2str(x,3),num2cell(V),'UniformOutput',false)],...
+            {'Date:';'PRM+(%):';'PRM-(%):'}]);
+        print(hf,fullfile(subjdir,sprintf('%s_%s_PRMoverlays.jpg',subjID,tags{1,i})),'-djpeg');
+    end
+    % Set back to normal modes:
+    cmiObj0.activatePRM(false);
 end
 
-% Set back to normal modes:
-cmiObj0.activatePRM(false);
 
 
 function addLabels(hf,titleString,labels)

@@ -3,6 +3,7 @@ function [stat,datestrs] = loadMFdata(cmiObj,subjdir)
 stat = true;
 dnames = dir(subjdir);
 dnames = {dnames([dnames.isdir]).name}';
+dnames = dnames(cellfun(@length,dnames)==8);
 datenums = cellfun(@(x)datenum(x,'yyyymmdd'),dnames);
 datenums(datenums==737061) = [];
 datestrs = cellfun(@(x)datestr(x,'yyyymmdd'),num2cell(datenums),'UniformOutput',false);

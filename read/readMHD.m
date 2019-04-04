@@ -71,10 +71,10 @@ if fid>2
     ind = find(strcmp('Labels',hstr),1);
     if isempty(ind)
         if nv>1
-            label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
-                                         'UniformOutput',false))';
+            label = cellfun(@num2str,num2cell(1:nv)','UniformOutput',false)';
         else
-            label = {bname};
+            tagstr = strsplit(bname,'_');
+            label = tagstr(end);
         end
     else
         label = regexp(hstr{ind+1},'\"(.*?)\"','tokens');
