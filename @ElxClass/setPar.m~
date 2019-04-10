@@ -21,11 +21,11 @@ if (nargin>2) && all(ismember(i,1:length(self.Schedule)))
         stat = true;
     elseif mod(length(varargin),2)==0 % Name/Value pairs
         for j = 1:2:length(varargin)
-            fstr = varargin{j};
-            fval = varargin{j+1};
-            if ischar(fstr)
+            if ischar(varargin{j})
                 for ii = 1:length(i)
                     ind = i(ii);
+                    fstr = varargin{j};
+                    fval = varargin{j+1};
                     if strncmp(fstr,'FinalGridSpacingIn',18)
                         tstr = {'Voxels','PhysicalUnits'};
                         tstr = tstr{strcmp(fstr(19:end),tstr)};

@@ -12,9 +12,9 @@ end
 [stat,datestrs] = loadMFdata(cmiObj0,subjdir);
 
 % Sort images and set up contrast:
-tags = {'T2w', 'HighB', 'ADC',       'FatPct', 'R2star', 'MTR' ;
-        [],    [],      [0,1]*10^-3, [2,12],   [0,600],  [0.5,0.8] ;
-        [],    [],      1e-4,        3,        50,       0.04 };
+tags = {'T2w', 'HighB', 'ADC',  'FatPct', 'R2star', 'MTR' ;
+        [],    [],      [0,1],  [2,12],   [0,600],  [0.5,0.8] ;
+        [],    [],      0.1,   3,        50,       0.04 };
 nt = size(tags,2);
 [vmin,vmax] = cmiObj0.img.getColorMinMax;
 clim = [vmin,vmax/2];
@@ -22,7 +22,7 @@ nvec = cmiObj0.img.dims(4);
 labels = cmiObj0.img.labels';
 labi = zeros(nvec,1);
 for i = 1:nt
-    ii = find(~cellfun(@isempty,strfind(labels,strcat('_',tags{1,i}))));
+    ii = find(~cellfun(@isempty,strfind(labels,tags{1,i})));
     if ~isempty(ii)
         labi(ii) = i;
         if ~isempty(tags{2,i})
@@ -37,7 +37,31 @@ cmiObj0.imgOrder(xi);
 cmiObj0.setClim([(1:nvec)',clim]);
 vmeans = mean(cmiObj0.img.getMaskVals);
 
+% Set color limits for DWI:
+ntp = length(datestrs);
+fname = fullfile(subjdir,'clim.mat');
+if exist(fname,'file')
+    t = load(fname,'clim');
+    tclim = t.clim;
+else
+    tclim = zeros(0,2);
+end
+ntpt = round(size(tclim,1)/2);
+itp = (ntpt+1:ntp)+1;
+clim((1:ntpt)+1,:) = tclim(1:ntpt,:);
+clim((1:ntpt)+1+ntp,:) = tclim((1:ntpt)+ntpt,:);
+cmiObj0.setClim([(1:nvec)',clim]);
+cmiObj0.h.slider_4D.Enable = 'off'; pause(0.01);
+for i = 1:length(itp)
+    cmiObj0.setVec(itp(i));
+    uiwait(msgbox('Adjust contrast.','Adjust Contrast'));
+end
+cmiObj0.h.slider_4D.Enable = 'on'; pause(0.01);
+clim = cmiObj0.clim(1+(1:ntp*2),:);
+save(fullfile(subjdir,'clim.mat'),'clim');
+
 % Load position parameters previously saved by user:
+cmiObj0.setVec(1);
 if exist(fullfile(subjdir,'position.mat'),'file')
     pos = load(fullfile(subjdir,'position.mat'));
     if ~all(ismember({'rot','orient','slc','cropz'},fieldnames(pos)))
@@ -49,41 +73,11 @@ if exist(fullfile(subjdir,'position.mat'),'file')
     end
     cmiObj0.setView(pos.orient);
     cmiObj0.setSlice(pos.slc);
-    cmiObj0.imgCrop(1,pos.cropz);
+    ind = 1:3; ind(pos.orient) = [];
+    cmiObj0.imgCrop(3,pos.cropz);
 else
     error('Position info not saved.');
 end
-
-% Set color limits for DWI:
-ntp = length(datestrs);
-fname = fullfile(subjdir,'clim.mat');
-if exist(fname,'file')
-    t = load(fname,'clim');
-    tclim = t.clim;
-else
-    tclim = zeros(0,2);
-end
-ntpt = round(size(tclim,1)/2);
-itp = ntpt+1:1:ntp;
-clim((1:ntpt)+1,:) = tclim(1:ntpt,:);
-clim((1:ntpt)+1+ntp,:) = tclim((1:ntpt)+ntpt,:);
-cmiObj0.setClim([(1:nvec)',clim]);
-cmiObj0.setClim
-cmiObj0.h.slider_4D.Enable = 'off';
-for i = 1:length(itp)
-    cmiObj0.setVec(itp(i));
-end
-cmiObj0.h.slider_4D.Enable = 'on';
-
-cmiObj0.setVec(1);
-uiwait(msgbox('Adjust anatomical contrast/view/alignment.','Adjust Image'));
-
-% % Eigen-Transform:
-% fprintf('Aligning image to axes ...\n');
-% cmiObj0.eigOrient;
-% cmiObj0.setView(1);
-% cmiObj0.imgRotate(-15);
-% cmiObj0.setView(3);
 
 % Interpolate x2
 d = cmiObj0.img.dims(1:3);
@@ -101,6 +95,7 @@ cmiObj0.morphMask('close',[3,3]);
 cmiObj0.morphMask('erode',[1,1]);
 cmiObj0.morphMask('open',[1,1]);
 cmiObj0.morphMask('close',[3,3]);
+mask = cmiObj0.img.mask.mat;
 
 % mask = cmiObj0.img.mask.mat;
 opts = struct('vdim',{orient},'mdim',{4},'mind',{[]});
@@ -133,37 +128,39 @@ cmiObj0.setOverCheck(false);
 cmiObj0.setCMap('gray');
 
 % Generate PRM montages and scatterplots:
-cmiObj0.img.prm.setOpts('cmap',flip(eye(3),2),'filtchk',false,...
-    'prmmap',{false(1,2),'PRM_-';[true,false],'PRM_0';true(1,2),'PRM_+'});
-thresh = [1,0,1,-1;1,0,1,1];
-SPopts = struct('Xvec',1,'Yvec',0,'Xmin',0,'Ymin',1,'Xmax',0,'Ymax',1);
-for i = 3:nt
-    pth = tags{3,i};
-    opts.mind = find(labi==i)';
-    thresh(:,1) = opts.mind(1);
-    thresh(:,4) = [-1,1]*pth;
-    SPopts.Xvec = opts.mind(1);
-    SPopts.Xmin = tags{2,i}(1);
-    SPopts.Xmax = tags{2,i}(2);
-    SPopts.Ymin = tags{2,i}(1);
-    SPopts.Ymax = tags{2,i}(2);
-    cmiObj0.img.prm.setOpts('thresh',thresh,'SPopts',SPopts);
-    
-    cmiObj0.activatePRM(true);
-    hf = cmiObj0.genMontage(opts,1);
-    
-    V = cmiObj0.img.getMaskVals(opts.mind);
-    [np,ntp] = size(V);
-    V = V - repmat(V(:,1),1,ntp);
-    V = [ sum(V>=pth,1)/np*100 ; sum(V<-pth,1)/np*100 ];
-    addLabels(hf,tags{1,i},...
-        [[datestrs';cellfun(@(x)num2str(x,3),num2cell(V),'UniformOutput',false)],...
-        {'Date:';'PRM+(%):';'PRM-(%):'}]);
-    print(hf,fullfile(subjdir,sprintf('%s_%s_PRMoverlays.jpg',subjID,tags{1,i})),'-djpeg');
+if ntp>1
+    cmiObj0.img.prm.setOpts('cmap',flip(eye(3),2),'filtchk',false,...
+        'prmmap',{false(1,2),'PRM_-';[true,false],'PRM_0';true(1,2),'PRM_+'});
+    thresh = [1,0,1,-1;1,0,1,1];
+    SPopts = struct('Xvec',1,'Yvec',0,'Xmin',0,'Ymin',1,'Xmax',0,'Ymax',1);
+    for i = 3:nt
+        pth = tags{3,i};
+        opts.mind = find(labi==i)';
+        thresh(:,1) = opts.mind(1);
+        thresh(:,4) = [-1,1]*pth;
+        SPopts.Xvec = opts.mind(1);
+        SPopts.Xmin = tags{2,i}(1);
+        SPopts.Xmax = tags{2,i}(2);
+        SPopts.Ymin = tags{2,i}(1);
+        SPopts.Ymax = tags{2,i}(2);
+        cmiObj0.img.prm.setOpts('thresh',thresh,'SPopts',SPopts);
+
+        cmiObj0.activatePRM(true);
+        hf = cmiObj0.genMontage(opts,1);
+
+        V = cmiObj0.img.getMaskVals(opts.mind);
+        [np,ntp] = size(V);
+        V = V - repmat(V(:,1),1,ntp);
+        V = [ sum(V>=pth,1)/np*100 ; sum(V<-pth,1)/np*100 ];
+        addLabels(hf,tags{1,i},...
+            [[datestrs';cellfun(@(x)num2str(x,3),num2cell(V),'UniformOutput',false)],...
+            {'Date:';'PRM+(%):';'PRM-(%):'}]);
+        print(hf,fullfile(subjdir,sprintf('%s_%s_PRMoverlays.jpg',subjID,tags{1,i})),'-djpeg');
+    end
+    % Set back to normal modes:
+    cmiObj0.activatePRM(false);
 end
 
-% Set back to normal modes:
-cmiObj0.activatePRM(false);
 
 
 function addLabels(hf,titleString,labels)

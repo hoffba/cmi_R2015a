@@ -24,7 +24,7 @@ if ns~=0
     addParameter(p,'fMask','',@ischar);
     addParameter(p,'mMask','',@ischar);
     addParameter(p,'ipp','',@ischar);
-    addParameter(p,'threads',[],@(x)isnumeric(x)&&(x>0)&&(x<=mxCores));
+    addParameter(p,'threads',[],@(x)isempty(x)||(isnumeric(x)&&(x>0)&&(x<=mxCores)));
     parse(p,fname,mname,odir,varargin{:})
     pp = p.Results;
     
