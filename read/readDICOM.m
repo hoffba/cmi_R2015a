@@ -151,6 +151,9 @@ for ifn = 1:nf
                 end
             else % assumed double
                 diffN = tinfo.SlopInt_6_9(1);
+                if isfield(tinfo,'Private_0043_107f')
+                    diffN = diffN - tinfo.Private_0043_107f;
+                end
             end
         end
         diffD = zeros(3,1);
@@ -336,7 +339,7 @@ if ~isempty(dcmdata)
                 dcmdata(ii(j)).SliceOrient = SO(i,:);
             end
         end
-        dcmdata(1).SliceOrient = SO(1,:);
+        dcmdata(i).SliceOrient = SO(1,:);
     end
 
     % Sort by slice location
@@ -365,28 +368,50 @@ if ~isempty(dcmdata)
             dcmdata(i).AcquisitionNumber(rmslc) = [];
             dcmdata(i).SlicePos(rmslc,:) = [];
         else
+            ii = i;
             tdd = dcmdata(i);
             % Separate by AcquisitionNumber:
             a = tdd.AcquisitionNumber;
             ua = unique(a);
             nua = length(ua);
-            if nua==nslc
+            if nua==1
+                fprintf('Concatenate in 4D\n');
+                nrep = nslc/nupos;
+                [~,pind2] = sortrows(tdd.SlicePos);
+                dcmdata(i).img = permute(reshape(tdd.img(:,:,pind2),[tdd.d,nrep,nupos]),[1,2,4,3]);
+                dcmdata(i).AcquisitionNumber = tdd.AcquisitionNumber(pind);
+                dcmdata(i).SlicePos = upos;
+                dcmdata(i).Label = strcat(tdd.Label,cellfun(@num2str,num2cell(1:nrep),'UniformOutput',false));
+            elseif nua==nslc
                 fprintf('Separating by file order\n')
+                nvec = nslc/nupos;
                 a = tdd.SlicePos;
-                [~,ia] = unique(a,'rows');
-                ii = [];
-                while ~isempty(a)
-                    if isempty(ii)
-                        j = i;
-                    else
-                        j = length(dcmdata)+1;
-                    end
-                    ii = [ii,j];
-                    dcmdata(j) = tdd;
-                    dcmdata(j).img = tdd.img(:,:,:,ia);
-                    dcmdata(j).AcquisitionNumber = tdd.AcquisitionNumber(ia);
-                    dcmdata(j).SlicePos = tdd.SlicePos(ia,:);
+                [~,ia] = sortrows(a);
+                dcmdata(j).img = permute(reshape(tdd.img(:,:,ia),[tdd.d,nvec,nupos]),[1,2,4,3]);
+                dcmdata(j).AcquisitionNumber = tdd.AcquisitionNumber(ia(1:nvec:end));
+                dcmdata(j).SlicePos = tdd.SlicePos(ia(1:nvec:end),:);
+                if strcmp(dcmdata(j).Label{1},'Generated Diffusion Tensor Images') && (nvec==22)
+                    dcmdata(j).Label = {'DTI_FA','DTI_Trace','DTI_A0','DTI_TWI','DTI_DXX','DTI_DYY','DTI_DZZ',...
+                        'DTI_DXY','DTI_DXZ','DTI_DYZ','DTI_L1','DTI_L2','DTI_L3',...
+                        'DTI_L1X','DTI_L1Y','DTI_L1Z','DTI_L2X','DTI_L2Y','DTI_L2Z','DTI_L3X','DTI_L3Y','DTI_L3Z'};
+                else
+                    dcmdata(j).Label = cellfun(@num2str,num2cell(1:nvec),'UniformOutput',false);
                 end
+                
+%                 [~,ia] = unique(a,'rows');
+%                 ii = [];
+%                 while ~isempty(a)
+%                     if isempty(ii)
+%                         j = i;
+%                     else
+%                         j = length(dcmdata)+1;
+%                     end
+%                     ii = [ii,j];
+%                     dcmdata(j) = tdd;
+%                     dcmdata(j).img = tdd.img(:,:,:,ia);
+%                     dcmdata(j).AcquisitionNumber = tdd.AcquisitionNumber(ia);
+%                     dcmdata(j).SlicePos = tdd.SlicePos(ia,:);
+%                 end
             else
                 fprintf('Separating by AcquisitionNumber\n')
                 ndd = length(dcmdata);
@@ -406,7 +431,7 @@ if ~isempty(dcmdata)
             nslc = size(dcmdata(j).SlicePos,1);
             ds = dot(dcmdata(i).SlicePos - repmat(dcmdata(i).SlicePos(1,:),nslc,1),repmat(snorm,nslc,1),2);
             [ds,ids] = sort(ds);
-            dcmdata(j).img = dcmdata(j).img(:,:,ids);
+            dcmdata(j).img = dcmdata(j).img(:,:,ids,:);
             dcmdata(j).AcquisitionNumber = dcmdata(j).AcquisitionNumber(ids);
             dcmdata(j).SlicePos = dcmdata(j).SlicePos(ids(1),:);
             dcmdata(j).PixelSpacing(3) = ds(2)-ds(1);
@@ -422,8 +447,8 @@ if ~isempty(dcmdata)
                         fval = str2double(inputdlg('Blank Slice Value:','',1,{num2str(min(dcmdata(j).img(:)))}));
                         ind = [1,cumsum(round(dds/min([uds,dcmdata(j).SlcThk])))+1];
                         timg = dcmdata(j).img;
-                        dcmdata(j).img = ones([dcmdata(j).d,max(ind)])*fval;
-                        dcmdata(j).img(:,:,ind) = timg;
+                        dcmdata(j).img = ones([dcmdata(j).d,max(ind),size(dcmdata(j).img,4)])*fval;
+                        dcmdata(j).img(:,:,ind,:) = timg;
                         dcmdata(j).PixelSpacing(3) = [];
                     case 'Cancel'
                          return;
@@ -431,6 +456,34 @@ if ~isempty(dcmdata)
             end
             dcmdata(j).d(3) = size(dcmdata(j).img,3);
             dcmdata(j).PixelSpacing(3) = (ds(end)-ds(1))/double((dcmdata(j).d(3)-1));
+        end
+        
+        % Flip to closest regular coordinates:
+        dircos = reshape([dcmdata(i).SliceOrient,snorm],3,3);
+        [~,ind] = sort(abs(dircos),2); ind = ind(:,3);
+        dcmdata(i).img = permute(dcmdata(i).img,[ind',4]);
+        dcmdata(i).SliceOrient = reshape(dircos(ind,:),1,[]);
+        dcmdata(i).SlicePos = dcmdata(i).SlicePos(1,ind);
+        dcmdata(i).PixelSpacing = dcmdata(i).PixelSpacing(ind);
+        flpi = false(1,3);
+        if dot(dcmdata(i).SliceOrient(1:3),[1,0,0])<0
+            dcmdata(i).img = flip(dcmdata(i).img,1);
+            dcmdata(i).SliceOrient(1:3) = -dcmdata(i).SliceOrient(1:3);
+            flpi(1) = true;
+        end
+        if dot(dcmdata(i).SliceOrient(4:6),[0,1,0])<0
+            dcmdata(i).img = flip(dcmdata(i).img,2);
+            dcmdata(i).SliceOrient(4:6) = -dcmdata(i).SliceOrient(4:6);
+            flpi(2) = true;
+        end
+        if dot(dcmdata(i).SliceOrient(7:9),[0,1,0])<0
+            dcmdata(i).img = flip(dcmdata(i).img,3);
+            dcmdata(i).SliceOrient(7:9) = -dcmdata(i).SliceOrient(7:9);
+            flpi(3) = true;
+        end
+        if flpi(ind(3))
+            dcmdata(i).SlicePos(ind(3)) = dcmdata(i).SlicePos(ind(3)) ...
+                - dcmdata(i).d(ind(3))*dcmdata(i).PixelSpacing(ind(3));
         end
     end
     
@@ -484,6 +537,6 @@ if ~isempty(dcmdata)
     img = permute(dcmdata.img,[2,1,3,4]);
     dcmdata = rmfield(dcmdata,'img');
     [d(1),d(2),d(3),d(4)] = size(img);
-    fov = dcmdata.PixelSpacing .* d(1:3);
+    fov = dcmdata.PixelSpacing([2,1,3]) .* d(1:3);
     label = dcmdata.Label;
 end

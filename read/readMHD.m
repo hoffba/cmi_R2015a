@@ -73,8 +73,9 @@ if fid>2
         if nv>1
             label = cellfun(@num2str,num2cell(1:nv)','UniformOutput',false)';
         else
-            tagstr = strsplit(bname,'_');
-            label = tagstr(end);
+            label = {bname};
+%             tagstr = strsplit(bname,'_');
+%             label = tagstr(end);
         end
     else
         label = regexp(hstr{ind+1},'\"(.*?)\"','tokens');

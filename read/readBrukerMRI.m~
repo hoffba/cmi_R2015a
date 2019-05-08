@@ -43,6 +43,7 @@ switch tname
             img = permute(img,ord);
             d = d(ord);
             fov(3) = d(3)*p.PVM_SPackArrSliceDistance;
+%             labels4d(ind) = [];
         end
         img = flip(permute(reshape(img,[d(1:3),prod(d(4:end))]),[2,1,3:length(d)]),1);
         

@@ -80,4 +80,5 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
         end
     end
 end
+str = str(:);
 
