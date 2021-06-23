@@ -56,11 +56,11 @@ for i = 1:N
             fprintf('   ... from NiFTi\n');
             
             data(1).img.info = niftiinfo(fullfile(procdir,[fname_Exp,fn_ext]));
-            data(1).img.mat = niftiread(data(1).info); 
+            data(1).img.mat = niftiread(data(1).img.info); 
             data(1).tag = 'Exp';
             
             data(2).img.info = niftiinfo(fullfile(procdir,[fname_Ins,fn_ext])); 
-            data(2).img.mat = niftiread(data(2).info); 
+            data(2).img.mat = niftiread(data(2).img.info); 
             data(2).tag = 'Ins';
             
             check_EI = false;
