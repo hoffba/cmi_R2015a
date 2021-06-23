@@ -22,3 +22,4 @@ if (nargin>1) && ~isempty(img)
         self.setVec(d);
     end
 end
+

@@ -1,8 +1,8 @@
 % CMIclass function
 % Set colormap for selected image (background or overlay)
 function setCMap(self,x,~)
-opts = {'gray','jet','hsv','hot','cool','spring','summer','autumn','winter',...
-        'bone','copper','pink','lines'};
+opts = {'jet','hsv','hot','cool','spring','summer','autumn','winter',...
+        'gray','bone','copper','pink','lines'};
 str = [];
 if (nargin>1)
     if (nargin==3) && ishandle(x) && strcmp(get(x,'Tag'),'popup_colormap')
@@ -13,9 +13,6 @@ if (nargin>1)
     end
 end
 if ~isempty(str)
-    if self.guicheck
-        set(self.h.popup_colormap,'Value',find(strcmp(str,opts),1));
-    end
     if self.bgcheck
         self.bgcmap = str;
     else

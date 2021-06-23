@@ -1,4 +1,4 @@
-function h = savesurf(vdm,ind,flag,fname)
+function h = savesurf(vdm,flag,fname)
 %,f,v,V,clim,label,logdisp,fname)
 
 h = [];
@@ -10,14 +10,14 @@ opts = {'EdgeColor','none',...
         'SpecularStrength',0.3,...
         'SpecularExponent',50,...
         'BackFaceLighting','reverselit'};
-V = vdm.map(ind).vals;
+V = vdm.vals;
 nv = length(V);
-if isempty(vdm.map(ind).clim)
+if isempty(vdm.clim)
     clim = prctile(V,[5,95]);
 else
-    clim = vdm.map(ind).clim;
+    clim = vdm.clim;
 end
-if vdm.map(ind).logdisp
+if vdm.logdisp
     V = real(log(V));
 end
 if nv == 0
@@ -31,7 +31,7 @@ else
 end
 opts = [{'Vertices',vdm.vertices,'Faces',vdm.faces},opts];
 
-if nargin==4
+if nargin==3
     [fdir,fname,~] = fileparts(fname);
 else
     fname = '';
@@ -39,7 +39,7 @@ end
 
 % Generate figure, but don't save
 if any(flag==0)
-    h = genFig(1,clim,opts,vdm.map(ind).label,vdm.map(ind).logdisp);
+    h = genFig(1,clim,opts,vdm.label,vdm.logdisp);
 end
 
 % Save figure as JPEG:
@@ -53,9 +53,8 @@ if any(flag==1)
         fname = [fname,'.jpg'];
     end
     if ~isempty(fname)
-        h = genFig(2,clim,opts,vdm.map(ind).label,vdm.map(ind).logdisp);
+        h = genFig(2,clim,opts,vdm.label,vdm.logdisp);
         saveas(h.hfig,fullfile(fdir,fname));
-        saveas(h.hfig,fullfile(fdir,[fname(1:end-4),'.fig']));
     end
 end
 
@@ -70,7 +69,7 @@ if any(flag==2)
         fname = [fname,'.mp4'];
     end
     if ~isempty(fname)
-        hh = genFig(1,clim,opts,vdm.map(ind).label,vdm.map(ind).logdisp);
+        hh = genFig(1,clim,opts,vdm.label,vdm.logdisp);
         a = 0:4:359;
         v = VideoWriter(fullfile(fdir,fname),'MPEG-4');
         open(v);
@@ -96,7 +95,7 @@ if any(flag==3)
     end
     if ~isempty(fname)
         if isempty(h)
-            h = genFig(1,clim,opts,vdm.map(ind).label,vdm.map(ind).logdisp);
+            h = genFig(1,clim,opts,vdm.label,vdm.logdisp);
         end
         vrml(h.plot(1).axes,fullfile(fdir,fname),'noedgelines');
     end
@@ -113,7 +112,7 @@ if any(flag==4)
         fname = [fname,'.x3d'];
     end
     if ~isempty(fname)
-        h = genFig(1,clim,opts,vdm.map(ind).label,vdm.map(ind).logdisp);
+        h = genFig(1,clim,opts,vdm.label,vdm.logdisp);
         disp('check');
         ha = h.plot.axes;
         data.tags.numobjects = 0;
@@ -134,20 +133,19 @@ end
 
 function h = genFig(n,clim,opts,label,logdisp)
 h.hfig = figure('Colormap',jet(128),'Position',[500 500 600*n 800],'Units','normalized');
-pos = [-90,0;90,0];
 for i = 1:n
     h.plot(i).axes = axes(h.hfig,'Position',[(i-1)/2 0 1/n 1],'CLim',clim);
-    h.plot(i).light = camlight(pos(i,1)-30,pos(i,2)-30);
+    h.plot(i).lightAngle = lightangle(60+180*(i-1),-30);
     h.plot(i).patch = patch(h.plot(i).axes,opts{:});
     axis(h.plot(i).axes,'equal','off','tight');
-    view(h.plot(i).axes,pos(i,1),pos(i,2));
+    view(h.plot(i).axes,90+180*(i-1),0);
     if logdisp
         caxis(h.plot(i).axes,log(clim));
     end
 end
 h.cbar = colorbar(h.plot(1).axes,'FontSize',20,'AxisLocation','in',...
     'Position',[ 1/n + (n-2)*0.05 , 0.2 , 1/(n*40) , 0.6 ]);
-yt = round(linspace(clim(1),clim(2),6),2);
+yt = linspace(clim(1),clim(2),6);
 if logdisp
 %     yt = 0:0.2:3;
 %     yclim = exp(h.cbar.YTick([1,end]));
@@ -161,10 +159,5 @@ ht = title(h.cbar,['\fontsize{30}{0}\selectfont',label],'Interpreter','latex','U
 if n==1
     ht.HorizontalAlignment = 'right';
 end
-hr = rotate3d(h.hfig);
-set(hr,'ActionPostCallback',{@rotCallback});
 
-function rotCallback(~,ha)
-hl = findobj(ha.Axes,'Type','light');
-camlight(hl,50,30);
 

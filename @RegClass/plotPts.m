@@ -21,11 +21,14 @@ if ~isempty(h)
         
         % Retrieve image properties:
         ornt = self.cmiObj(i).orient;
+        fov = self.cmiObj(i).getProp('fov');
+        voxsz = self.cmiObj(i).img.voxsz;
         
-        % Convert spatial to matrix coordinates, find points on this slice
-        p = self.cmiObj(i).img.getImageCoords(p,1);
-        p = p(round(p(:,ornt))==self.cmiObj(i).getProp('slc'),:);
-        p(:,ornt) = [];
+        % Convert spatial to matrix dimension order, find points on this slice
+        p = p(:,[2,1,3]);
+        zind = round((p(:,ornt) + fov(ornt)/2)/voxsz(ornt) + 0.5) == self.cmiObj(i).getProp('slc');
+        xyi = (1:3)~=ornt;
+        p = bsxfun(@plus,p(zind,xyi),fov(xyi)/2);
         
     end
     if isempty(p)

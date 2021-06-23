@@ -55,6 +55,7 @@ if (nargin==6) % need all inputs
                 if np > self.SPopts.Nmax
                     % Need to down-sample for large data sets
                     ind = randperm(np,self.SPopts.Nmax);
+%                     ind = round(1:(np/self.SPopts.Nmax):np);
                 else
                     ind = 1:np;
                 end
@@ -117,8 +118,12 @@ if (nargin==6) % need all inputs
                     ['                [% of VOI] ; [% of PRM]',char(10)...
                      sprintf('%16s = % 7.3f ; % 7.3f\n',str{:})]);
                 
+%   Commented out by CJG 20151103. Using check box for Wiener2 filter in ImageClass/calcPRM.                 
+%                 % Calculate PRM stats to return:
+%                 if self.normchk
+%                     np = nnz(prmvals);
+%                 end
                 prmpcts = tot/np;
-                self.results = prmpcts(:);
                 
                 self.hascatter = ha;
                 self.hfscatter = get(ha,'Parent');

@@ -6,6 +6,10 @@ function [m,b] = scale2HU(self,vec)
 %       - or only a region over water
 
 m = 1; b = 0;
+tissue = [-1000,10]; % Water=0HU, soft tissue=10-40HU, air=-1000HU, fat=-120
+if tissue(2) == 10
+    'Using muscle (10HU)'
+end
 if self.check && self.mask.check
     if nargin==1
         vec = 1;
@@ -20,7 +24,7 @@ if self.check && self.mask.check
         vals = sort(vals);
         om = self.scaleM(vec);
         ob = self.scaleB(vec);
-        m = 1000/diff(vals)*om;
+        m = diff(tissue)/diff(vals)*om;
         b = m * (ob - vals(2));
         self.imgScale(vec,m,b);
     else

@@ -10,21 +10,20 @@ if (nargin == 3) && all(ismember(dim,1:3)) ...
     lims = round(lims); % Make sure they're integer values
     if ~isempty(self.mat)
         % Crop each dimension
-        ix = 1:self.dims(1);
-        iy = 1:self.dims(2);
+        iy = 1:self.dims(1);
+        ix = 1:self.dims(2);
         iz = 1:self.dims(3);
         for i = 1:length(dim)
             switch dim(i)
                 case 1
-                    ix((ix<lims(i,1))|(ix>lims(i,2))) = [];
-                case 2
                     iy((iy<lims(i,1))|(iy>lims(i,2))) = [];
+                case 2
+                    ix((ix<lims(i,1))|(ix>lims(i,2))) = [];
                 case 3
                     iz((iz<lims(i,1))|(iz>lims(i,2))) = [];
             end
         end
-        self.mat = self.mat(ix,iy,iz,:);
-        self.slcpos = self.getImageCoords([ix(1),iy(1),iz(1)]);
+        self.mat = self.mat(iy,ix,iz,:);
     end
     self.dims(dim) = diff(lims,1,2)+1;
     if isprop(self,'mask') && isa(self.mask,'MaskClass') && isvalid(self.mask)

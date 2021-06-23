@@ -1,13 +1,12 @@
 % CMIclass function
 % Set image 4D label
-function setLabel(self,x,cstr)
-if (nargin==3) && isa(x(1),'matlab.ui.control.UIControl') && strcmp(get(x,'Tag'),'edit_veclabel')
-    cstr = {get(x,'String')};
-    x = self.vec;
+function setLabel(self,x,~)
+str = [];
+if (nargin==3) && ishandle(x) && strcmp(get(x,'Tag'),'edit_veclabel')
+    str = get(x,'String');
 elseif self.img.check && ischar(x)
-    cstr = {x};
-    x = self.vec;
+    str = x;
 end
-if ~isempty(cstr)
-    self.img.setLabel(x,cstr);
+if ~isempty(str)
+    self.img.setLabel(self.vec,str);
 end

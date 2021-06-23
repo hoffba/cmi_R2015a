@@ -73,6 +73,7 @@ if nargin>2
                 % Generate interpolation model:
                 disp('Calculating meshgrid ...')
                 [Xq,Yq,Zq] = meshgrid(1:d(2),1:d(1),1:d(3));
+                
                 [Y,X,Z] = ind2sub(d,ind);
                 for ith = 1:nth
                     for imf = 1:nmf

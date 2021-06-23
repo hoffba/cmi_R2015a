@@ -92,10 +92,15 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
         hw = waitbar(0,'Applying 2D image filter:');
         tmat = nan([self.dims(1:3),length(vec)]);
         for v = 1:length(vec)
-            for i = 1:self.dims(3)
-                tmat(:,:,i,v) = feval(func,self.mat(:,:,i,vec(v)),opts);
-                ct = ct+1;
-                waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
+            if strcmpi(ftype,'median') && numel(opts{1}) == 3
+                waitbar(0,hw,'Applying 3D image filter:');
+                tmat(:,:,:,v) = medfilt3(self.mat(:,:,:,vec(v)),opts{1});
+            else
+                for i = 1:self.dims(3)
+                    tmat(:,:,i,v) = feval(func,self.mat(:,:,i,vec(v)),opts);
+                    ct = ct+1;
+                    waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
+                end          
             end
         end
         self.mat(:,:,:,vec) = tmat;

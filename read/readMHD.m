@@ -1,7 +1,6 @@
 function [img,label,fov,info] = readMHD(varargin)
 % Reads .mhd and associated .raw files into the cmi program
 img = []; label = {}; fov = [];
-info = struct('SlicePos',{[]},'SliceOrient',{[]});
 
 % Read info from .mhd file
 fname = varargin{1};
@@ -11,7 +10,11 @@ else
     origD = [];
 end
 [path,bname,~] = fileparts(fname);
-rawfname = fullfile(path,[bname,'.raw']);
+if exist(fullfile(path,[bname,'.raw']),'file')
+    rawfname = fullfile(path,[bname,'.raw']);
+elseif exist(fullfile(path,[bname,'.zraw']),'file')
+    rawfname = fullfile(path,[bname,'.zraw']);
+end
 hchk = false;
 fid = fopen(fullfile(path,[bname,'.mhd']),'rb');
 if fid>2
@@ -26,27 +29,6 @@ if fid>2
     if ~isempty(ind)
         voxsz = str2num(hstr{ind+1});
     end
-    ind = find(strcmp('TransformMatrix',hstr),1);
-    flipz = false;
-    if ~isempty(ind)
-        val = str2num(hstr{ind+1});
-        info.SliceOrient = val(1:6);
-        orthv = cross(val(1:3),val(4:6));
-        if all(orthv==-val(7:9))
-            flipz = true;
-        elseif ~all(orthv==val(7:9))
-            warning('Not a rectilinear volume!');
-        end
-    end
-    ind = find(strcmp('Offset',hstr),1);
-    if ~isempty(ind)
-        info.SlicePos = str2num(hstr{ind+1});
-    else
-        ind = find(strcmp('Position',hstr),1);
-        if ~isempty(ind)
-            info.SlicePos = str2num(hstr{ind+1});
-        end
-    end
     ind = find(strcmp('ElementNumberOfChannels',hstr),1);
     if ~isempty(ind)
         nv = str2double(hstr{ind+1});
@@ -59,8 +41,6 @@ if fid>2
     ind = find(strcmp('ElementType',hstr),1);
     if ~isempty(ind)
         Etype = hstr{ind+1};
-    else
-        Etype = 'Unknown';
     end
     if ~exist(rawfname,'file')
         ind = find(strcmp('ElementDataFile',hstr),1);
@@ -71,11 +51,10 @@ if fid>2
     ind = find(strcmp('Labels',hstr),1);
     if isempty(ind)
         if nv>1
-            label = cellfun(@num2str,num2cell(1:nv)','UniformOutput',false)';
+            label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
+                                         'UniformOutput',false))';
         else
             label = {bname};
-%             tagstr = strsplit(bname,'_');
-%             label = tagstr(end);
         end
     else
         label = regexp(hstr{ind+1},'\"(.*?)\"','tokens');
@@ -112,8 +91,6 @@ if fid>2
             Etype = 'int32';
         case 'uint'
             Etype = 'uint32';
-        otherwise
-            Etype = 'single';
     end
     hchk = true;
 else
@@ -121,8 +98,8 @@ else
 end
 
 % Read in the .raw file
-if ~isempty(origD) && ((length(origD)~=length(d)) || ~all(origD==d))
-    warning('Dimensions do not match: current[%u %u %u] ~= new[%u %u %u]',origD,d);
+if ~isempty(origD) && ((length(origD)~=length(d)) || ~all(origD==d([2,1,3])))
+    warning('Dimensions do not match: current[%u %u %u] ~= new[%u %u %u]',origD,d([2,1,3]));
 elseif hchk && exist(rawfname,'file')
     fid = fopen(rawfname, 'r');
     if fid>2
@@ -141,10 +118,7 @@ elseif hchk && exist(rawfname,'file')
         if numel(img)~=prod([d,nv])
             img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
         end
-        img = permute(reshape(img,[nv,d]),[2,3,4,1]);
-        if flipz
-            img = flip(img,3);
-        end
+        img = permute(reshape(img,[nv,d]),[3,2,4,1]);
         fov = d.*voxsz;
         fclose(fid);
     else

@@ -1,13 +1,12 @@
 % CMIclass function
 % Interpolate Image
-function imgInterp(self,d0,~)
+function imgInterp(self,~,~)
 if self.img.check
-    if isa(d0,'matlab.ui.container.Menu')
-        answer = inputdlg('Interpolate to what dimensions?',...
-                          'Interpolate',1,{num2str(self.img.dims(1:3))});
-        d0 = str2num(answer{1});
-    end
-    if isnumeric(d0) && (length(d0)==3)
+    d = self.img.dims(1:3);
+    d0 = inputdlg('Interpolate to what dimensions?',...
+                      'Interpolate',1,{num2str(d)});
+    if ~isempty(d0)
+        d0 = str2num(d0{1});
         if ~any(isnan(d0)) && (length(d0)==3)
             self.img.interp(d0(:));
             tdims = self.img.dims(1:3);

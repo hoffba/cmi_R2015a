@@ -19,13 +19,12 @@ if self.check
     else
         fname = '';
     end
-%     tmask = self.mat(:,:,:);
+    tmask = self.mat(:,:,:);
     fov = self.dims(1:3).*voxsz;
     if (nargin<2) % fname was not input
         fname = [];
     end
-    info = struct('dircos',self.dircos,'slcpos',self.slcpos);
-    status = cmi_save(logical(self.mat),{'VOI'},fov,fname,info);
+    status = cmi_save(1,tmask,{'VOI'},fov,fname);
 else
     status = false;
 end

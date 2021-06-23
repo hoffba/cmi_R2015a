@@ -7,7 +7,7 @@ if nargin>0
         info = imfinfo(fname);
         nh = info(1).Height;
         nw = info(1).Width;
-        nf = length(info);
+        nf = length(info)-1;
         ncolor = info(1).SamplesPerPixel;
         img = zeros(nh,nw,nf,ncolor);
         for i = 1:nf

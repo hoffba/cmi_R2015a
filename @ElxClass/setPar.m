@@ -18,32 +18,18 @@ if (nargin>2) && all(ismember(i,1:length(self.Schedule)))
                 end
             end
         end
-        stat = true;
     elseif mod(length(varargin),2)==0 % Name/Value pairs
         for j = 1:2:length(varargin)
-            fstr = varargin{j};
-            fval = varargin{j+1};
-            if ischar(fstr)
+            if ischar(varargin{j})
                 for ii = 1:length(i)
-                    ind = i(ii);
-                    if strncmp(fstr,'FinalGridSpacingIn',18)
-                        tstr = {'Voxels','PhysicalUnits'};
-                        tstr = tstr{strcmp(fstr(19:end),tstr)};
-                        if isempty(tstr)
-                            warning('Unknown tag: %s',fstr);
-                        elseif isfield(self.Schedule{ind},tstr)
-                            self.Schedule{ind} = rmfield(self.Schedule{ind},tstr);
-                        end
-                    end
-                    if isempty(fval) && isfield(self.Schedule{ind},fstr)
-                        self.Schedule{ind} = rmfield(self.Schedule{ind},fstr);
+                    if isempty(varargin{j+1}) && isfield(self.Schedule{i(ii)},varargin{j})
+                        self.Schedule{i(ii)} = rmfield(self.Schedule{i(ii)},varargin{j});
                     else
-                        self.Schedule{ind}.(fstr) = fval;
+                        self.Schedule{i(ii)}.(varargin{j}) = varargin{j+1};
                     end
                 end
             end
         end
-        stat = true;
     else
         error('Invalid inputs.')
     end

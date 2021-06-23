@@ -119,7 +119,9 @@ for ith = 1:nth
         if isnan(p.wnum(i))
             p.wnum(i) = nnz(wmask);
         end
-        normval = p.wnum(i)*voxvol*ones(1,nmf); % For normalizing V, S, B
+%         normval = p.wnum(i)*voxvol*ones(1,nmf); % For normalizing V, S, B
+        normval = repmat(feval(p.func,wmask,p.voxsz,0), [1,4]); % Added by CJG 20210323
+        
         normval(p.ord==p.nD) = p.wnum(i); % For normalizing X and alpha
         
         % Calculate MF values:
@@ -170,7 +172,7 @@ end
 function p = calcMF3D(BW,voxsz,ord)
 p = nan(1,length(ord));
 if ismember(0,ord)
-    p(ord==0) = imVolume(BW,voxsz);
+    p(ord==0) = imVolumeEstimate(BW,voxsz);
 end
 if ismember(1,ord)
     p(ord==1) = imSurfaceEstimate(BW,voxsz);

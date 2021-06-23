@@ -13,9 +13,15 @@ elseif ischar(filt)
     filt = {filt};
 end
 
+% dcmtags = {'PatientID','StudyID','StudyDate','SeriesNumber','AcquisitionNumber',...
+%     'StudyDescription','SeriesDescription','ScanOptions',...
+%     'SliceThickness','Rows','Columns','PixelSpacing'};
+
 dcmtags = {'PatientID','StudyID','StudyDate','SeriesNumber','AcquisitionNumber',...
-    'StudyDescription','SeriesDescription','ScanOptions',...
-    'SliceThickness','Rows','Columns','PixelSpacing'};
+    'StudyDescription','SeriesDescription',...
+    'ScanOptions','FilterType','ConvolutionKernel','Manufacturer','KVP',...
+    'XrayTubeCurrent','ExposureTime','SliceThickness','Rows','Columns','PixelSpacing'};
+
 nfld = length(dcmtags);
 C = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'}];
 
@@ -35,6 +41,7 @@ if opath~=0
     for idir = 1:ndir
         waitbar(idir/ndir,hw,['Processing folder ',num2str(idir),...
                          ' of ',num2str(ndir)]);
+ 
         info = dicominfo(fullfile(D{idir},F{idir}{1}),'UseDictionaryVR',true);
         tC = cell(1,nfld);
         for ifld = 1:nfld

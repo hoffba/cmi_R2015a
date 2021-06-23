@@ -21,8 +21,8 @@ if ischar(fname) && exist(fname,'file')
         end
         
         % Convert numeric fields into numbers:
-        nC = cellfun(@str2double,C);
-        nn = ~isnan(nC);
+        nC = cellfun(@str2double,C,'UniformOutput',false);
+        nn = ~cellfun(@isnan,nC);
         C(nn) = nC(nn);
         
     end

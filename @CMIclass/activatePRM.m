@@ -3,7 +3,7 @@
 function val = activatePRM(self,x,~)
 val = [];
 
-if (nargin==1) || (ishghandle(x) && strcmp(x.Tag,'analysis_PRM'))
+if ishghandle(x) && strcmp(x.Tag,'analysis_PRM')
     val = ~strcmp(get(self.h.analysis_PRM,'Checked'),'on');
 elseif ~isempty(x) && islogical(x)
     val = x(1);

@@ -28,7 +28,7 @@ if ~isempty(tmask)
     set(self.hfig,'WindowStyle','modal');
     title(self.haxes,'Select Region:','Visible','on');
     % axes(self.haxes);
-    [mx,my] = getpts(self.haxes);
+    [x,y] = getpts(self.haxes);
     title(self.haxes,'','Visible','off');
     set(self.hfig,'WindowStyle','normal');
 
@@ -36,7 +36,9 @@ if ~isempty(tmask)
 
     % Convert 2D point to matrix index:
     order = 1:3; order(self.orient) = [];
-    mx = round(mx); my = round(my);
+    voxsz = self.img.voxsz; voxsz(self.orient) = [];
+    mx = round(x/voxsz(2)+0.5);
+    my = round(y/voxsz(1)+0.5);
     if self.chk2D
         d = size(tmask);
         ii = sub2ind(d,my(:),mx(:));

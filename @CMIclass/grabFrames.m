@@ -48,12 +48,12 @@ if ~isempty(opts) && isstruct(opts) && all(isfield(opts,{'vdim','mdim','mind'}))
     %     aspn = aspn(1:2)/(max(aspn(1:2)));
     %     npos(3:4) = aspn.*pos(3:4);
     %     npos(1:2) = pos(1:2) + (pos(3:4) - npos(3:4))/2;
-%         currunits = get(self.haxes,'Units');
-%         set(self.haxes,'Units','pixels');
-%         npos = plotboxpos(self.haxes);
-%         set(self.haxes,'Units',currunits);
-%         npos(1:2) = npos(1:2)+1;
-%         npos(3:4) = npos(3:4)-2;
+        currunits = get(self.haxes,'Units');
+        set(self.haxes,'Units','pixels');
+        npos = plotboxpos(self.haxes);
+        set(self.haxes,'Units',currunits);
+        npos(1:2) = npos(1:2)+1;
+        npos(3:4) = npos(3:4)-2;
         for i = 1:length(opts.mind)
             % Change to next slice/vec
             if (opts.mdim == 4)
@@ -61,8 +61,7 @@ if ~isempty(opts) && isstruct(opts) && all(isfield(opts,{'vdim','mdim','mind'}))
             else
                 self.setSlice(opts.mind(i));
             end
-            F(i) = getframe(self.haxes);
-%             F(i) = getframe(self.hfig,npos);
+            F(i) = getframe(self.hfig,npos);
         end
         % Set view back to original
         if self.orient ~= oview

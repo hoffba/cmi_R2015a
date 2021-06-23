@@ -48,9 +48,8 @@ if self.overcheck
     adata = alpha*squeeze(any(self.img.mask.mat,self.orient));
     cshift = self.ncolors;
 else
-    timg = feval(fcn{fi},self.img.mat(:,:,:,self.vec));
     tclim = self.clim(self.vec,:);
-    timg = (tnc-1) * ( timg - tclim(1) ) / diff(tclim);
+    timg = (tnc-1) * (feval(fcn{fi},self.img.mat(:,:,:,self.vec))  - tclim(1)) / diff(tclim);
     timg(timg>tnc) = tnc;
     adata = 1;
     cshift = 0;

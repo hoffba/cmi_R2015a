@@ -15,7 +15,7 @@ p.addOptional('cmap'  ,nan,@(x) isnumeric(x) && (size(x,2)==3));
 p.addOptional('labels',nan,@(x) iscellstr(x));
 p.addOptional('filtchk',nan,@(x) islogical(x) && length(x)==1);
 p.addOptional('filttype',nan,@(x) ischar(x));
-p.addOptional('filtstr',nan,@(x) isvector(x) && length(x)==2);
+p.addOptional('filtstr',nan,@(x) isvector(x) && (length(x)==2||length(x)==3)); %changed this CJG
 p.addOptional('SPopts',nan,@isstruct);
 p.addOptional('guicheck',nan,@isscalar);
 p.parse(varargin{:});

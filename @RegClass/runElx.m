@@ -24,6 +24,7 @@ end
 
 stat = self.cmiObj(1).img.check && self.cmiObj(2).img.check;
 hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
+hw.Children.Title.Interpreter = 'none';
 
 elxC = {};
 
@@ -60,9 +61,7 @@ if stat
     
     % Get FOV for both images:
     ffov = self.cmiObj(1).img.dims(1:3).*self.cmiObj(1).img.voxsz;
-    forient = struct('dircos',self.cmiObj(1).img.dircos,'slcpos',self.cmiObj(1).img.slcpos);
     mfov = self.cmiObj(2).img.dims(1:3).*self.cmiObj(2).img.voxsz;
-    morient = struct('dircos',self.cmiObj(2).img.dircos,'slcpos',self.cmiObj(2).img.slcpos);
        
     % Set filenames:
     outfn = fullfile(self.odir,[self.cmiObj(2).img.name,'_R.mhd']);
@@ -92,7 +91,7 @@ if stat
     % Save original moving image:
     waitbar(0.1,hw,'Saving Original Moving Image ...');
     timg = self.cmiObj(2).img.mat(:,:,:,self.cmiObj(2).vec);
-    stat = saveMHD(origfn,timg,[],mfov,morient);
+    stat = saveMHD(origfn,timg,[],mfov);
     
     % Moving Image:
     if stat
@@ -137,7 +136,7 @@ if stat
         end
         % Save moving image:
         waitbar(0.35,hw,'Saving Processed Moving Image ...');
-        stat = saveMHD(mname,timg,[],mfov,morient);
+        stat = saveMHD(mname,timg,[],mfov);
     end
         
     % Fixed Image:
@@ -146,7 +145,7 @@ if stat
         if ~isempty(filtN) && any(filtN(1,:))
             waitbar(0.5,hw,'Filtering Fixed Image ...');
             if strcmp(self.ftype,'Gaussian')
-                timg = feval(func,timg,filtN(1,:));
+                timg = feval(func,timg,filtN(2,:));
             else
                 for islc = 1:size(timg,3)
                     timg(:,:,islc) = feval(func,timg(:,:,islc),filtN(1,:));
@@ -183,18 +182,19 @@ if stat
         end
         % Save fixed image:
         waitbar(0.6,hw,'Saving Processed Fixed Image ...');
-        stat = saveMHD(fname,timg,[],ffov,forient);
+        stat = saveMHD(fname,timg,[],ffov);
     end
     
     % Moving VOI to transform along with image:
     addstr = '';
     if stat && self.Tvoi
         waitbar(0.65,hw,'Saving moving VOI for transform ...');
-        stat = saveMHD(tmskname,self.cmiObj(2).img.mask.mat,[],mfov,morient);
+        stat = saveMHD(tmskname,self.cmiObj(2).img.mask.mat,[],mfov);
         elxC = [elxC,'tMask',tmskname];
-        addstr = strcat(addstr,...
-            '; sed ''s/Final[A-Za-z]*Interpolator/FinalNearestNeighborInterpolator/'' <',...
-            test.txt,' >test2.txt');
+        % CJG 20200208 commented 'addstr' getting error with test.txt
+%         addstr = strcat(addstr,...
+%             '; sed ''s/Final[A-Za-z]*Interpolator/FinalNearestNeighborInterpolator/'' <',...
+%             test.txt,' >test2.txt');
         fullfile(self.odir,[self.cmiObj(2).img.name,'_VOI_R.mhd'])
     end
     
@@ -208,7 +208,7 @@ if stat
         elxC = [elxC,'mMask',mmskname];
         stat = saveMHD(mmskname,...
                        voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
-                       [],mfov,morient);
+                       [],mfov);
     end
     
     % Dilate and save fixed mask:
@@ -217,7 +217,7 @@ if stat
         elxC = [elxC,'fMask',fmskname];
         stat = saveMHD(fmskname,...
                        voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
-                       [],ffov,forient);
+                       [],ffov);
     end
     
     
@@ -272,7 +272,8 @@ if stat
         
         % Determine if new batch job needs to be started:
         nj = length(self.job);
-        if (nj<self.qnum) && exist(self.qfile,'file')
+        [nj self.qnum]
+        if (nj<self.qnum) && exist(self.qfile,'file') % CJG 20200108 changed (nj<self.qnum) to (nj<=self.qnum)
             % Start new batch job:
             tjob = runBatchFromQ(self.qfile);
             if isempty(self.job)

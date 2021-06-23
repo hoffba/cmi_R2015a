@@ -14,9 +14,11 @@ for i = 1:length(reqflds)
     end
 end
 
-% % Permute from YXZ to XYZ:
+%% CJG commented out this part
+% Permute from YXZ to XYZ:
 % img = permute(img,[2,1,3,4]);
 % fov = fov([2,1,3]);
+%%
 
 [d(1),d(2),d(3),nv] = size(img);
 [pathstr, fname, ~] = fileparts(fname);
@@ -38,7 +40,7 @@ end
 element_types = struct('double','MET_DOUBLE',...
                        'int8',  'MET_CHAR',...
                        'uint8', 'MET_UCHAR',...
-                       'single','MET_FLOAT',...
+                       'single', 'MET_FLOAT',...
                        'int16', 'MET_SHORT',...
                        'uint16','MET_USHORT',...
                        'int32', 'MET_INT',...
@@ -51,10 +53,6 @@ NDims = length(d);
 voxsz = fov./d;
 if ischar(ofnames)
     ofnames = {ofnames};
-end
-
-if numel(info.dircos)==6
-    info.dircos(7:9) = cross(info.dircos(1:3),info.dircos(4:6));
 end
 
 legalchars = 'a-zA-Z0-9\-\_\.';
@@ -76,8 +74,8 @@ for ifn = 1:nv
     fprintf(fid,'BinaryData = %s\n','True');
     fprintf(fid,'BinaryDataByteOrderMSB = %s\n','False');
     fprintf(fid,'CompressedData = %s\n','False');
-    fprintf(fid,'TransformMatrix = %u %u %u %u %u %u %u %u %u\n',info.dircos(1:9));
-    fprintf(fid,['Position =',repmat(' %.10f',1,NDims),'\n'],info.slcpos);
+    fprintf(fid,'TransformMatrix = %u %u %u %u %u %u %u %u %u\n',[ 1 0 0 0 1 0 0 0 1 ]);
+    fprintf(fid,['Position =',repmat(' %.10f',1,NDims),'\n'],(1-d).*voxsz/2);
     fprintf(fid,'AnatomicalOrientation = %s\n','RAI');
     fprintf(fid,['ElementSpacing =',repmat(' %.6f',1,NDims),'\n'],voxsz);
     fprintf(fid,['DimSize =',repmat(' %u',1,NDims),'\n'],d);

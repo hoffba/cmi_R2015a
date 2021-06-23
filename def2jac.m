@@ -7,7 +7,7 @@ if (length(d)==4) && (d(4)==3)
     for i = 1:3
         fprintf('Calculating gradient %u of 3 ... ',i);
         j = (i-1)*3;
-        [FY,FX,FZ] = gradient(D(:,:,:,i),voxsz(1),voxsz(2),voxsz(3));
+        [FX,FY,FZ] = gradient(D(:,:,:,i),voxsz(1),voxsz(2),voxsz(3));
         J(:,:,:,j+1) = FX;
         J(:,:,:,j+2) = FY;
         J(:,:,:,j+3) = FZ;

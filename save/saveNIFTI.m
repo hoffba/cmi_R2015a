@@ -1,4 +1,4 @@
-function status = saveNIFTI(fname,img,~,max_ext,info)
+function stat = saveNIFTI(fname,img,~,max_ext,info)
 % Save as NIFTI-1 file format
 %  - .nii OR .nii.gz
 

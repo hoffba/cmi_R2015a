@@ -24,8 +24,8 @@ else
 end
     
 sm = 3;
-Ti = 607 + b;
-Tt = 125 + b;
+Ti = 774 + b;
+Tt = 124 + b;
 bt1 = 8; % Trachea dilation
 bt2 = 8; % Lung erosion
 bt3 = 9; % End dilation
@@ -134,7 +134,7 @@ if ~isempty(answer)
     n = numel(lmask);
     nvox = cellfun(@numel,cc.PixelIdxList);
     ind = cellfun(@(x)any(ismember(x,cind)),cc.PixelIdxList);
-    idx = find(~ind & ((nvox/n)>0.005));
+    idx = find(~ind & ((nvox/n)>0.002)); % CJG this threshold desides to keep or disgard volume
     disp(['    Using ' num2str(length(idx)) ' regions ...'])
 %     lmask2 = false(d); % temporary mask
     lmask = zeros(d);  % final label matrix

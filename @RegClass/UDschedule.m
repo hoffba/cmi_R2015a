@@ -32,22 +32,7 @@ elseif ishghandle(hObject)
                 self.selectTform(length(self.elxObj.Schedule));
             end
         case 'button_addTform'
-            opts = {'Translation','Euler','Similarity','Affine','Warp'};
-            [sel,ok] = listdlg('ListString',opts,...
-                               'SelectionMode','single',...
-                               'Name','Transform Type');
-            if ok
-                answer = opts{sel};
-                stat = self.elxObj.addStep(answer);
-                if stat
-                    if strcmp(get(self.h.listbox_Tforms,'Enable'),'off')
-                        set(self.h.listbox_Tforms,'Enable','on');
-                    end
-                    str = [get(self.h.listbox_Tforms,'String');{answer}];
-                    set(self.h.listbox_Tforms,'String',str);
-                    self.selectTform(length(str));
-                end
-            end
+            self.addElxStep;
         case {'edit_finalGridX','edit_finalGridY','edit_finalGridZ'}
             i = find(strcmp(tag(end),{'X','Y','Z'}),1);
             val = str2double(get(hObject,'String'));

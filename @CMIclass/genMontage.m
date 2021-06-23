@@ -1,6 +1,6 @@
 % CMIclass function
 % Create Montage of current image
-function hf = genMontage(self,x,dim)
+function hf = genMontage(self,x,~)
 % Inputs:
 %   
 if self.img.check && self.guicheck
@@ -22,12 +22,8 @@ if self.img.check && self.guicheck
             timg(:,:,:,i) = double(im);
         end
         warning('off','Images:initSize:adjustingMag');
-        if nargin<3 || isa(x,'matlab.ui.container.Menu')
-            dim = round(sqrt(size(timg,4)));
-            dim = round(str2double(inputdlg('Desired number of rows:','Rows',1,{num2str(dim)})));
-        elseif ~(isnumeric(dim) && isscalar(dim))
-            dim = round(sqrt(size(timg,4)));
-        end
+        dim = round(sqrt(size(timg,4)));
+        dim = round(str2double(inputdlg('Desired number of rows:','Rows',1,{num2str(dim)})));
         hf = figure;montage(timg/255,'Size',[dim,NaN]);
     end
 end
