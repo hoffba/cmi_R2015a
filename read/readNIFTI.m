@@ -3,10 +3,8 @@ function [img,label,fov] = readNIFTI(varargin)
 fname = varargin{1};
 [~, Nfile, ~] = fileparts(fname);
 
-img = double(niftiread(fname));
 info = niftiinfo(fname);
-
-% img = flipud(fliplr(rot90((img),-1)));
+img = double(niftiread(info));
 
 fov = info.ImageSize.*info.PixelDimensions;
 
