@@ -96,11 +96,11 @@ fwidth = scsz(3)/2;
 fheight = scsz(4)*2/3;
 gap = 5;
 hf = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight]),...
-    'Name','Select DICOMcatalog data for processing:');%,'CloseRequestFcn',@cancel_callback);
+    'Name','Select DICOMcatalog data for processing:','CloseRequestFcn',@cancel_callback);
 colForm = repmat({''},1,nfields); colForm{1} = {' ','Exp','Ins'};
-colEdit = [true, false(1,nfields-1)];
+colEdit = false(1,nfields); colEdit([1,3]) = true;
 huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-20 ],'ColumnName',colnames,...
-    'Data',C,'ColumnFormat',colForm,'ColumnEditable',colEdit,'CellEditCallback',@checkValid);
+    'Data',C,'ColumnFormat',colForm,'ColumnEditable',colEdit,'CellEditCallback',@editCell);
 uibutton(hf,'Position',[fwidth-50,1,50,20],...
     'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
 uibutton(hf,'Position',[fwidth-100-gap,1,50,20],...
@@ -125,13 +125,28 @@ else
         tC = C( g_ind & ismember(C(:,1),{'Exp','Ins'}) ,:);
         if ~isempty(tC)
             selected_data(ig).PatientName = C{find(g_ind,1),3};
-            selected_data(ig).StudyDate = C{find(g_ind,1),4};
+            selected_data(ig).StudyDate = num2str(C{find(g_ind,1),4});
             selected_data(ig).Scans = cell2struct(tC, colnames , 2);
         end
     end
 end
 
 %% Set up callbacks:
+    function editCell(hObject,eventdata)
+        if eventdata.Indices(2)==1
+            % Edited Tag
+            checkValid(hObject);
+        else 
+            % Edited PatientID
+            if isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once'))
+                % Set ID for all scans in this case group:
+                hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),3) = {eventdata.NewData};
+            else
+                warning('Invalid PatientID, try again.');
+                hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
+            end
+        end
+    end
     function checkValid(hObject,~)
         for i = 1:ngroups
             irow = find(ugroups_ic==i);
