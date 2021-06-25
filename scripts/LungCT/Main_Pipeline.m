@@ -67,7 +67,7 @@ for i = 1:N
         end
         
         %% Generate Lung Segmentation [This is when VOI don't exist]
-        if ~(exist(fullfile(procdir,fname_Exp_Label),'file') && exist(fullfile(procdir,fname_Ins_Label),'file'))
+        if ~(exist(fullfile(procdir,[fname_Exp_Label,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins_Label,fn_ext]),'file'))
             fprintf('   Generating VOIs\n')
             [data(1).voi.mat, data(1).voi.info] = Step02_segLungHuman_cjg(1,data(1).img.mat,data(1).img.info, procdir);
             [data(2).voi.mat, data(2).voi.info] = Step02_segLungHuman_cjg(1,data(2).img.mat,data(2).img.info, procdir);
