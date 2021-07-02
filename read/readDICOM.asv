@@ -546,11 +546,9 @@ if ~isempty(dcmdata)
     end
 
     % Calculate 3D orientation matrix
-    orient = [ [ dcmdata.Orient(1:3)*dcmdata.PixelSpacing(1) ,...
-                 dcmdata.Orient(4:6)*dcmdata.PixelSpacing(2) ,...
-                 (dcmdata.SlicePos(end,:)-dcmdata.SlicePos(1,:))'/(d(3)-1) ,...
-                 dcmdata.SlicePos(1,:)' ] ;...
-               0 0 0 1];
+    F = reshape(dcmdata.Orient,3,2)
+    k = (dcmdata.SlicePos(end,:)-dcmdata.SlicePos(1,:))'/(d(3)-1);
+    orient = [ dcmdata.Orient(1:3)*dcmdata. , k , dcmdata.SlicePos(1)' ; 0 0 0 1];
     
     % Prepare data to return:
     img = dcmdata.img;

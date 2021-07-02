@@ -26,8 +26,7 @@ else
     svname = fname;
 end
 if ~isempty(orient) && ~all(all(orient==eye(4)))
-    info.TransformName = 'Sform';
-    info.Transform = affine3d(orient);
+    
 %     tform = affine3d(orient);
 %     if tform.isRigid
 %         % Use qform (quaternions)

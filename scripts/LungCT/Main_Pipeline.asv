@@ -4,9 +4,12 @@ function Main_Pipeline(catalog)
 %                   by the "dcmCatalog()" script
 
 % Pipeline consists of:
-% 1. 
-    Identify image key information and save as .nii
-% 2. Perform elastix registration
+% 1. Select data for processing based on catalogDICOM script .csv file
+% 2. Identify image key information and read images
+% 3. Generate lung segmentations
+% 4. Identify Exp/Ins images and save as .nii.gz
+% 5. Quantify unregistered lung statistics
+% 2. Enqueue elastix registration
 
 %% Determine data for processing:
 % cases is structure array:
@@ -43,14 +46,12 @@ for i = 1:N
         fname_Exp_Label = sprintf('%s_Exp_Label',ID);
         fname_Ins_Label = sprintf('%s_Ins_Label',ID);
         fname_ScatNet = sprintf('%s_SNmap',ID);
-        
-        %% Initialize data structure
-%         data = struct('tag',{'Exp','Ins'},'mat',{[],[]},'voi',{[],[]},'info',{[],[]});
-        
+                
         %% Read selected DICOM data:
         fprintf('\nReading image data from file ... ID = %s\n',ID)
         if ~(exist(fullfile(procdir,[fname_Exp,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins,fn_ext]),'file'))
             fprintf('   ... from DICOM\n');
+            
             data = Step01_dcm2nii(procdir,{cases(i).Scans(:).Directory},{cases(i).Scans(:).Tag});
             check_EI = true;
         else

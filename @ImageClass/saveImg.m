@@ -30,7 +30,7 @@ if self.check
         if (nargin<3) % fname was not input
             fname = self.name;
         end
-        status = cmi_save(0,self.mat(:,:,:,tvec),self.labels(tvec),fov,fname);
+        status = cmi_save(0,self.mat(:,:,:,tvec),self.labels(tvec),fov,self.orient,fname);
         if status
             fname = status;
             [self.dir,self.name] = fileparts(status);

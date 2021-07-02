@@ -36,7 +36,7 @@ N = length(cases);
 fn_ext = '.nii.gz';
 h1 = waitbar(0, 'Analyze Exp and Ins data');
 for i = 1:N
-    ID = cases(i).PatientName;
+    ID = sprintf('%s_%s',cases(i).PatientName,cases(i).StudyDate);
     waitbar(i/N,h1,[num2str(round(100*(i-1)/N,1)),'% Complete: Load Data and Masks for ',ID])
         
         %% Establish relevant filenmes:
@@ -56,10 +56,12 @@ for i = 1:N
         else
             fprintf('   ... from NiFTi\n');
             
+            fprintf('   ... Reading Exp\n');
             data(1).img.info = niftiinfo(fullfile(procdir,[fname_Exp,fn_ext]));
             data(1).img.mat = niftiread(data(1).img.info); 
             data(1).tag = 'Exp';
             
+            fprintf('   ... Reading Ins\n');
             data(2).img.info = niftiinfo(fullfile(procdir,[fname_Ins,fn_ext])); 
             data(2).img.mat = niftiread(data(2).img.info); 
             data(2).tag = 'Ins';
@@ -110,8 +112,8 @@ for i = 1:N
         dataTable.Ins810(i,1) = insData(4);
 
         %% Register I2E
-        lungreg_BH( fullfile(procdir,[fname_Exp,fn_ext]), fullfile(procdir,[fname_Ins,fn_ext]),...
-            fullfile(procdir,[fname_Exp_Label,fn_ext]), fullfile(procdir,[fname_Ins_Label,fn_ext]), regObj);
+        elxdir = fullfile(procdir,sprintf('elxreg_%s',ID));
+        lungreg_BH(data,ID,elxdir,regObj);
 end
 delete(h1);
 

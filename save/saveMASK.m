@@ -1,4 +1,4 @@
-function status = saveMASK(fname,img)
+function status = saveMASK(fname,img,varargin)
 %% Save .mask file (binary VOI data)
 % First check that the file name is correct
 [pathstr, name, ext] = fileparts(fname);

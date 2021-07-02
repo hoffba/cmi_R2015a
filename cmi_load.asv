@@ -1,4 +1,4 @@
-function [img,label,fov,orient,info,fnameOut] = cmi_load(imgflag,d,fullname)
+function [img,label,fov,orient,fnameOut] = cmi_load(imgflag,d,fullname)
 % loads images for umich2 program
 % Inputs: imflag -   type of load request: 0=mask, 1=image, 2=image appended
 %         d -        optional input for dimensions if loading a mask
@@ -149,8 +149,6 @@ if ~isempty(fullname)
                 if i==1 % first image loaded initializes the image data
                     img = timg;
                     fov = tfov;
-                    orient = torient;
-                    info = tinfo;
                     d0 = dt;
                 else
                     [d1(1),d1(2),d1(3),d1(4)] = size(timg);
@@ -164,7 +162,6 @@ if ~isempty(fullname)
                 img = [];
                 alabel = {};
                 fov = [];
-                orient = [];
                 fnameOut = [];
             end
         end

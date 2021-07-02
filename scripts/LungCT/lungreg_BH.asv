@@ -1,4 +1,4 @@
-function lungreg_BH(data,ID,elxdir,regObj)
+function lungreg_BH(data,ID,regObj)
 % This function runs key steps for image RegObj0istration using Ben's RegObj0
 % program. This program will execute a RegObj0istration using preloaded data,
 % segmentation masks and settings. The automated features include: generate
@@ -27,16 +27,25 @@ function lungreg_BH(data,ID,elxdir,regObj)
 % RegObj0 = reg object
 
 
+%% Elxreg directory for results:
+[bdir,bname] = fileparts(Moving_dFile);
+if contains(bname,'.')
+    [~, bname, ~] = fileparts(bname);
+end
+tdir = fullfile(bdir,['elxreg_',bname]);
+if exist(tdir,'dir')==0
+    mkdir(tdir);
+end
+
 %% Load Data and Labels
 disp([bname,': Fixed and Label'])
-regObj.cmiObj(1).setImg(cat(4,double(data(1).img.mat),double(data(1).voi.mat)),...
+regObj.cmiObj(1).setImg(cat(4,data(1).img.mat,data(1).voi.mat),...
     {'Exp','Exp_VOI'},data(1).img.info.ImageSize.*data(1).img.info.PixelDimensions,...
     sprintf('%s_%s',ID,data(1).tag));
+regObj.cmiObj(1).loadImg(0,{Fixed_dFile; Fixed_mFile});
 
 disp([bname,': Moving and Label'])
-regObj.cmiObj(2).setImg(cat(4,double(data(2).img.mat),double(data(2).voi.mat)),...
-    {'Exp','Exp_VOI'},data(2).img.info.ImageSize.*data(2).img.info.PixelDimensions,...
-    sprintf('%s_%s',ID,data(2).tag));
+regObj.cmiObj(2).loadImg(0,{Moving_dFile; Moving_mFile});
 pause(1);
 
 %% Is the fixed image incremental or continuous?
@@ -80,7 +89,7 @@ if gapchk(2)
 end
 
 %% Add steps to the schedule
-regObj.setOdir(elxdir);
+regObj.setOdir(tdir);
 regObj.addElxStep('Affine','NumberOfResolutions',1,...
                            'FixedImagePyramidSchedule',f_sched{1},...
                            'MovingImagePyramidSchedule',f_sched{1},...

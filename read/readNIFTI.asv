@@ -1,4 +1,4 @@
-function [img,label,fov,orient,info] = readNIFTI(varargin)
+function [img,label,fov,info] = readNIFTI(varargin)
 %% reads Nifti *.nii file
 fname = varargin{1};
 [~, Nfile, ~] = fileparts(fname);
@@ -9,10 +9,10 @@ img = double(niftiread(info));
 fov = info.ImageSize.*info.PixelDimensions;
 
 label = {Nfile};
-d4 = size(img,4);
-if d4>1
-    label = strcat(label,'_',cellfun(@num2str,num2cell(1:d4),'UniformOutput',false));
+if size(img,4)>1
+    label = strcat(label,cellfun(@num2str,num2cell(1:
+    for i = 1:size(img,4)
+        label(i) = {[Nfile,'_',num2str(i)]};
+    end
 end
-
-orient = info.Transform.T';
     

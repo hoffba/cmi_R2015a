@@ -14,7 +14,7 @@ d = [];
 if appendcheck
     d = self.dims(1:3);
 end
-[img,label,fov,fnameOut] = cmi_load(1,d,fname);
+[img,label,fov,orient,info,fnameOut] = cmi_load(1,d,fname);
 % img(isnan(img)) = 0;
 if ~isempty(img)
 %     if size(img,3)==1
@@ -55,6 +55,8 @@ if ~isempty(img)
         self.labels = label;
         self.voxsz = fov./d(1:3);
         self.dims = d;
+        self.orient = orient;
+        self.info = info;
         self.mask.setDims(d(1:3));
         self.thresh = ([-1 1]'*inf(1,d(4)))';
         self.scaleM = ones(1,d(4));
