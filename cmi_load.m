@@ -21,7 +21,7 @@ dtypes = {...
             {'.vff'},                   'VFF';...       % 5
             {'fid','2dseq'},            'BrukerMRI';... % 6
             {'.log'},                   'BrukerCT';...  % 7
-            {'.dcm','.1','DICOMDIR'},   'DICOM';...     % 8
+            {'.dcm','DICOMDIR'},        'DICOM';...     % 8
             {'.nii.gz','.nii'},         'NIFTI';...     % 9
             {'.sur','.mrd'},            'MRS';...       % 10
             {'.mask'},                  'MASK';...      % 11
