@@ -1,5 +1,5 @@
 % ImageClass function
-function imgAppend(self,img,label)
+function ii = imgAppend(self,img,label)
 
 if (nargin>1) && ~isempty(img)
     [d(1),d(2),d(3),d(4)] = size(img);

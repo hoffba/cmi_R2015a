@@ -46,53 +46,51 @@ for i = 1:N
         fname_Exp_Label = sprintf('%s_Exp_Label',ID);
         fname_Ins_Label = sprintf('%s_Ins_Label',ID);
         fname_ScatNet = sprintf('%s_SNmap',ID);
-        elxdir = fullfile(procdir,sprintf('elxreg_%s',fname_Ins));
-        if ~isfolder(elxdir)
-            mkdir(elxdir);
-        end
                 
         %% Read selected DICOM data:
         fprintf('\nReading image data from file ... ID = %s\n',ID)
         if ~(exist(fullfile(procdir,[fname_Exp,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins,fn_ext]),'file'))
             fprintf('   ... from DICOM\n');
-            regObj.cmiObj(1).loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Exp')).Directory,procdir,fname_Exp);
-            regObj.cmiObj(2).loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Ins')).Directory,procdir,fname_Ins);
+            data = Step01_dcm2nii(procdir,{cases(i).Scans(:).Directory},{cases(i).Scans(:).Tag});
             check_EI = true;
         else
             fprintf('   ... from NiFTi\n');
+            
             fprintf('   ... Reading Exp\n');
-            regObj.cmiObj(1).loadImg(0,fullfile(procdir,[fname_Exp,fn_ext]),procdir,fname_Exp);
+            data(1).img.info = niftiinfo(fullfile(procdir,[fname_Exp,fn_ext]));
+            data(1).img.mat = niftiread(data(1).img.info); 
+            data(1).tag = 'Exp';
+            
             fprintf('   ... Reading Ins\n');
-            regObj.cmiObj(2).loadImg(0,fullfile(procdir,[fname_Ins,fn_ext]),procdir,fname_Ins);
+            data(2).img.info = niftiinfo(fullfile(procdir,[fname_Ins,fn_ext])); 
+            data(2).img.mat = niftiread(data(2).img.info); 
+            data(2).tag = 'Ins';
+            
             check_EI = false;
         end
         
         %% Generate Lung Segmentation [This is when VOI don't exist]
         if ~(exist(fullfile(procdir,[fname_Exp_Label,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins_Label,fn_ext]),'file'))
             fprintf('   Generating VOIs\n')
-            tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(1).img.mat,fname_Exp_Label, procdir);
-            regObj.cmiObj(1).img.mask.merge('replace',tmask);
-            tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(2).img.mat,fname_Ins_Label, procdir);
-            regObj.cmiObj(2).img.mask.merge('replace',tmask);
+            [data(1).voi.mat, data(1).voi.info] = Step02_segLungHuman_cjg(1,data(1).img.mat,data(1).img.info, procdir);
+            [data(2).voi.mat, data(2).voi.info] = Step02_segLungHuman_cjg(1,data(2).img.mat,data(2).img.info, procdir);
         else
             fprintf('   Reading VOIs from file\n')
-            regObj.cmiObj(1).loadMask(fullfile(procdir,fname_Exp_Label));
-            regObj.cmiObj(2).loadMask(fullfile(procdir,fname_Ins_Label));
+            data(1).voi.info = niftiinfo(fullfile(procdir,fname_Exp_Label));
+            data(1).voi.mat = niftiread(data(1).voi.info);
+            data(2).voi.info = niftiinfo(fullfile(procdir,fname_Ins_Label));
+            data(2).voi.mat = niftiread(data(2).voi.info);
         end
 
         %% Identify Exp and Ins using lung volume; used for determining file name
         if check_EI
             %   ** Need to double-check in case of mislabel
-            if nnz(regObj.cmiObj(1).img.mask.mat) > nnz(regObj.cmiObj(2).img.mask.mat)
-                regObj.swapCMIdata;
-            end
+            idx_EIV = Step03_Identify_EI(data);
+            data = data(idx_EIV);
         end
         
         %% Save nii.gz files using ID and Tag
-        regObj.cmiObj(1).img.saveImg(1,fullfile(procdir,[fname_Exp,fn_ext]),1);
-        regObj.cmiObj(2).img.saveImg(1,fullfile(procdir,[fname_Ins,fn_ext]),1);
-        regObj.cmiObj(1).img.saveMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
-        regObj.cmiObj(2).img.saveMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
+        Step04_Rename_EI(procdir,fname_Exp,fname_Exp_Label,fname_Ins,fname_Ins_Label,data);
         
         %% Quantify unregistered CT scans
         fprintf('\n   Quantifying unregistered statistics\n');
@@ -114,6 +112,7 @@ for i = 1:N
         dataTable.Ins810(i,1) = insData(4);
 
         %% Register I2E
+        elxdir = fullfile(procdir,sprintf('elxreg_%s',fname_Ins));
         lungreg_BH(data,ID,elxdir,regObj);
 end
 delete(h1);

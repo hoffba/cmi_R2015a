@@ -208,18 +208,18 @@ if stat
     if stat && self.cmiObj(2).img.mask.check
         waitbar(0.75,hw,['Dilating and Saving Moving VOI ...',mmskname]);
         elxC = [elxC,'mMask',mmskname];
-        stat = saveNIFTI(mmskname,...
+        stat = saveMHD(mmskname,...
                        voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
-                       [],mfov,morient);
+                       [],mfov);
     end
     
     % Dilate and save fixed mask:
     if stat && self.cmiObj(1).img.mask.check
         waitbar(0.85,hw,['Dilating and Saving Moving VOI ...',fmskname]);
         elxC = [elxC,'fMask',fmskname];
-        stat = saveNIFTI(fmskname,...
+        stat = saveMHD(fmskname,...
                        voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
-                       [],ffov,forient);
+                       [],ffov);
     end
     
     

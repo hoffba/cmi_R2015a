@@ -1,6 +1,6 @@
 % ImageClass function
 % Load image
-function status = loadImg(self,appendcheck,fname)
+function status = loadImg(self,appendcheck,fname,indir,inname)
 if (nargin <2)
     appendcheck = false;
 end
@@ -49,7 +49,12 @@ if ~isempty(img)
                                       squeeze(max(max(max(img,[],1),[],2),[],3))]];
     else
         self.prmBaseVec = 1;
-        [self.dir,self.name] = fileparts(fnameOut);
+        if nargin==5
+            self.dir = indir;
+            self.name = inname;
+        else
+            [self.dir,self.name] = fileparts(fnameOut);
+        end
         [d(1),d(2),d(3),d(4)] = size(img);
         self.mat = img;
         self.labels = label;

@@ -50,15 +50,15 @@ if gochk
         hw = waitbar(0,'Saving temporary files for Transformix ...');
         tpfname = self.elxObj.saveTx0(fullfile(self.odir,...
             ['TransformParameters-snap-',datestr(now,'yyyymmdd'),'.txt']));
-        fname = fullfile(self.odir,'elxtemp-in.mhd');
-        stat = saveMHD(fname,self.cmiObj(2).img.mat(:,:,:,self.cmiObj(2).vec),...
-                       [],self.cmiObj(2).getProp('fov'));
+        fname = fullfile(self.odir,'elxtemp-in.nii');
+        stat = saveNIFTI(fname,self.cmiObj(2).img.mat(:,:,:,self.cmiObj(2).vec),...
+                       [],self.cmiObj(2).getProp('fov'),self.cmiObj(2).img.orient);
         if stat
             waitbar(0.5,hw,'Calling Transformix ...');
             
             % Set Reference image properties:
-            self.elxObj.setTx0par('Size',self.cmiObj(1).img.dims([2,1,3]),...
-                                  'Spacing',self.cmiObj(1).img.voxsz([2,1,3]));
+            self.elxObj.setTx0par('Size',self.cmiObj(1).img.dims(1:3),...
+                                  'Spacing',self.cmiObj(1).img.voxsz);
 
             % Generate system command:
             cmdstr = self.elxObj.sysCmd(self.odir,'title','Transformix',...
@@ -74,7 +74,7 @@ if gochk
             % Append transformed image to Reference CMIobj
             if stat
                 waitbar(0.9,hw,'Appending transformed image to Reference ...');
-                self.cmiObj(1).loadImg(true,fullfile(self.odir,'result.mhd'));
+                self.cmiObj(1).loadImg(true,fullfile(self.odir,'result.nii'));
             end
         end
         delete(hw);

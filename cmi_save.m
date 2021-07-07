@@ -64,7 +64,7 @@ if nargin > 1
         % Call format save function
         status = feval(['save',fmt],fname,img,label,fov,orient);
         if status
-            status = fullfile(pname,fname);
+            status = fullfile(fpath,fname);
         end
     end
 

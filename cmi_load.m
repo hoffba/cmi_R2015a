@@ -22,7 +22,7 @@ dtypes = {...
             {'fid','2dseq'},            'BrukerMRI';... % 6
             {'.log'},                   'BrukerCT';...  % 7
             {'.dcm','.1','DICOMDIR'},   'DICOM';...     % 8
-            {'.gz'},                    'NIFTI';...     % 9
+            {'.nii.gz','.nii'},         'NIFTI';...     % 9
             {'.sur','.mrd'},            'MRS';...       % 10
             {'.mask'},                  'MASK';...      % 11
             {'.tif'},                   'TIFF';...      % 12
@@ -113,7 +113,7 @@ if ~isempty(fullname)
             if isempty(ext)
                 datatype = 'DICOM';
             else
-                idt = find(cellfun(@(x)any(strcmpi(ext,x)),dtypes(:,1)),1);
+                idt = find(cellfun(@(x)contains(fullname{i},x),dtypes(:,1)),1);
                 if isempty(idt) && isdicom(fullname{i})
                     idt = 8;
                 end
@@ -177,6 +177,8 @@ else
     img = [];
     label = {};
     fov = [];
+    orient = [];
+    info = [];
     fnameOut = [];
 end
 if (imgflag == 0)

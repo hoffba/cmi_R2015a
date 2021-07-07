@@ -14,5 +14,5 @@ if d4>1
     label = strcat(label,'_',cellfun(@num2str,num2cell(1:d4),'UniformOutput',false));
 end
 
-orient = info.Transform.T';
+orient = (info.Transform.T * diag([-1 -1 1 1]))';
     

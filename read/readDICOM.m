@@ -218,11 +218,13 @@ for ifn = 1:nf
             dcmdata(j).DiffusionDir = diffD;
             dcmdata(j).TE = TE;
             dcmdata(j).TR = TR;
+            
             val = [1,1];
             if isfield(tinfo,'PixelSpacing')
                 val = tinfo.PixelSpacing;
             end
             dcmdata(j).PixelSpacing = val;
+            
             val = [];
             if isfield(tinfo,'SpacingBetweenSlices')
                 val = tinfo.SpacingBetweenSlices;
@@ -230,12 +232,15 @@ for ifn = 1:nf
                 val = tinfo.SliceThickness;
             end
             dcmdata(j).SlcThk = val;
+            
             dcmdata(j).Orient = tinfo.ImageOrientationPatient;
+            
             val = '';
             if isfield(tinfo,'StudyDescription')
                 val = tinfo.StudyDescription;
             end
             dcmdata(j).StudyDescription = val;
+            
             if isfield(tinfo,'DiffusionBValue') && (length(tinfo.DiffusionBValue)==1)
                 val = ['b',num2str(tinfo.DiffusionBValue)];
             elseif isfield(tinfo,'SeriesDescription') && ~isempty(tinfo.SeriesDescription)
@@ -246,11 +251,23 @@ for ifn = 1:nf
                 val = tinfo.Modality;
             end
             dcmdata(j).Label = {val};
+            
             val = '';
-            if isfield(tinfo,'PatientID')
+            if isfield(tinfo,'PatientIdentityRemoved') && strcmpi(tinfo.PatientIdentityRemoved,'yes')
+                if isfield(tinfo.PatientName,'FamilyName')
+                    val = tinfo.PatientName.FamilyName;
+                end
+            elseif isfield(tinfo,'PatientID')
                 val = tinfo.PatientID;
             end
             dcmdata(j).PatientID = val;
+            
+            val = '';
+            if isfield(tinfo,'StudyDate')
+                val = tinfo.StudyDate;
+            end
+            dcmdata(j).StudyDate = val;
+            
             dcmdata(j).img = [];
             if all(isfield(tinfo,{'Rows','Columns'}))
                 dcmdata(j).d = [tinfo.Rows,tinfo.Columns];
@@ -545,7 +562,7 @@ if ~isempty(dcmdata)
         error(['Dimensions must match!',sprintf(' %f',d)])
     end
 
-    % Calculate 3D orientation matrix
+    % Calculate 3D orientation matrix (compatible with NIfTI orientation)
     orient = [ [ dcmdata.Orient(1:3)*dcmdata.PixelSpacing(1) ,...
                  dcmdata.Orient(4:6)*dcmdata.PixelSpacing(2) ,...
                  (dcmdata.SlicePos(end,:)-dcmdata.SlicePos(1,:))'/(d(3)-1) ,...

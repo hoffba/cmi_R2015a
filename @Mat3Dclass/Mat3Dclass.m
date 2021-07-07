@@ -5,7 +5,7 @@ classdef Mat3Dclass < handle
         dims = zeros(1,4);  % Dimensions of mat, 4-element vector
         voxsz = ones(1,3);  % Voxel dimensions
         voxsp = ones(1,3);  % Voxel spacing
-        dircos = [];        % Directional cosines
+        orient = [];        % Matrix spatial orientation affine matrix
         check = false;      % Check that matrix is available
     end
     

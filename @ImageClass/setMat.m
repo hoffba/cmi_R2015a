@@ -1,5 +1,5 @@
 % ImageClass function
-function setMat(self,imat,ilabels,ivoxsz,iname)
+function setMat(self,imat,ilabels,ivoxsz,iorient,iname)
 % Manually set the matrix
 d = size(imat);
 if all(d>0) && (length(d)>2)
@@ -14,6 +14,7 @@ if all(d>0) && (length(d)>2)
     self.valExt = [squeeze(min(min(min(imat,[],1),[],2),[],3)),...
                    squeeze(max(max(max(imat,[],1),[],2),[],3))];
     self.dims = d;
+    self.orient = iorient;
     self.mask.setDims(d(1:3));
     self.thresh = (inf*[-1 1]'*ones(1,d(4)))';
     self.scaleM = ones(1,d(4));

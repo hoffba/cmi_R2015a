@@ -1,5 +1,5 @@
 % Automatic segmentation of human lung CT images
-function lmask = Step02_segLungHuman_cjg(output,img,dname,procdir)
+function [lmask, info] = Step02_segLungHuman_cjg(output,img,procdir)
 
 %             case 2 % Clin. Insp.
 %                 sm = 3;
@@ -385,14 +385,14 @@ if ~isempty(answer)
     disp(['Ended after ' num2str(toc) ' seconds'])
     
     %%
-%     [PathName a z] = fileparts(info.Filename);
-%     [x a z] = fileparts(a);
-%     
-%     fNiftiname = fullfile(PathName,[a,'.nii']);
-%     
-%     info.Filename = fNiftiname;
-%     info.Datatype = 'int8';
-%     info.BitsPerPixel = 8;
+    [PathName a z] = fileparts(info.Filename);
+    [x a z] = fileparts(a);
+    
+    fNiftiname = fullfile(PathName,[a,'.nii']);
+    
+    info.Filename = fNiftiname;
+    info.Datatype = 'int8';
+    info.BitsPerPixel = 8;
     
     %% If img is dynamic (i.e. 4D)
     if size(img_orig,4)>1
@@ -401,8 +401,8 @@ if ~isempty(answer)
     end
     
 %     ['Output  :',a,'_Label_Results.jpg']
-    saveas(hf_segm,fullfile(procdir,[dname,'_Results.jpg'])); 
+    saveas(hf_segm,fullfile(procdir,[a,'_Results.jpg'])); 
     close(hf_segm)
 %     niftiwrite(int8(lmask),fNiftiname,info,'Compressed',true);
-%     cd(PathName);
+    cd(PathName);
 end

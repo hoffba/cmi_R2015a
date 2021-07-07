@@ -1,5 +1,5 @@
 % CMIclass function
-function imgAppend(self,img,label)
+function ind = imgAppend(self,img,label)
 
 if (nargin>1) && ~isempty(img)
     [d(1),d(2),d(3),d(4)] = size(img);
@@ -7,7 +7,7 @@ if (nargin>1) && ~isempty(img)
         if (nargin<3) || ~iscellstr(label)
             label = strcat({'Append-'},num2str((1:d(4))','%02u'))';
         end
-        self.img.imgAppend(img,label);
+        ind = self.img.imgAppend(img,label);
         nvec = size(self.clim,1)+1 : self.img.dims(4);
         self.clim(nvec,:) = [squeeze(min(min(min(self.img.mat(:,:,:,nvec))))),...
                              squeeze(max(max(max(self.img.mat(:,:,:,nvec)))))];

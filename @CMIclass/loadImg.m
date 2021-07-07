@@ -1,6 +1,6 @@
 % CMIclass function
 % Load image
-function stat = loadImg(self,x,fname)
+function stat = loadImg(self,x,fname,varargin)
 % appcheck = self.appendcheck;
 
 % Validate inputs:
@@ -20,7 +20,7 @@ if (nargin<3) || ~(iscellstr(fname) || ischar(fname))
     fname = {};
 end
 tvec = self.img.dims(4); % need in case of append
-stat = self.img.loadImg(appcheck,fname);
+stat = self.img.loadImg(appcheck,fname,varargin{:});
 if stat % check that new image was actually loaded
     if appcheck
         d4 = self.img.dims(4);

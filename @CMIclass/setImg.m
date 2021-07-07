@@ -1,5 +1,5 @@
 % CMIclass function 
-function setImg(self,iimg,labels,fov,iname)
+function setImg(self,iimg,labels,fov,orient,iname)
 % Set image matrix manually
 % Input: iimg = 3D or 4D image matrix
 %        labels = cell array of string labels for 4th dimension
@@ -12,7 +12,7 @@ end
 
 % First set ImageClass matrix:
 [d(1),d(2),d(3),d(4)] = size(iimg);
-self.img.setMat(iimg,labels,fov./d(1:3),iname);
+self.img.setMat(iimg,labels,fov./d(1:3),orient,iname);
 
 % Not update image-related CMIclass properties:
 self.prmcheck = false;

@@ -156,6 +156,10 @@ if (nargin>1) && isnumeric(i) && ~isempty(i) ...
                     if ismember(tval,{'true','false'})
                         tC = [pname(ipar),{tval}];
                     end
+                case 'ResultImageFormat'
+                    if ismember(tval,{'mhd','nii'}) % may need to add to this list
+                        tC = [pname(ipar),{tval}];
+                    end
 
             end
             C = [C,tC];

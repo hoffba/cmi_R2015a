@@ -1,6 +1,6 @@
 % ElxClass function
 % Set Initial Transform Options
-function setTx0(self,x,fvoxsz,fdims,varargin)
+function setTx0(self,x,fvoxsz,fdims,forient,varargin)
 
 if nargin==1 % no initial transform desired
     self.Tx0 = [];
@@ -14,9 +14,10 @@ elseif (nargin>3)
     addRequired(p,'TransformParameters',@isvector);
     addRequired(p,'Spacing',@(x)isvector(x)&&(length(x)==3));
     addRequired(p,'Size',@(x)isvector(x)&&(length(x)==3));
+    addRequired(p,'Orient',@(x)ismatrix(x)&&all(size(x)==[4,4]));
     addParameter(p,'DefaultPixelValue',0,@isnumeric);
     addParameter(p,'FixedImageLandmarks',[],@isnumeric);
-    parse(p,x,fvoxsz,fdims,varargin{:});
+    parse(p,x,fvoxsz,fdims,forient,varargin{:});
     
     t.NumberOfParameters = length(p.Results.TransformParameters);
     t.TransformParameters = p.Results.TransformParameters;
@@ -57,16 +58,15 @@ elseif (nargin>3)
     t.Size = p.Results.Size;
     t.Index = zeros(1,3);
     t.Spacing = p.Results.Spacing;
-    % Center of the image is at (0,0,0) coordinates
-    t.Origin = t.Spacing.*(1-t.Size)/2;
+    t.Origin = p.Results.Orient(1:3,4)';
     t.CenterOfRotationPoint = zeros(1,3);
-    t.Direction = [1 0 0 0 1 0 0 0 1];
-    t.UseDirectionCosines = 'false';
+    t.Direction = reshape(p.Results.Orient(1:3,1:3)*diag(1./p.Results.Spacing),1,[]);
+    t.UseDirectionCosines = 'true';
     t.ResampleInterpolator = 'FinalBSplineInterpolator';
     t.FinalBSplineInterpolationOrder = 3;
     t.Resampler = 'DefaultResampler';
     t.DefaultPixelValue = p.Results.DefaultPixelValue;
-    t.ResultImageFormat = 'mhd';
+    t.ResultImageFormat = 'nii';
     t.ResultImagePixelType = 'float';
     t.FixedInternalImagePixelType = 'float';
     t.MovingInternalImagePixelType = 'float';
