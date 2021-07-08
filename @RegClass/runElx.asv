@@ -208,18 +208,18 @@ if stat
     if stat && self.cmiObj(2).img.mask.check
         waitbar(0.75,hw,['Dilating and Saving Moving VOI ...',mmskname]);
         elxC = [elxC,'mMask',mmskname];
-        stat = saveMHD(mmskname,...
+        stat = saveNIFTI(mmskname,...
                        voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
-                       [],mfov);
+                       [],mfov,morient);
     end
     
     % Dilate and save fixed mask:
     if stat && self.cmiObj(1).img.mask.check
         waitbar(0.85,hw,['Dilating and Saving Moving VOI ...',fmskname]);
         elxC = [elxC,'fMask',fmskname];
-        stat = saveMHD(fmskname,...
+        stat = saveNIFTI(fmskname,...
                        voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
-                       [],ffov);
+                       [],ffov,forient);
     end
     
     
@@ -275,8 +275,9 @@ if stat
         % Determine if new batch job needs to be started:
         nj = length(self.job);
         [nj self.qnum]
-        if (nj<self.qnum) && exist(self.qfile,'file') % CJG 20200108 changed (nj<self.qnum) to (nj<=self.qnum)
+        if (nj<self.qnum) && exist(self.qfile,'file')
             % Start new batch job:
+            fprintf('Starting new batch job %u of %u.\n',nj,self.qnum);
             tjob = runBatchFromQ(self.qfile);
             if isempty(self.job)
                 self.job = tjob;

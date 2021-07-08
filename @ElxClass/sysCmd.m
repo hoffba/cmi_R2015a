@@ -63,7 +63,7 @@ if ~isempty(str)
     % Cleanup string:
     if p.cleanup
         if ispc
-            tstr = {}; % not programmed yet
+            tstr = {['del /s ',fullfile(p.odir,'elxtemp-*')]};
         else
             tstr = {['find ',p.odir,' -name "elxtemp-*" -exec rm -f {} \;']};
         end

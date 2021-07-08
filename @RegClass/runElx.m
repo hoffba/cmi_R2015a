@@ -66,7 +66,8 @@ if stat
     morient = self.cmiObj(2).img.orient;
        
     % Set filenames:
-    outfn = fullfile(self.odir,[self.cmiObj(2).img.name,'_R.nii.gz']);
+    [~,outfn] = fileparts(self.cmiObj(2).img.name);
+    outfn = fullfile(self.odir,[outfn,'_R.nii']);
     origfn = fullfile(self.odir,'elxtemp-origm.nii');
     fname = fullfile(self.odir,'elxtemp-f.nii');
     mname = fullfile(self.odir,'elxtemp-m.nii');
@@ -274,9 +275,9 @@ if stat
         
         % Determine if new batch job needs to be started:
         nj = length(self.job);
-        [nj self.qnum]
-        if (nj<self.qnum) && exist(self.qfile,'file') % CJG 20200108 changed (nj<self.qnum) to (nj<=self.qnum)
+        if (nj<self.qnum) && exist(self.qfile,'file')
             % Start new batch job:
+            fprintf('Starting new batch job %u of %u.\n',nj+1,self.qnum);
             tjob = runBatchFromQ(self.qfile);
             if isempty(self.job)
                 self.job = tjob;
