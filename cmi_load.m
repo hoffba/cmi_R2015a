@@ -110,7 +110,7 @@ if ~isempty(fullname)
             if any(strcmp(tname,{'2dseq','fid'}))
                 ext = tname;
             end
-            if isempty(ext)
+            if isempty(ext) || isfolder(fullname{i})
                 datatype = 'DICOM';
             else
                 idt = find(cellfun(@(x)contains(fullname{i},x),dtypes(:,1)),1);
