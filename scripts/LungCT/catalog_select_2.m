@@ -9,13 +9,22 @@ function [selected_data,home_path] = catalog_select_2(C)
 %                                .Scans = structure array with scan info
 
 if nargin==0 || isempty(C)
-    % Use GUI to select DICOMcatalog.csv
-    [tfname,home_path] = uigetfile('*.csv','Select DICOMcatalog:');
-    if ~home_path
-        selected_data = [];
-        return
+    fpath = uigetdir('Select folder for processing.');
+    if ~fpath
+        return;
     end
-    C = fullfile(home_path,tfname);
+
+    % Find existing DICOMcatalog files:
+    fnames = dir('*DICOMcatalog*.csv');
+    answer = listdlg('PromptString','Select a catalog:',...
+        'ListString',{'* Create New *',fnames.name});
+    if isempty(answer)
+        return;
+    elseif answer == 1
+        C = dcmCatalog_BH_CJG;
+    else
+        C = fullfile(fnames(answer).folder,fnames(answer).name);
+    end
 end
 if ischar(C)
     if exist(C,'file') && strcmp(C(end-3:end),'.csv')
@@ -55,10 +64,11 @@ nfields = nfields+1;
 colnames = [{'Tag'},colnames];
 C = [repmat({''},nscans,1),C];
 
-% Sort array
+% Remove empty data and sort array
 ci = [ find(strcmp(colnames,'PatientName')) ,...
        find(strcmp(colnames,'StudyDate')) ,...
        find(strcmp(colnames,'SeriesNumber')) ];
+C(any(cellfun(@isempty,C(:,ci)),2),:) = [];
 C = sortrows(C,ci);
 
 % Find groups of scans with unique PatientName and StudyDate
@@ -69,26 +79,26 @@ ci_StudyDate = find(strcmp(colnames,'StudyDate'),1);
 [~,~,ugroups_ic] = unique([unames_ic,[C{:,ci_StudyDate}]'],'rows');
 ngroups = max(ugroups_ic);
 
-% Loop over scan groups
-gp_valid = true(ngroups,1);
-for i_gp = 1:ngroups
-
-    % Try to find Ins/Exp tags:
-    idx = find(ugroups_ic==i_gp);
-    tC = C(idx,ci_SeriesDescription);
-    gp_valid(i_gp) = true;
-    i_exp = find(contains(tC,'exp','IgnoreCase',true),1);
-    if ~isempty(i_exp)
-        C{idx(i_exp),1} = 'Exp';
-        gp_valid(i_gp) = ~gp_valid(i_gp);
-    end
-    i_ins = find(contains(tC,'ins','IgnoreCase',true),1);
-    if ~isempty(i_ins)
-        C{idx(i_ins),1} = 'Ins';
-        gp_valid(i_gp) = ~gp_valid(i_gp);
-    end
-        
-end
+% % Loop over scan groups
+% gp_valid = true(ngroups,1);
+% for i_gp = 1:ngroups
+% 
+%     % Try to find Ins/Exp tags:
+%     idx = find(ugroups_ic==i_gp);
+%     tC = C(idx,ci_SeriesDescription);
+%     gp_valid(i_gp) = true;
+%     i_exp = find(contains(tC,'exp','IgnoreCase',true),1);
+%     if ~isempty(i_exp)
+%         C{idx(i_exp),1} = 'Exp';
+%         gp_valid(i_gp) = ~gp_valid(i_gp);
+%     end
+%     i_ins = find(contains(tC,'ins','IgnoreCase',true),1);
+%     if ~isempty(i_ins)
+%         C{idx(i_ins),1} = 'Ins';
+%         gp_valid(i_gp) = ~gp_valid(i_gp);
+%     end
+%         
+% end
 
 %% Set up figure:
 scsz = get(0,'screensize'); % screen size
@@ -99,8 +109,12 @@ hf = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight])
     'Name','Select DICOMcatalog data for processing:','CloseRequestFcn',@cancel_callback);
 colForm = repmat({''},1,nfields); colForm{1} = {' ','Exp','Ins'};
 colEdit = false(1,nfields); colEdit([1,3]) = true;
-huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-20 ],'ColumnName',colnames,...
+huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ],'ColumnName',colnames,...
     'Data',C,'ColumnFormat',colForm,'ColumnEditable',colEdit,'CellEditCallback',@editCell);
+F = cell(2,nfields); F(:,1:2) = {'Exp','EXP';'Ins','INS'};
+colEdit = true(1,nfields); colEdit(1) = false;
+htfilt = uitable(hf,'Position',[ 1 , fheight-90 , fwidth , 90 ],'ColumnName',colnames,...
+    'Data',F,'ColumnEditable',colEdit,'CellEditCallback',@applyFilter);
 uibutton(hf,'Position',[fwidth-50,1,50,20],...
     'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
 uibutton(hf,'Position',[fwidth-100-gap,1,50,20],...
@@ -110,7 +124,9 @@ bgs_white = uistyle('BackgroundColor','white');
 bgs_gray = uistyle('BackgroundColor','#cecece');
 bgs_red = uistyle('BackgroundColor','#ffc4c4');
 
-checkValid(huit);
+gp_valid = true(ngroups,1);
+
+applyFilter;
 
 %% End script when window closes
 waitfor(hf);
@@ -119,19 +135,65 @@ waitfor(hf);
 if isempty(C)
     selected_data = [];
 else
+    empty_flag = false(ngroups,1);
     selected_data = struct('PatientName',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
     for ig = 1:ngroups
         g_ind = ugroups_ic==ig;
         tC = C( g_ind & ismember(C(:,1),{'Exp','Ins'}) ,:);
-        if ~isempty(tC)
+        if isempty(tC)
+            empty_flag(ig) = true;
+        else
             selected_data(ig).PatientName = C{find(g_ind,1),3};
             selected_data(ig).StudyDate = num2str(C{find(g_ind,1),4});
             selected_data(ig).Scans = cell2struct(tC, colnames , 2);
         end
     end
+    selected_data(empty_flag) = [];
 end
 
 %% Set up callbacks:
+    function applyFilter(~,eventdata)
+        
+        if nargin==0 % filter all
+            rowi = 1:2;
+            coli = 2:nfields;
+        elseif nargin==2 % filter single
+            rowi = eventdata.Indices(1);
+            coli = eventdata.Indices(2);
+        end
+        
+        % Set tags:
+        tag = huit.Data(:,1);
+        for i = rowi
+            tag(strcmp(tag,htfilt.Data{i,1})) = {''};
+            TF = true(nscans,1);
+            for j = coli
+                if ~isempty(htfilt.Data{i,j})
+                    TF = TF & contains(C(:,j),htfilt.Data{i,j});
+                end
+            end
+            tag(TF) = htfilt.Data(i,1);
+        end
+        huit.Data(:,1) = tag;
+        checkValid;
+        
+%         for i_gp = 1:ngroups
+%             % Try to find Ins/Exp tags:
+%             idx = find(ugroups_ic==i_gp);
+%             tC = C(idx,ci_SeriesDescription);
+%             gp_valid(i_gp) = true;
+%             i_exp = find(contains(tC,'exp','IgnoreCase',true),1);
+%             if ~isempty(i_exp)
+%                 C{idx(i_exp),1} = 'Exp';
+%                 gp_valid(i_gp) = ~gp_valid(i_gp);
+%             end
+%             i_ins = find(contains(tC,'ins','IgnoreCase',true),1);
+%             if ~isempty(i_ins)
+%                 C{idx(i_ins),1} = 'Ins';
+%                 gp_valid(i_gp) = ~gp_valid(i_gp);
+%             end
+%         end
+    end
     function editCell(hObject,eventdata)
         if eventdata.Indices(2)==1
             % Edited Tag
@@ -147,19 +209,19 @@ end
             end
         end
     end
-    function checkValid(hObject,~)
+    function checkValid(~)
         for i = 1:ngroups
             irow = find(ugroups_ic==i);
-            tags = hObject.Data(irow,1);
+            tags = huit.Data(irow,1);
             n_exp = nnz(strcmp(tags,'Exp'));
             n_ins = nnz(strcmp(tags,'Ins'));
             gp_valid(i) = (n_exp==n_ins && ismember(n_exp,[0,1]));
             if ~gp_valid(i)
-                addStyle(hObject,bgs_red,'row',irow);
+                addStyle(huit,bgs_red,'row',irow);
             elseif rem(i,2)
-                addStyle(hObject,bgs_white,'row',irow);
+                addStyle(huit,bgs_white,'row',irow);
             else
-                addStyle(hObject,bgs_gray,'row',irow);
+                addStyle(huit,bgs_gray,'row',irow);
             end
         end
     end
