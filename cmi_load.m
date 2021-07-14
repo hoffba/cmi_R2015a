@@ -8,31 +8,24 @@ function [img,label,fov,orient,info,fnameOut] = cmi_load(imgflag,d,fullname)
 %          fov - spatial extents of the image, [1x3] for 3D images
 
 % Accepted file types:
-if imgflag
-    str = 'Image';
-else
-    str = 'Mask';
-end
-dtypes = {...
-            {'.hdr'},                   'ANALYZE';...   % 1
-            {'.mhd'},                   'MHD';...       % 2
-            {'.fld'},                   'FLD';...       % 3
-            {'.fdf'},                   'FDF';...       % 4
-            {'.vff'},                   'VFF';...       % 5
-            {'fid','2dseq'},            'BrukerMRI';... % 6
-            {'.log'},                   'BrukerCT';...  % 7
-            {'.dcm','DICOMDIR'},        'DICOM';...     % 8
-            {'.nii.gz','.nii'},         'NIFTI';...     % 9
-            {'.sur','.mrd'},            'MRS';...       % 10
-            {'.mask'},                  'MASK';...      % 11
-            {'.tif'},                   'TIFF';...      % 12
-            {'.jpg'},                   'JPG';...       % 13
-            {'.mat'},                   'MAT';...       % 14
-            {'.fid'},                   'FID';...       % 15
-            {'.vox'},                   'VOX';...       % 16
+dtypes = {...                                           Image       Mask
+            {'.hdr'},                   'ANALYZE',      true,       true;...   % 1
+            {'.mhd'},                   'MHD',          true,       true;...   % 2
+            {'.fld'},                   'FLD',          true,       true;...   % 3
+            {'.fdf'},                   'FDF',          true,       false;...  % 4
+            {'.vff'},                   'VFF',          true,       false;...  % 5
+            {'fid','2dseq'},            'BrukerMRI',    true,       true;...   % 6
+            {'.log'},                   'BrukerCT',     true,       true;...   % 7
+            {'.dcm','DICOMDIR'},        'DICOM',        true,       false;...  % 8
+            {'.nii.gz','.nii'},         'NIFTI',        true,       true;...   % 9
+            {'.sur','.mrd'},            'MRS',          true,       true;...   % 10
+            {'.mask'},                  'MASK',         false,      false;...  % 11
+            {'.tif'},                   'TIFF',         true,       true;...   % 12
+            {'.jpg'},                   'JPG',          true,       false;...  % 13
+            {'.mat'},                   'MAT',          true,       false;...  % 14
+            {'.fid'},                   'FID',          true,       false;...  % 15
+            {'.vox'},                   'VOX',          true,       false;...  % 16
          };
-imggp = true(13,1); imggp(10) = false;
-maskgp = false(13,1); maskgp([1:3,6,7,9,10,12]) = true;
 
 if (nargin == 0)
     imgflag = 1;
@@ -40,35 +33,40 @@ end
 if (nargin < 2)
     d = [];
 end
-if (nargin < 3) || (~iscell(fullname))
+if (nargin < 3)
     fullname = {};
+elseif ~isempty(fullname)
+    if ischar(fullname)
+        fullname = {fullname};
+    end
+    ind = ~cellfun(@(x)exist(x,'file'),fullname);
+    if any(ind)
+        error(['Files not found:\n',repmat('   %s\n',1,nnz(ind))],fullname{ind});
+    end
 end
 
-% Check that all input file names exist
-gopt = true;
-if ~isempty(fullname)
-    gopt = any(~cellfun(@(x)exist(x,'file'),fullname));
-end
 
-% If not a valid fname, ask for input
+% Ask for input
+gopt = isempty(fullname);
 if gopt
     % Determine filter for UI
     if imgflag % Select an image file
-        filter = dtypes(imggp,:);
+        filter = dtypes([dtypes{:,3}],1:2);
     else % Select a VOI file
-        filter = dtypes(maskgp,:);
+        filter = dtypes([dtypes{:,4}],1:2);
     end
     % Determine multi-select option
     if imgflag
-        str = 'on';
+        str = 'Image';
+        ms_flag = 'on';
     else
-        str = 'off';
+        str = 'Mask';
+        ms_flag = 'off';
     end
     % User selects file(s)
-    filter = [{[filter{:,1},'.gz'],'All Images'};{{''},'All Files'};filter];
+    filter = [{[filter{:,1}],'All Images'};{{''},'All Files'};filter];
     filter(:,1) = cellfun(@(x)sprintf('*%s;',x{:}),filter(:,1),'UniformOutput',false);
-%     [fullname,fpath,findex] = uigetfile([{'*','All'};filter],['Load ',str,':'],'MultiSelect',str);
-    [fullname,fpath,findex] = uigetfile(filter,['Load ',str,':'],'MultiSelect',str);
+    [fullname,fpath,findex] = uigetfile(filter,['Load ',str,':'],'MultiSelect',ms_flag);
     if fpath
         if ischar(fullname) % single selection
             fullname = {[fpath,fullname]};

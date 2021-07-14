@@ -1,4 +1,4 @@
-function lungreg_BH(data,ID,elxdir,regObj)
+function lungreg_BH(ID,elxdir,regObj)
 % This function runs key steps for image RegObj0istration using Ben's RegObj0
 % program. This program will execute a RegObj0istration using preloaded data,
 % segmentation masks and settings. The automated features include: generate
@@ -127,6 +127,8 @@ disp([ID,': Remove Moving Mask'])
 regObj.cmiObj(2).clearMask;
 
 disp([ID,': Enqueue Registration:'])
+regObj.cmiObj(1).setVec(1);
+regObj.cmiObj(2).setVec(1);
 regObj.runElx(false);
 pause(1);
 

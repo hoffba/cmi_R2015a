@@ -16,8 +16,9 @@ end
 
 %% ScatterNet for AT on Exp CT scan
 SNfname = fullfile(procdir,[fname_ScatNet,'.nii.gz']);
-if exist(fullfile(procdir,[fname_ScatNet,'.nii.gz']),'file')
+if exist(SNfname,'file')
     regObj.cmiObj(1).loadImg(1,SNfname);
+    atMap = regObj.cmiObj(1).img.mat(:,:,:,end);
 %     atMap = niftiread(SNfname);
 else
     [atMap, laaMap, percentatMap, percentlaaMap, meanvalatMap, meanvallaaMap] = ScatNet( ...
@@ -55,7 +56,6 @@ expData(1,2) = mean(maskvals);
 expData(1,3) = 100 * nnz(maskvals<-856) / nvox;
 expData(1,4) = 100 * nnz(atMap(temp_mask)) / nvox;
 expData(1,5) = mean(temp_data(logical(atMap)));
-
 
 %% Next, handle Ins
 fprintf('Analyzing Ins ... ');

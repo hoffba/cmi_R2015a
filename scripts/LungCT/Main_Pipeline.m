@@ -27,7 +27,7 @@ dataTable = table;
 % Find RegClass object in base workspace
 regObj = getObjectsFromBase('RegClass',1);
 % If non found, create a temporary one without GUI
-if isempty(regObj)
+if isempty(regObj) || ~isvalid(regObj)
     regObj = RegClass(0);
 end
 
@@ -76,8 +76,8 @@ for i = 1:N
             regObj.cmiObj(2).img.mask.merge('replace',tmask);
         else
             fprintf('   Reading VOIs from file\n')
-            regObj.cmiObj(1).loadMask(fullfile(procdir,fname_Exp_Label));
-            regObj.cmiObj(2).loadMask(fullfile(procdir,fname_Ins_Label));
+            regObj.cmiObj(1).loadMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
+            regObj.cmiObj(2).loadMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
         end
 
         %% Identify Exp and Ins using lung volume; used for determining file name
@@ -86,15 +86,15 @@ for i = 1:N
             if nnz(regObj.cmiObj(1).img.mask.mat) > nnz(regObj.cmiObj(2).img.mask.mat)
                 regObj.swapCMIdata;
             end
+            %% Save nii.gz files using ID and Tag
+            regObj.cmiObj(1).img.saveImg(1,fullfile(procdir,[fname_Exp,fn_ext]),1);
+            regObj.cmiObj(2).img.saveImg(1,fullfile(procdir,[fname_Ins,fn_ext]),1);
+            regObj.cmiObj(1).img.saveMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
+            regObj.cmiObj(2).img.saveMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
         end
         
-        %% Save nii.gz files using ID and Tag
-        regObj.cmiObj(1).img.saveImg(1,fullfile(procdir,[fname_Exp,fn_ext]),1);
-        regObj.cmiObj(2).img.saveImg(1,fullfile(procdir,[fname_Ins,fn_ext]),1);
-        regObj.cmiObj(1).img.saveMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
-        regObj.cmiObj(2).img.saveMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
         
-        %% Quantify unregistered CT scans
+        %% Quantify unregiste44444red CT scans
         fprintf('\n   Quantifying unregistered statistics\n');
         [expData,insData] = Step05_UnRegLungAnalysis(procdir, fname_ScatNet, regObj);
 
@@ -114,7 +114,7 @@ for i = 1:N
         dataTable.Ins810(i,1) = insData(4);
 
         %% Register I2E
-        lungreg_BH(data,ID,elxdir,regObj);
+        lungreg_BH(ID,elxdir,regObj);
 end
 delete(h1);
 

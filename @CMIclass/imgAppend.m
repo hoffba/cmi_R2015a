@@ -16,9 +16,11 @@ if (nargin>1) && ~isempty(img)
         if d>1
             estr = 'on';
         end
-        set(self.h.text_nv,'String',num2str(d));
-        set(self.h.slider_4D,'Max',d,'SliderStep',[1,1]/(d-1),'Enable',estr);
-        set(self.h.edit_vec,'Enable',estr);
+        if self.guicheck
+            set(self.h.text_nv,'String',num2str(d));
+            set(self.h.slider_4D,'Max',d,'SliderStep',[1,1]/(d-1),'Enable',estr);
+            set(self.h.edit_vec,'Enable',estr);
+        end
         self.setVec(d);
     end
 end

@@ -25,12 +25,14 @@ if ischar(type_str) && ~isempty(type_str)
             end
             
             % Update GUI objects:
-            if strcmp(get(self.h.listbox_Tforms,'Enable'),'off')
-                set(self.h.listbox_Tforms,'Enable','on');
+            if self.guicheck
+                if strcmp(get(self.h.listbox_Tforms,'Enable'),'off')
+                    set(self.h.listbox_Tforms,'Enable','on');
+                end
+                str = [get(self.h.listbox_Tforms,'String');{type_str}];
+                set(self.h.listbox_Tforms,'String',str);
+                self.selectTform(length(str));
             end
-            str = [get(self.h.listbox_Tforms,'String');{type_str}];
-            set(self.h.listbox_Tforms,'String',str);
-            self.selectTform(length(str));
         end
     else
         error('Invalid transform type: %s',type_str);

@@ -1,4 +1,4 @@
-function [selected_data,home_path] = catalog_select_2(C)
+function [selected_data,fpath] = catalog_select_2(C)
 % GUI for selection of DICOM data from DICOMcatalog information
 %   For use in Ins/Exp CT analysis, looking for two matching scans per time
 % Input: C = cell array of DICOM information
@@ -15,7 +15,7 @@ if nargin==0 || isempty(C)
     end
 
     % Find existing DICOMcatalog files:
-    fnames = dir('*DICOMcatalog*.csv');
+    fnames = dir(fullfile(fpath,'*DICOMcatalog*.csv'));
     answer = listdlg('PromptString','Select a catalog:',...
         'ListString',{'* Create New *',fnames.name});
     if isempty(answer)
@@ -23,7 +23,7 @@ if nargin==0 || isempty(C)
     elseif answer == 1
         C = dcmCatalog_BH_CJG;
     else
-        C = fullfile(fnames(answer).folder,fnames(answer).name);
+        C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
     end
 end
 if ischar(C)
