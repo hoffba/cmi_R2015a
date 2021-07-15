@@ -1,4 +1,4 @@
-function [img,label,fov,info] = readMHD(varargin)
+function [img,label,fov,orient,info] = readMHD(varargin)
 % Reads .mhd and associated .raw files into the cmi program
 img = []; label = {}; fov = [];
 
@@ -21,50 +21,55 @@ if fid>2
 %     emin = nan; emax = nan;
     hstr = strtrim(strsplit(fread(fid,inf,'*char')',{'\n','='}));
     fclose(fid);
-    ind = find(strcmp('DimSize',hstr),1);
-    if ~isempty(ind)
-        d = str2num(hstr{ind+1});
-    end
-    ind = find(strcmp('ElementSpacing',hstr),1);
-    if ~isempty(ind)
-        voxsz = str2num(hstr{ind+1});
-    end
-    ind = find(strcmp('ElementNumberOfChannels',hstr),1);
-    if ~isempty(ind)
-        nv = str2double(hstr{ind+1});
-        if isnan(nv)
-            nv = 1;
+    
+    istart = find(strcmp(hstr,'ObjectType'),1);
+    info = struct(hstr{istart:end});
+    flds = fieldnames(info);
+    for i = 1:length(flds)
+        orig_val = info.(flds{i});
+        if strcmp(orig_val,'True')
+            val = true;
+        elseif strcmp(orig_val,'False')
+            val = false;
+        else
+            val = str2num(orig_val);
+            if isempty(val)
+                val = orig_val;
+            end
         end
+        info.(flds{i}) = val;
+    end
+
+    d = info.DimSize;
+    voxsz = info.ElementSpacing;
+    if isfield(info,'ElementNumberOfChannels')
+        nv = info.ElementNumberOfChannels;
     else
         nv = 1;
     end
-    ind = find(strcmp('ElementType',hstr),1);
-    if ~isempty(ind)
-        Etype = hstr{ind+1};
-    end
+    orient = [reshape(info.TransformMatrix,3,3)'*diag(voxsz),info.Position';0 0 0 1];
+    Etype = info.ElementType;
+
     if ~exist(rawfname,'file')
-        ind = find(strcmp('ElementDataFile',hstr),1);
-        if ~isempty(ind)
-            rawfname = fullfile(path,hstr{ind+1});
-        end
+        rawfname = info.ElementDataFile;
     end
-    ind = find(strcmp('Labels',hstr),1);
-    if isempty(ind)
+
+    if isfield(info,'Labels')
+        label = regexp(info.Labels,'\"(.*?)\"','tokens');
+        label = [label{:}]';
+    else
         if nv>1
             label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
                                          'UniformOutput',false))';
         else
             label = {bname};
         end
-    else
-        label = regexp(hstr{ind+1},'\"(.*?)\"','tokens');
-        label = [label{:}]';
     end
-    ind = find(strcmp('CompressedData',hstr),1);
-    if isempty(ind)
-        zp = false;
+
+    if isfield(info,'CompressedData')
+        zp = info.CompressedData;
     else
-        zp = strcmpi(hstr{ind+1},'true');
+        zp = false;
     end
 %     ind = find(strcmp('ElementMin',hstr),1);
 %     if ~isempty(ind)

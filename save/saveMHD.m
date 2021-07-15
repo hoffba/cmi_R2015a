@@ -1,4 +1,4 @@
-function status = saveMHD(fname,img,labels,fov,info)
+function status = saveMHD(fname,img,labels,fov,orient)
 % Save as MHD file for Elastix
 % * Automatically adds label to name if dim(4) > 1
 
@@ -56,6 +56,9 @@ if ischar(ofnames)
     ofnames = {ofnames};
 end
 
+TM = reshape((orient(1:3,1:3)/voxsz)',1,[]);
+pos = orient(1:3,4)';
+
 legalchars = 'a-zA-Z0-9\-\_\.';
 for ifn = 1:nv
     % First check that the file name is correct
@@ -75,8 +78,8 @@ for ifn = 1:nv
     fprintf(fid,'BinaryData = %s\n','True');
     fprintf(fid,'BinaryDataByteOrderMSB = %s\n','False');
     fprintf(fid,'CompressedData = %s\n','False');
-    fprintf(fid,'TransformMatrix = %u %u %u %u %u %u %u %u %u\n',[ 1 0 0 0 1 0 0 0 1 ]);
-    fprintf(fid,['Position =',repmat(' %.10f',1,NDims),'\n'],(1-d).*voxsz/2);
+    fprintf(fid,['TransformMatrix =',repmat(' %.6f',1,9),'\n'],TM);
+    fprintf(fid,['Position =',repmat(' %.6f',1,3),'\n'],pos);
     fprintf(fid,'AnatomicalOrientation = %s\n','RAI');
     fprintf(fid,['ElementSpacing =',repmat(' %.6f',1,NDims),'\n'],voxsz);
     fprintf(fid,['DimSize =',repmat(' %u',1,NDims),'\n'],d);
