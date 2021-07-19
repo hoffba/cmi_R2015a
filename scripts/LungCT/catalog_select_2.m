@@ -22,6 +22,9 @@ if nargin==0 || isempty(C)
         return;
     elseif answer == 1
         C = dcmCatalog_BH_CJG;
+        if ~istable(C)
+            C = cell2table(C);
+        end
     else
         C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
     end
