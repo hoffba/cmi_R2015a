@@ -28,20 +28,21 @@ if nargin==0 || isempty(C)
 end
 if ischar(C)
     if exist(C,'file') && strcmp(C(end-3:end),'.csv')
-        C = cmi_csvread(C);
+        iopt = detectImportOptions(C);
+        C = readtable(C,iopt);
+%         C = cmi_csvread(C);
     else
         error('Invalid input string. Must be path to DICOMcatalog.csv file.');
     end
 elseif ~iscell(C)
     error('Invalid input type.');
 else
-    home_path = pwd;
+    fpath = pwd;
 end
 
-%% Validate cell array input:
+%% Validate table input:
 % Separate header from scan info:
-colnames = C(1,:);
-C(1,:) = [];
+colnames = C.Properties.VariableNames;
 req_fields = {'SeriesDescription','PatientName','StudyDate','SeriesNumber'};
 i_member = ismember(req_fields,colnames);
 if ~all(ismember({'SeriesDescription','PatientName','StudyDate','SeriesNumber'},colnames))
@@ -49,56 +50,22 @@ if ~all(ismember({'SeriesDescription','PatientName','StudyDate','SeriesNumber'},
 end
 
 %% Set up display data:
-
 % Re-order columns for easier reading:
-I = cellfun(@(x)find(strcmp(colnames,x),1),req_fields);
-tI = 1:length(colnames);
-tI(I) = [];
-I = [I tI];
-colnames = colnames(I);
-C = C(:,I);
+C = movevars(C,req_fields,'Before',1);
 
-% Add Tag column:
-[nscans,nfields] = size(C);
-nfields = nfields+1;
-colnames = [{'Tag'},colnames];
-C = [repmat({''},nscans,1),C];
+% Add Tag columns:
+nscans = size(C,1);
+C = addvars(C,false(nscans,1),false(nscans,1),'Before',1,'NewVariableNames',{'Exp','Ins'});
+colnames = C.Properties.VariableNames;
+nfields = length(colnames);
 
 % Remove empty data and sort array
-ci = [ find(strcmp(colnames,'PatientName')) ,...
-       find(strcmp(colnames,'StudyDate')) ,...
-       find(strcmp(colnames,'SeriesNumber')) ];
-C(any(cellfun(@isempty,C(:,ci)),2),:) = [];
-C = sortrows(C,ci);
+C = sortrows(C,{'PatientName','StudyDate','SeriesNumber'});
 
 % Find groups of scans with unique PatientName and StudyDate
-ci_PatientName = find(strcmp(colnames,'PatientName'),1);
-ci_SeriesDescription = find(strcmp(colnames,'SeriesDescription'),1);
-ci_StudyDate = find(strcmp(colnames,'StudyDate'),1);
-[~,~,unames_ic] = unique(C(:,ci_PatientName));
-[~,~,ugroups_ic] = unique([unames_ic,[C{:,ci_StudyDate}]'],'rows');
+C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+[~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate));
 ngroups = max(ugroups_ic);
-
-% % Loop over scan groups
-% gp_valid = true(ngroups,1);
-% for i_gp = 1:ngroups
-% 
-%     % Try to find Ins/Exp tags:
-%     idx = find(ugroups_ic==i_gp);
-%     tC = C(idx,ci_SeriesDescription);
-%     gp_valid(i_gp) = true;
-%     i_exp = find(contains(tC,'exp','IgnoreCase',true),1);
-%     if ~isempty(i_exp)
-%         C{idx(i_exp),1} = 'Exp';
-%         gp_valid(i_gp) = ~gp_valid(i_gp);
-%     end
-%     i_ins = find(contains(tC,'ins','IgnoreCase',true),1);
-%     if ~isempty(i_ins)
-%         C{idx(i_ins),1} = 'Ins';
-%         gp_valid(i_gp) = ~gp_valid(i_gp);
-%     end
-%         
-% end
 
 %% Set up figure:
 scsz = get(0,'screensize'); % screen size
@@ -106,15 +73,22 @@ fwidth = scsz(3)/2;
 fheight = scsz(4)*2/3;
 gap = 5;
 hf = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight]),...
-    'Name','Select DICOMcatalog data for processing:','CloseRequestFcn',@cancel_callback);
-colForm = repmat({''},1,nfields); colForm{1} = {' ','Exp','Ins'};
-colEdit = false(1,nfields); colEdit([1,3]) = true;
-huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ],'ColumnName',colnames,...
-    'Data',C,'ColumnFormat',colForm,'ColumnEditable',colEdit,'CellEditCallback',@editCell);
-F = cell(2,nfields); F(:,1:2) = {'Exp','EXP';'Ins','INS'};
-colEdit = true(1,nfields); colEdit(1) = false;
-htfilt = uitable(hf,'Position',[ 1 , fheight-90 , fwidth , 90 ],'ColumnName',colnames,...
-    'Data',F,'ColumnEditable',colEdit,'CellEditCallback',@applyFilter);
+    'Name','Select DICOMcatalog data for processing:');%,'CloseRequestFcn',@cancel_callback);
+
+colEdit = false(1,nfields); colEdit([1,2,4]) = true;
+colWidth = repmat({'auto'},1,nfields); colWidth(1:2) = {40,40};
+huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ], 'Data',C,...
+    'ColumnEditable',colEdit,'CellEditCallback',@editCell,'ColumnWidth',colWidth);
+
+dtypes = cell(1,nfields-2);
+for i_fld = 1:nfields-2
+    dtypes{i_fld} = class(C.(colnames{i_fld+2}));
+end
+F = table('Size',[2,nfields-1],'VariableTypes',[{'cell'},dtypes],'VariableNames',[{'Tag'},colnames(3:end)]);
+F(:,1:2) = {'Exp','EXP';'Ins','INS'};
+htfilt = uitable(hf,'Position',[ 1 , fheight-90 , fwidth , 90 ],...
+    'Data',F,'ColumnEditable',[false,true(1,nfields-2)],'CellEditCallback',@applyFilter);
+
 uibutton(hf,'Position',[fwidth-50,1,50,20],...
     'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
 uibutton(hf,'Position',[fwidth-100-gap,1,50,20],...
@@ -126,6 +100,7 @@ bgs_red = uistyle('BackgroundColor','#ffc4c4');
 
 gp_valid = true(ngroups,1);
 
+pause(1);
 applyFilter;
 
 %% End script when window closes
@@ -156,65 +131,45 @@ end
         
         if nargin==0 % filter all
             rowi = 1:2;
-            coli = 2:nfields;
+            varnames = htfilt.ColumnName(2:end);
         elseif nargin==2 % filter single
             rowi = eventdata.Indices(1);
-            coli = eventdata.Indices(2);
+            varnames = htfilt.ColumnName(eventdata.Indices(2));
         end
         
         % Set tags:
-        tag = huit.Data(:,1);
         for i = rowi
-            tag(strcmp(tag,htfilt.Data{i,1})) = {''};
             TF = true(nscans,1);
-            for j = coli
-                if ~isempty(htfilt.Data{i,j})
-                    TF = TF & contains(C(:,j),htfilt.Data{i,j});
+            for j = 1:length(varnames)
+                tname = varnames{j};
+                if iscell(htfilt.Data.(tname)) && ~isempty(htfilt.Data.(tname){i})
+                    TF = TF & contains(C.(tname),htfilt.Data.(tname){i});
+                elseif isnumeric(htfilt.Data.(tname)) && htfilt.Data.(tname)(i)
+                    TF = TF & (C.(tname)==htfilt.Data.(tname)(i));
                 end
             end
-            tag(TF) = htfilt.Data(i,1);
+            huit.Data.(htfilt.Data{i,1}{1}) = TF;
         end
-        huit.Data(:,1) = tag;
+
         checkValid;
-        
-%         for i_gp = 1:ngroups
-%             % Try to find Ins/Exp tags:
-%             idx = find(ugroups_ic==i_gp);
-%             tC = C(idx,ci_SeriesDescription);
-%             gp_valid(i_gp) = true;
-%             i_exp = find(contains(tC,'exp','IgnoreCase',true),1);
-%             if ~isempty(i_exp)
-%                 C{idx(i_exp),1} = 'Exp';
-%                 gp_valid(i_gp) = ~gp_valid(i_gp);
-%             end
-%             i_ins = find(contains(tC,'ins','IgnoreCase',true),1);
-%             if ~isempty(i_ins)
-%                 C{idx(i_ins),1} = 'Ins';
-%                 gp_valid(i_gp) = ~gp_valid(i_gp);
-%             end
-%         end
     end
     function editCell(hObject,eventdata)
-        if eventdata.Indices(2)==1
+        if ismember(eventdata.Indices(2),[1,2])
             % Edited Tag
             checkValid(hObject);
-        else 
-            % Edited PatientID
-            if isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once'))
-                % Set ID for all scans in this case group:
-                hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),3) = {eventdata.NewData};
-            else
-                warning('Invalid PatientID, try again.');
-                hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
-            end
+        elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) % Edited PatientID
+            % Set ID for all scans in this case group:
+            hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),3) = {eventdata.NewData};
+        else
+            warning('Invalid PatientID, try again.');
+            hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
         end
     end
     function checkValid(~)
         for i = 1:ngroups
             irow = find(ugroups_ic==i);
-            tags = huit.Data(irow,1);
-            n_exp = nnz(strcmp(tags,'Exp'));
-            n_ins = nnz(strcmp(tags,'Ins'));
+            n_exp = nnz(huit.Data.Exp(irow));
+            n_ins = nnz(huit.Data.Ins(irow));
             gp_valid(i) = (n_exp==n_ins && ismember(n_exp,[0,1]));
             if ~gp_valid(i)
                 addStyle(huit,bgs_red,'row',irow);

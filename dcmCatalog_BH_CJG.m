@@ -63,6 +63,9 @@ if opath~=0
         C(idir+1,:) = [D(idir),tC(1:(end-1)),{dd(1),dd(2),length(F{idir})}];
     end
     delete(hw);
+
+    % Convert cell array to table:
+    C = cell2table(C(2:end,:),'VariableNames',C(1,:));
     
     % Choose where to save results:
     [fname,fpath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
