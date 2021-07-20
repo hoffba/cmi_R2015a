@@ -117,13 +117,13 @@ else
     selected_data = struct('PatientName',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
     for ig = 1:ngroups
         g_ind = ugroups_ic==ig;
-        tC = C( g_ind & ismember(C(:,1),{'Exp','Ins'}) ,:);
+        tC = C( g_ind & (C.Exp | C.Ins) ,:);
         if isempty(tC)
             empty_flag(ig) = true;
         else
-            selected_data(ig).PatientName = C{find(g_ind,1),3};
-            selected_data(ig).StudyDate = num2str(C{find(g_ind,1),4});
-            selected_data(ig).Scans = cell2struct(tC, colnames , 2);
+            selected_data(ig).PatientName = tC.PatientName{1};
+            selected_data(ig).StudyDate = tC.StudyDate{1};
+            selected_data(ig).Scans = table2struct([tC(tC.Exp,3:end);tC(tC.Ins,3:end)]);
         end
     end
     selected_data(empty_flag) = [];
