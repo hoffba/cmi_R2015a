@@ -83,15 +83,16 @@ colWidth = repmat({'auto'},1,nfields); colWidth(1:2) = {40,40};
 huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ], 'Data',C,...
     'ColumnEditable',colEdit,'CellEditCallback',@editCell,'ColumnWidth',colWidth);
 
-dtypes = cell(1,nfields-2);
-for i_fld = 1:nfields-2
-    dtypes{i_fld} = class(C.(colnames{i_fld+2}));
-end
-F = table('Size',[2,nfields-1],'VariableTypes',[{'cell'},dtypes],'VariableNames',[{'Tag'},colnames(3:end)]);
-F(:,1:2) = {'Exp','EXP';'Ins','INS'};
+% dtypes = cell(1,nfields-2);
+% for i_fld = 1:(nfields-2)
+%     dtypes{i_fld} = class(C.(colnames{i_fld+2}));
+% end
+F = table('Size',[2,nfields-1],'VariableTypes',repmat({'cellstr'},1,nfields-1),'VariableNames',[{'Tag'},colnames(3:end)]);
+F.Tag = {'Exp';'Ins'};
 htfilt = uitable(hf,'Position',[ 1 , fheight-90 , fwidth , 90 ],...
     'Data',F,'ColumnEditable',[false,true(1,nfields-2)],'CellEditCallback',@applyFilter);
 
+uibutton(hf,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
 uibutton(hf,'Position',[fwidth-50,1,50,20],...
     'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
 uibutton(hf,'Position',[fwidth-100-gap,1,50,20],...
@@ -142,14 +143,18 @@ end
         
         % Set tags:
         for i = rowi
-            TF = true(nscans,1);
-            for j = 1:length(varnames)
-                tname = varnames{j};
-                if iscell(htfilt.Data.(tname)) && ~isempty(htfilt.Data.(tname){i})
-                    TF = TF & contains(C.(tname),htfilt.Data.(tname){i});
-                elseif isnumeric(htfilt.Data.(tname)) && htfilt.Data.(tname)(i)
-                    TF = TF & (C.(tname)==htfilt.Data.(tname)(i));
+            if any(~cellfun(@isempty,table2cell(htfilt.Data(i,2:end))))
+                TF = true(nscans,1);
+                for j = 1:length(varnames)
+                    tname = varnames{j};
+                    if iscell(htfilt.Data.(tname)) && ~isempty(htfilt.Data.(tname){i})
+                        TF = TF & contains(C.(tname),htfilt.Data.(tname){i});
+                    elseif isnumeric(htfilt.Data.(tname)) && htfilt.Data.(tname)(i)
+                        TF = TF & (C.(tname)==htfilt.Data.(tname)(i));
+                    end
                 end
+            else
+                TF = false(nscans,1);
             end
             huit.Data.(htfilt.Data{i,1}{1}) = TF;
         end
@@ -182,6 +187,10 @@ end
                 addStyle(huit,bgs_gray,'row',irow);
             end
         end
+    end
+    function clearTags(~,~)
+        huit.Data(:,1:2) = {false};
+        checkValid;
     end
     function done_callback(hObject,~)
         % Check that each timepoint has Ins/Exp selected (and only one of each)
