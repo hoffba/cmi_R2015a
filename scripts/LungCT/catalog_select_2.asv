@@ -22,9 +22,9 @@ if nargin==0 || isempty(C)
         return;
     elseif answer == 1
         C = dcmCatalog_BH_CJG;
-%         if ~istable(C)
-%             C = cell2table(C);
-%         end
+        if ~istable(C)
+            C = cell2table(C);
+        end
     else
         C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
     end
@@ -33,6 +33,7 @@ if ischar(C)
     if exist(C,'file') && strcmp(C(end-3:end),'.csv')
         iopt = detectImportOptions(C);
         C = readtable(C,iopt);
+%         C = cmi_csvread(C);
     else
         error('Invalid input string. Must be path to DICOMcatalog.csv file.');
     end

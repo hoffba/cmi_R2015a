@@ -24,7 +24,7 @@ classdef RegClass < handle
         cmiObj           % set of two CMIclass objects (constructor)
                          %       (1) Reference Image
                          %       (2) Homologous Image
-        points = cell(1,2); % {1 x 2}[n x 3] control points in [x,y,z] index coordinates
+        points = cell(1,2); % {1 x 2}[n x 3] control points in spatial coordinates
         hpts = nan(1,2); % handles to point plots
         T0defVal = 0;      % Default image value for the OneShot
         
@@ -122,18 +122,21 @@ classdef RegClass < handle
         end
         % Listener for updating points list
         function listenPoints(self,~,~)
-            hlist = [self.h.list_ref,self.h.list_hom];
-            for i = 1:2
-                np = size(self.points{i},1);
-                if np
-                    % Convert points from index to spatial coordinates
-                    p = [self.points{i},ones(np,1)]*self.cmiObj(i).img.orient';
-                    set(hlist(i),'String',num2str(p(:,1:3),'% .2f '),...
-                                 'Enable','on','Value',np);
-                else
-                    set(hlist(i),'String','','Enable','off','Value',1);
-                end
-            end
+            eopts = {'on','off'};
+            
+            str = eopts{1+isempty(self.points{1})};
+            % convert points from indices to image geometry:
+            p = [self.points{1},1]*self.cmiObj(1).img.orient';
+            set(self.h.list_ref,'String',num2str(p(1:3),'% .2f '),...
+                               'Enable',str,...
+                               'Value',max(size(p,1),1));
+                           
+            str = eopts{1+isempty(self.points{2})};
+            % convert points from indices to image geometry:
+            p = [self.points{2},1]*self.cmiObj(2).img.orient';
+            set(self.h.list_hom,'String',num2str(p(1:3),'% .2f '),...
+                               'Enable',str,...
+                               'Value',max(size(p,1),1));
         end
         % Listener for change in Initial Transform
         function listenT0(self,~,~)

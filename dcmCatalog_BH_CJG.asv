@@ -13,6 +13,10 @@ elseif ischar(filt)
     filt = {filt};
 end
 
+% dcmtags = {'PatientID','StudyID','StudyDate','SeriesNumber','AcquisitionNumber',...
+%     'StudyDescription','SeriesDescription','ScanOptions',...
+%     'SliceThickness','Rows','Columns','PixelSpacing'};
+
 dcmtags = {'PatientName','StudyID','StudyDate','PatientID','SeriesNumber','AccessionNumber',...
     'AcquisitionNumber','StudyDescription','SeriesDescription',...
     'ScanOptions','FilterType','ConvolutionKernel','Manufacturer','KVP',...
@@ -22,6 +26,7 @@ vtype = {'cellstr','cellstr','cellstr','cellstr','cellstr','double','cellstr',..
     'double','double','double','double','double','double','double','double','double'};
 
 nfld = length(dcmtags);
+% C = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'}];
 
 % Find folders containing DICOMs
 opath = uigetdir(pwd,'Select folder containing all DICOMS:');
@@ -38,6 +43,7 @@ if opath~=0
     vnames = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'}];
     C = table('Size',[ndir,numel(vnames)],'VariableTypes',vtype,'VariableNames',vnames);
     flagx = false(ndir,1);
+%     C = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'};cell(ndir,nfld+4)];
     for idir = 1:ndir
         waitbar(idir/ndir,hw,['Processing folder ',num2str(idir),...
                          ' of ',num2str(ndir)]);
@@ -45,12 +51,14 @@ if opath~=0
         fname = fullfile(D{idir},F{idir}{1});
         if isdicom(fname)
             info = dicominfo(fname,'UseDictionaryVR',true);
+%             tC = cell(1,nfld);
             for ifld = 1:nfld
                 fieldname = dcmtags{ifld};
                 if isfield(info,fieldname)
                     
                     if strcmp(fieldname,'PatientName')
                         C.(fieldname){idir} = info.PatientName.FamilyName;
+%                         tC{ifld} = info.PatientName.FamilyName;
                     elseif strcmp(fieldname,'PixelSpacing')
                         C.dy(idir) = info.PixelSpacing(1);
                         C.dx(idir) = info.PixelSpacing(2);
@@ -61,17 +69,27 @@ if opath~=0
                         else
                             C.(fieldname){idir} = tval;
                         end
+%                         tC{ifld} = info.(dcmtags{ifld});
                     end
                 end
             end
             C.Slices(idir) = length(F{idir});
-            C.Directory(idir) = D(idir);
+            C.Directory{idir) = D(idir);
+%             if isempty(tC{end})
+%                 dd = nan(1,2);
+%             else
+%                 dd = tC{end};
+%             end
+%             C(idir+1,:) = [D(idir),tC(1:(end-1)),{dd(1),dd(2),length(F{idir})}];
         else
             flagx(idir) = true;
         end
     end
     delete(hw);
     C(flagx,:) = [];
+
+    % Convert cell array to table:
+%     C = cell2table(C(2:end,:),'VariableNames',C(1,:));
     
     % Choose where to save results:
     [fname,fpath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
@@ -79,5 +97,6 @@ if opath~=0
     if ischar(fpath)
         % Save results as CSV:
         writetable(C,fullfile(fpath,fname));
+%         cmi_csvwrite(fullfile(fpath,fname),C);
     end
 end
