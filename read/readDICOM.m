@@ -5,20 +5,19 @@ din = [];
 if nargin==2
     din = varargin{2};
 end
-if strncmp(version('-release'),'2016',4)
-    v = {'UseDictionaryVR',true};
-else
-    v = {};
-end
+% if strncmp(version('-release'),'2016',4)
+%     v = {'UseDictionaryVR',true};
+% else
+%     v = {};
+% end
 
 img = []; label = {}; fov = [];
 
 % Assumes DICOMS are stored by case in a folder
-ext = [];
 if isfolder(fname)
     fpath = fname;
 elseif exist(fname,'file')==2
-    [fpath,~,ext] = fileparts(fname);
+    fpath = fileparts(fname);
 else
     error('Invalid input for readDICOM: %s',fname);
 end
@@ -32,7 +31,7 @@ if ind
     % DICOM names are stored in "DICOMDIR" file
 %     hp = waitbar(0,'Reading DICOMDIR ...');
     fprintf('\nReading DICOMDIR ...\n');
-    tinfo = dicominfo(fullfile(fpath,fname{ind}),v{:});
+    tinfo = dicominfo(fullfile(fpath,fname{ind}),'UseDictionaryVR',true);
     fname = fieldnames(tinfo.DirectoryRecordSequence);
     nf = length(fname);
     ind = false(1,nf);
@@ -95,7 +94,7 @@ for ifn = 1:nf
     end
     
     % Load DICOM file info:
-    tinfo = dicominfo(fullfile(fpath,fname{ifn}),v{:});
+    tinfo = dicominfo(fullfile(fpath,fname{ifn}),'UseDictionaryVR',true);
     if (ifn==1) % Check manufacturer to read private tags:
         ddir = fileparts(which('cmi'));
         if isfield(tinfo,'Manufacturer')
@@ -112,7 +111,7 @@ for ifn = 1:nf
         else
             dicomdict('factory');
         end
-        tinfo = dicominfo(fullfile(fpath,fname{ifn}),v{:});
+        tinfo = dicominfo(fullfile(fpath,fname{ifn}),'UseDictionaryVR',true);
     end
     
     if isfield(tinfo,'Modality')

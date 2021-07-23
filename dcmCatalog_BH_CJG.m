@@ -48,7 +48,6 @@ if opath~=0
             for ifld = 1:nfld
                 fieldname = dcmtags{ifld};
                 if isfield(info,fieldname)
-                    
                     if strcmp(fieldname,'PatientName')
                         C.(fieldname){idir} = info.PatientName.FamilyName;
                     elseif strcmp(fieldname,'PixelSpacing')
@@ -57,7 +56,11 @@ if opath~=0
                     else
                         tval = info.(fieldname);
                         if isnumeric(tval)
-                            C.(fieldname)(idir) = tval;
+                            if isempty(tval)
+                                C.(fieldname)(idir) = nan;
+                            else
+                                C.(fieldname)(idir) = tval;
+                            end
                         else
                             C.(fieldname){idir} = tval;
                         end
