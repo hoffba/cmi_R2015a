@@ -23,7 +23,13 @@ if (nargin>1) && ismember(Tflag,0:3) && (size(Y,1)==size(X,1))
     X = X(1:npts,:);
     
     if Tflag==3 % Full Affine
-                
+        
+        x = reshape(X',[],1);
+        y = [ Y,ones(npts,1),zeros(npts,ndim*(ndim+1)),Y,ones(npts,1),...
+              zeros(npts,ndim*(ndim+1)),Y,ones(npts,1)];
+        y = reshape(y',ndim*(ndim+1),npts*ndim)';
+        M = pinv(y)*x;
+        
         % Linear least squares solution for full affine:
         X = [X,ones(npts,1)];
         M = [Y'*X/(X'*X);zeros(1,ndim),1];

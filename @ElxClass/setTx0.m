@@ -58,9 +58,9 @@ elseif (nargin>3)
     t.Size = p.Results.Size;
     t.Index = zeros(1,3);
     t.Spacing = p.Results.Spacing;
-    t.Origin = p.Results.Orient(1:3,4)';
+    t.Origin = p.Results.Orient([2,1,3],4)';
     t.CenterOfRotationPoint = zeros(1,3);
-    t.Direction = reshape(p.Results.Orient(1:3,1:3)*diag(1./p.Results.Spacing),1,[]);
+    t.Direction = reshape(p.Results.Orient([2,1,3],[2,1,3])*diag(1./p.Results.Spacing([2,1,3])),1,[]);
     t.UseDirectionCosines = 'true';
     t.ResampleInterpolator = 'FinalBSplineInterpolator';
     t.FinalBSplineInterpolationOrder = 3;

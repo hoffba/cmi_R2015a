@@ -50,7 +50,7 @@ end
 %     T = [ M(1:2,3) ; mean(hompts(:,3))-mean(refpts(:,3)) ];
 %     M = [ A , T ; 0 0 0 1 ];
 % else
-    M = pts2T(hompts(:,1:3),refpts(:,1:3),val); % ref/hom backwards because Elastix works on inverse
+    M = pts2T(hompts(:,[2,1,3]),refpts(:,[2,1,3]),val); % ref/hom backwards because Elastix works on inverse
     A = M(1:3,1:3);
     T = M(1:3,4);
 % end
