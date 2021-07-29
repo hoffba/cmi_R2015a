@@ -25,9 +25,9 @@ if (nargin >= 3) && ~isempty(d) && isnumeric(d) ...
     end
     
     if ok
-        if ischar(fname)
-            fname = {fname};
-        end
+%         if ischar(fname)
+%             fname = {fname};
+%         end
         status = true;
         % Load new mask
         [tmask,~] = cmi_load(0,d,fname);

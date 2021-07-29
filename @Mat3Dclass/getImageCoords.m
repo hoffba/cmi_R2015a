@@ -6,18 +6,22 @@ function xyz = getImageCoords(self,ind,iflag)
 
 d = self.dims(1:3);
 
-n = cross(self.dircos(1:3),self.dircos(4:6));
-M = [reshape(self.dircos,3,2),n',self.slcpos';zeros(1,3),1];
+% n = cross(self.dircos(1:3),self.dircos(4:6));
+% M = [reshape(self.dircos,3,2),n',self.slcpos';zeros(1,3),1];
+M = self.orient;
 
 if nargin==1
     % Return all spatial coordinates of image:
     
     np = prod(d);
-    [Y,X,Z] = meshgrid((0:d(2)-1)*self.voxsz(2),...
-                       (0:d(1)-1)*self.voxsz(1),...
-                       (0:d(3)-1)*self.voxsz(3));
-    xyz = M * [reshape(cat(4,X,Y,Z),np,3)';ones(1,np)];
-    xyz = reshape(xyz(1:3,:)',[d,3]);
+%     [Y,X,Z] = meshgrid((0:d(2)-1)*self.voxsz(2),...
+%                        (0:d(1)-1)*self.voxsz(1),...
+%                        (0:d(3)-1)*self.voxsz(3));
+%     xyz = M * [reshape(cat(4,X,Y,Z),np,3)';ones(1,np)];
+%     xyz = reshape(xyz(1:3,:)',[d,3]);
+    [Y,X,Z] = meshgrid((1:d(2)),(1:d(1)),(1:d(3)));
+    xyz = [reshape(cat(4,X,Y,Z),np,3),ones(np,1)]*M';
+    xyz = reshape(xyz(1:3,:),[d,3]);
 elseif (nargin==2) || ~iflag
     % Return only specified coordinates:
     

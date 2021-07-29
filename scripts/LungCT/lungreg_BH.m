@@ -129,7 +129,7 @@ regObj.cmiObj(2).clearMask;
 disp([ID,': Enqueue Registration:'])
 regObj.cmiObj(1).setVec(1);
 regObj.cmiObj(2).setVec(1);
-regObj.runElx(false);
+regObj.runElx(true);
 pause(1);
 
 

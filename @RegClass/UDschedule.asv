@@ -5,7 +5,8 @@ function UDschedule(self,hObject,edata)
 if nargin==1
     % Re-set Schedule to empty
     self.elxObj.rmStep;
-    set(self.h.listbox_Tforms,'String',{},'Enable','off','Value',1);
+    self.h.listbox_Tforms.String = {};
+    self.h.listbox_Tforms.Enable = 'of
 elseif ishghandle(hObject)
     C = {};
     tag = get(hObject,'Tag');

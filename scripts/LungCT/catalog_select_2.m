@@ -21,10 +21,7 @@ if nargin==0 || isempty(C)
     if isempty(answer)
         return;
     elseif answer == 1
-        C = dcmCatalog_BH_CJG;
-%         if ~istable(C)
-%             C = cell2table(C);
-%         end
+        C = dcmCatalog_BH_CJG(fpath,'DICOMcatalog.csv');
     else
         C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
     end
@@ -36,7 +33,7 @@ if ischar(C)
     else
         error('Invalid input string. Must be path to DICOMcatalog.csv file.');
     end
-elseif ~iscell(C)
+elseif ~istable(C)
     error('Invalid input type.');
 else
     fpath = pwd;

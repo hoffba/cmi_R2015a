@@ -1,16 +1,44 @@
-function C = dcmCatalog_BH_CJG(filt)
+function T = dcmCatalog_BH_CJG(varargin)
 % Catalogs desired DICOM header values
+% Syntax:
+%   T = dcmCatalog_BH_CJG;
+%   T = dcmCatalog_BH_CJG(filt);
+%   T = dcmCatalog_BH_CJG(opath); 
+%   T = dcmCatalog_BH_CJG(opath,svname);
+%   T = dcmCatalog_BH_CJG(opath,svname,filt);
+%
 % Inputs (optional):
-%       extout = extension of files to save
-%       pathout = directory for saving converted files
+%       filt = cellstr with filename filters
+%       opath = directory for searching for dicoms and saving results
+%       svname = filename for output catalog .csv file
 
-% Input: filt = string or cell array of strings for file name filters
-%               e.g. '*.dcm' or {'*.1','*.dcm'}
+opath = '';
+svname = '';
+filt = {'*.1','*.dcm',''};
+if nargin
+    if iscellstr(varargin{1})
+        filt = varargin{1};
+    else
+        opath = varargin{1};
+    end
+end
+if nargin>1
+    svname = varargin{2};
+end
+if nargin==3
+    filt = varargin{3};
+end
+p = inputParser;
+p.addRequired('filt',@iscellstr);
+p.addRequired('opath',@(x) ischar(x) && isfolder(x) );
+p.addRequired('svname',@(x) ischar(x) && isempty(regexp(x, '[/\*:?"<>|]', 'once')) );
+p.parse(filt,opath,svname);
+filt = p.Results.filt;
+opath = p.Results.opath;
+svname = p.Results.svname;
 
-if nargin==0 || ~(iscellstr(filt) || ischar(filt))
-    filt = {'*.1','*.dcm',''};
-elseif ischar(filt)
-    filt = {filt};
+if isempty(opath)
+    opath = uigetdir(pwd,'Select folder containing all DICOMS:');
 end
 
 dcmtags = {'PatientName','StudyID','StudyDate','PatientID','SeriesNumber','AccessionNumber',...
@@ -20,11 +48,9 @@ dcmtags = {'PatientName','StudyID','StudyDate','PatientID','SeriesNumber','Acces
 vtype = {'cellstr','cellstr','cellstr','cellstr','cellstr','double','cellstr',...
     'double','cellstr','cellstr','cellstr','cellstr','cellstr','cellstr','double',...
     'double','double','double','double','double','double','double','double','double'};
-
 nfld = length(dcmtags);
 
 % Find folders containing DICOMs
-opath = uigetdir(pwd,'Select folder containing all DICOMS:');
 if opath~=0
     hw = waitbar(0,'Finding DICOM folders ...');
     [D,F] = dirtree(opath,filt); % D: cell array of strings (directories)
@@ -36,7 +62,7 @@ if opath~=0
 
     % Loop over all DICOM directories
     vnames = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'}];
-    C = table('Size',[ndir,numel(vnames)],'VariableTypes',vtype,'VariableNames',vnames);
+    T = table('Size',[ndir,numel(vnames)],'VariableTypes',vtype,'VariableNames',vnames);
     flagx = false(ndir,1);
     for idir = 1:ndir
         waitbar(idir/ndir,hw,['Processing folder ',num2str(idir),...
@@ -49,38 +75,40 @@ if opath~=0
                 fieldname = dcmtags{ifld};
                 if isfield(info,fieldname)
                     if strcmp(fieldname,'PatientName')
-                        C.(fieldname){idir} = info.PatientName.FamilyName;
+                        T.(fieldname){idir} = info.PatientName.FamilyName;
                     elseif strcmp(fieldname,'PixelSpacing')
-                        C.dy(idir) = info.PixelSpacing(1);
-                        C.dx(idir) = info.PixelSpacing(2);
+                        T.dy(idir) = info.PixelSpacing(1);
+                        T.dx(idir) = info.PixelSpacing(2);
                     else
                         tval = info.(fieldname);
                         if isnumeric(tval)
                             if isempty(tval)
-                                C.(fieldname)(idir) = nan;
+                                T.(fieldname)(idir) = nan;
                             else
-                                C.(fieldname)(idir) = tval;
+                                T.(fieldname)(idir) = tval;
                             end
                         else
-                            C.(fieldname){idir} = tval;
+                            T.(fieldname){idir} = tval;
                         end
                     end
                 end
             end
-            C.Slices(idir) = length(F{idir});
-            C.Directory(idir) = D(idir);
+            T.Slices(idir) = length(F{idir});
+            T.Directory(idir) = D(idir);
         else
             flagx(idir) = true;
         end
     end
     delete(hw);
-    C(flagx,:) = [];
+    T(flagx,:) = [];
     
     % Choose where to save results:
-    [fname,fpath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
+    if isempty(svname)
+        [svname,opath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
+    end
     
-    if ischar(fpath)
+    if svname
         % Save results as CSV:
-        writetable(C,fullfile(fpath,fname));
+        writetable(T,fullfile(opath,svname));
     end
 end

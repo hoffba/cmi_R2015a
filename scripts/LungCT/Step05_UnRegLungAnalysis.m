@@ -27,6 +27,7 @@ else
     regObj.cmiObj(1).img.saveImg(ind,SNfname);
 %     niftiwrite(int8(atMap),fullfile(procdir,fname_ScatNet),data(1).voi.info,'Compressed',true);
 end
+regObj.cmiObj(1).setVec(1);
 
 %% Calculate  AT, Emph and PD
 filt_flag = length(find(std(single(regObj.cmiObj(1).img.mat(:,:,:,1)),1,[1 2])~=0)') == regObj.cmiObj(1).img.dims(3);

@@ -10,16 +10,18 @@ if self.cmiObj(1).img.mask.check && self.cmiObj(2).img.mask.check
     sz = zeros(2,3);
     cent = zeros(2,3);
     for i = 1:2
-        orient = self.cmiObj(i).img.orient;
         d = self.cmiObj(i).img.dims(1:3);
-        [vy,vx,vz] = ind2sub(d,find(self.cmiObj(i).img.mask.mat));
+        [vx,vy,vz] = ind2sub(d,find(self.cmiObj(i).img.mask.mat));
         n = length(vy);
-        xyz = [vx,vy,vz,ones(n,1)] * orient;
+        xyz = [vx,vy,vz,ones(n,1)] * self.cmiObj(i).img.orient';
         xyz(:,4) = [];
         sz(i,:) =  max(xyz) - min(xyz); % extent
         cent(i,:) = sum(xyz)/n; % centroid
     end
-    x = [ reshape(diag(sz(2,:)./sz(1,:)),1,[]) , diff(cent) ];
+    S = sz(2,:)./sz(1,:);
+    T = cent(2,:) - S.*cent(1,:);
+    x = [ reshape(diag(S),1,[]) , T ];
+%     x = [ reshape(diag(sz(2,:)./sz(1,:)),1,[]) , diff(cent) ];
     
 % OLD VERSION - from MHD use of image-centric coordinates assumed
 %     % Scale / Translate based on VOI limits
