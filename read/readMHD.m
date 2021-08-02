@@ -22,6 +22,7 @@ if fid>2
     hstr = strtrim(strsplit(fread(fid,inf,'*char')',{'\n','='}));
     fclose(fid);
     
+    hstr(cellfun(@isempty,hstr)) = [];
     istart = find(strcmp(hstr,'ObjectType'),1);
     info = struct(hstr{istart:end});
     flds = fieldnames(info);
@@ -47,7 +48,13 @@ if fid>2
     else
         nv = 1;
     end
-    orient = [reshape(info.TransformMatrix,3,3)'*diag(voxsz),info.Position';0 0 0 1];
+    pos = zeros(1,3);
+    if isfield(info,'Position')
+        pos = info.Position;
+    elseif isfield(info,'Offset')
+        pos = info.Offset;
+    end
+    orient = [reshape(info.TransformMatrix,3,3)'*diag(voxsz),pos';0 0 0 1];
     Etype = info.ElementType;
 
     if ~exist(rawfname,'file')
