@@ -2,10 +2,12 @@
 function UDschedule(self,hObject,edata)
 % Handle Callbacks from Elastix Schedule-related GUI objects
 
-if (nargin==1) && self.guicheck
+if (nargin==1)
     % Re-set Schedule to empty
     self.elxObj.rmStep;
-    set(self.h.listbox_Tforms,'String',{},'Enable','off','Value',1);
+    if self.guicheck
+        set(self.h.listbox_Tforms,'String',{},'Enable','off','Value',1);
+    end
 elseif ishghandle(hObject)
     C = {};
     tag = get(hObject,'Tag');
