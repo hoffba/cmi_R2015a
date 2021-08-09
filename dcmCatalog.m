@@ -1,104 +1,114 @@
-function C = dcmCatalog
-% Catalogs desired DICOM header values
+function T = dcmCatalog_BH_CJG(varargin)
+% Catalogs desired DICOM metadata
+% Syntax:
+%   T = dcmCatalog_BH_CJG;
+%   T = dcmCatalog_BH_CJG(filt);
+%   T = dcmCatalog_BH_CJG(opath); 
+%   T = dcmCatalog_BH_CJG(opath,svname);
+%   T = dcmCatalog_BH_CJG(opath,svname,filt);
+%
 % Inputs (optional):
-%       extout = extension of files to save
-%       pathout = directory for saving converted files
+%       filt = cellstr with filename filters
+%       opath = directory for searching for dicoms and saving results
+%       svname = filename for output catalog .csv file
 
-% Input: filt = string or cell array of strings for file name filters
-%               e.g. '*.dcm' or {'*.1','*.dcm'}
+opath = '';
+svname = '';
+filt = {'*.1','*.dcm',''};
+if nargin
+    if iscellstr(varargin{1})
+        filt = varargin{1};
+    else
+        opath = varargin{1};
+    end
+end
+if nargin>1
+    svname = varargin{2};
+end
+if nargin==3
+    filt = varargin{3};
+end
+p = inputParser;
+p.addRequired('filt',@iscellstr);
+p.addRequired('opath',@(x) ischar(x) && isfolder(x) );
+p.addRequired('svname',@(x) ischar(x) && isempty(regexp(x, '[/\*:?"<>|]', 'once')) );
+p.parse(filt,opath,svname);
+filt = p.Results.filt;
+opath = p.Results.opath;
+svname = p.Results.svname;
 
-% if nargin==0
-    filt = {'*.1','*.dcm',''};
-% elseif ischar(filt)
-%     filt = {filt};
-% end
+if isempty(opath)
+    opath = uigetdir(pwd,'Select folder containing all DICOMS:');
+end
 
-hdrstr = {'PatientID','StudyID','StudyDate','SeriesNumber','AcquisitionNumber',...
-    'StudyDescription','SeriesDescription',...
-    'ScanOptions','FilterType','ConvolutionKernel','KVP',...
-    'SliceThickness','Rows','Columns','PixelSpacing'};
-nfld = length(hdrstr);
-C = [{'Directory'},hdrstr(1:(end-1)),{'dy','dx','Slices'}];
+dcmtags = {'PatientName','StudyID','StudyDate','PatientID','SeriesNumber','AccessionNumber',...
+    'AcquisitionNumber','StudyDescription','SeriesDescription','ImageType',...
+    'ScanOptions','FilterType','ConvolutionKernel','Manufacturer','KVP',...
+    'XRayTubeCurrent','ExposureTime','Exposure','SliceThickness','Rows','Columns','PixelSpacing'};
+vtype = {'cellstr','cellstr','cellstr','cellstr','cellstr','double','cellstr',...
+    'double','cellstr','cellstr','cellstr','cellstr','cellstr','cellstr','cellstr','double',...
+    'double','double','double','double','double','double','double','double','double'};
+nfld = length(dcmtags);
 
 % Find folders containing DICOMs
-opath = uigetdir(pwd,'Select folder containing all DICOMS:');
 if opath~=0
     hw = waitbar(0,'Finding DICOM folders ...');
-    D = dirtree(opath,filt); % D: cell array of strings (directories)
+    [D,F] = dirtree(opath,filt); % D: cell array of strings (directories)
+    % Remove DICOMDIR
+    ind = cellfun(@(x)(length(x)==1)&&strcmp(x{1},'DICOMDIR'),F);
+    F(ind) = [];
+    D(ind) = [];
     ndir = length(D);
 
     % Loop over all DICOM directories
+    vnames = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'}];
+    T = table('Size',[ndir,numel(vnames)],'VariableTypes',vtype,'VariableNames',vnames);
+    flagx = false(ndir,1);
     for idir = 1:ndir
         waitbar(idir/ndir,hw,['Processing folder ',num2str(idir),...
                          ' of ',num2str(ndir)]);
-        fnames = [];
-        for ifilt = 1:length(filt)
-            tfnames = dir(fullfile(D{idir},filt{ifilt}));
-            if isempty(filt{ifilt})
-                tfnames(~cellfun(@isempty,strfind({tfnames(:).name},'.'))) = [];
-                tfnames([tfnames(:).isdir]) = [];
-            end
-            fnames = cat(1,fnames,tfnames);
-        end
-        nf = length(fnames);
-        if nf~=0
-            fields = {}; clear('dinfo');
-            for ifn = nf:-1:1
-                tinfo = dicominfo(fullfile(D{idir},fnames(ifn).name));
-                tfields = fieldnames(tinfo);
-                newfields = setdiff(tfields,fields); enf = ~isempty(newfields);
-                misfields = setdiff(fields,tfields); emf = ~isempty(misfields);
-                if (ifn==nf)
-                    fields = tfields;
-                elseif (enf || emf)
-                    % Need to adjust info structure fields to match
-                    if emf
-                        for k = 1:length(misfields)
-                            tinfo.(misfields{k}) = [];
-                        end
-                    end
-                    if enf
-                        for k = 1:length(newfields)
-                            dinfo(ifn).(newfields{k}) = [];
-                        end
-                        fields = [fields;newfields]; %#ok<*AGROW>
-                        dinfo = orderfields(dinfo,tinfo);
+        
+        fname = fullfile(D{idir},F{idir}{1});
+        if isdicom(fname)
+            info = dicominfo(fname,'UseDictionaryVR',true);
+            for ifld = 1:nfld
+                fieldname = dcmtags{ifld};
+                if isfield(info,fieldname)
+                    if strcmp(fieldname,'PatientName')
+                        T.(fieldname){idir} = info.PatientName.FamilyName;
+                    elseif strcmp(fieldname,'PixelSpacing')
+                        T.dy(idir) = info.PixelSpacing(1);
+                        T.dx(idir) = info.PixelSpacing(2);
                     else
-                        tinfo = orderfields(tinfo,dinfo);
+                        tval = info.(fieldname);
+                        if isnumeric(tval)
+                            if isempty(tval)
+                                T.(fieldname)(idir) = nan;
+                            else
+                                T.(fieldname)(idir) = tval;
+                            end
+                        else
+                            T.(fieldname){idir} = tval;
+                        end
                     end
                 end
-                dinfo(ifn) = tinfo;
             end
-            % Find unique acquisition numbers
-            if isfield(dinfo,'AcquisitionNumber') ...
-                    && ~any(cellfun(@isempty,{dinfo(:).AcquisitionNumber}))
-                acqn = [dinfo(:).AcquisitionNumber];
-                acqu = unique(acqn);
-            else
-                acqn = 0; acqu = 0;
-            end
-            % Store relevant parameters for each acquisition
-            for j = 1:length(acqu)
-                ii = find(acqn==acqu(j));
-                tC = cell(1,nfld);
-                for ifld = 1:nfld
-                    if isfield(dinfo,hdrstr{ifld})
-                        tC{ifld} = dinfo(ii(1)).(hdrstr{ifld});
-                    end
-                end
-                if isempty(tC{end})
-                    dd = nan(1,2);
-                else
-                    dd = tC{end};
-                end
-                C = [C;D(idir),tC(1:(end-1)),{dd(1),dd(2),length(ii)}];
-            end
+            T.Slices(idir) = length(F{idir});
+            T.Directory(idir) = D(idir);
+        else
+            flagx(idir) = true;
         end
-        clear info
     end
     delete(hw);
-    [fname,path] = uiputfile('*.csv','Save Catalog Data:');
-    if fname~=0
-        cmi_csvwrite(fullfile(path,fname),C);
+    T(flagx,:) = [];
+    
+    % Choose where to save results:
+    if isempty(svname)
+        [svname,opath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
+    end
+    
+    if svname
+        % Save results as CSV:
+        writetable(T,fullfile(opath,svname));
     end
 end
