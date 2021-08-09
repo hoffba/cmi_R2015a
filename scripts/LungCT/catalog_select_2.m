@@ -1,7 +1,8 @@
 function [selected_data,fpath] = catalog_select_2(C)
 % GUI for selection of DICOM data from DICOMcatalog information
 %   For use in Ins/Exp CT analysis, looking for two matching scans per time
-% Input: C = cell array of DICOM information
+% Input: C = table of DICOM information
+%          OR = filename of catalog .csv to read in
 % Output: selected_data = structure containig DICOM info for selected data
 %                      .PatientID = patient name
 %                      .timepoint = structure array containing timepoint info
@@ -26,7 +27,7 @@ if nargin==0 || isempty(C)
         C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
     end
 end
-if ischar(C)
+if ischar(C) % Read from input filename
     if exist(C,'file') && strcmp(C(end-3:end),'.csv')
         iopt = detectImportOptions(C);
         C = readtable(C,iopt);
@@ -40,7 +41,6 @@ else
 end
 
 %% Validate table input:
-% Separate header from scan info:
 colnames = C.Properties.VariableNames;
 req_fields = {'SeriesDescription','PatientName','StudyDate','SeriesNumber'};
 i_member = ismember(req_fields,colnames);

@@ -19,7 +19,7 @@ function Main_Pipeline(catalog)
 if nargin==0
     catalog = [];
 end
-[cases, home_pwd] = catalog_select_2(catalog);
+[cases, home_pwd] = catalog_select(catalog);
 
 %% prepare Data Table with Dummy values
 dataTable = table;
