@@ -63,7 +63,9 @@ nfields = length(colnames);
 C = sortrows(C,{'PatientName','StudyDate','SeriesNumber'});
 
 % Find groups of scans with unique PatientName and StudyDate
-C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+if ~iscellstr(C.StudyDate)
+    C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+end
 [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate));
 ngroups = max(ugroups_ic);
 
