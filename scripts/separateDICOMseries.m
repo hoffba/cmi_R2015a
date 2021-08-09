@@ -18,11 +18,11 @@ for idir = 1:length(dnames)
     fnames = dir(fullfile(tpath,'*.dcm'));
     for i = 1:length(fnames)
         info = dicominfo(fullfile(tpath,fnames(i).name));
-        serUID = info.SeriesInstanceUID;
-        if ~isfolder(fullfile(tpath,serUID))
-            mkdir(fullfile(tpath,serUID));
+        svdir = info.SeriesNumber;
+        if ~isfolder(fullfile(tpath,svdir))
+            mkdir(fullfile(tpath,svdir));
         end
-        movefile(fullfile(tpath,fnames(i).name),fullfile(tpath,serUID));
+        movefile(fullfile(tpath,fnames(i).name),fullfile(tpath,svdir));
     end
     
 end
