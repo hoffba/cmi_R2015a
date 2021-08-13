@@ -1,5 +1,5 @@
 % ImageClass function
-function [vMean,vStD,vMed,vVol,nVox,VOIstats] = getStats(self,vec)
+function [vMean,vStD,vMed,vVol,nVox] = getStats(self,vec)
 % Calculates the following VOI statistics:
 %       Mean Value
 %       Standard Deviation
@@ -33,7 +33,6 @@ if self.check && self.mask.check
         nVox(i) = numel(tvals);
         vVol(i) = nVox(i) * prod(self.voxsz) /1e6;
     end
-    varNames = {'#Voxels', 'Vol (L)', 'Mean', 'StDev', 'Median'};
-    VOIstats = table(nVox',vVol', vMean',vStD',vMed','VariableNames',varNames);
+    VOIstats = table(nVox',vVol', vMean',vStD',vMed');
     assignin('base','VOIstats',VOIstats);
 end
