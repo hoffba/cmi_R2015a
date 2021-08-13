@@ -467,7 +467,7 @@ guidata(gcbo,handles);
 function edit_filtSize_Callback(hObject, ~, handles)
 val = sscanf(get(hObject,'String'),'%f %f %f');
 nv = length(val);
-if any(nv==(1:2))
+if any(nv==(1:3))
     if nv==1
         val = [val,val];
     end

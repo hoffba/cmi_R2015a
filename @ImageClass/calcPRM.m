@@ -17,7 +17,7 @@ if self.check && self.mask.check
             timg = ImageClass;
             timg.setMat(self.mat(:,:,:,tvec),...
                 cellfun(@num2str,num2cell(tvec),'UniformOutput',false),...
-                self.voxsz.*self.dims(1:3));
+                self.voxsz.*self.dims(1:3),self.orient,self.name); %CJG added 20210812
             timg.mask.merge('replace',self.mask.mat);
             timg.imgFilt(1:nvec,self.prm.filttype,{self.prm.filtstr});
             vals = timg.getMaskVals;
