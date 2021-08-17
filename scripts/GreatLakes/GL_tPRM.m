@@ -147,7 +147,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         ind = ~isfield(p,flds);
         if any(ind)
             error(['Invalid input. Missing:',repmat(' %s',1,nnz(ind))],flds{ind});
-        elseif ~(iscellstr(p.fn_prm) && iscellstr(p.fn_seg) && ischar(sv_path) ...
+        elseif ~(iscellstr(p.fn_prm) && iscellstr(p.fn_seg) && ischar(p.sv_path) ...
                 && (numel(p.fn_prm)==numel(p.fn_seg)))
             error('Invalid input. fn_prm and fn_seg must be cellstr with equal number of elements.');
         end
