@@ -179,7 +179,7 @@ function job_tPRM(fn_prm,fn_seg,sv_path)
 %         fn_seg = full filename of segmentation map (as seen by GL)
 %         sv_path = path to save resulting tPRM maps into
     
-    fn_base = regexp(fn_prm{1},'/([^./]+)\.','tokens');
+    fn_base = regexp(fn_prm,'/([^./]+)\.','tokens');
     fn_base = fn_base{1}{1};
 
     % Load PRM map
