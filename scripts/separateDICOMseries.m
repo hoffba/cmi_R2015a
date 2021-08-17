@@ -32,14 +32,14 @@ for idir = 1:length(dnames)
         end
     end
     
-    % Move DICOM files to new subfolders
+    % Move DICOM files to new subfolders    
     for i = 1:length(fnames)
         shortname = fullfile(dnames{idir},fnames(i).name);
         if ~strcmp(fnames(i).name,'DICOMDIR')
             fullname = fullfile(tpath,fnames(i).name);
             if isdicom(fullname)
                 info = dicominfo(fullname);
-                svdir = info.SeriesNumber;
+                svdir = num2str(info.SeriesNumber);
                 if ~isfolder(fullfile(tpath,svdir))
                     mkdir(fullfile(tpath,svdir));
                 end
