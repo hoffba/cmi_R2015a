@@ -109,32 +109,38 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         % Determine batch job inputs and save input file for GL execution:
         tstr = char(datetime('now','Format','yyyyMMddHHmmss'));
         tempdir = fullfile(LOC_turbo_path,'GreatLakes','temp');
-        fname_inputs = sprintf('batch_inputs_%s.mat',tstr);
+        fname_inputs = fullfile(tempdir,sprintf('batch_inputs_%s.mat',tstr));
         GL_turbo_dir = {'/nfs/turbo/umms-cgalban'};
         fn_prm = cellfun(@(x,y)strjoin([GL_turbo_dir,x(2:end),{y}],'/'),...
             shortpath_prm,fn_prm,'UniformOutput',false);
         fn_seg = cellfun(@(x,y)strjoin([GL_turbo_dir,x(2:end),{y}],'/'),...
             shortpath_seg,fn_seg,'UniformOutput',false);
         sv_path = strjoin([GL_turbo_dir,shortpath_sv{1}(2:end)],'/');
-        save(fullfile(tempdir,fname_inputs),'fn_prm','fn_seg','sv_path');
+        save(fname_inputs,'fn_prm','fn_seg','sv_path');
         
         % Write SBATCH file
         nf = numel(fn_prm);
-        fname = sprintf('GL_tPRM_%s.sh',tstr);
-        cores = min(nf,6);
-        mem = cores * 24;
-        write_sbatch(fullfile(tempdir,fname),fname,username,cores,mem,'GL_tPRM',...
-            strjoin([GL_turbo_dir,{'GreatLakes','temp',fname_inputs}],'/'));
+        pmem = 24; % max GB per process
+        ptime = 90; % max minutes per process
+        jobname = sprintf('GL_tPRM_%s',tstr);
+        fname = [jobname,'.sh'];
+        part_str = 'standard';
+        cores = min(min(nf,floor(180/pmem))+1,36);
+        mem = pmem * (cores-1);
+        walltime = ptime*ceil(nf/(cores-1));
+        write_sbatch(fullfile(tempdir,fname),jobname,'GL_tPRM',...
+            'partition',part_str, 'cores',cores, 'mem',mem, 'walltime',walltime,...
+            'username',username, 'inputs_fname',fname_inputs);
         
         % Run SBATCH
-        clipboard('copy',sprintf('cd /nfs/turbo/umms-cgalban/GreatLakes/temp && sbatch %s',fname));
+        sb_str = sprintf('cd /nfs/turbo/umms-cgalban/GreatLakes/temp && sbatch %s',fname);
+        clipboard('copy',sb_str);
         fprintf(['\n\n1) Use PuTTy to log onto Great Lakes:\n',...
                  '   Host Name: greatlakes.arc-ts.umich.edu\n',...
                  '   Login: Level 1\n',...
                  '2) Start SBATCH using terminal commands:\n',...
                  '   (ALREADY IN CLIPBOARD, just paste into PuTTy using middle mouse button)\n',...
-                 '   cd /nfs/turbo/umms-cgalban/GreatLakes/temp\n',...
-                 '   sbatch %s\n'],fname);
+                 '   ',sb_str,'\n'],fname);
         
     elseif ischar(inputs_fname) && exist(inputs_fname,'file') && strcmp(inputs_fname(end-3:end),'.mat')
         
@@ -160,12 +166,19 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         end
         
         % Wait for all jobs to complete
+        errflag = true(nf,1);
         for i = 1:nf
-            wait(job(i),'finished');
-            fprintf('Job %u finished.\n',i);
-            diary(job(i))
-%             getReport(job(i).Tasks(1).Error)
+            wait(job(i));
+            dt = minutes(job(i).FinishDateTime - job(i).StartDateTime);
+            fprintf('Job %u finished after %.1f minutes.\n',i,dt);
+            job(i).diary
+            if strcmp(job(i).State,'failed')
+                errflag(i) = false;
+                fprintf(job(i).Tasks(1).ErrorMessage);
+            end
         end
+        fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
+            mean(dt(errflag)),std(dt(errflag)));
         
     else
         error('Invalid input');
@@ -181,6 +194,13 @@ function job_tPRM(fn_prm,fn_seg,sv_path)
     
     fn_base = regexp(fn_prm,'/([^./]+)\.','tokens');
     fn_base = fn_base{1}{1};
+    if isfolder('/tmpssd')
+        tmpdir = '/tmpssd';
+    elseif isfolder('/tmp')
+        tmpdir = '/tmp';
+    else
+        tmpdir = sv_path;
+    end
 
     % Load PRM map
     fprintf('Loading PRM map: %s\n',fn_prm);
@@ -211,16 +231,26 @@ function job_tPRM(fn_prm,fn_seg,sv_path)
     
     % Generate MF values
     fprintf('Calculating Minkowski functionals ...\n');
-    p = minkowskiFun(seg,'thresh',1:nprm,'tmode','==','n',[10,10,10],'gridsp',[5,5,5],'voxsz',voxsz,'mask',seg);
+    p = minkowskiFun(prm_sub,'thresh',1:nprm,'tmode','==','n',[10,10,10],'gridsp',[5,5,5],'voxsz',voxsz,'mask',seg);
     
     % Re-grid, scale, and save as .nii.gz
     scale=[10000 10000 1e5 1e5];
     for iprm = 1:nprm
         for imf = 1:4
             fn_out = [fn_base,'_',prmclass(iprm).label,'_',MF_label{imf},'.nii'];
-            fprintf('Saving MF result: %s\n',fn_out);
+            svname = fullfile(tmpdir,fn_out);
+            fprintf('Saving MF result: %s.gz\n',svname);
             tprm = grid2img(p.MF(iprm,imf,:),p.ind,seg,3,1) * scale(imf);
-            niftiwrite(int16(tprm),fullfile(sv_path,fn_out),info_sv,'Compressed',true);
+            niftiwrite(int16(tprm),svname,info_sv,'Compressed',true);
+            if ~strcmp(tmpdir,sv_path)
+                fprintf('Moving to: %s\n   ... ',sv_path);
+                stat = movefile([svname,'.gz'],sv_path);
+                if stat
+                    fprintf('done\n');
+                else
+                    fprintf('failed\n');
+                end
+            end
         end
     end
 
