@@ -48,12 +48,12 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         else
             % User GUI for file selection:
             [fn_prm,fpath_prm] = uigetfile('*.prm.nii.gz','Select PRM data for processing:','MultiSelect','on');
-            if isempty(fn_prm)
-                return;
-            end
+            if isempty(fn_prm),return;end
             fn_prm = fullfile(fpath_prm,fn_prm);
             fn_seg = uigetdir(pwd,'Select folder containing corresponding lobe_segmentation.nii.gz files:');
+            if ~fn_seg,return;end
             sv_path = uigetdir(pwd,'Select folder for saving tPRM results:');
+            if ~sv_path,return;end
         end
         if ischar(fn_prm)
             fn_prm = {fn_prm};
@@ -88,21 +88,33 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         if all(flag_seg)
             error('No valid segmentation files were found.');
         elseif ~folder_flag
+            % Show files that weren't found
+            fprintf('%u segmentation files not found:\n',nnz(flag_seg));
+            fprintf('   %s\n',fn_seg{flag_seg});
             fn_prm(flag_seg) = [];
         end
         
         % Find corresponding segmentation files
         if folder_flag
-            fn_seg = cellfun(@(x)regexprep(x,'.prm.','.njh.lobe_segmentation.'),fn_prm,'UniformOutput',false);
-            fnames = fullfile(shortpath_seg{1}{:},fn_seg);
-            ind = ~cellfun(@(x)exist(x,'file'),fnames);
-            if all(ind)
+            nf = numel(fn_prm);
+            fn_seg = cell(nf,1);
+            flag_seg = false(nf,1);
+            for i = 1:nf
+                tname = dir(fullfile(shortpath_seg{1}{:},...
+                    [extractBefore(fn_prm{i},'.'),'*.lobe_segmentation.nii.gz']));
+                if isempty(tname)
+                    flag_seg(i) = true;
+                else
+                    fn_seg{i} = tname.name;
+                end
+            end
+            if all(flag_seg)
                 error('No valid segmentation files were found.');
-            elseif any(ind)
+            elseif any(flag_seg)
                 % Show files that weren't found
-                fprintf('%u segmentation files not found:\n',nnz(ind));
-                fprintf('   %s\n',fn_seg{ind});
-                fn_seg(ind) = [];
+                fprintf('%u segmentation files not found:\n',nnz(flag_seg));
+                fprintf('   %s\n',fn_seg{flag_seg});
+                fn_seg(flag_seg) = [];
             end
         end
 
@@ -173,7 +185,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         if ~isnan(jobnum)
             fprintf('Running job number %u of %u\n',jobnum,njobs);
         end
-        nf = length(p.fn_prm);
+        nf = numel(p.fn_prm);
         if ~isnan(jobnum)
             ind = round((nf/njobs)*[jobnum-1 jobnum]);
             ind = (ind(1)+1):ind(2);

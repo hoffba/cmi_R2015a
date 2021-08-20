@@ -15,6 +15,9 @@ newp = strsplit(newp,pathsep);
 % Remove .git folders:
 newp(contains(newp,'.git')) = [];
 
+% Remove OLD folders:
+newp(contains(newp,'OLD')) = [];
+
 % Remove directories already existing in the search path
 p = strsplit(path,pathsep);
 newp(ismember(newp,p)) = [];
