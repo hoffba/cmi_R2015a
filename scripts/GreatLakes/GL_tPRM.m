@@ -118,19 +118,25 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         sv_path = strjoin([GL_turbo_dir,shortpath_sv{1}(2:end)],'/');
         save(fname_inputs,'fn_prm','fn_seg','sv_path');
         
-        % Write SBATCH file
-        nf = numel(fn_prm);
-        pmem = 24; % max GB per process
-        ptime = 90; % max minutes per process
+        % Determine SBATCH inputs
         jobname = sprintf('GL_tPRM_%s',tstr);
         fname = [jobname,'.sh'];
         part_str = 'standard';
+        nf = numel(fn_prm);
+        pmem = 12; % max GB per process
+        ptime = 90; % max minutes per process
         cores = min(min(nf,floor(180/pmem))+1,36);
         mem = pmem * (cores-1);
         walltime = ptime*ceil(nf/(cores-1));
-        write_sbatch(fullfile(tempdir,fname),jobname,'GL_tPRM',...
-            'partition',part_str, 'cores',cores, 'mem',mem, 'walltime',walltime,...
-            'username',username, 'inputs_fname',fname_inputs);
+        nodes = ceil(walltime/(14*24*60)); % 14 days max walltime
+        
+        % Write SBATCH file
+        opts = {'partition',part_str, 'cores',cores, 'mem',mem, 'walltime',walltime,...
+            'username',username, 'inputs_fname',fname_inputs};
+        if nodes > 1
+            opts = [opts,{'array',sprintf('1-%u',nodes)}];
+        end
+        write_sbatch(fullfile(tempdir,fname),jobname,'GL_tPRM',opts{:});
         
         % Run SBATCH
         sb_str = sprintf('cd /nfs/turbo/umms-cgalban/GreatLakes/temp && sbatch %s',fname);
@@ -148,6 +154,9 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         
         % In GL, load file containing relevant inputs to the processing function
         %   and start processing jobs  
+        
+        fprintf('Available workers on this node: %s\n',getenv('SLURM_CPUS_PER_TASK'));
+        
         p = load(inputs_fname);
         flds = {'fn_prm','fn_seg','sv_path'};
         ind = ~isfield(p,flds);
@@ -158,11 +167,26 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             error('Invalid input. fn_prm and fn_seg must be cellstr with equal number of elements.');
         end
         
-        % Start batch jobs
+        % Check for job array:
+        njobs = str2double(getenv('SLURM_NNODES'));
+        jobnum = str2double(getenv('SLURM_ARRAY_TASK_ID'));
+        if ~isnan(jobnum)
+            fprintf('Running job number %u of %u\n',jobnum,njobs);
+        end
         nf = length(p.fn_prm);
+        if ~isnan(jobnum)
+            ind = round((nf/njobs)*[jobnum-1 jobnum]);
+            ind = (ind(1)+1):ind(2);
+        else
+            ind = 1:nf;
+        end
+        nf = numel(ind);
+        
+        % Start batch jobs
         for i = 1:nf
-            fprintf('Starting batch job %u:\n   %s\n',i,p.fn_prm{i});
-            job(i) = batch(@job_tPRM,0,[p.fn_prm(i),p.fn_seg(i),p.sv_path]);
+            ii = ind(i);
+            fprintf('Starting batch job %u:\n   %s\n',i,p.fn_prm{ii});
+            job(i) = batch(@job_tPRM,0,[p.fn_prm(ii),p.fn_seg(ii),p.sv_path]);
         end
         
         % Wait for all jobs to complete
@@ -241,6 +265,7 @@ function job_tPRM(fn_prm,fn_seg,sv_path)
             svname = fullfile(tmpdir,fn_out);
             fprintf('Saving MF result: %s.gz\n',svname);
             tprm = grid2img(p.MF(iprm,imf,:),p.ind,seg,3,1) * scale(imf);
+            % write to /tmpssd or /tmp folder to save read/write time on the zip
             niftiwrite(int16(tprm),svname,info_sv,'Compressed',true);
             if ~strcmp(tmpdir,sv_path)
                 fprintf('Moving to: %s\n   ... ',sv_path);

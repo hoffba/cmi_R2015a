@@ -14,7 +14,7 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
 %     username = your UniqueName for email notifications
 %     mailtype = comma-separated list of events for email (BEGIN,END,FAIL)
 
-    [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,username,mailtype] ...
+    [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,username,mailtype] ...
         = parseInputs(fname,jobname,fcn,varargin);
 
     stat = false;
@@ -73,18 +73,22 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
         str = [str,sprintf('#SBATCH --mail-user=%s@med.umich.edu\n',username)];
         str = [str,sprintf('#SBATCH --mail-type=%s\n',mailtype)];
     end
-    str = [str,sprintf(['#SBATCH --output=./%%x-%%j\n\n',...
+    if ~isempty(array)
+        str = [str,sprintf('#SBATCH --array=1-%u\n',array)];
+    end
+    str = [str,sprintf(['#SBATCH --output=./%%x-%%j.log\n\n',...
                         'if [[ $SLURM_JOB_NODELIST ]] ; then\n',...
                         '   echo "Running on"\n',...
                         '   scontrol show hostnames $SLURM_JOB_NODELIST\n',...
                         'fi\n\n',...
                         'module load matlab\n\n',...
-                        'my_job_header\n\n',...
+                        'my_job_header\n\n',... % Script for printing info about job environment
                         'echo -n "My job array ID is:  "\n',...
                         'env | grep ARRAY_TASK_ID\n\n',...
                         '#  Put your job commands after this line\n'])];
-    str = [str,sprintf(['matlab -nodisplay -r "cd(''%s'');','cmi_setPath;%s(''%s''); exit"\n'],...
+    str = [str,sprintf(['matlab -nodisplay -r "cd(''%s'');','cmi_setPath;%s(''%s''); exit"\n\n'],...
                    GL_Matlab_path,fcn,inputs_fname)];
+    str = [str,sprintf('my_job_statistics\n')]; % Script for printing performance statistics 
                    
     fid = fopen(fname,'w');
     if fid 
@@ -95,7 +99,7 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
     
 end
 
-function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,username,mailtype] ...
+function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,username,mailtype] ...
     = parseInputs(fname,jobname,fcn,in)
     p = inputParser;
     p.addRequired('fname',@ischar);
@@ -106,6 +110,7 @@ function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,username,ma
     p.addParameter('cores',1,@(x)isnumeric(x)&&(x>0)&&~isinf(x)&&floor(x)==x);
     p.addParameter('mem',8,@(x)isnumeric(x)&&(x>0)&&~isinf(x)&&floor(x)==x);
     p.addParameter('walltime',60,@(x)isnumeric(x)&&(x>0)&&~isinf(x)&&floor(x)==x);
+    p.addParameter('array',[],@isnumeric);
     p.addParameter('username','',@(x)ischar(x)&&isempty(regexp(x,'[^a-z]','once')));
     p.addParameter('mailtype','END',@(x)ischar(x)&&all(ismember(strsplit(x,','),{'BEGIN','END','FAIL'})));
     p.parse(fname,jobname,fcn,in{:});
@@ -126,5 +131,5 @@ function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,username,ma
     walltime = datestr(duration(0,p.Results.walltime,0),'dd-HH:MM:SS');
     mailtype = p.Results.mailtype;
     part_str = p.Results.partition;
-    
+    array = round(p.Results.array);
 end
