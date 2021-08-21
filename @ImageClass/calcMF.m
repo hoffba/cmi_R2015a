@@ -60,7 +60,7 @@ if self.check
         mask = self.mask.mat;
     end
     gchk = any(isinf(r));
-    varargin = [varargin,{'voxsz',self.voxsz,'mask',mask,'prog',true}];
+    varargin = [varargin,{'voxsz',self.voxsz,'mask',mask,'prog',3}];
     
     if gchk % Global analysis:
 
