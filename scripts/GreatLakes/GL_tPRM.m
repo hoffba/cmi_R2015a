@@ -203,10 +203,11 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         
         % Wait for all jobs to complete
         errflag = true(nf,1);
+        dt = zeros(nf,1);
         for i = 1:nf
             wait(job(i));
-            dt = minutes(job(i).FinishDateTime - job(i).StartDateTime);
-            fprintf('Job %u finished after %.1f minutes.\n',i,dt);
+            dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
+            fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
             job(i).diary
             if strcmp(job(i).State,'failed')
                 errflag(i) = false;
