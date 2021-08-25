@@ -17,7 +17,7 @@
 %       voxsz   = voxel size in 3D
 %       mask    = binary image mask
 %       defVal  = (logical) value assigned to voxels outside the mask
-%       prog    = logical check to display waitbar/progress
+%       prog    = check to display waitbar/progress (0=none, 1=terminal, 2=waitbar)
 %       calcConfl = logical check to calculate confluence
 %       Cwin    = confluence smoothing window (default 9)
 %       Cstr    = confluence smoothing strength (default 2)
@@ -42,7 +42,6 @@ p = parseInputs(img,varargin{:});
 nmf = length(p.ord);
 nth = length(p.thresh);
 ni = length(p.ind) + p.gchk;
-voxvol = prod(p.voxsz);
 nCth = length(p.Cthresh);
 if p.calcConfl
     dCth = diff(p.Cthresh);
@@ -58,7 +57,7 @@ if p.pchk
     p.thresh = prctile(img(p.mask),p.thresh);
 end
 
-if p.prog, hw = waitbar(0,'Processing Minkowski Functional Analysis ...'); end
+if p.prog==2, hw = waitbar(0,'Processing Minkowski Functional Analysis ...'); end
 fprintf('Number of iterations: %u\n',ni)
 
 % Loop over thresholds
@@ -84,7 +83,7 @@ for ith = 1:nth
             t = tic;
         end
         % Only update display every 10k iterations
-        if mod(i,10000)==0
+        if p.prog==1 && mod(i,10000)==0
             disp(['  ',num2str(ni-i),' left (',...
                   datestr(toc(t)*(ni-i)/(i*86400),'DD:HH:MM:SS'),')'])
         end
@@ -119,9 +118,7 @@ for ith = 1:nth
         if isnan(p.wnum(i))
             p.wnum(i) = nnz(wmask);
         end
-%         normval = p.wnum(i)*voxvol*ones(1,nmf); % For normalizing V, S, B
         normval = repmat(feval(p.func,wmask,p.voxsz,0), [1,4]); % Added by CJG 20210323
-        
         normval(p.ord==p.nD) = p.wnum(i); % For normalizing X and alpha
         
         % Calculate MF values:
@@ -133,7 +130,7 @@ for ith = 1:nth
         if p.calcConfl
             X = nan(nCth,1);
             for j = 1:nCth
-                cBW = feval(@gt,wBWdens,p.Cthresh(j));
+                cBW = wBWdens > p.Cthresh(j);
                 X(j) = feval(p.Cfunc,cBW);
             end
             X = (X-1).^2;
@@ -142,7 +139,7 @@ for ith = 1:nth
         
     end
     
-    if p.prog, waitbar(ith/nth,hw); end
+    if p.prog==2, waitbar(ith/nth,hw); end
 end
 
 % Separate out the GLOBAL results:
@@ -153,7 +150,7 @@ if p.gchk
     p.MF(:,:,1) = [];
 end
 
-if p.prog, delete(hw); end
+if p.prog==2, delete(hw); end
 
 % Raw 2D MF calculation
 function p = calcMF2D(BW,voxsz,ord)
@@ -199,7 +196,7 @@ addParameter(p,'ind',[],@isvector);
 addParameter(p,'voxsz',ones(1,3),@isvector);
 addParameter(p,'mask',[],@islogical);
 addParameter(p,'defVal',false,@(x)islogical(x)&&isscalar(x));
-addParameter(p,'prog',false,@(x)islogical(x)&&isscalar(x));
+addParameter(p,'prog',0,@(x)isnumeric(x)&&isscalar(x)&&ismember(x,0:2));
 addParameter(p,'calcConfl',false,@(x)islogical(x)&&isscalar(x));
 addParameter(p,'Cwin',9,@(x)isnumeric(x)&&(x>0));
 addParameter(p,'Cstr',2,@(x)isnumeric(x)&&(x>0));

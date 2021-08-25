@@ -88,10 +88,12 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         if all(flag_seg)
             error('No valid segmentation files were found.');
         elseif ~folder_flag
-            % Show files that weren't found
-            fprintf('%u segmentation files not found:\n',nnz(flag_seg));
-            fprintf('   %s\n',fn_seg{flag_seg});
-            fn_prm(flag_seg) = [];
+            if any(flag_seg)
+                % Show files that weren't found
+                fprintf('%u segmentation files not found:\n',nnz(flag_seg));
+                fprintf('   %s\n',fn_seg{flag_seg});
+                fn_prm(flag_seg) = [];
+            end
         end
         
         % Find corresponding segmentation files
@@ -180,6 +182,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         end
         
         % Check for job array:
+        jobname = getenv('SLURM_JOB_NAME');
         njobs = str2double(getenv('SLURM_NNODES'));
         jobnum = str2double(getenv('SLURM_ARRAY_TASK_ID'));
         if ~isnan(jobnum)
@@ -195,11 +198,23 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         nf = numel(ind);
         
         % Start batch jobs
+        fn_base = cell(1,nf);
         for i = 1:nf
+            % Find subsection index:
             ii = ind(i);
+            
+            % Extract base name
+            tok = regexp(p.fn_prm{ii},'/([^./]+)\.','tokens');
+            fn_base{i} = tok{1}{1};
+            
             fprintf('Starting batch job %u:\n   %s\n',i,p.fn_prm{ii});
-            job(i) = batch(@job_tPRM,0,[p.fn_prm(ii),p.fn_seg(ii),p.sv_path]);
+            job(i) = batch(@job_tPRM,1,[p.fn_prm(ii),p.fn_seg(ii),p.sv_path]);
         end
+        
+        % Initialize table for statistics:
+        T = table('Size',[nf,20],'VariableTypes',repmat({'double'},1,20),...
+            'VariableNames',reshape(append({'fSAD','emph','PD','Norm'},'_',{'%','V_e4','S_e4','B_e5','X_e5'}'),[],1),...
+            'RowNames',fn_base);
         
         % Wait for all jobs to complete
         errflag = true(nf,1);
@@ -208,12 +223,21 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             wait(job(i));
             dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
             fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
-            job(i).diary
             if strcmp(job(i).State,'failed')
                 errflag(i) = false;
                 fprintf(job(i).Tasks(1).ErrorMessage);
             end
+            
+            % Compile statistics:
+            val = job(i).fetchOutputs;
+            T(i,:) = num2cell(val{1});
+            
         end
+        
+        % Write table with mean values to save path
+        writetable(T,fullfile(p.sv_path,sprintf('%s_%u_Means.csv',jobname,jobnum)),...
+            'WriteRowNames',true);
+        
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
             mean(dt(errflag)),std(dt(errflag)));
         
@@ -223,7 +247,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
 
 end
 
-function job_tPRM(fn_prm,fn_seg,sv_path)
+function val = job_tPRM(fn_prm,fn_seg,sv_path)
 % Perform tPRM processing 
 % Inputs: fn_prm = full filename of PRM classification map (as seen by GL)
 %         fn_seg = full filename of segmentation map (as seen by GL)
@@ -251,12 +275,14 @@ function job_tPRM(fn_prm,fn_seg,sv_path)
     seg = niftiread(info_seg);
     % Only need total lung segmentation for this:
     seg = ismember(seg,[11,12,13,21,22]);
+    nseg = nnz(seg);
 
     % Set up labels for results
     info_sv = info_prm;
     info_sv.Datatype = 'int16';
     info_sv.BitsPerPixel = 16;
-    prmclass = struct('val',{3,(4:5),(8:10),(1:2)},'label',{'fSAD','emph','PD','Norm'});
+    prmclass = struct('val',    { 3 ,     (4:5) , (8:10) , (1:2) },...
+                      'label',  { 'fSAD', 'emph', 'PD' ,   'Norm' });
     nprm = length(prmclass);
     MF_label = {'V_e4','S_e4','B_e5','X_e5'};
 
@@ -272,12 +298,18 @@ function job_tPRM(fn_prm,fn_seg,sv_path)
     
     % Re-grid, scale, and save as .nii.gz
     scale=[10000 10000 1e5 1e5];
+    val = nan(1,20); % [ PRM%(x4) , fSAD-MF(x4) , etc. ]
     for iprm = 1:nprm
+        val(iprm) = nnz(prm_sub==iprm)/nseg*100;
         for imf = 1:4
             fn_out = [fn_base,'_',prmclass(iprm).label,'_',MF_label{imf},'.nii'];
             svname = fullfile(tmpdir,fn_out);
             fprintf('Saving MF result: %s.gz\n',svname);
             tprm = grid2img(p.MF(iprm,imf,:),p.ind,seg,3,1) * scale(imf);
+            
+            % Calculate whole-lung means:
+            val( 4*iprm + imf ) = mean(tprm(seg));
+            
             % write to /tmpssd or /tmp folder to save read/write time on the zip
             niftiwrite(int16(tprm),svname,info_sv,'Compressed',true);
             if ~strcmp(tmpdir,sv_path)
@@ -291,7 +323,7 @@ function job_tPRM(fn_prm,fn_seg,sv_path)
             end
         end
     end
-
+    
 end
 
 function [fn,shortpath,flag] = checkTurboPath(fnames,dcode)

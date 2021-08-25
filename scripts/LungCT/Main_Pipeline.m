@@ -26,10 +26,12 @@ dataTable = table;
 
 % Find RegClass object in base workspace
 regObj = getObjectsFromBase('RegClass',1);
-% If non found, create a temporary one without GUI
+% If not found, create a temporary one without GUI
 if isempty(regObj) || ~isvalid(regObj)
     regObj = RegClass(0);
 end
+ref = regObj.cmiObj(1);
+hom = regObj.cmiObj(2);
 
 %% Loop over cases
 N = length(cases);
@@ -55,42 +57,42 @@ for i = 1:N
         fprintf('\nReading image data from file ... ID = %s\n',ID)
         if ~(exist(fullfile(procdir,[fname_Exp,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins,fn_ext]),'file'))
             fprintf('   ... from DICOM\n');
-            regObj.cmiObj(1).loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Exp')).Directory,procdir,fname_Exp);
-            regObj.cmiObj(2).loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Ins')).Directory,procdir,fname_Ins);
+            ref.loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Exp')).Directory,procdir,fname_Exp);
+            hom.loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Ins')).Directory,procdir,fname_Ins);
             check_EI = true;
         else
             fprintf('   ... from NiFTi\n');
             fprintf('   ... Reading Exp\n');
-            regObj.cmiObj(1).loadImg(0,fullfile(procdir,[fname_Exp,fn_ext]),procdir,fname_Exp);
+            ref.loadImg(0,fullfile(procdir,[fname_Exp,fn_ext]),procdir,fname_Exp);
             fprintf('   ... Reading Ins\n');
-            regObj.cmiObj(2).loadImg(0,fullfile(procdir,[fname_Ins,fn_ext]),procdir,fname_Ins);
+            hom.loadImg(0,fullfile(procdir,[fname_Ins,fn_ext]),procdir,fname_Ins);
             check_EI = false;
         end
         
         %% Generate Lung Segmentation [This is when VOI don't exist]
         if ~(exist(fullfile(procdir,[fname_Exp_Label,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins_Label,fn_ext]),'file'))
             fprintf('   Generating VOIs\n')
-            tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(1).img.mat,fname_Exp_Label, procdir);
-            regObj.cmiObj(1).img.mask.merge('replace',tmask);
-            tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(2).img.mat,fname_Ins_Label, procdir);
-            regObj.cmiObj(2).img.mask.merge('replace',tmask);
+%             tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(1).img.mat,fname_Exp_Label, procdir);
+            ref.img.mask.merge('replace',getRespiratoryOrgans(ref.img.mat));
+%             tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(2).img.mat,fname_Ins_Label, procdir);
+            hom.img.mask.merge('replace',getRespiratoryOrgans(hom.img.mat));
         else
             fprintf('   Reading VOIs from file\n')
-            regObj.cmiObj(1).loadMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
-            regObj.cmiObj(2).loadMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
+            ref.loadMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
+            hom.loadMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
         end
 
         %% Identify Exp and Ins using lung volume; used for determining file name
         if check_EI
             %   ** Need to double-check in case of mislabel
-            if nnz(regObj.cmiObj(1).img.mask.mat) > nnz(regObj.cmiObj(2).img.mask.mat)
+            if nnz(ref.img.mask.mat) > nnz(hom.img.mask.mat)
                 regObj.swapCMIdata;
             end
             %% Save nii.gz files using ID and Tag
-            regObj.cmiObj(1).img.saveImg(1,fullfile(procdir,[fname_Exp,fn_ext]),1);
-            regObj.cmiObj(2).img.saveImg(1,fullfile(procdir,[fname_Ins,fn_ext]),1);
-            regObj.cmiObj(1).img.saveMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
-            regObj.cmiObj(2).img.saveMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
+            ref.img.saveImg(1,fullfile(procdir,[fname_Exp,fn_ext]),1);
+            hom.img.saveImg(1,fullfile(procdir,[fname_Ins,fn_ext]),1);
+            ref.img.saveMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));
+            hom.img.saveMask(fullfile(procdir,[fname_Ins_Label,fn_ext]));
         end
         
         

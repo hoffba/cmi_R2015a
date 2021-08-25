@@ -6,7 +6,7 @@ function setImg(self,iimg,labels,fov,orient,iname)
 %        fov = 3D image size
 %        iname = string name of image (optional)
 
-if nargin<5
+if nargin<6
     iname = 0;
 end
 

@@ -88,7 +88,7 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
                         '#  Put your job commands after this line\n'])];
     str = [str,sprintf(['matlab -nodisplay -r "cd(''%s'');','cmi_setPath;%s(''%s''); exit"\n\n'],...
                    GL_Matlab_path,fcn,inputs_fname)];
-    str = [str,sprintf('my_job_statistics\n')]; % Script for printing performance statistics 
+    str = [str,sprintf('my_job_statistics $SLURM_JOB_ID\n')]; % Script for printing performance statistics 
                    
     fid = fopen(fname,'w');
     if fid 
