@@ -2,32 +2,41 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
     % Performs tPRM on existing PRM maps on GreatLakes
     % Syntax:
     %   GL_tPRM(username)
+    %   GL_tPRM(username,N)
     %   GL_tPRM(username,fn_prm,fn_seg,sv_path)
+    %   GL_tPRM(username,fn_prm,fn_seg,sv_path,N)
     % Required inputs:
     %       fn_prm = cell array of PRM files (*.nii.gz)
     %       fn_seg = cell array of segmentation files (*.nii.gz)
     %             OR string location of folder containing matching seg files
     %       sv_path = string location of directory for saving results
+    %       N = requested node array
 
     % Parse inputs
-    switch nargin
-        case 1
-            if isfile(varargin{1})
-                % GL EXECUTION
-                flag = false;
-                inputs_fname = varargin{1};
-            else
-                flag = true;
-                username = varargin{1};
-            end
-        case 4
+    N = 1;
+    if nargin < 3 
+        if isfile(varargin{1})
+            % GL EXECUTION
+            flag = false;
+            inputs_fname = varargin{1};
+        else
             flag = true;
             username = varargin{1};
-            fn_prm = varargin{2};
-            fn_seg = varargin{3};
-            sv_path = varargin{4};
-        otherwise
-            error('Invalid number of inputs.');
+        end
+        if nargin==2 && isnumeric(varargin{2}) && isscalar(varargin{2})
+            N = varargin{2};
+        end
+    elseif nargin>3
+        flag = true;
+        username = varargin{1};
+        fn_prm = varargin{2};
+        fn_seg = varargin{3};
+        sv_path = varargin{4};
+        if nargin==5 && isnumeric(varargin{5}) && isscalar(varargin{5})
+            N = varargin{5};
+        end
+    else
+        error('Invalid number of inputs.');
     end
     
     if flag
@@ -35,7 +44,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         % ~~ LOCAL EXECUTION ~~
         
         % Select data for processing:
-        if nargin==4
+        if nargin>3
             if ~(iscellstr(fn_prm) || ischar(fn_prm))
                 error('Input 1 (fn_prm) must be a string or cellstr containing PRM file locations.');
             end
@@ -47,11 +56,14 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             end
         else
             % User GUI for file selection:
+            
             [fn_prm,fpath_prm] = uigetfile('*.prm.nii.gz','Select PRM data for processing:','MultiSelect','on');
             if isempty(fn_prm),return;end
             fn_prm = fullfile(fpath_prm,fn_prm);
+            
             fn_seg = uigetdir(pwd,'Select folder containing corresponding lobe_segmentation.nii.gz files:');
             if ~fn_seg,return;end
+            
             sv_path = uigetdir(pwd,'Select folder for saving tPRM results:');
             if ~sv_path,return;end
         end
@@ -119,9 +131,25 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
                 fn_seg(flag_seg) = [];
             end
         end
+        
+        % Determine SBATCH inputs
+        tstr = char(datetime('now','Format','yyyyMMddHHmmss'));
+        jobname = sprintf('GL_tPRM_%s',tstr);
+        fname = [jobname,'.sh'];
+        part_str = 'standard';
+        nf = numel(fn_prm)/N;
+        pmem = 12; % max GB per process
+        ptime = 90; % max minutes per process
+        cores = min(min(nf,floor(180/pmem))+1,36);
+        mem = pmem * (cores-1);
+        walltime = ptime*ceil(nf/(cores-1));
+        if N==1
+            Nnodes = ceil(walltime/(14*24*60)); % 14 days max walltime
+        else
+            Nnodes = N;
+        end
 
         % Determine batch job inputs and save input file for GL execution:
-        tstr = char(datetime('now','Format','yyyyMMddHHmmss'));
         tempdir = fullfile(LOC_turbo_path,'GreatLakes','temp');
         fname_inputs = fullfile(tempdir,sprintf('batch_inputs_%s.mat',tstr));
         GL_turbo_dir = {'/nfs/turbo/umms-cgalban'};
@@ -130,25 +158,13 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         fn_seg = cellfun(@(x,y)strjoin([GL_turbo_dir,x(2:end),{y}],'/'),...
             shortpath_seg,fn_seg,'UniformOutput',false);
         sv_path = strjoin([GL_turbo_dir,shortpath_sv{1}(2:end)],'/');
-        save(fname_inputs,'fn_prm','fn_seg','sv_path');
-        
-        % Determine SBATCH inputs
-        jobname = sprintf('GL_tPRM_%s',tstr);
-        fname = [jobname,'.sh'];
-        part_str = 'standard';
-        nf = numel(fn_prm);
-        pmem = 12; % max GB per process
-        ptime = 90; % max minutes per process
-        cores = min(min(nf,floor(180/pmem))+1,36);
-        mem = pmem * (cores-1);
-        walltime = ptime*ceil(nf/(cores-1));
-        nodes = ceil(walltime/(14*24*60)); % 14 days max walltime
+        save(fname_inputs,'fn_prm','fn_seg','sv_path','Nnodes');
         
         % Write SBATCH file
         opts = {'partition',part_str, 'cores',cores, 'mem',mem, 'walltime',walltime,...
             'username',username, 'inputs_fname',fname_inputs};
-        if nodes > 1
-            opts = [opts,{'array',sprintf('1-%u',nodes)}];
+        if Nnodes > 1
+            opts = [opts,{'array',Nnodes}];
         end
         write_sbatch(fullfile(tempdir,fname),jobname,'GL_tPRM',opts{:});
         
@@ -180,10 +196,14 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
                 && (numel(p.fn_prm)==numel(p.fn_seg)))
             error('Invalid input. fn_prm and fn_seg must be cellstr with equal number of elements.');
         end
+        if isfield(p,'Nnodes')
+            njobs = p.Nnodes;
+        else
+            njobs = 1;
+        end
         
         % Check for job array:
         jobname = getenv('SLURM_JOB_NAME');
-        njobs = str2double(getenv('SLURM_NNODES'));
         jobnum = str2double(getenv('SLURM_ARRAY_TASK_ID'));
         if ~isnan(jobnum)
             fprintf('Running job number %u of %u\n',jobnum,njobs);
@@ -231,6 +251,9 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             % Compile statistics:
             val = job(i).fetchOutputs;
             T(i,:) = num2cell(val{1});
+            
+            % Delete job files:
+            job(i).delete;
             
         end
         
