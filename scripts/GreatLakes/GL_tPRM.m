@@ -217,6 +217,11 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         end
         nf = numel(ind);
         
+        % Set up cluster properties
+        c = parcluster;
+        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobnum));
+        c.JobStorageLocation = jobdir;
+        
         % Start batch jobs
         fn_base = cell(1,nf);
         for i = 1:nf
@@ -256,6 +261,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             job(i).delete;
             
         end
+        rmdir(jobdir);
         
         % Write table with mean values to save path
         writetable(T,fullfile(p.sv_path,sprintf('%s_%u_Means.csv',jobname,jobnum)),...

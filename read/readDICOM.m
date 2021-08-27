@@ -24,6 +24,7 @@ end
 
 % Check for dicomdir file:
 fname = dir(fpath);
+fname([fname.isdir]) = [];
 fname = {fname(:).name};
 fname(ismember(fname,{'.','..'})) = [];
 ind = find(strcmpi('dicomdir',fname),1);
