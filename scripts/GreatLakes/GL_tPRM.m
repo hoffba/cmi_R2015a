@@ -13,52 +13,40 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
     %       N = requested node array
 
     % Parse inputs
-    N = 1;
-    if nargin < 3 
-        if isfile(varargin{1})
-            % GL EXECUTION
-            flag = false;
-            inputs_fname = varargin{1};
-        else
-            flag = true;
-            username = varargin{1};
-        end
-        if nargin==2 && isnumeric(varargin{2}) && isscalar(varargin{2})
-            N = varargin{2};
-        end
-    elseif nargin>3
-        flag = true;
+    if ischar(varargin{1}) % Should be uniquename
+        
+% ~~~~~~~~~~~~~~~~~~~~~
+% ~~ LOCAL EXECUTION ~~
+% ~~~~~~~~~~~~~~~~~~~~~
+        
+        % Parse Inputs:
+        N = 1;
         username = varargin{1};
-        fn_prm = varargin{2};
-        fn_seg = varargin{3};
-        sv_path = varargin{4};
-        if nargin==5 && isnumeric(varargin{5}) && isscalar(varargin{5})
-            N = varargin{5};
-        end
-    else
-        error('Invalid number of inputs.');
-    end
-    
-    if flag
-        
-        % ~~ LOCAL EXECUTION ~~
-        
-        % Select data for processing:
-        if nargin>3
-            if ~(iscellstr(fn_prm) || ischar(fn_prm))
-                error('Input 1 (fn_prm) must be a string or cellstr containing PRM file locations.');
-            end
-            if ~(iscellstr(fn_seg) || ischar(fn_seg))
-                error('Input 2 (fn_seg) must be a directory containing segmentation files or cellstr of individual file locations.');
-            end
-            if ~ischar(sv_path)
-                error('Input 3 (sv_path) must be a directory location for saving results.');
+        gflag = false; % GUI flag
+        if nargin>1
+            if isnumeric(varargin{2}) && isscalar(varargin{2})
+                N = varargin{2};
+                gflag = true;
+            elseif (nargin>3) && (ischar(varargin{2}) || iscellstr(varargin{2}))
+                fn_prm = varargin{2};
+                fn_seg = varargin{3};
+                sv_path = varargin{4};
+                if (nargin==5) && isnumeric(varargin{5}) && isscalar(varargin{5})
+                    N = varargin{5};
+                end
+            else
+                warning('Invalid input #2.');
+                return;
             end
         else
-            % User GUI for file selection:
+            gflag = true;
+        end
             
+        % Select data for processing:
+        if gflag
+            % User GUI for file selection:
             [fn_prm,fpath_prm] = uigetfile('*.prm.nii.gz','Select PRM data for processing:','MultiSelect','on');
-            if isempty(fn_prm),return;end
+            if ~fn_prm,return;end
             fn_prm = fullfile(fpath_prm,fn_prm);
             
             fn_seg = uigetdir(pwd,'Select folder containing corresponding lobe_segmentation.nii.gz files:');
@@ -66,6 +54,17 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             
             sv_path = uigetdir(pwd,'Select folder for saving tPRM results:');
             if ~sv_path,return;end
+        else
+            % Validate fn inputs
+            if ~(iscellstr(fn_prm) || ischar(fn_prm))
+                error('Input 2 (fn_prm) must be a string or cellstr containing PRM file locations.');
+            end
+            if ~(iscellstr(fn_seg) || ischar(fn_seg))
+                error('Input 3 (fn_seg) must be a directory containing segmentation files or cellstr of individual file locations.');
+            end
+            if ~ischar(sv_path)
+                error('Input 4 (sv_path) must be a directory location for saving results.');
+            end
         end
         if ischar(fn_prm)
             fn_prm = {fn_prm};
@@ -137,16 +136,25 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         jobname = sprintf('GL_tPRM_%s',tstr);
         fname = [jobname,'.sh'];
         part_str = 'standard';
-        nf = numel(fn_prm)/N;
         pmem = 12; % max GB per process
-        ptime = 90; % max minutes per process
-        cores = min(min(nf,floor(180/pmem))+1,36);
-        mem = pmem * (cores-1);
+        ptime = 60; % max minutes per process
+        mxmem = 180; % 180GB max memory for standard node
+        nf = numel(fn_prm);
+        cores = min(min(nf,floor(mxmem/pmem))+1,36);
         walltime = ptime*ceil(nf/(cores-1));
         if N==1
             Nnodes = ceil(walltime/(14*24*60)); % 14 days max walltime
         else
             Nnodes = N;
+        end
+        % Recalculate taking into account #nodes
+        nf = ceil(nf/Nnodes);
+        cores = min(min(nf,floor(mxmem/pmem))+1,36);
+        mem = pmem * (cores-1);
+        walltime = ptime*ceil(nf/(cores-1));
+        if walltime > (14*24*60) % 14 day max walltime
+            warning('Processes may not complete.\nEstimated time = %s\n',...
+                datestr(duration(0,walltime,0),'dd-HH:MM:SS'));
         end
 
         % Determine batch job inputs and save input file for GL execution:
@@ -178,12 +186,20 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
                  '   (ALREADY IN CLIPBOARD, just paste into PuTTy using middle mouse button)\n',...
                  '   ',sb_str,'\n'],fname);
         
-    elseif ischar(inputs_fname) && exist(inputs_fname,'file') && strcmp(inputs_fname(end-3:end),'.mat')
+    elseif (nargin==2) % ( 1 , inputs_filename )
         
-        % ~~ GREATLAKES EXECUTION ~~
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~
+% ~~ GREATLAKES EXECUTION ~~
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         % In GL, load file containing relevant inputs to the processing function
         %   and start processing jobs  
+        
+        if ischar(varargin{2}) && exist(varargin{2},'file') && strcmp(varargin{2}(end-3:end),'.mat')
+            inputs_fname = varargin{2};
+        else
+            error('Invalid input: must be valid .mat file containing function inputs.');
+        end
         
         fprintf('Available workers on this node: %s\n',getenv('SLURM_CPUS_PER_TASK'));
         
@@ -211,6 +227,10 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         nf = numel(p.fn_prm);
         if ~isnan(jobnum)
             ind = round((nf/njobs)*[jobnum-1 jobnum]);
+            
+            fprintf('ind: %u-%u\n',ind+[1,0]);
+            p
+            
             ind = (ind(1)+1):ind(2);
         else
             ind = 1:nf;
@@ -219,8 +239,9 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         
         % Set up cluster properties
         c = parcluster;
-        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobnum));
-        c.JobStorageLocation = jobdir;
+        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobname,jobnum));
+        mkdir(jobdir);
+        c.JobStorageLocation = jobdir
         
         % Start batch jobs
         fn_base = cell(1,nf);
@@ -233,7 +254,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             fn_base{i} = tok{1}{1};
             
             fprintf('Starting batch job %u:\n   %s\n',i,p.fn_prm{ii});
-            job(i) = batch(@job_tPRM,1,[p.fn_prm(ii),p.fn_seg(ii),p.sv_path]);
+            job(i) = batch(c,@job_tPRM,1,[p.fn_prm(ii),p.fn_seg(ii),p.sv_path]);
         end
         
         % Initialize table for statistics:
@@ -261,7 +282,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
             job(i).delete;
             
         end
-        rmdir(jobdir);
+        rmdir(jobdir,'s');
         
         % Write table with mean values to save path
         writetable(T,fullfile(p.sv_path,sprintf('%s_%u_Means.csv',jobname,jobnum)),...
@@ -329,7 +350,8 @@ function val = job_tPRM(fn_prm,fn_seg,sv_path)
     scale=[10000 10000 1e5 1e5];
     val = nan(1,20); % [ PRM%(x4) , fSAD-MF(x4) , etc. ]
     for iprm = 1:nprm
-        val(iprm) = nnz(prm_sub==iprm)/nseg*100;
+        ii = (iprm-1)*5 + 1;
+        val(ii) = nnz(prm_sub==iprm)/nseg*100;
         for imf = 1:4
             fn_out = [fn_base,'_',prmclass(iprm).label,'_',MF_label{imf},'.nii'];
             svname = fullfile(tmpdir,fn_out);
@@ -337,7 +359,7 @@ function val = job_tPRM(fn_prm,fn_seg,sv_path)
             tprm = grid2img(p.MF(iprm,imf,:),p.ind,seg,3,1) * scale(imf);
             
             % Calculate whole-lung means:
-            val( 4*iprm + imf ) = mean(tprm(seg));
+            val(ii+imf) = mean(tprm(seg));
             
             % write to /tmpssd or /tmp folder to save read/write time on the zip
             niftiwrite(int16(tprm),svname,info_sv,'Compressed',true);
