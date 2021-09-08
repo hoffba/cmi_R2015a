@@ -74,10 +74,10 @@ for i = 1:N
             fprintf('   Generating VOIs\n')
 %             tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(1).img.mat,fname_Exp_Label, procdir);
 %             ref.img.mask.merge('replace',getRespiratoryOrgans(ref.img.mat));
-            ref.img.mask.merge('replace',CTlung_Segmentation(ref.img.mat));
+            ref.img.mask.merge('replace',DL_lung_segmetation(ref.img.mat));
 %             tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(2).img.mat,fname_Ins_Label, procdir);
 %             hom.img.mask.merge('replace',getRespiratoryOrgans(hom.img.mat));
-            hom.img.mask.merge('replace',CTlung_Segmentation(hom.img.mat));
+            hom.img.mask.merge('replace',DL_lung_segmetation(hom.img.mat));
         else
             fprintf('   Reading VOIs from file\n')
             ref.loadMask(fullfile(procdir,[fname_Exp_Label,fn_ext]));

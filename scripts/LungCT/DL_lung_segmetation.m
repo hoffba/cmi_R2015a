@@ -1,4 +1,4 @@
-function [finalLabel,lungLabel] = DL_lung_segmetation(x)
+function finalLabel = DL_lung_segmetation(x)
 
 if nargin<1
     [FileName,PathName] = uigetfile('*.nii.gz','Select nii File for Conversion of mhd 2 nii.');
