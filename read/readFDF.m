@@ -1,4 +1,8 @@
-function [img,label,fov] = readFDF(varargin)
+function [img,label,fov,torient,tinfo] = readFDF(varargin)
+
+torient = eye(4);
+tinfo = {'temp'};
+
 fnames = varargin{1};
 [path,~] = fileparts(fnames);
 % Find and load all FDF files in selected directory
