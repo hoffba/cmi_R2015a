@@ -367,8 +367,10 @@ if ~isempty(answer)
     end
     
 %     ['Output  :',a,'_Label_Results.jpg']
-    saveas(hf_segm,fullfile(procdir,[dname,'_Results.jpg'])); 
-    close(hf_segm)
+    if nargin==4 && isfolder(procdir)
+        saveas(hf_segm,fullfile(procdir,[dname,'_Results.jpg'])); 
+        close(hf_segm)
 %     niftiwrite(int8(lmask),fNiftiname,info,'Compressed',true);
 %     cd(PathName);
+    end
 end
