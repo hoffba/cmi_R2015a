@@ -1,0 +1,2 @@
+function seg = lungSegPy(img)
+

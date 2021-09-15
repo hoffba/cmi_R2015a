@@ -26,19 +26,6 @@ function lungreg_BH(ID,elxdir,regObj)
 % Moving_mask = mask for moving data
 % RegObj0 = reg object
 
-
-%% Load Data and Labels
-% disp([ID,': Fixed and Label'])
-% regObj.cmiObj(1).setImg(cat(4,double(data(1).img.mat),double(data(1).voi.mat)),...
-%     {'Exp','Exp_VOI'},data(1).img.info.ImageSize.*data(1).img.info.PixelDimensions,...
-%     data(1).img.info.Transform.T',sprintf('%s_%s',ID,data(1).tag));
-% 
-% disp([ID,': Moving and Label'])
-% regObj.cmiObj(2).setImg(cat(4,double(data(2).img.mat),double(data(2).voi.mat)),...
-%     {'Exp','Exp_VOI'},data(2).img.info.ImageSize.*data(2).img.info.PixelDimensions,...
-%     data(2).img.info.Transform.T',sprintf('%s_%s',ID,data(2).tag));
-% pause(1);
-
 %% Is the fixed image incremental or continuous?
 nslc = regObj.cmiObj(1).img.dims(3);
 gapchk = nnz(std(reshape(regObj.cmiObj(1).img.mat(:,:,:,1),[],nslc),[],1)) < nslc;
