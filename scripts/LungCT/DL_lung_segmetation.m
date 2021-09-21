@@ -17,6 +17,7 @@ elseif isnumeric(x) && ndims(x)==3
 else
     error('Invalid input.');
 end
+clear x;
 
 %% Pre-processing:
 img(img<-1024) = -1024; % get rid of values <-1024
@@ -63,7 +64,7 @@ outPatchSize = [28 28 28 2];
 lungLabel = stichData_cjg_simple(net, img, classNames, inputPatchSize, outPatchSize);
 
 %% upsample back to original dimensions
-lungLabel = single(imresize3(single(lungLabel),dims,'nearest'));
+lungLabel = float(imresize3(single(lungLabel),dims,'nearest'));
 lungLabel = lungLabel-1;
 
 %% VOI post-processing
@@ -79,9 +80,10 @@ if isempty(A)
     warning('No lung VOI found.');
     finalLabel = lungLabel;
 else
-    finalLabel = ismember(finalLabel,A);
+%     finalLabel = ismember(finalLabel,A);
+    finalLabel(~ismember(finalLabel,A)) = 0;
+    % dilate image
+    finalLabel = imdilate(finalLabel,se);
 end
 
-% dilate image
-finalLabel = imdilate(finalLabel,se);
 
