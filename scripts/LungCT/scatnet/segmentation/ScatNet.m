@@ -59,7 +59,7 @@ mask = ((mask == 1) | (mask == 2));
 % Calculate the -856HU Threshold and the %AT due to the LAA Method
 laaMap = roi <= -856;
 
-percentlaaMap = length(find(laaMap))/length(find(mask));
+percentlaaMap = 100*length(find(laaMap))/length(find(mask));
 beta = percentlaaMap;
 meanvallaaMap = mean(I(laaMap));
 
@@ -173,7 +173,7 @@ for i = 1:size(roi,3)
 %         imwrite(temp2,'laaMapOV.tif','tif','WriteMode','append');
     end
 end
-percentatMap = length(find(atMap))/length(find(mask));
+percentatMap = 100*length(find(atMap))/length(find(mask));
 meanvalatMap = mean(I(atMap));
 
 % % Calculate the mean Intensity values for each lobe
