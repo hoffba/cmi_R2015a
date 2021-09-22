@@ -64,7 +64,7 @@ outPatchSize = [28 28 28 2];
 lungLabel = stichData_cjg_simple(net, img, classNames, inputPatchSize, outPatchSize);
 
 %% upsample back to original dimensions
-lungLabel = float(imresize3(single(lungLabel),dims,'nearest'));
+lungLabel = double(imresize3(single(lungLabel),dims,'nearest'));
 lungLabel = lungLabel-1;
 
 %% VOI post-processing
