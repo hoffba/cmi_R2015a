@@ -82,6 +82,9 @@ if isempty(A)
 else
 %     finalLabel = ismember(finalLabel,A);
     finalLabel(~ismember(finalLabel,A)) = 0;
+    for i = 1:numel(A)
+        finalLabel(finalLabel==A(i)) = i;
+    end
     % dilate image
     finalLabel = imdilate(finalLabel,se);
 end
