@@ -1,7 +1,6 @@
 function T = vesselSeg_BH(varargin)
 % Perform lung vessel segmentation 
 % Inputs: subj_dir = directory containing all subject data
-% t = vesselSeg_BH(subj_dir)
 % t = vesselSeg_BH(ID,fname_ins,fname_seg,save_path)
 % t = vesselSeg_BH(ID,ins,seg,info,save_path)
 
@@ -10,25 +9,7 @@ function T = vesselSeg_BH(varargin)
 
     %% Parse Inputs
     flag = true; % load file flag
-    if (nargin==1) && isfolder(varargin{1})
-        save_path = varargin{1};
-        [~,ID] = fileparts(save_path);
-        % Find files in subject directory:
-        fn_ct = dir(fullfile(save_path,'*_INSP_*.ct.nii.gz'));
-        if isempty(fn_ct)
-            warning('No INSP file found for subject: %s.',ID);
-            return
-        else
-            fn_ct = fullfile(save_path,fn_ct.name);
-        end
-        fn_seg = dir(fullfile(save_path,'*_INSP_*.lobe_segmentation.nii.gz'));
-        if isempty(fn_seg)
-            warning('No SEGMENTATION file found for subject: %s.',ID);
-            return
-        else
-            fn_seg = fullfile(save_path,fn_seg.name);
-        end
-    elseif nargin==4
+    if nargin==4
         ID = varargin{1};
         fn_ct = varargin{2};
         fn_seg = varargin{3};
@@ -46,7 +27,7 @@ function T = vesselSeg_BH(varargin)
 
     %% Find and load INSP CT file:
     if flag
-        if ~contains(fn_ct,'.ct.nii')
+        if ~contains(fn_ct,'.nii')
             warning('Invalid input CT file name: %s',fn_ct);
             return
         elseif exist(fn_ct,'file')
@@ -68,7 +49,7 @@ function T = vesselSeg_BH(varargin)
     
     %% Find INSP segmentation file:
     if flag
-        if ~contains(fn_seg,'.lobe_segmentation.nii')
+        if ~contains(fn_seg,'.nii')
             warning('Invalid input segmentation file name: %s',fn_seg);
             return
         elseif exist(fn_seg,'file')
@@ -86,6 +67,12 @@ function T = vesselSeg_BH(varargin)
     elseif ~all(info.PixelDimensions==0.625)
                 fprintf('  Resampling SEGMENTATION image ...\n');
         seg = resample_subj(seg,info,fullfile(save_path,[ID,'.lobe_segmentation.nii']));
+    end
+    
+    %% Validate size of loaded data:
+    if ~all(size(ct)==size(seg))
+        warning('Warning :: INS and SEGMENTATION images must be the same size.');
+        return;
     end
     
     %% Update nifti info
@@ -110,7 +97,7 @@ function T = vesselSeg_BH(varargin)
     segBW = ismember(seg,[lobe.val]);
 
     %% Generate enhanced vessel maps
-    fprintf('Calculating enhanced vessel maps ... ');
+    fprintf('Calculating enhanced vessel maps ... \n');
     t = tic;
     [vessels, ~] = MTHT3D( Normalize(ct.*segBW) ,...
                      0.5:1:5.5 ,...
@@ -135,7 +122,7 @@ function T = vesselSeg_BH(varargin)
     %% Generate CSA maps
     fprintf('Generating CSA maps ... ');
     t = tic;
-    csa_map = createCSA_maps(bin_vessels);
+    csa_map = CSA_create_maps(bin_vessels);
     save(fullfile(save_path,[ID,'_CSA_skel.mat']),'csa_map');
     fprintf('done (%s)\n',duration(0,0,toc(t)));
     
@@ -159,7 +146,7 @@ function T = vesselSeg_BH(varargin)
     %% Tabulate results and save to subject directory
     fprintf('Tabulating results ... ');
     t = tic;
-    T = tabulateResults(id,ct,seg,vessels,csa);
+    T = tabulateResults(ID,ct,seg,vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_allMetrics.csv']));
     fprintf('done (%s)\n',duration(0,0,toc(t)));
     
