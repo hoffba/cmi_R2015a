@@ -20,9 +20,10 @@ function [image] = CSA_create_maps(V)
     %Skeleton to fill with CSA 
     image = zeros(size(V));
     
-    stxt = sprintf('%%%uu (%%4.1f%%%%)',numel(num2str(np)));
+    stxt = sprintf('%%%uu (%%4.1f%%%% - %%s)',numel(num2str(np)));
     nbsp = 0;
     fprintf('   Completed ');
+    t = tic;
     for i = 1:length(pieces) %For each connected piece
         
         % Isolate just this piece on 3D matrix
@@ -36,8 +37,10 @@ function [image] = CSA_create_maps(V)
             end
         catch E
         end
+        
+        % Print progress:
         if ~mod(i,round(np/1000))
-            txt = sprintf(stxt,i,i/np*100);
+            txt = sprintf(stxt,i,i/np*100,duration(0,0,toc(t)));
             fprintf([repmat('\b',1,nbsp),'%s'],txt);
             nbsp = numel(txt);
         end
