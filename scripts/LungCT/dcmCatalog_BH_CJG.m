@@ -1,4 +1,4 @@
-function C = dcmCatalog_BH_CJG(filt)
+function C = dcmCatalog_BH_CJG(varargin)
 % Catalogs desired DICOM header values
 % Inputs (optional):
 %       extout = extension of files to save

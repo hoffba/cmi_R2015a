@@ -80,7 +80,7 @@ if isempty(A)
     warning('No lung VOI found.');
     finalLabel = lungLabel;
 else
-%     finalLabel = ismember(finalLabel,A);
+    fprintf('Found %u lung regions.\n',numel(A));
     finalLabel(~ismember(finalLabel,A)) = 0;
     for i = 1:numel(A)
         finalLabel(finalLabel==A(i)) = i;

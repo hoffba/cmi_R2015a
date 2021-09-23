@@ -118,7 +118,7 @@ for i = 1:N
         dataTable.Ins810(i,1) = insData(4);
 
         %% Register I2E
-        lungreg_BH(ID,elxdir,regObj);
+%         lungreg_BH(ID,elxdir,regObj);
 end
 delete(h1);
 
