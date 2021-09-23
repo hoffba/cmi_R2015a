@@ -178,9 +178,9 @@ function [I,info] = resample_subj(I,info,fname)
     info.ImageSize = size(I);
     
     % Save resampled data to file:
-    [subj_dir,fname,ext] = fileparts(fname);
-    fname = fullfile(subj_dir,['re_',fname,ext]);
-    niftiwrite(cast(I,info.DataType),fname,info,'Compressed',true);
+    [subj_dir,fname] = fileparts(fname);
+    fname = fullfile(subj_dir,['re_',fname]);
+    niftiwrite(cast(I,info.Datatype),fname,info,'Compressed',true);
     
 end
 
