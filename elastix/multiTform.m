@@ -16,7 +16,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         ~isempty(tp) && ischar(odir) && exist(odir,'dir')
     t = tic;
     
-    % Determine which TP steps need nearest neighbor / linear:
+    % Determine which TP steps need [ nearest neighbor , linear ]:
     intrp = cell2mat(cellfun(@(x)[ (~isempty(x)&&any([x{:,1}])),...
                                    (isempty(x)||any(~[x{:,1}])) ] ,...
                              {tp(:).im}','UniformOutput',false));
@@ -82,8 +82,8 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
         end
         C = [C,fliplr(tC)];
         
-        % Read transformed image geometry for interpolation:
-        if geochk % Do this for each chain
+        % Read transformed image geometry from final transform
+        if geochk % Do this once for each chain
             fid = fopen(C{1},'r');
             sz = []; sp = []; orig = [];
             while isempty(sz) || isempty(sp) || isempty(orig)
@@ -104,7 +104,7 @@ elseif isstruct(tp) && all(isfield(tp,{'fname','chain','im','jac'})) && ...
             geochk = false;
         end
         
-        % Write to log file:
+        % Write chain to log file:
         jac = tp(i).jac;
         ncalls = max(jac,size(tp(i).im,1));
         if ncalls
@@ -203,7 +203,7 @@ if nn
 end
 str = fullfile(odir,sprintf('MultiTransPar.%02u%s.txt',i,nnstr));
 
-function copytp(fname,odir,i,nn,sz,sp,orig)
+function copytp(fname,odir,i,nn,sz,sp,orig,fmt)
 % Copies transform parameter file to new directory and adjust relevant parameters:
 % Inputs:
 %   fname   = transform parameter file to copy
@@ -216,11 +216,15 @@ function copytp(fname,odir,i,nn,sz,sp,orig)
 %   orig    = interpolating image geometric origin
 
 % Read file:
-fid = fopen(fname,'r'); str = fread(fid,'*char')'; fclose(fid);
+p = readTransformParam(fname);
+
+if isfield(p,'HowToCombineTransforms') && strcmp(p.HowToCombineTransforms(1),'c')
+end
 % Temporary fix for previous coregistrations:
 % * (found that HowToCombineTransforms is case sensitive)
 str = regexprep(str,'\(HowToCombineTransforms ([^)]*)',...
     '\(HowToCombineTransforms "Compose"');
+
 if nargin==7 % Only needs to be done on parameter file that is called
     str = regexprep(str,'\(Size ([^)]*)',...
         ['\(Size ',sprintf('%u %u %u',sz)]);

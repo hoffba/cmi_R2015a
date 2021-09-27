@@ -56,7 +56,7 @@ if ischar(ofnames)
     ofnames = {ofnames};
 end
 
-TM = reshape((orient(1:3,1:3)/voxsz)',1,[]);
+TM = reshape((orient(1:3,1:3)/diag(voxsz))',1,[]);
 pos = orient(1:3,4)';
 
 legalchars = 'a-zA-Z0-9\-\_\.';

@@ -99,32 +99,26 @@ function T = vesselSeg_BH(varargin)
     %% Generate enhanced vessel maps
     fprintf('Calculating enhanced vessel maps ... \n');
     t = tic;
-    [vessels, ~] = MTHT3D( Normalize(ct.*segBW) ,...
-                     0.5:1:5.5 ,...
-                     12 ,... % number of orientations
-                     70 ,... % beta
-                     0.5 ,... % alpha
-                     15 ,... % c : parameters for Vesselness
-                     -1/3 );  % alfa : parameters for Neuriteness
-    vessels = double(vessels) .* segBW;
+    vessels = vesselSeg_boxes(ct, segBW);
     save(fullfile(save_path,[ID,'_enhancedVessel.mat']),'vessels');
-    fprintf('done (%s)\n',duration(0,0,toc(t)));
+    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
 
     %% Binarize vessels:
     fprintf('Binarizing vessel map ... ');
     t = tic;
     info.Datatype = 'int8';
     info.BitsPerPixel = 8;
-    bin_vessels = activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese');
-    niftiwrite(uint8(bin_vessels),fullfile(save_path,[ID,'_binVessel.nii']),'Compressed',true);
-    fprintf('done (%s)\n',duration(0,0,toc(t)));
+    bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
+    niftiwrite(bin_vessels,fullfile(save_path,[ID,'_binVessel.nii']),'Compressed',true);
+    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
     %% Generate CSA maps
-    fprintf('Generating CSA maps ... ');
+    fprintf('Generating CSA maps ... \n');
     t = tic;
     csa_map = CSA_create_maps(bin_vessels);
     save(fullfile(save_path,[ID,'_CSA_skel.mat']),'csa_map');
-    fprintf('done (%s)\n',duration(0,0,toc(t)));
+    clear bin_vessels;
+    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
     %% Frangi Filter
     fprintf('Generating Frangi Filtered image ... ');
@@ -134,21 +128,23 @@ function T = vesselSeg_BH(varargin)
                  'BlackWhite',false);
     frangi_enhanced_vessels = FrangiFilter3D(ct.*segBW,opt) .* segBW; 
     save(fullfile(save_path,[ID,'_enhancedVessel_frangi.mat']),'frangi_enhanced_vessels');
-    fprintf('done (%s)\n',duration(0,0,toc(t)));
+    clear frangi_enhanced_vessels;
+    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
 
     %% Curvilinear Filter
-    fprintf('Generating Curvilinear Filtered image ... ');
+    fprintf('Generating Curvilinear Filtered image ... \n');
     t = tic;
     curv_enhanced_vessels = vesselness3D(ct.*segBW, 0.5:1:5.5, [1,1,1], 1, true).*segBW;
     save(fullfile(save_path,[ID,'_enhancedVessel_curv.mat']),'curv_enhanced_vessels');
-    fprintf('done (%s)\n',duration(0,0,toc(t)));
+    clear curv_enhanced_vessels;
+    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
     %% Tabulate results and save to subject directory
     fprintf('Tabulating results ... ');
     t = tic;
     T = tabulateResults(ID,ct,seg,vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_allMetrics.csv']));
-    fprintf('done (%s)\n',duration(0,0,toc(t)));
+    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
     fprintf('TOTAL processing time: %s',duration(0,0,toc(tt)));
     
@@ -182,6 +178,31 @@ function [I,info] = resample_subj(I,info,fname)
     fname = fullfile(subj_dir,['re_',fname]);
     niftiwrite(cast(I,info.Datatype),fname,info,'Compressed',true);
     
+end
+
+function V = vesselSeg_boxes(ct, segBW)
+    I = ct .* segBW;
+    I = Normalize(I);
+    
+    %Divide I into num_boxes pieces to fit into memory
+    image_size = size(I);
+    nblocks = ceil( prod(image_size) / 14e6 );
+    zlim = round(linspace(0,image_size(3),nblocks+1));
+
+    V = zeros(size(I));
+
+    for i = 1:nblocks
+        fprintf('   block %u/%u: %u - %u\n',i,nblocks,zlim(i)+1,zlim(i+1));
+        zind = (zlim(i)+1):zlim(i+1);
+        tmp = MTHT3D( I(:,:,zind),...
+                      0.5:1:5.5,...
+                      12,...  % orientations
+                      70,...  % beta
+                      0.5,... % alpha
+                      15,...  % c, for vesselness
+                      -1.3 ); % alfa, for Neuriteness
+        V(:,:,zind) = tmp .* segBW(:,:,zind);
+    end
 end
 
 %% Determine lobe tags for various segmentations
@@ -231,7 +252,7 @@ function T = tabulateResults(id,ct,seg,vessels,csa)
         
         T.VOLUME(i) = nnz(seg == lobe_id) * 0.625^3; %Convert num voxels into volume by multiplying by voxel dim
         T.VESSEL_VOLUME(i) = nnz(V) * 0.625^3;
-        T.PER_EMPH(i) = nnz((ct < -950) & (seg == lobe_id)) / VOLUME*100;
+        T.PER_EMPH(i) = nnz((ct < -950) & (seg == lobe_id)) / T.VOLUME*100;
        
         [T.NUM_VESSELS(i), T.NUM_COMPONENTS(i), T.NUM_ENDPOINTS(i)] = CSA_size_metrics(C);
         [T.CSA_EXP_A(i), T.CSA_EXP_B(i)] = CSA_metrics(C);

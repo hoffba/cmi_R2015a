@@ -22,9 +22,9 @@ function [image] = CSA_create_maps(V)
     
     stxt = sprintf('%%%uu (%%4.1f%%%% - %%s)',numel(num2str(np)));
     nbsp = 0;
-    fprintf('   Completed ');
+    fprintf('   Processing ');
     t = tic;
-    for i = 1:length(pieces) %For each connected piece
+    for i = 1:np %For each connected piece
         
         % Isolate just this piece on 3D matrix
         tmp = zeros(size(V));
