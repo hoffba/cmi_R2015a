@@ -48,22 +48,10 @@ end
 % n_ext = 0;
 if ~isempty(pp.outfn)
     if ispc
-        cpexec = 'copy';
+        cpexec = 'rename';
     else
-        cpexec = 'cp';
+        cpexec = 'mv';
     end
-    
-%     % Determine result.* extensions to copy:
-%     outfmt =  self.outfmt;
-%     % Elastix can't seem to save as .gz:
-%     if endsWith(outfmt,'.gz')
-%         outfmt(end-2:end) = [];
-%     end
-%     outfmt = {outfmt};
-%     if strcmp(outfmt,'.mhd')
-%         outfmt = {'.mhd','.raw'};
-%     end
-%     n_ext = length(outfmt);
 end
 
 if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
@@ -90,12 +78,7 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
         end
         if outchk && ~isempty(pp.outfn) && ~isempty(pp.outfn{i})
             [odir,outfn] = fileparts(pp.outfn{i});
-            str{2,i} = [cpexec,' "',fullfile(odir,'result.*'),'" "',fullfile(odir,[outfn,'.*'])];
-%             for j = 1:n_ext
-%                 str{j+1,i} = [cpexec,' "',fullfile(odir,['result',outfmt{j}]),'" "',...
-%                     fullfile(odir,[outfn,outfmt{j}]),'"'];
-%             end
+            str{2,i} = [cpexec,' "',fullfile(odir,'result.???'),'" "',fullfile(odir,[outfn,'.???'])];
         end
     end
 end
-
