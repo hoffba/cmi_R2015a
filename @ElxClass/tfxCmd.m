@@ -45,23 +45,30 @@ if length(pp.tp)~=nf
     pp.tp = repmat(pp.tp,nf,1);
 end
 
-n_ext = 0;
+% n_ext = 0;
 if ~isempty(pp.outfn)
     if ispc
         cpexec = 'copy';
     else
         cpexec = 'cp';
     end
-    outfmt =  {self.Schedule{end}.ResultImageFormat};
-    if strcmp(outfmt,'mhd')
-        outfmt = {'mhd','raw'};
-    end
-    n_ext = length(outfmt);
+    
+%     % Determine result.* extensions to copy:
+%     outfmt =  self.outfmt;
+%     % Elastix can't seem to save as .gz:
+%     if endsWith(outfmt,'.gz')
+%         outfmt(end-2:end) = [];
+%     end
+%     outfmt = {outfmt};
+%     if strcmp(outfmt,'.mhd')
+%         outfmt = {'.mhd','.raw'};
+%     end
+%     n_ext = length(outfmt);
 end
 
 if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
     outchk = length(pp.outfn)==nf;
-    str = cell(1+n_ext*outchk,nf);
+    str = cell(1+outchk,nf);
     for i = 1:nf
         str{1,i} = [fullfile(self.elxdir,'transformix'),...
                ' -out "',pp.odir,'"',...
@@ -83,10 +90,11 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
         end
         if outchk && ~isempty(pp.outfn) && ~isempty(pp.outfn{i})
             [odir,outfn] = fileparts(pp.outfn{i});
-            for j = 1:n_ext
-                str{j+1,i} = [cpexec,' "',fullfile(odir,['result.',outfmt{j}]),'" "',...
-                    fullfile(odir,[outfn,'.',outfmt{j}]),'"'];
-            end
+            str{2,i} = [cpexec,' "',fullfile(odir,'result.*'),'" "',fullfile(odir,[outfn,'.*'])];
+%             for j = 1:n_ext
+%                 str{j+1,i} = [cpexec,' "',fullfile(odir,['result',outfmt{j}]),'" "',...
+%                     fullfile(odir,[outfn,outfmt{j}]),'"'];
+%             end
         end
     end
 end

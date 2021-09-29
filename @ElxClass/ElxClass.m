@@ -11,6 +11,7 @@ classdef ElxClass < handle
         Tx0guess = struct('i',{},'fname',{},'fpath',{}); % File names of initial guess transform (.txt)
         Tx0              % Initial transformation(s) (before optimization)
         Schedule = {};   % Schedule of coregistration parameters
+        outfmt = '.nii.gz' % Image output format
         
     end
     methods

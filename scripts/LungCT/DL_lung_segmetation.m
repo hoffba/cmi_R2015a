@@ -53,8 +53,9 @@ finalLabel(CC.PixelIdxList{idx}) = true;
 img = (single(img.*finalLabel) + 1024) / (max(img(finalLabel)) + 1024); % cjg data must be in range [0 1]
 
 %% Load CNN: CJG got validation accuracy to 98.8% Still get some colon and trachea. Use post-processing to remove.
-net = load(fullfile(fileparts(which('DL_lung_segmetation')),...
-    'trained3DUNetValid-01-Sep-2021-10-52-44-Epoch-60.mat'));
+% netname = 'trained3DUNetValid-01-Sep-2021-10-52-44-Epoch-60.mat'; % Whole lung volume Ins
+netname = 'trained3DUNetValid-25-Sep-2021-17-33-42-Epoch-20.mat'; % Whole lung Ins/Exp
+net = load(fullfile(fileparts(which('DL_lung_segmetation')),netname));
 net = net.net;
 
 %% Stich Data

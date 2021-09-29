@@ -14,5 +14,8 @@ if d4>1
     label = strcat(label,'_',cellfun(@num2str,num2cell(1:d4),'UniformOutput',false));
 end
 
+% Re-order for Matlab display
+img = permute(img,[2,1,3]);
+
 orient = (info.Transform.T * diag([-1 -1 1 1]))';
     
