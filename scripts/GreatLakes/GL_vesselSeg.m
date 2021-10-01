@@ -57,7 +57,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         else
             % Validate fn inputs
             if ~(iscellstr(fn_ins) || ischar(fn_ins))
-                error('Input 2 (fn_prm) must be a string or cellstr containing INSP file locations.');
+                error('Input 2 (fn_ins) must be a string or cellstr containing INSP file locations.');
             end
             if ~(iscellstr(fn_seg) || ischar(fn_seg))
                 error('Input 3 (fn_seg) must be a directory containing segmentation files or cellstr of individual file locations.');
@@ -137,7 +137,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         fname = [jobname,'.sh'];
         part_str = 'standard';
         pmem = 12; % max GB per process
-        ptime = 90; % max minutes per process
+        ptime = 300; % max minutes per process
         mxmem = 180; % 180GB max memory for standard node
         nf = numel(fn_ins);
         cores = min(min(nf,floor(mxmem/pmem))+1,36);
@@ -208,8 +208,8 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         ind = ~isfield(p,flds);
         if any(ind)
             error(['Invalid input. Missing:',repmat(' %s',1,nnz(ind))],flds{ind});
-        elseif ~(iscellstr(p.fn_prm) && iscellstr(p.fn_seg) && ischar(p.sv_path) ...
-                && (numel(p.fn_prm)==numel(p.fn_seg)))
+        elseif ~(iscellstr(p.fn_ins) && iscellstr(p.fn_seg) && ischar(p.sv_path) ...
+                && (numel(p.fn_ins)==numel(p.fn_seg)))
             error('Invalid input. fn_ins and fn_seg must be cellstr with equal number of elements.');
         end
         if isfield(p,'Nnodes')
@@ -224,7 +224,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         if ~isnan(jobnum)
             fprintf('Running job number %u of %u\n',jobnum,njobs);
         end
-        nf = numel(p.fn_prm);
+        nf = numel(p.fn_ins);
         if ~isnan(jobnum)
             ind = round((nf/njobs)*[jobnum-1 jobnum]);
             
@@ -252,15 +252,11 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
             tok = regexp(p.fn_ins{ii},'/([^./]+)\.','tokens');
             fn_base{i} = tok{1}{1};
             
-            fprintf('Starting batch job %u:\n   %s\n',i,p.fn_ins{ii});
-            job(i) = batch(c,@job_vesselSeg,1,[p.fn_ins(ii),p.fn_seg(ii),p.sv_path]);
+            fprintf('Starting batch job %u:\n',i,p.fn_ins{ii});
+            fprintf('   Ins: %s\n   Seg: %s\n   Sv: %s\n',p.fn_ins{ii},p.fn_seg{ii},p.sv_path);
+            job(i) = batch(c,@vesselSeg_BH,1,[p.fn_ins(ii),p.fn_seg(ii),p.sv_path]);
         end
-        
-        % Initialize table for statistics:
-%         T = table('Size',[nf,20],'VariableTypes',repmat({'double'},1,20),...
-%             'VariableNames',reshape(append({'fSAD','emph','PD','Norm'},'_',{'%','V_e4','S_e4','B_e5','X_e5'}'),[],1),...
-%             'RowNames',fn_base);
-        
+                
         % Wait for all jobs to complete
         errflag = true(nf,1);
         dt = zeros(nf,1);
@@ -272,20 +268,12 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
                 errflag(i) = false;
                 fprintf(job(i).Tasks(1).ErrorMessage);
             end
-            
-            % Compile statistics:
-%             val = job(i).fetchOutputs;
-%             T(i,:) = num2cell(val{1});
-            
+                        
             % Delete job files:
             job(i).delete;
             
         end
         rmdir(jobdir,'s');
-        
-        % Write table with mean values to save path
-%         writetable(T,fullfile(p.sv_path,sprintf('%s_%u_Means.csv',jobname,jobnum)),...
-%             'WriteRowNames',true);
         
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
             mean(dt(errflag)),std(dt(errflag)));
@@ -353,15 +341,15 @@ function val = job_vesselSeg(subj_dir)
     segBW = ismember(seg,[11,12,13,21,22]);
     
     % Determine temp folder for fast saving
-    fn_base = regexp(fn_ins,'/([^./]+)\.','tokens');
-    fn_base = fn_base{1}{1};
-    if isfolder('/tmpssd')
-        tmpdir = '/tmpssd';
-    elseif isfolder('/tmp')
-        tmpdir = '/tmp';
-    else
-        tmpdir = sv_path;
-    end
+%     fn_base = regexp(fn_ins,'/([^./]+)\.','tokens');
+%     fn_base = fn_base{1}{1};
+%     if isfolder('/tmpssd')
+%         tmpdir = '/tmpssd';
+%     elseif isfolder('/tmp')
+%         tmpdir = '/tmp';
+%     else
+%         tmpdir = sv_path;
+%     end
 
 %     % Set up labels for results
 %     info_sv = info_ins;

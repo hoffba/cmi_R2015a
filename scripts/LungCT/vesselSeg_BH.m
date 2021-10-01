@@ -1,30 +1,45 @@
 function T = vesselSeg_BH(varargin)
 % Perform lung vessel segmentation 
 % Inputs: subj_dir = directory containing all subject data
-% t = vesselSeg_BH(ID,fname_ins,fname_seg,save_path)
-% t = vesselSeg_BH(ID,ins,seg,info,save_path)
+% t = vesselSeg_BH( fname_ins , fname_seg , save_path )
+% t = vesselSeg_BH( ins , seg , info , save_path )
 
     T = [];
     tt = tic;
 
     %% Parse Inputs
     flag = true; % load file flag
-    if nargin==4
-        ID = varargin{1};
-        fn_ct = varargin{2};
-        fn_seg = varargin{3};
-        save_path = varargin{4};
+    if nargin==3
+        fn_ct = varargin{1};
+        fn_seg = varargin{2};
+        save_path = varargin{3};
     elseif nargin==5
         flag = false;
-        ID = varargin{1};
-        ct = varargin{2};
-        seg = varargin{3};
-        info = varargin{4};
-        save_path = varargin{5};
+        ct = varargin{1};
+        seg = varargin{2};
+        info = varargin{3};
+        save_path = varargin{4};
     else
         error('Invalid inputs.')
     end
 
+    %% Check save directory
+    fprintf('   Saving to folder: %s\n',save_path);
+    if ~isfolder(save_path)
+        mkdir(save_path);
+    end
+    
+    %% Use base name as ID
+    [~,ID] = fileparts(fn_ct);
+    if startsWith(ID,'re_')
+        ID(1:3) = [];
+    end
+    if contains(ID,'_')
+        ID = extractBefore(ID,'_');
+    elseif contains(ID,'.')
+        ID = extractBefore(ID,'.');
+    end
+    
     %% Find and load INSP CT file:
     if flag
         if ~contains(fn_ct,'.nii')
