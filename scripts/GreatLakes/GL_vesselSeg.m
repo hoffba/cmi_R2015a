@@ -243,18 +243,23 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         c.JobStorageLocation = jobdir;
         
         % Start batch jobs
-        fn_base = cell(1,nf);
         for i = 1:nf
             % Find subsection index:
             ii = ind(i);
             
-            % Extract base name
-            tok = regexp(p.fn_ins{ii},'/([^./]+)\.','tokens');
-            fn_base{i} = tok{1}{1};
-            
+            [~,ID] = fileparts(p.fn_ins{ii});
+            if startsWith(ID,'re_')
+                ID(1:3) = [];
+            end
+            if contains(ID,'_')
+                ID = extractBefore(ID,'_');
+            elseif contains(ID,'.')
+                ID = extractBefore(ID,'.');
+            end
+
             fprintf('Starting batch job %u:\n',i,p.fn_ins{ii});
             fprintf('   Ins: %s\n   Seg: %s\n   Sv: %s\n',p.fn_ins{ii},p.fn_seg{ii},p.sv_path);
-            job(i) = batch(c,@vesselSeg_BH,1,[p.fn_ins(ii),p.fn_seg(ii),p.sv_path]);
+            job(i) = batch(c,@vesselSeg_BH,1,[p.fn_ins(ii),p.fn_seg(ii),fullfile(p.sv_path,ID)]);
         end
                 
         % Wait for all jobs to complete
@@ -282,116 +287,6 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         error('Invalid input');
     end
 
-end
-
-function val = job_vesselSeg(subj_dir)
-% Perform lung vessel segmentation 
-% Inputs: subj_dir = directory containing all subject data
-
-    [~,ID] = fileparts(subj_dir);
-    
-    % Find and load INSP CT file:
-    fn_ins = dir(fullfile(subj_dir,'*_INSP_*.ct.nii.gz'));
-    if isempty(fn_ins), warning('No INSP file found for subject: %s.',ID); return, end
-    fn_ins = {fn_ins.name};
-    ind = startsWith(fn_ins,'re_');
-    re_flag = false;
-    if any(ind)
-        fn_ins = fn_ins{ind};
-    else
-        fn_ins = fn_ins{1};
-        re_flag = true;
-    end
-    info_ct = niftiinfo(fn_ins);
-    ct = double(niftiread(info_ct));
-    if re_flag
-        [ct,info_ct] = resample_subj(ct,info_ct,fn_ins);
-    end
-    
-    % Find INSP segmentation file:
-    fn_seg = dir(fullfile(subj_dir,'*_INSP_*.lobe_segmentation.nii.gz'));
-    if isempty(fn_seg), warning('No INSP segmentation file found for subject: %s.',ID); return, end
-    fn_seg = {fn_seg.name};
-    ind = startsWith(fn_seg,'re_');
-    re_flag = false;
-    if any(ind)
-        fn_seg = fn_seg{ind};
-    else
-        fn_seg = fn_seg{1};
-        re_flag = true;
-    end
-    info_seg = niftiinfo(fn_seg);
-    seg = niftiread(info_seg);
-    if re_flag
-        [seg,info_seg] = resample_subj(seg,info_seg,fn_seg);
-    end
-    
-    % Save eroded lobe map:
-    lobe_tag = [11,12,13,21,22];
-    se = strel('sphere',5);
-    eroded_lobes = zeros(size(seg));
-    for i = 1:numel(lobe_tag)
-        eroded_lobes(imerode(seg == lobe_tag(i),se)) = lobe_tag(i);
-    end
-    eroded_lobes = uint8(eroded_lobes);
-    save(fullfile(subj_dir,[ID,'_erodedLobes.mat']),'eroded_lobes');
-    eroded_lobes = eroded_lobes > 0;
-    
-    % Full lung volume:
-    segBW = ismember(seg,[11,12,13,21,22]);
-    
-    % Determine temp folder for fast saving
-%     fn_base = regexp(fn_ins,'/([^./]+)\.','tokens');
-%     fn_base = fn_base{1}{1};
-%     if isfolder('/tmpssd')
-%         tmpdir = '/tmpssd';
-%     elseif isfolder('/tmp')
-%         tmpdir = '/tmp';
-%     else
-%         tmpdir = sv_path;
-%     end
-
-%     % Set up labels for results
-%     info_sv = info_ins;
-%     info_sv.Datatype = 'int16';
-%     info_sv.BitsPerPixel = 16;
-
-    % Generate ero
-
-    % Generate enhanced vessel maps
-    fprintf('Calculating enhanced vessel maps ...\n');
-    [vessels, ~] = MTHT3D( Normalize(ct.*segBW) ,...
-                     0.5:1:5.5 ,...
-                     12 ,... % number of orientations
-                     70 ,... % beta
-                     0.5 ,... % alpha
-                     15 ,... % c : parameters for Vesselness
-                     -1/3 );  % alfa : parameters for Neuriteness
-    vessels = double(vessels) .* segBW;
-    save(fullfile(subj_dir,[ID,'_enhancedVessel.mat']),'vessels');
-
-    % Binarize vessels:
-    info = info_seg;
-    info.Datatype = 'int8';
-    info.BitsPerPixel = 8;
-    bin_vessels = activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese');
-    niftiwrite(uint8(bin_vessels),fullfile(subj_dir,[ID,'_binVessel.nii']),'Compressed',true);
-    
-    % Generate CSA maps
-    csa_map = createCSA_maps(bin_vessels);
-    save(fullfile(subj_dir,[ID,'_CSA_skel.mat']),'csa_map');
-
-    %Frangi Filter
-    opt = struct('FrangiScaleRange',[0.5 5.5],...
-                 'FrangiScaleRatio',1,...
-                 'BlackWhite',false);
-    frangi_enhanced_vessels = FrangiFilter3D(ct.*segBW,opt); 
-    save(fullfile(subj_dir,[ID,'_enhancedVessel_frangi.mat']),'frangi_enhanced_vessels');
-
-    %Curvilinear Filter
-    curv_enhanced_vessels = vesselness3D(ct.*segBW, 0.5:1:5.5, [1,1,1], 1, true).*segBW;
-    save(fullfile(subj_dir,[ID,'_enhancedVessel_curv.mat']),'curv_enhanced_vessels');
-    
 end
 
 function [fn,shortpath,flag] = checkTurboPath(fnames,dcode)
@@ -425,31 +320,3 @@ function [fn,shortpath,flag] = checkTurboPath(fnames,dcode)
     shortpath(flag) = [];
 end
 
-function [I,info] = resample_subj(I,info,fname)
-    
-    if endsWith(fname,'.lobe_segmentation.nii.gz')
-        interpmethod = 'nearest';
-    else
-        interpmethod = 'linear';
-    end
-
-    %Get new size
-    pixDim = info.PixelDimensions;
-    pixSize = 0.625;
-    
-    [sx,sy,sz] = size(I);
-    xq = length(0:pixSize/pixDim(1):sx);
-    yq = length(0:pixSize/pixDim(2):sy);
-    zq = sz; %was length(0:sz) so original batch has one extra z layer
-    
-    I = imresize3(img_ct, [xq yq zq], 'method', interpmethod);
-    
-    info.PixelDimensions = [0.625, 0.625, 0.625];
-    info.ImageSize = size(I);
-    
-    % Save resampled data to file:
-    [subj_dir,fname,ext] = fileparts(fname);
-    fname = fullfile(subj_dir,['re_',fname,ext]);
-    niftiwrite(I,fname,info);
-    
-end
