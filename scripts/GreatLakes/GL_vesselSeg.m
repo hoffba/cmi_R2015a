@@ -251,7 +251,9 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         % Set up cluster properties
         c = parcluster;
         jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobname,jobnum));
-        mkdir(jobdir);
+        if ~isfolder(jobdir)
+            mkdir(jobdir);
+        end
         c.JobStorageLocation = jobdir;
         
         % Start batch jobs
