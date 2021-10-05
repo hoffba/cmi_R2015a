@@ -136,8 +136,8 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         jobname = sprintf('GL_vesselSeg_%s',tstr);
         fname = [jobname,'.sh'];
         part_str = 'standard';
-        pmem = 12; % max GB per process
-        ptime = 300; % max minutes per process
+        pmem = 16; % max GB per process
+        ptime = 420; % max minutes per process
         mxmem = 180; % 180GB max memory for standard node
         nf = numel(fn_ins);
         cores = min(min(nf,floor(mxmem/pmem))+1,36);
@@ -219,6 +219,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         end
         
         % Check for job array:
+        jobid = getenv('SLURM_JOBID');
         jobname = getenv('SLURM_JOB_NAME');
         jobnum = str2double(getenv('SLURM_ARRAY_TASK_ID'));
         if ~isnan(jobnum)
@@ -236,6 +237,17 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         end
         nf = numel(ind);
         
+        % Determine temporary directory for saving results:
+        tmpdir = '';
+        tmpchk = false;
+        if isfolder('/tmpssd')
+            tmpchk = true;
+            tmpdir = '/tmpssd';
+        elseif isfolder('/tmp')
+            tmpchk = true;
+            tmpdir = '/tmp';
+        end
+        
         % Set up cluster properties
         c = parcluster;
         jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobname,jobnum));
@@ -243,23 +255,32 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         c.JobStorageLocation = jobdir;
         
         % Start batch jobs
+        ID = cell(nf,1);
         for i = 1:nf
             % Find subsection index:
             ii = ind(i);
             
-            [~,ID] = fileparts(p.fn_ins{ii});
-            if startsWith(ID,'re_')
-                ID(1:3) = [];
+            [~,ID{i}] = fileparts(p.fn_ins{ii});
+            if startsWith(ID{i},'re_')
+                ID{i}(1:3) = [];
             end
-            if contains(ID,'_')
-                ID = extractBefore(ID,'_');
+            if contains(ID{i},'_')
+                ID{i} = extractBefore(ID{i},'_');
             elseif contains(ID,'.')
-                ID = extractBefore(ID,'.');
+                ID{i} = extractBefore(ID{i},'.');
             end
 
-            fprintf('Starting batch job %u:\n',i,p.fn_ins{ii});
+            if tmpchk
+                % Save to tmp and copy over after done
+                svdir = fullfile(tmpdir,jobid,ID{i});
+            else
+                % Save directly to turbo
+                svdir = fullfile(p.sv_path,ID{i});
+            end
+            
+            fprintf('Starting batch job %u:\n',i);
             fprintf('   Ins: %s\n   Seg: %s\n   Sv: %s\n',p.fn_ins{ii},p.fn_seg{ii},p.sv_path);
-            job(i) = batch(c,@vesselSeg_BH,1,[p.fn_ins(ii),p.fn_seg(ii),fullfile(p.sv_path,ID)]);
+            job(i) = batch(c,@vesselSeg_BH,1,[p.fn_ins(ii),p.fn_seg(ii),svdir]);
         end
                 
         % Wait for all jobs to complete
@@ -273,7 +294,13 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
                 errflag(i) = false;
                 fprintf(job(i).Tasks(1).ErrorMessage);
             end
-                        
+                    
+            % Move files from tmp to Turbo:
+            if tmpchk
+                fprintf('Moving files from tmp to %s',p.sv_path);
+                movefile(fullfile(tmpdir,jobid,ID{i}),p.sv_path);
+            end
+            
             % Delete job files:
             job(i).delete;
             
