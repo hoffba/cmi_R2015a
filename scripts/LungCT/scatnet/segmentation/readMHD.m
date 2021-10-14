@@ -1,4 +1,4 @@
-function [img,label,fov,info] = readMHD(varargin)
+function [img,label,fov,orient,info] = readMHD(varargin)
 % Reads .mhd and associated .raw files into the cmi program
 img = []; label = {}; fov = [];
 info = struct('SlicePos',{[]},'SliceOrient',{[]});
@@ -26,18 +26,6 @@ if fid>2
     if ~isempty(ind)
         voxsz = str2num(hstr{ind+1});
     end
-    ind = find(strcmp('TransformMatrix',hstr),1);
-    flipz = false;
-    if ~isempty(ind)
-        val = str2num(hstr{ind+1});
-        info.SliceOrient = val(1:6);
-        orthv = cross(val(1:3),val(4:6));
-        if all(orthv==-val(7:9))
-            flipz = true;
-        elseif ~all(orthv==val(7:9))
-            warning('Not a rectilinear volume!');
-        end
-    end
     ind = find(strcmp('Offset',hstr),1);
     if ~isempty(ind)
         info.SlicePos = str2num(hstr{ind+1});
@@ -47,6 +35,21 @@ if fid>2
             info.SlicePos = str2num(hstr{ind+1});
         end
     end
+    ind = find(strcmp('TransformMatrix',hstr),1);
+    flipz = false;
+    if isempty(ind)
+        T = eye(3);
+    else
+        T = str2num(hstr{ind+1});
+        info.SliceOrient = T(1:6);
+        orthv = cross(T(1:3),T(4:6));
+        if all(orthv==-T(7:9))
+            flipz = true;
+        elseif ~all(orthv==T(7:9))
+            warning('Not a rectilinear volume!');
+        end
+    end
+    orient = [ reshape(T,3,3)*diag(voxsz) , info.SlicePos(:) ; 0 0 0 1 ];
     ind = find(strcmp('ElementNumberOfChannels',hstr),1);
     if ~isempty(ind)
         nv = str2double(hstr{ind+1});
@@ -152,4 +155,8 @@ elseif hchk && exist(rawfname,'file')
     end
 end
 
+perm = [2,1,3];
+img = flip(permute(img,perm),3);
+fov = fov(perm);
+orient = orient([perm,4],[perm,4]);
 

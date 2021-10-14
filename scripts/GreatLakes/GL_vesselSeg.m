@@ -136,8 +136,8 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         jobname = sprintf('GL_vesselSeg_%s',tstr);
         fname = [jobname,'.sh'];
         part_str = 'standard';
-        pmem = 32; % max GB per process
-        ptime = 420; % max minutes per process
+        pmem = 64; % max GB per process
+        ptime = 720; % max minutes per process
         mxmem = 180; % 180GB max memory for standard node
         nf = numel(fn_ins);
         cores = min(min(nf,floor(mxmem/pmem))+1,36);
@@ -290,17 +290,18 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         dt = zeros(nf,1);
         for i = 1:nf
             wait(job(i));
-            fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
             if ~isempty(job(i).Tasks(1).Error)  %strcmp(job(i).State,'failed')
                 errflag(i) = false;
                 fprintf(job(i).Tasks(1).ErrorMessage);
             else
                 dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
             end
+            fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
                     
             % Move files from tmp to Turbo:
             if tmpchk
                 fprintf('Moving files from tmp to %s',p.sv_path);
+                if 
                 movefile(fullfile(tmpdir,jobid,ID{i}),p.sv_path);
             end
             
