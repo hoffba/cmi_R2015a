@@ -1,5 +1,9 @@
 function finalLabel = DL_lung_segmetation(x)
 
+if ~gpuDeviceCount
+    warning('GPU was not found on this system.');
+end
+
 if nargin<1
     [FileName,PathName] = uigetfile('*.nii.gz','Select nii File for Conversion of mhd 2 nii.');
     if FileName
@@ -55,7 +59,7 @@ img = (single(img.*finalLabel) + 1024) / (max(img(finalLabel)) + 1024); % cjg da
 %% Load CNN: CJG got validation accuracy to 98.8% Still get some colon and trachea. Use post-processing to remove.
 % netname = 'trained3DUNetValid-01-Sep-2021-10-52-44-Epoch-60.mat'; % Whole lung volume Ins
 % netname = 'trained3DUNetValid-25-Sep-2021-17-33-42-Epoch-20.mat'; % Whole lung Ins/Exp
-netname = 'EXP_trained3DUNetValid-06-Oct-2021-09-28-53-Epoch-20.mat';
+netname = 'trained3DUNetValid-14-Oct-2021-09-10-33-Epoch-20.mat';
 net = load(fullfile(fileparts(which('DL_lung_segmetation')),netname));
 net = net.net;
 
