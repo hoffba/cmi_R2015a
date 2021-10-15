@@ -4,11 +4,24 @@ function varargout = yacta(fnames,varargin)
 % Inputs:
 %   fname = location of image file for processing
 %   options = strings for optional input to yacta64
-%       (i.e. 'airways', 'parenchyma', 'renderer', 'hide', 'exportlabels', 'yactascp')
-%       ** no optional inputs uses all
+%       ('airways', 'parenchyma', 'renderer', 'hide', 'exportlabels', 'yactascp')
+%           ** no optional inputs uses all
+%       ('wait' option to suspend action until completion of system call)
 
 if ischar(fnames)
     fnames =  {fnames};
+end
+
+waitstr = '&';
+ind = strcmp('wait',varargin);
+if nnz(ind)
+    waitstr = '';
+end
+
+% Validate YACTA options:
+opts = {'airways','parenchyma','renderer','hide','exportlabels','yactascp'};
+if nargin > 1
+    opts = varargin(ismember(varargin,opts));
 end
 
 nf = numel(fnames);
@@ -19,11 +32,11 @@ for i = 1:nf
     if isfolder(fname)
 
         % Compile .dcv file with DICOM names in folder
-        [fpath,dcmname] = fileparts(fname);
+        [~,dcmname] = fileparts(fname);
         tnames = dir(fname);
         tnames([tnames.isdir]) = [];
         tnames = {tnames.name};
-        tnames(~cellfun(@isdicom,tnames)) = [];
+        tnames(~cellfun(@(x)exist(x)&&isdicom(x),tnames)) = [];
         fname = fullfile(fname,sprintf('%s.dcv',dcmname));
 
         % write DCV file
@@ -35,30 +48,38 @@ for i = 1:nf
 
         % Must convert to MHD for YACTA to read:
         fpath = fileparts(fname);
-        [img,label,fov,orient,info,fnameOut] = cmi_load(1,[],fname);
+        [img,label,fov,orient,~,fnameOut] = cmi_load(1,[],fname);
         fname = fullfile(fpath,[fnameOut,'.mhd']);
         stat = saveMHD(fname,img,label,fov,orient);
 
     end
 
-    % Validate YACTA options:
-    opts = {'airways','parenchyma','renderer','hide','exportlabels','yactascp'};
-    if nargin > 1
-        opts = varargin(ismember(varargin,opts));
-    end
-
     % Generate system call
-    cmd{i} = sprintf('yacta64 "%s"%s',fname,sprintf(' --%s',opts{:}));
+    yactastr = 'C:\Program Files\yacta64\yacta64.exe';
+    cmd{i} = sprintf('"%s" "%s"%s',yactastr,fname,sprintf(' --%s',opts{:}));
     
+end
+
+if nf > 1
+    % Run .bat file:
+    batname = fullfile(tempdir,sprintf('yacta_%s.bat',datestr(datetime,'yyyymmddHHMMss')));
+    fid = fopen(batname,'wt');
+    fprintf(fid,'%s\n',cmd{:});
+    fclose(fid);
+    cmd = batname;
+else
+    cmd = cmd{1};
 end
 
 % Send system call:
 fprintf('System Call: %s\n',cmd);
 t = tic;
-stat = system(cmd);
-fprintf('Complete (%s)\n',duration(toc(t)));
+stat = system(sprintf('%s%s',cmd,waitstr));
+if isempty(waitstr)
+    fprintf('Complete (%s)\n',duration(0,0,toc(t)));
+end
 
 if nargout
     % Load results to pass back from function:
-    varargout = {};
+    varargout = stat;
 end
