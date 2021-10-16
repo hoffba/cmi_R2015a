@@ -36,11 +36,11 @@ for i = 1:nf
         tnames = dir(fname);
         tnames([tnames.isdir]) = [];
         tnames = {tnames.name};
-        tnames(~cellfun(@(x)exist(x)&&isdicom(x),tnames)) = [];
-        fname = fullfile(fname,sprintf('%s.dcv',dcmname));
+        tnames(~cellfun(@(x)exist(x,'file')&&isdicom(x),tnames)) = [];
+        svname = fullfile(fname,sprintf('%s.dcv',dcmname));
 
         % write DCV file
-        fid = fopen(fname,'wt');
+        fid = fopen(svname,'wt');
         fprintf(fid,'%s\n',tnames{:});
         fclose(fid);
 
