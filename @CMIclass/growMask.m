@@ -2,12 +2,16 @@
 % segmentation algorithms for mask region growing
 function growMask(self,~,~)
 if self.img.check
-    opts = {'Points-Threshold','VOI-Threshold','Ends-in','Lung Segment'};
+    opts = {'Deep Learning','Points-Threshold','VOI-Threshold','Ends-in','Lung Segment'};
     [sel,ok] = listdlg('PromptString','Select a mask growing option:','ListString',opts);
     if ok
         % Threshold for region growing is set by user before running this algorithm
         switch sel
-            case 1 % Points-Threshold
+            case 1 % Deep Learning
+                tmask = DL_lung_segmetation(self.img.mat(:,:,:,self.vec));
+                self.img.mask.merge('replace',logical(tmask));
+                self.imgAppend(tmask,{'Segmentation'});
+            case 2 % Points-Threshold
                 stat = true;
                 if self.img.mask.check
                     stat = strcmp(questdlg('This will delete your current mask. Continue?'),'Yes');
@@ -28,15 +32,15 @@ if self.img.check
                     self.img.mask.setSlice(tmask,self.orient,1,self.slc(self.orient));
                     self.img.growVOI(self.vec);
                 end
-            case 2 % VOI-Threshold
+            case 3 % VOI-Threshold
                 if any(self.img.mask.mat(:))
                     self.img.growVOI(self.vec)
                 else
                     error('Need to draw a mask first!')
                 end
-            case 3 % Ends-in
+            case 4 % Ends-in
                 self.img.growVOI(self.vec,1);
-            case 4 % Automated Lung Segmentation
+            case 5 % Automated Lung Segmentation
                 lmask = self.img.segmentLung(self.vec);
                 if ~islogical(lmask)
                     self.imgAppend(lmask,{'Segmentation'});

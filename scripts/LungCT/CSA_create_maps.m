@@ -26,16 +26,21 @@ function [image] = CSA_create_maps(V)
     t = tic;
     for i = 1:np %For each connected piece
         
-        % Isolate just this piece on 3D matrix
-        tmp = zeros(size(V));
-        tmp( pieces{i}) = true;
-        try
-            [~,~,links] = Skel2Graph3D(tmp,0);
-            for lidx = 1:length(links)
-                link = links(lidx).point;
-                image(link) = mean(csa(link));
+        if numel(pieces{i})>1
+        
+            % Isolate just this piece on 3D matrix
+            tmp = zeros(size(V));
+            tmp( pieces{i}) = true;
+            try
+                [~,~,links] = Skel2Graph3D(tmp,0);
+                for lidx = 1:length(links)
+                    link = links(lidx).point;
+                    image(link) = mean(csa(link));
+                end
+            catch E
+                disp('check');
             end
-        catch E
+            
         end
         
         % Print progress:

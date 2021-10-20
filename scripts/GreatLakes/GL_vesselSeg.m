@@ -290,18 +290,19 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         dt = zeros(nf,1);
         for i = 1:nf
             wait(job(i));
-            if ~isempty(job(i).Tasks(1).Error)  %strcmp(job(i).State,'failed')
+            dt(i) = minutes(datetime('now') - job(i).StartDateTime);
+            if isempty(job(i).Tasks(1).Error)
+                fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
+            else
+                fprintf('Job %u failed after %.1f minutes.\n',i,dt(i));
                 errflag(i) = false;
                 fprintf(job(i).Tasks(1).ErrorMessage);
-            else
-                dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
+                dt(i) = 0; % Don't want to keep failed times
             end
-            fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
                     
             % Move files from tmp to Turbo:
             if tmpchk
                 fprintf('Moving files from tmp to %s',p.sv_path);
-                if 
                 movefile(fullfile(tmpdir,jobid,ID{i}),p.sv_path);
             end
             
