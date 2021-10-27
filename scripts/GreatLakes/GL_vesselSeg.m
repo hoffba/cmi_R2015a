@@ -219,15 +219,13 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         end
         
         % Check for job array:
-        jobid = getenv('SLURM_JOBID');
-        jobname = getenv('SLURM_JOB_NAME');
-        jobnum = str2double(getenv('SLURM_ARRAY_TASK_ID'));
-        if ~isnan(jobnum)
-            fprintf('Running job number %u of %u\n',jobnum,njobs);
+        slurm = getSLURM;
+        if ~isempty(slurm.jobnum)
+            fprintf('Running job number %u of %u\n',slurm.jobnum,njobs);
         end
         nf = numel(p.fn_ins);
-        if ~isnan(jobnum)
-            ind = round((nf/njobs)*[jobnum-1 jobnum]);
+        if ~isempty(slurm.jobnum)
+            ind = round((nf/njobs)*[slurm.jobnum-1 slurm.jobnum]);
             
             fprintf('ind: %u-%u\n',ind+[1,0]);
             
@@ -237,20 +235,9 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         end
         nf = numel(ind);
         
-        % Determine temporary directory for saving results:
-        tmpdir = '';
-        tmpchk = false;
-        if isfolder('/tmpssd')
-            tmpchk = true;
-            tmpdir = '/tmpssd';
-        elseif isfolder('/tmp')
-            tmpchk = true;
-            tmpdir = '/tmp';
-        end
-        
         % Set up cluster properties
         c = parcluster;
-        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobname,jobnum));
+        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',slurm.jobname,slurm.slurm.jobnum));
         if ~isfolder(jobdir)
             mkdir(jobdir);
         end
@@ -272,13 +259,8 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
                 ID{i} = extractBefore(ID{i},'.');
             end
 
-%             if tmpchk
-%                 % Save to tmp and copy over after done
-%                 svdir = fullfile(tmpdir,jobid,ID{i});
-%             else
-                % Save directly to turbo
-                svdir = fullfile(p.sv_path,ID{i});
-%             end
+            % Save directly to turbo
+            svdir = fullfile(p.sv_path,ID{i});
             
             fprintf('Starting batch job %u:\n',i);
             fprintf('   Ins: %s\n   Seg: %s\n   Sv: %s\n',p.fn_ins{ii},p.fn_seg{ii},p.sv_path);
@@ -302,16 +284,9 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
                 fprintf('File: %s\n',job(i).Tasks(1).stack(1).file);
                 fprintf('Name: %s\n',job(i).Tasks(1).stack(1).name);
                 fprintf('Line: %s\n',job(i).Tasks(1).stack(1).line);
-%                 dt(i) = 0; % Don't want to keep failed times
             end
                     
             job(i).diary
-            
-            % Move files from tmp to Turbo:
-%             if tmpchk
-%                 fprintf('Moving files from tmp to %s',p.sv_path);
-%                 movefile(fullfile(tmpdir,jobid,ID{i}),p.sv_path);
-%             end
             
             % Delete job files:
             job(i).delete;
