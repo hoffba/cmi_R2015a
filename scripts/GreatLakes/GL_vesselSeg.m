@@ -272,13 +272,13 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
                 ID{i} = extractBefore(ID{i},'.');
             end
 
-            if tmpchk
-                % Save to tmp and copy over after done
-                svdir = fullfile(tmpdir,jobid,ID{i});
-            else
+%             if tmpchk
+%                 % Save to tmp and copy over after done
+%                 svdir = fullfile(tmpdir,jobid,ID{i});
+%             else
                 % Save directly to turbo
                 svdir = fullfile(p.sv_path,ID{i});
-            end
+%             end
             
             fprintf('Starting batch job %u:\n',i);
             fprintf('   Ins: %s\n   Seg: %s\n   Sv: %s\n',p.fn_ins{ii},p.fn_seg{ii},p.sv_path);
@@ -290,21 +290,28 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         dt = zeros(nf,1);
         for i = 1:nf
             wait(job(i));
-            dt(i) = minutes(datetime('now') - job(i).StartDateTime);
+            
+            dt(i) = minutes(datetime('now','TimeZone','local') - job(i).StartDateTime);
+            
             if isempty(job(i).Tasks(1).Error)
                 fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
             else
                 fprintf('Job %u failed after %.1f minutes.\n',i,dt(i));
                 errflag(i) = false;
-                fprintf(job(i).Tasks(1).ErrorMessage);
-                dt(i) = 0; % Don't want to keep failed times
+                fprintf('%s\n',job(i).Tasks(1).ErrorMessage);
+                fprintf('File: %s\n',job(i).Tasks(1).stack(1).file);
+                fprintf('Name: %s\n',job(i).Tasks(1).stack(1).name);
+                fprintf('Line: %s\n',job(i).Tasks(1).stack(1).line);
+%                 dt(i) = 0; % Don't want to keep failed times
             end
                     
+            job(i).diary
+            
             % Move files from tmp to Turbo:
-            if tmpchk
-                fprintf('Moving files from tmp to %s',p.sv_path);
-                movefile(fullfile(tmpdir,jobid,ID{i}),p.sv_path);
-            end
+%             if tmpchk
+%                 fprintf('Moving files from tmp to %s',p.sv_path);
+%                 movefile(fullfile(tmpdir,jobid,ID{i}),p.sv_path);
+%             end
             
             % Delete job files:
             job(i).delete;

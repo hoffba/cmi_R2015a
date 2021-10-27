@@ -115,12 +115,13 @@ function T = vesselSeg_BH(varargin)
     fprintf('Calculating enhanced vessel maps ... \n');
     t = tic;
     vessels = vesselSeg_boxes(ct, segBW);
+    vessels(isnan(vessels)) = 0;
     save(fullfile(save_path,[ID,'_enhancedVessel.mat']),'vessels');
     fprintf('done (%s)\n\n',duration(0,0,toc(t)));
 
     %% Binarize vessels:
     fprintf('Binarizing vessel map ... ');
-    t = tic;
+    t = tic; 
     info.Datatype = 'int8';
     info.BitsPerPixel = 8;
     bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
@@ -243,7 +244,8 @@ end
 
 %% Tabulate statistics for each lobe
 function T = tabulateResults(id,ct,seg,vessels,csa)
-
+    
+    fprintf('Tabulating vessel results:\n');
     lobe = getLobeTags(seg);
     nlobes = numel(lobe);
     T = table('Size',[nlobes,14],...
@@ -268,7 +270,8 @@ function T = tabulateResults(id,ct,seg,vessels,csa)
         T.VOLUME(i) = nnz(seg == lobe_id) * 0.625^3; %Convert num voxels into volume by multiplying by voxel dim
         T.VESSEL_VOLUME(i) = nnz(V) * 0.625^3;
         T.PER_EMPH(i) = nnz((ct < -950) & (seg == lobe_id)) / T.VOLUME(i)*100;
-       
+        
+        fprintf('   Calculating size metrics\n');
         [T.NUM_VESSELS(i), T.NUM_COMPONENTS(i), T.NUM_ENDPOINTS(i)] = CSA_size_metrics(C);
         [T.CSA_EXP_A(i), T.CSA_EXP_B(i)] = CSA_metrics(C);
         [T.VESSEL_VOLUME_5DOWN(i), T.NUM_VESSELS_5DOWN(i)] = CSA_range_metrics(C < 5 & C > 0, C);
