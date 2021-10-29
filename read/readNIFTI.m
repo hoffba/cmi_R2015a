@@ -15,7 +15,7 @@ if d4>1
 end
 
 % Re-order for Matlab display
-img = permute(img,[2,1,3]);
+% img = permute(img,[2,1,3]);
 
 orient = (info.Transform.T * diag([-1 -1 1 1]))';
     
