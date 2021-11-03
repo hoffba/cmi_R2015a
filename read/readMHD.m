@@ -130,7 +130,7 @@ elseif hchk && exist(rawfname,'file')
         if numel(img)~=prod([d,nv])
             img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
         end
-        img = permute(reshape(img,[nv,d]),[3,2,4,1]);
+        img = permute(reshape(img,[nv,d]),[2,3,4,1]);
         fov = d.*voxsz;
         fclose(fid);
     else
