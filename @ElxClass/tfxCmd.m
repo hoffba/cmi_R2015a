@@ -78,7 +78,7 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
         end
         if outchk && ~isempty(pp.outfn) && ~isempty(pp.outfn{i})
             [odir,outfn] = fileparts(pp.outfn{i});
-            str{2,i} = [cpexec,' "',fullfile(odir,'result.???'),'" "',fullfile(odir,[outfn,'.???'])];
+            str{2,i} = [cpexec,' "',fullfile(odir,'result.???'),'" "',outfn,'.???"'];
         end
     end
 end

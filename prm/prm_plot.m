@@ -82,7 +82,7 @@ if (nargin>=4)
 %         end
         % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         % ~~~~~~ Colormap color control ~~~~~~~~~
-        colormap(ha,cmap);
+        colormap(ha.Parent,cmap);
         C = ind;
         % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         

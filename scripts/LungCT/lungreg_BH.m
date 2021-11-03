@@ -1,4 +1,16 @@
-function lungreg_BH(ID,elxdir,regObj)
+function j = lungreg_BH(exp,exp_info,exp_mask,ins,ins_info,ins_mask,elxdir,ID,qcheck) 
+%OLD --lungreg_BH(ID,elxdir,regObj,qcheck)
+
+% ***_info = struct with fields:
+%                         .name
+%                         .label
+%                         .fov
+%                         .orient
+%                         .d
+%                         .voxsz
+%                         .voxvol
+
+
 % This function runs key steps for image RegObj0istration using Ben's RegObj0
 % program. This program will execute a RegObj0istration using preloaded data,
 % segmentation masks and settings. The automated features include: generate
@@ -26,6 +38,24 @@ function lungreg_BH(ID,elxdir,regObj)
 % Moving_mask = mask for moving data
 % RegObj0 = reg object
 
+if nargin<4
+    qcheck = true;
+else
+    qcheck = logical(qcheck);
+end
+
+%% Set up Reg object:
+regObj = RegClass;
+regObj.cmiObj(1).setImg(exp,exp_info.label,exp_info.fov,exp_info.orient,exp_info.name);
+regObj.cmiObj(1).img.mask.merge('replace',exp_mask);
+regObj.cmiObj(2).setImg(ins,ins_info.label,ins_info.fov,ins_info.orient,ins_info.name);
+regObj.cmiObj(2).img.mask.merge('replace',ins_mask);
+if qcheck
+else
+    regObj.h.checkbox_wait.Value = 0;
+    regObj.UDschedule(regObj.h.checkbox_wait);
+end
+
 %% Is the fixed image incremental or continuous?
 nslc = regObj.cmiObj(1).img.dims(3);
 gapchk = nnz(std(reshape(regObj.cmiObj(1).img.mat(:,:,:,1),[],nslc),[],1)) < nslc;
@@ -47,10 +77,6 @@ end
 
 %% Set up preprocessing options
 regObj.UDpreproc('filtn',[3,3,0;3,3,0],'dilaten',[10,10,10;0,0,0],'clamp',[-1000,0;-1000,0])
-
-%% Set Parameters
-% First make sure the schedule is clear:
-regObj.UDschedule;
 
 %% Set up registration resolutions
 f_sched = {8*ones(1,3), 10*ones(1,3), [5*ones(1,3),2*ones(1,3)]};
@@ -116,7 +142,7 @@ regObj.cmiObj(2).clearMask;
 disp([ID,': Enqueue Registration:'])
 regObj.cmiObj(1).setVec(1);
 regObj.cmiObj(2).setVec(1);
-regObj.runElx(true);
+regObj.runElx(qcheck);
 pause(1);
 
 

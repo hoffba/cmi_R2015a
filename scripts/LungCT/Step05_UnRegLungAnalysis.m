@@ -1,4 +1,4 @@
-function [expData, insData] = Step05_UnRegLungAnalysis(procdir, fname_ScatNet, regObj)
+function [expData, insData] = Step05_UnRegLungAnalysis(exp,exp_voxvol,ins,ins_voxvol,atMap,label)
 
 % calculate densitometry and ScatterNet for whole-lung.
 % Note: need to custimize this for lobes.
@@ -10,32 +10,17 @@ function [expData, insData] = Step05_UnRegLungAnalysis(procdir, fname_ScatNet, r
 % idx_Ins = idx_EIV(3);
 % idx_Ins_voi = idx_EIV(4);
 
-if ~isfolder(procdir)
-    mkdir(procdir);
-end
-
-%% ScatterNet for AT on Exp CT scan
-SNfname = fullfile(procdir,[fname_ScatNet,'.nii.gz']);
-if exist(SNfname,'file')
-    regObj.cmiObj(1).loadImg(1,SNfname);
-    atMap = regObj.cmiObj(1).img.mat(:,:,:,end);
-%     atMap = niftiread(SNfname);
-else
-    [atMap, laaMap, percentatMap, percentlaaMap, meanvalatMap, meanvallaaMap] = ScatNet( ...
-        regObj.cmiObj(1).img.mat, regObj.cmiObj(1).img.mask.mat, 0);
-    ind = regObj.cmiObj(1).imgAppend(atMap,{'ScatNet'});
-    regObj.cmiObj(1).img.saveImg(ind,SNfname);
-%     niftiwrite(int8(atMap),fullfile(procdir,fname_ScatNet),data(1).voi.info,'Compressed',true);
-end
-regObj.cmiObj(1).setVec(1);
-
 %% Calculate  AT, Emph and PD
-filt_flag = length(find(std(single(regObj.cmiObj(1).img.mat(:,:,:,1)),1,[1 2])~=0)') == regObj.cmiObj(1).img.dims(3);
+if length(find(std(single(exp),1,[1 2])~=0)') == size(exp,3)
+    filtfun = @medfilt3;
+else
+    filtfun = @(x)medfilt2(x,[3,3]);
+end
 
 %% First handle Exp data:
 fprintf('Analyzing Exp ... ');
 % filter data using median filter
-temp_data = double(regObj.cmiObj(1).img.mat(:,:,:,1));
+temp_data = double(exp);
 if filt_flag
     fprintf('3D Median Filter\n');
     temp_data = medfilt3(temp_data);

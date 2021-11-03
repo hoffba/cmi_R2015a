@@ -37,16 +37,22 @@ if ~isempty(img)
                     label);
     end
     
-    if appendcheck && self.check && all(self.dims(1:3)==dd(1:3))
-        nnv = size(img,4);
-        self.mat = cat(4,self.mat,img);
-        self.dims(4) = size(self.mat,4);
-        self.labels = [self.labels label];
-        self.thresh = [self.thresh; ([-1 1]'*inf(1,nnv))'];
-        self.scaleM = [self.scaleM ones(1,nnv)];
-        self.scaleB = [self.scaleB zeros(1,nnv)];
-        self.valExt = [self.valExt ; [squeeze(min(min(min(img,[],1),[],2),[],3)),...
-                                      squeeze(max(max(max(img,[],1),[],2),[],3))]];
+    if appendcheck && self.check
+        if all(self.dims(1:3)==dd(1:3))
+            nnv = size(img,4);
+            self.mat = cat(4,self.mat,img);
+            self.dims(4) = size(self.mat,4);
+            self.labels = [self.labels label];
+            self.thresh = [self.thresh; ([-1 1]'*inf(1,nnv))'];
+            self.scaleM = [self.scaleM ones(1,nnv)];
+            self.scaleB = [self.scaleB zeros(1,nnv)];
+            self.valExt = [self.valExt ; [squeeze(min(min(min(img,[],1),[],2),[],3)),...
+                                          squeeze(max(max(max(img,[],1),[],2),[],3))]];
+        else
+            fprintf('New dimensions (%u %u %u) do not match existing (%u %u %u)\n',dd(1:3),self.dims(1:3));
+            status = false;
+            return;
+        end
     else
         self.prmBaseVec = 1;
         if nargin==5

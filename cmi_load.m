@@ -27,6 +27,13 @@ dtypes = {...                                           Image       Mask
             {'.vox'},                   'VOX',          true,       false;...  % 16
          };
 
+img = [];
+label = {};
+fov = [];
+orient = [];
+info = [];
+fnameOut = [];
+                
 if (nargin == 0)
     imgflag = 1;
 end
@@ -142,7 +149,7 @@ if ~isempty(fullname)
                 timg = timg(:,:,:,sel);
                 tlabel = tlabel(sel);
             end
-            if ok
+            if ok && dt(1)>0
                 alabel{i} = tlabel;
                 if i==1 % first image loaded initializes the image data
                     img = timg;
@@ -158,12 +165,6 @@ if ~isempty(fullname)
                         errordlg('Images must be the same 3D size!')
                     end
                 end
-            else
-                img = [];
-                alabel = {};
-                fov = [];
-                orient = [];
-                fnameOut = [];
             end
         end
     end
@@ -171,13 +172,6 @@ if ~isempty(fullname)
     if ~isempty(fov)
         fov = fov([2,1,3]); % change to matlab coordinates: [y,x,z]
     end
-else
-    img = [];
-    label = {};
-    fov = [];
-    orient = [];
-    info = [];
-    fnameOut = [];
 end
 if (imgflag == 0)
     img = logical(img);
