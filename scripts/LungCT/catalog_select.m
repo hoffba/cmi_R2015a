@@ -1,4 +1,4 @@
-function [selected_data,fpath] = catalog_select_2(C)
+function [selected_data,fpath] = catalog_select(C)
 % GUI for selection of DICOM data from DICOMcatalog information
 %   For use in Ins/Exp CT analysis, looking for two matching scans per time
 % Input: C = table of DICOM information

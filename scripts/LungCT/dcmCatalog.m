@@ -35,10 +35,10 @@ dcmtags = {'PatientName','StudyID','StudyDate','PatientID','SeriesNumber',...
     'Rows','Columns','PixelSpacing'};
 ntags = length(dcmtags);
 tvars = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'}];
-vtypes = {'char',...
-    'char','char','char','char','uint32',...
-    'uint32','uint16','char','char',...
-    'char','char','char','char','double',...
+vtypes = {'cellstr',...
+    'cellstr','cellstr','cellstr','cellstr','uint32',...
+    'uint32','uint16','cellstr','cellstr',...
+    'cellstr','cellstr','cellstr','cellstr','double',...
     'double','double','double','double',...
     'uint16','uint16',...
     'double','double','uint16'};
@@ -60,37 +60,44 @@ fprintf('Processing folder (of %u): ',ndir);
 nchar = 0;
 for idir = 1:ndir
     ntxt = sprintf('%u',idir);
+    fprintf([repmat('\b',1,nchar),'%s'],ntxt);
     nchar = numel(ntxt);
-    fprintf([repmat()],
-    waitbar(idir/ndir,hw,['Processing folder ',num2str(idir),...
-        ' of ',num2str(ndir)]);
     
     info = dicominfo(fullfile(D{idir},F{idir}{1}),'UseDictionaryVR',true);
-    tC = cell(1,ntags);
     for ifld = 1:ntags
-        
-        if isfield(info,dcmtags{ifld})
+        ttag = dcmtags{ifld};
+        if isfield(info,ttag)
             
-            if strcmp(dcmtags{ifld},'PatientName')
-                tC{ifld} = info.PatientName.FamilyName;
+            if strcmp(ttag,'PatientName')
+                T.PatientName{idir} = info.PatientName.FamilyName;
+            elseif strcmp(ttag,'PixelSpacing')
+                T.dx(idir) = info.PixelSpacing(1);
+                T.dy(idir) = info.PixelSpacing(2);
             else
-                tC{ifld} = info.(dcmtags{ifld});
+                val = info.(ttag);
+                if ischar(val)
+                    if iscellstr(T.(ttag))
+                        T.(ttag){idir} = val;
+                    else
+                        T.(ttag)(idir) = str2double(val);
+                    end
+                else
+                    T.(ttag)(idir) = val;
+                end
             end
+            
         end
     end
-    if isempty(tC{end})
-        dd = nan(1,2);
-    else
-        dd = tC{end};
-    end
-    T(idir+1,:) = [D(idir),tC(1:(end-1)),{dd(1),dd(2),length(F{idir})}];
+    T.Directory{idir} = D{idir};
+    T.Slices(idir) = length(F{idir});
 end
-delete(hw);
+fprintf('\n');
 
 % Choose where to save results:
-[fname,fpath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
+% [fname,opath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
+fname = 'DICOMcatalog.csv';
 
-if ischar(fpath)
+if ischar(opath)
     % Save results as CSV:
-    cmi_csvwrite(fullfile(fpath,fname),T);
+    writetable(T,fullfile(opath,fname));
 end

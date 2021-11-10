@@ -22,7 +22,8 @@ if nargin==0
     tpath = pwd;
 end
 if (nargin<3) || ~ishandle(h)
-    h = waitbar(0,'Finding directories');
+    h = false;
+%     h = waitbar(0,'Finding directories');
 end
 
 D = {};
@@ -30,7 +31,7 @@ F = {};
 if ~isempty(filt)
     [~,dname] = fileparts(tpath);
     disp(dname);
-    waitbar(0,h,dname);
+%     waitbar(0,h,dname);
     tD = dir(tpath);
     % Match file filters in this path:
         fchk = false;
@@ -68,5 +69,5 @@ if ~isempty(filt)
 end
 
 if (nargin<3) && ishandle(h)
-    delete(h);
+%     delete(h);
 end

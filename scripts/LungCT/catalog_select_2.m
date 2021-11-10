@@ -22,7 +22,7 @@ if nargin==0 || isempty(C)
     if isempty(answer)
         return;
     elseif answer == 1
-        C = dcmCatalog_BH_CJG(fpath,'DICOMcatalog.csv');
+        C = dcmCatalog(fpath);
     else
         C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
     end
@@ -62,7 +62,9 @@ nfields = length(colnames);
 C = sortrows(C,{'PatientName','StudyDate','SeriesNumber'});
 
 % Find groups of scans with unique PatientName and StudyDate
-C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+if isnumeric(C.StudyDate)
+    C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+end
 [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate));
 ngroups = max(ugroups_ic);
 
