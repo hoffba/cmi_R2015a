@@ -1,4 +1,7 @@
-function CTlung_Segmentation(data,method)
+function err = CTlung_Segmentation(data,method)
+
+err = [];
+try
 
 % Check for GPU (required if method==3)
 if method==3 && ~gpuDeviceCount
@@ -22,4 +25,7 @@ for i = 1:numel(imgObj)
     if ~isempty(tmask)
         imgObj(i).mask.merge('replace',tmask);
     end
+end
+
+catch err
 end

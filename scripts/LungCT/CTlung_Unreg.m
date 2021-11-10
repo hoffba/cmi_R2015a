@@ -20,6 +20,7 @@ for i = 1:(n+(n>1))
     if i==1
         % Use whole lung mask
         tmask = logical(label);
+        S(i).tag = 'WholeLung';
     else
         % Use sub-region in label
         tmask = label==ulab(i-1);
@@ -32,8 +33,8 @@ for i = 1:(n+(n>1))
     if strcmp(tag,'exp')
         S(i).exp856 = 100 * nnz(maskvals < -856) / nvox;
         if nargin == 5
-            S(i).SNpct = 100 * nnz(atMat(tmask)) / nvox;
-            S(i).SNmean = mean(img(logcial(atMap)));
+            S(i).SNpct = 100 * nnz(atMap(tmask)) / nvox;
+            S(i).SNmean = mean(img(logical(atMap)));
         end
     else % 'ins'
         S(i).ins950 = 100 * nnz(maskvals < -950) / nvox;

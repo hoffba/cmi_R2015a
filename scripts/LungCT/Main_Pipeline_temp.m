@@ -1,4 +1,4 @@
-function T = Main_Pipeline(catalog)
+function T = Main_Pipeline_temp(catalog)
 
 % Input: catalog = cell array of dicom information in a directory generated
 %                   by the "dcmCatalog()" script

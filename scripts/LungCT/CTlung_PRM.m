@@ -1,4 +1,4 @@
-function [prm,info] = CTlung_PRM(exp,exp_info,mask,insR)
+function [prm,info] = CTlung_PRM(img)
 
 %% Load PRM options
 info = load(fullfile(fileparts(which('cmi')),'PRMdefs','PRMdef_AllLung_5Color.mat'));

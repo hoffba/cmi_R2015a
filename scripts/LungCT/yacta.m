@@ -16,12 +16,18 @@ waitstr = '&';
 ind = strcmp('wait',varargin);
 if nnz(ind)
     waitstr = '';
+    varargin(ind) = [];
 end
 
 % Validate YACTA options:
 opts = {'airways','parenchyma','renderer','hide','exportlabels','yactascp'};
-if nargin > 1
+if numel(varargin)
     opts = varargin(ismember(varargin,opts));
+end
+if numel(opts)
+    optstr = sprintf(' --%s',opts{:});
+else
+    optstr = '';
 end
 
 nf = numel(fnames);
@@ -56,7 +62,7 @@ for i = 1:nf
 
     % Generate system call
     yactastr = 'C:\Program Files\yacta64\yacta64.exe';
-    cmd{i} = sprintf('"%s" "%s"%s',yactastr,fname,sprintf(' --%s',opts{:}));
+    cmd{i} = sprintf('"%s" "%s"%s',yactastr,fname,optstr);
     
 end
 

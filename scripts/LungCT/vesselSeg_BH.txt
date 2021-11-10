@@ -1,0 +1,21 @@
+
+
+Single segmentation with file name inputs:
+vesselSeg_BH(fn_ins,fn_seg,save_path)
+	fn_ins = full path to INSP ct image file
+	fn_seg = full path to lobe segmentation
+	save_path = where to save results
+
+Single segmentation with matrix inputs:
+vesselSeg_BH(img,label,info,save_path)
+	img = INSP ct image matrix
+	label = lobe segmentation matrix
+	info = nifti metadata
+	save_path = where to save results
+
+Run batch on Great Lakes (using Turbo storage):
+GL_vesselSeg(username,fn_ins_fn_seg,save_path)
+	username = your uniquename
+	fn_ins = cell array of full paths to INSP image files
+	fn_seg = cell array of full paths to corresponding lobe segmentation files
+	save_path = string where to save results (will make subdirectories for each subject)

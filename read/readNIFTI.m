@@ -13,7 +13,7 @@ img = double(niftiread(info));
 
 fov = info.ImageSize.*info.PixelDimensions;
 
-label = {Nfile};
+label = {extractBefore(Nfile,'.nii')};
 d4 = size(img,4);
 if d4>1
     label = strcat(label,'_',cellfun(@num2str,num2cell(1:d4),'UniformOutput',false));

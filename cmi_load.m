@@ -128,7 +128,6 @@ if ~isempty(fullname)
                 if any(strcmp(datatype,{'DICOM','FDF','Bruker'}))
                     fnameOut = fpath;
                 end
-                cd(fpath);
             end
             [timg,tlabel,tfov,torient,tinfo] = feval(['read' datatype],fullname{i},d);
             [dt(1),dt(2),dt(3),dt(4)] = size(timg);

@@ -22,7 +22,7 @@ if nargin==0 || isempty(C)
     if isempty(answer)
         return;
     elseif answer == 1
-        C = dcmCatalog_BH_CJG(fpath,'DICOMcatalog.csv');
+        C = dcmCatalog_BH_CJG(fullfile(fpath,'*DICOMcatalog*.csv'));
     else
         C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
     end
@@ -114,13 +114,15 @@ if isempty(C)
     selected_data = [];
 else
     empty_flag = false(ngroups,1);
-    selected_data = struct('PatientName',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
+    selected_data = struct('BasePath',cell(1,ngroups),'PatientName',cell(1,ngroups),...
+        'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
     for ig = 1:ngroups
         g_ind = ugroups_ic==ig;
         tC = C( g_ind & (C.Exp | C.Ins) ,:);
         if isempty(tC)
             empty_flag(ig) = true;
         else
+            selected_data(ig).BasePath = fpath;
             selected_data(ig).PatientName = tC.PatientName{1};
             selected_data(ig).StudyDate = tC.StudyDate{1};
             selected_data(ig).Scans = table2struct([tC(tC.Exp,3:end);tC(tC.Ins,3:end)]);

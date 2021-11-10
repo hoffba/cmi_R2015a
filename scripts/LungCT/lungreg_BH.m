@@ -1,4 +1,4 @@
-function j = lungreg_BH(exp,exp_info,exp_mask,ins,ins_info,ins_mask,elxdir,ID,qcheck) 
+function j = lungreg_BH(exp,exp_info,exp_mask,ins,ins_info,ins_mask,elxdir,ID,qcheck,flag) 
 %OLD --lungreg_BH(ID,elxdir,regObj,qcheck)
 
 % ***_info = struct with fields:
@@ -43,18 +43,16 @@ if nargin<4
 else
     qcheck = logical(qcheck);
 end
+if nargin<10
+    flag = false;
+end
 
 %% Set up Reg object:
-regObj = RegClass;
+regObj = RegClass(false);
 regObj.cmiObj(1).setImg(exp,exp_info.label,exp_info.fov,exp_info.orient,exp_info.name);
 regObj.cmiObj(1).img.mask.merge('replace',exp_mask);
 regObj.cmiObj(2).setImg(ins,ins_info.label,ins_info.fov,ins_info.orient,ins_info.name);
 regObj.cmiObj(2).img.mask.merge('replace',ins_mask);
-if qcheck
-else
-    regObj.h.checkbox_wait.Value = 0;
-    regObj.UDschedule(regObj.h.checkbox_wait);
-end
 
 %% Is the fixed image incremental or continuous?
 nslc = regObj.cmiObj(1).img.dims(3);
@@ -92,6 +90,17 @@ if gapchk(2)
     m_sched{3}([3,6]) = 1;
 end
 
+%% Single res third step for faster reg:
+nres = 2;
+maxiter = [10000 2000];
+SP_A = [50 50];
+SP_a = [100000 25000];
+samp = [5000 5000];
+gridsp = [5*ones(1,3),2*ones(1,3)];
+if flag
+    nres = 1;
+end
+
 %% Add steps to the schedule
 if ~isfolder(elxdir)
     mkdir(elxdir)
@@ -119,14 +128,14 @@ regObj.addElxStep('Warp','NumberOfResolutions',1,...
                          'ResultImageFormat','nii',...
                          'DefaultPixelValue',-2000);
                     
-regObj.addElxStep('Warp','NumberOfResolutions',2,...
-                         'FixedImagePyramidSchedule',f_sched{3},...
-                         'MovingImagePyramidSchedule',m_sched{3},...
-                         'MaximumNumberOfIterations',[10000,2000],...
-                         'SP_A',[50,50],...
-                         'SP_a',[100000,25000],...
-                         'NumberOfSpatialSamples',[5000,5000],...
-                         'GridSpacingSchedule',[5*ones(1,3),2*ones(1,3)],...
+regObj.addElxStep('Warp','NumberOfResolutions',nres,...
+                         'FixedImagePyramidSchedule',f_sched{3}(1:nres),...
+                         'MovingImagePyramidSchedule',m_sched{3}(1:nres),...
+                         'MaximumNumberOfIterations',maxiter(1:nres),...
+                         'SP_A',SP_A(1:nres),...
+                         'SP_a',SP_a(1:nres),...
+                         'NumberOfSpatialSamples',samp(1:nres),...
+                         'GridSpacingSchedule',gridsp(1:nres*3),...
                          'TransformBendingEnergy',25,...
                          'ResultImageFormat','nii',...
                          'DefaultPixelValue',-2000);
@@ -142,9 +151,11 @@ regObj.cmiObj(2).clearMask;
 disp([ID,': Enqueue Registration:'])
 regObj.cmiObj(1).setVec(1);
 regObj.cmiObj(2).setVec(1);
+regObj.setWait(~qcheck);
 regObj.runElx(qcheck);
 pause(1);
 
+delete(regObj);
 
 
 

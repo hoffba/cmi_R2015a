@@ -1,4 +1,4 @@
-function CTlung_checkEI(regObj,fnames,procdir)
+function img = CTlung_checkEI(img)
 
 if nnz(regObj.cmiObj(1).img.mask.mat) > nnz(regObj.cmiObj(2).img.mask.mat)
     regObj.swapCMIdata;
