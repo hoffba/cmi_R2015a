@@ -49,7 +49,7 @@ img(2).info.name = img(2).info.label;
 
 if isfolder(expfname)
     res.Exp_DICOM = expfname;
-    res.ID = info.PatientName;
+    res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
     check_EI = true;
 else
     tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
@@ -81,6 +81,7 @@ for ii = 1:2
         svchk = true;
     end
 end
+clear BW
 
 %% Quick segmentation for Exp/Ins Identification:
 img(1).label = getRespiratoryOrgans(img(1).mat);
@@ -98,6 +99,10 @@ if check_EI
     end
     svchk = true;
 end
+img(1).info.label = [res.ID,'_Exp'];
+img(2).info.label = [res.ID,'_Ins'];
+img(1).info.name = [res.ID,'_Exp'];
+img(2).info.name = [res.ID,'_Ins'];
 
 %% Save images:
 if svchk
@@ -118,14 +123,14 @@ for itag = 1:2
         img(itag).label = readNIFTI(fn_label{itag});
     else
         fprintf('generating using YACTA\n');
-        ydir = fullfile(procdir,['yacta_',img(itag).info.label]);
+        ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
         if ~isfolder(ydir)
             mkdir(ydir);
         end
         tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
         cmi_save(0,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient,tname);
         yacta(tname,'wait');
-        tname = dir(sprintf('%s*.mhd',tname));
+        tname = dir(sprintf('%s*explabels.mhd',tname));
         img(itag).label = cmi_load(1,[],fullfile(ydir,tname.name));
         % Clean-up
         cln_fnames = [dir(fullfile(ydir,'*.mhd'));dir(fullfile(ydir,'*.raw'));dir(fullfile(ydir,'*.zraw'))];
@@ -137,14 +142,14 @@ for itag = 1:2
 end
 
 %% QC segmentation
-% fprintf('Generating EXP montage...\n');
-% ind = 10:10:img(1).info.d(3);
-% QCmontage('seg',cat(4,img(1).mat(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
-%     fullfile(procdir,sprintf('%s.Montage.tiff',img(1).info.label)));
-% fprintf('Generating INSP montage...\n');
-% ind = 10:10:img(2).info.d(3);
-% QCmontage('seg',cat(4,img(2).mat(:,:,ind),img(2).label(:,:,ind)),img(2).info.voxsz,...
-%     fullfile(procdir,sprintf('%s.Montage.tiff',img(2).info.label)));
+fprintf('Generating EXP montage...\n');
+ind = 10:10:img(1).info.d(3);
+QCmontage('seg',cat(4,img(1).mat(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
+    fullfile(procdir,sprintf('%s.Montage.tiff',img(1).info.label)));
+fprintf('Generating INSP montage...\n');
+ind = 10:10:img(2).info.d(3);
+QCmontage('seg',cat(4,img(2).mat(:,:,ind),img(2).label(:,:,ind)),img(2).info.voxsz,...
+    fullfile(procdir,sprintf('%s.Montage.tiff',img(2).info.label)));
 
 %% ScatterNet for AT on Exp CT scan
 fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID,'scatnet',fn_ext));
