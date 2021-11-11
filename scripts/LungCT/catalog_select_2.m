@@ -135,18 +135,18 @@ end
         
         if nargin==0 % filter all
             rowi = 1:2;
-            varnames = htfilt.ColumnName(2:end);
+%             varnames = htfilt.ColumnName(2:end);
         elseif nargin==2 % filter single
             rowi = eventdata.Indices(1);
-            varnames = htfilt.ColumnName(eventdata.Indices(2));
+%             varnames = htfilt.ColumnName(eventdata.Indices(2));
         end
         
         % Set tags:
         for i = rowi
             if any(~cellfun(@isempty,table2cell(htfilt.Data(i,2:end))))
                 TF = true(nscans,1);
-                for j = 1:length(varnames)
-                    tname = varnames{j};
+                for j = 2:numel(htfilt.ColumnName)
+                    tname = htfilt.ColumnName{j};
                     if iscell(htfilt.Data.(tname)) && ~isempty(htfilt.Data.(tname){i})
                         TF = TF & contains(C.(tname),htfilt.Data.(tname){i});
                     elseif isnumeric(htfilt.Data.(tname)) && htfilt.Data.(tname)(i)
