@@ -170,6 +170,8 @@ clear atMap;
 for ilab = 1:numel(S)
     if isempty(S(ilab).tag)
         tstr = '';
+    elseif ischar(S(ilab).tag)
+        tstr = ['_',S(ilab).tag];
     else
         tstr = sprintf('_%u',S(ilab).tag);
     end
