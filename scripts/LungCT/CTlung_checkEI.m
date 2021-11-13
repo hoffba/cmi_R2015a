@@ -1,11 +1,15 @@
-function img = CTlung_checkEI(img)
+function CTlung_checkEI(ct)
 
-if nnz(regObj.cmiObj(1).img.mask.mat) > nnz(regObj.cmiObj(2).img.mask.mat)
-    regObj.swapCMIdata;
+
+%% Quick segmentation for Exp/Ins Identification:
+if nnz(getRespiratoryOrgans(ct.img(1).mat)) > nnz(getRespiratoryOrgans(ct.img(2).mat))
+    fprintf('Swapping images due to lung volume\n');
+    ct.img = ct.img([2,1]);
+    ct.dcmdir = ct.dcmdir([2,1]);
 end
-%% Save nii.gz files using ID and Tag
-fprintf('Saving Exp/Ins images to: %s\n',procdir);
-for i = 1:2
-    regObj.cmiObj(i).img.saveImg(1,fnames{i,1},1);
-    regObj.cmiObj(i).img.saveMask(fnames{i,2});
-end
+
+%% Set image labels
+ct.img(1).info.label = [ct.id,'_Exp'];
+ct.img(2).info.label = [ct.id,'_Ins'];
+ct.img(1).info.name = [ct.id,'_',ct.tp,'.exp'];
+ct.img(2).info.name = [ct.id,'_',ct.tp,'.ins'];

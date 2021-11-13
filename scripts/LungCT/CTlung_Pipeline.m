@@ -1,4 +1,4 @@
-function output = CTlung_Pipeline(ct,measures)
+function results = CTlung_Pipeline(info,basedir,measures)
 % Inputs: info = [struct] containing case info
 %             .ProcDir = [char] base path for data and saving
 %             .PatientID = [char]
@@ -13,49 +13,22 @@ function output = CTlung_Pipeline(ct,measures)
 % Pipeline consists of:
 % 1. 
 
-
-%% prepare case info
-output = [];
-procdir = fullfile(ct.BasePath,'ProcessedData',ct.PatientID);
-fn_base = sprintf('%s_%s',ct.PatientID,ct.StudyDate);
-
 %% Initialize processing structure:
+fn_base = sprintf('%s_%s',info.PatientID,info.StudyDate);
 ct.exp = ImageClass;
 ct.ins = ImageClass;
-ct.elxdir = fullfile(ct.ProcDir,sprintf('elxreg_%s',fn_base));
-% info.fn = struct('exp',sprintf('%s_Exp',fn_base),...
-%                  'ins',sprintf('%s_Ins',fn_base),...
-%                  'exp_label',sprintf('%s_Exp_Label',fn_base),...
-%                  'ins_label',sprintf('%s_Ins_Label',fn_base),...
-%                  'scatnet',sprintf('%s_SNmap',fn_base),...
-%                  'csa',sprintf('%s_CSA_skel.mat',fn_base),...
-%                  'prm',sprintf('%s_PRM',fn_base),...
-%                  'tprm',sprintf('%s_',fn_base));
+ct.procdir = fullfile(basedir,'ProcessedData',fn_base);
+ct.elxdir = fullfile(ct.procdir,sprintf('elxreg_%s',fn_base));
 ct.ext = '.nii.gz';
-ct.Results = [];
 
 %% Check dependencies and previously saved data
-opts = CTlung_CheckDependencies(ct,measures);
+% opts = CTlung_CheckDependencies(ct,measures);
 
 %% Read selected DICOM data:
-fprintf('\nReading image data from file ... ID = %s\n',ID)
-stat = CTlung_ReadImages(ct,opts);
-
-if ~(exist(fullfile(procdir,[fname_Exp,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins,fn_ext]),'file'))
-    fprintf('   ... from DICOM\n');
-    regObj.cmiObj(1).loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Exp')).Directory,procdir,fname_Exp);
-    regObj.cmiObj(2).loadImg(0,cases(i).Scans(strcmp({cases(i).Scans(:).Tag},'Ins')).Directory,procdir,fname_Ins);
-    check_EI = true;
-else
-    fprintf('   ... from NiFTi\n');
-    fprintf('   ... Reading Exp\n');
-    regObj.cmiObj(1).loadImg(0,fullfile(procdir,[fname_Exp,fn_ext]),procdir,fname_Exp);
-    fprintf('   ... Reading Ins\n');
-    regObj.cmiObj(2).loadImg(0,fullfile(procdir,[fname_Ins,fn_ext]),procdir,fname_Ins);
-    check_EI = false;
-end
+check_EI = CTlung_ReadImages(ct);
 
 %% Generate Lung Segmentation [This is when VOI don't exist]
+CTlung_Segmentation();
 if ~(exist(fullfile(procdir,[fname_Exp_Label,fn_ext]),'file') && exist(fullfile(procdir,[fname_Ins_Label,fn_ext]),'file'))
     fprintf('   Generating VOIs\n')
     tmask = Step02_segLungHuman_cjg(1,regObj.cmiObj(1).img.mat,fname_Exp_Label, procdir);

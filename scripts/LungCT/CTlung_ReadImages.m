@@ -1,19 +1,28 @@
-function check_EI = CTlung_ReadImages(regObj,fnames,dcmnames)
+function flag = CTlung_ReadImages(ct)
 
+fprintf('\nReading image data from file ... ID = %s\n',ct.id)
+
+%% Check if .exp / .ins files already exist
+fnames = fullfile(ct.procdir,strcat(ct.id,'_',ct.tp,'.',{'exp','ins'},ct.ext));
 imchk  = cellfun(@(x)exist(x,'file'),fnames);
-if ~all(imchk)
-    check_EI = true;
+flag = ~all(imchk);
+if flag
+    fprintf('   ... from DICOM\n');
+    fnames = ct.dcmdir;
+else
+    fprintf('   ... from NiFTi\n');
 end
 
-fprintf('\nReading image data from file ... ID = %s\n',ID)
+%% Load images
 for i = 1:2
-    if imchk(i)
-        fprintf('   ... from NiFTi\n');
-        loadname = fnames{i};
-    else
-        fprintf('   ... from DICOM\n');
-        loadname = dcmnames{i};
+    ct.img(i).loadImg(0,fnames{i});
+    
+    %% Find orientation of image by bone threshold
+    prop = regionprops(max(ct.img(i).mat(:,:,round(img(i).dims(3)/2):end)>800,[],3),...
+        'Orientation','Area');
+    if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
+        fprintf('   Permuting image #%u\n',i);
+        ct.img(i).permuteMat([2 1 3]);
     end
-    regObj.cmiObj(i).loadImg(0,loadname);
 end
 

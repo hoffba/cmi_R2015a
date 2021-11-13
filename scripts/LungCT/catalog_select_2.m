@@ -135,10 +135,8 @@ end
         
         if nargin==0 % filter all
             rowi = 1:2;
-%             varnames = htfilt.ColumnName(2:end);
         elseif nargin==2 % filter single
             rowi = eventdata.Indices(1);
-%             varnames = htfilt.ColumnName(eventdata.Indices(2));
         end
         
         % Set tags:

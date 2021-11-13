@@ -1,4 +1,4 @@
-function err = CTlung_Segmentation(data,method)
+function err = CTlung_Segmentation(ct,method)
 
 err = [];
 try
@@ -9,7 +9,7 @@ if method==3 && ~gpuDeviceCount
     method = 2;
 end
 
-for i = 1:numel(imgObj)
+for i = 1:2
     switch method
         case 1
             fprintf('- Generating VOI from Step02_segLungHuman_cjg ...\n');
@@ -20,6 +20,9 @@ for i = 1:numel(imgObj)
         case 3
             fprintf('- Generating VOI from DL_lung_segmetation ...\n');
             tmask = DL_lung_segmetation(data.img(i).mat);
+        case 4
+            fprintf('- Generating VOI from YACTA ...\n');
+            
         otherwise
     end
     if ~isempty(tmask)

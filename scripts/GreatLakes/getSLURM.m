@@ -16,13 +16,15 @@ C = {'jobid',       'SLURM_JOBID';...
      'user',        'SLURM_JOB_USER';
      'hostname',    'SLURM_SUBMIT_HOST'};
 
-p = struct([]);
+p = struct;
 for i = 1:size(C,1)
     val = getenv(C{i,2});
     valn = str2double(val);
     if isnan(valn)
         p.(C{i,1}) = val;
+        fprintf('%s : %s\n',C{i,1},val);
     else
         p.(C{i,1}) = valn;
+        fprintf('%s : %u\n',C{i,1},valn);
     end
 end

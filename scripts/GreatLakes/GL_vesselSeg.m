@@ -220,12 +220,12 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         
         % Check for job array:
         slurm = getSLURM;
-        if ~isempty(slurm.jobnum)
-            fprintf('Running job number %u of %u\n',slurm.jobnum,njobs);
+        if ~isempty(slurm.arraytaskid)
+            fprintf('Running job number %u of %u\n',slurm.arraytaskid,njobs);
         end
         nf = numel(p.fn_ins);
-        if ~isempty(slurm.jobnum)
-            ind = round((nf/njobs)*[slurm.jobnum-1 slurm.jobnum]);
+        if ~isempty(slurm.arraytaskid)
+            ind = round((nf/njobs)*[slurm.arraytaskid-1 slurm.arraytaskid]);
             
             fprintf('ind: %u-%u\n',ind+[1,0]);
             
@@ -237,7 +237,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         
         % Set up cluster properties
         c = parcluster;
-        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',slurm.jobname,slurm.slurm.jobnum));
+        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',slurm.jobname,slurm.arraytaskid));
         if ~isfolder(jobdir)
             mkdir(jobdir);
         end
@@ -277,6 +277,11 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
             
             if isempty(job(i).Tasks(1).Error)
                 fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
+                if i==1
+                    T = fetchOutputs(job(i));
+                else
+                    T = join(T,fetchOutputs(job(i)));
+                end
             else
                 fprintf('Job %u failed after %.1f minutes.\n',i,dt(i));
                 errflag(i) = false;
