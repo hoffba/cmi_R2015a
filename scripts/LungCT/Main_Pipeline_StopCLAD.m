@@ -1,10 +1,10 @@
-function j = Main_Pipeline_StopCLAD(fpath)
+function j = Main_Pipeline_StopCLAD(dcmpath,svpath)
 
 %% Find files
-if exist(fullfile(fpath,'DICOMcatalog.csv'),'file')
-    cases = catalog_select_2(fpath);
+if exist(fullfile(dcmpath,'DICOMcatalog.csv'),'file')
+    cases = catalog_select_2(dcmpath);
 else
-    C = dcmCatalog(fpath);
+    C = dcmCatalog(dcmpath);
     cases = catalog_select_2(C);
 end
 
@@ -14,7 +14,7 @@ for i = 1:ncases
     
     basename = sprintf('%s_%s',cases(i).PatientName,cases(i).StudyDate);
     
-    procdir = fullfile(fpath,basename);
+    procdir = fullfile(svpath,basename);
     
     
     %% Start pipeline batch job
