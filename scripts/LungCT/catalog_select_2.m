@@ -42,9 +42,10 @@ end
 
 %% Validate table input:
 colnames = C.Properties.VariableNames;
-req_fields = {'SeriesDescription','PatientName','StudyDate','SeriesNumber'};
+req_fields = {'SeriesDescription','PatientName','StudyDate','SeriesNumber',...
+              'ConvolutionKernel','SliceThickness','Slices'};
 i_member = ismember(req_fields,colnames);
-if ~all(ismember({'SeriesDescription','PatientName','StudyDate','SeriesNumber'},colnames))
+if ~all(ismember(req_fields,colnames))
     error(['Missing required fields: ',strjoin(req_fields(~i_member),', ')]);
 end
 
