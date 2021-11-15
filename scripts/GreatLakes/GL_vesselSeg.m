@@ -280,12 +280,13 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
                 if i==1
                     T = fetchOutputs(job(i));
                 else
-                    T = join(T,fetchOutputs(job(i)));
+                    T(i,:) = fetchOutputs(job(i));
                 end
             else
                 fprintf('Job %u failed after %.1f minutes.\n',i,dt(i));
                 errflag(i) = false;
                 fprintf('%s\n',job(i).Tasks(1).ErrorMessage);
+                job(i).Tasks(1)
                 fprintf('File: %s\n',job(i).Tasks(1).stack(1).file);
                 fprintf('Name: %s\n',job(i).Tasks(1).stack(1).name);
                 fprintf('Line: %s\n',job(i).Tasks(1).stack(1).line);
@@ -298,6 +299,10 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
             
         end
         rmdir(jobdir,'s');
+        
+        tfname = fullfile(p.sv_path,sprintf('Results_%s.csv',slurm.jobname));
+        fprintf('Saving tabulated results: %s',tfname);
+        writetable(T,tfname);
         
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
             mean(dt(errflag)),std(dt(errflag)));

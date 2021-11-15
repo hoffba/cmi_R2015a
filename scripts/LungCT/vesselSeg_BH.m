@@ -104,7 +104,7 @@ function T = vesselSeg_BH(varargin)
         eroded_lobes(imerode(seg == lobe(i).val,se)) = lobe(i).val;
     end
     eroded_lobes = uint8(eroded_lobes);
-    save(fullfile(save_path,[ID,'_erodedLobes.mat']),'eroded_lobes');
+    niftiwrite(eroded_lobes,fullfile(save_path,[ID,'_erodedLobes']),'Compressed',true);
     fprintf('done (%s)\n',duration(0,0,toc(t)));
     eroded_lobes = eroded_lobes > 0;
     
@@ -112,48 +112,99 @@ function T = vesselSeg_BH(varargin)
     segBW = ismember(seg,[lobe.val]);
 
     %% Generate enhanced vessel maps
-    fprintf('Calculating enhanced vessel maps ... \n');
-    t = tic;
-    vessels = vesselSeg_boxes(ct, segBW);
-    vessels(isnan(vessels)) = 0;
-    save(fullfile(save_path,[ID,'_enhancedVessel.mat']),'vessels');
-    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    flag = true;
+    fname = fullfile(save_path,[ID,'_enhancedVessel']);
+    if exist([fname,'.nii.gz'],'file')
+        fprintf('Loading enhanced vessel map from file ...\n');
+        vessels = niftiread([fname,'.nii.gz']);
+        if isfield(vessels,'vessels')
+            vessels = vessels.vessels;
+            flag = false;
+        else
+            fprintf('-- Invalid enhanced vessel file\n');
+        end
+    end
+    if flag
+        fprintf('Calculating enhanced vessel maps ... \n');
+        t = tic;
+        vessels = single(vesselSeg_boxes(ct, segBW));
+        vessels(isnan(vessels)) = 0;
+        niftiwrite(vessels,fname,'Compressed',true);
+        fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    end
 
     %% Binarize vessels:
-    fprintf('Binarizing vessel map ... ');
-    t = tic; 
-    info.Datatype = 'int8';
-    info.BitsPerPixel = 8;
-    bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
-    niftiwrite(bin_vessels,fullfile(save_path,[ID,'_binVessel.nii']),'Compressed',true);
-    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    flag = true;
+    fname = fullfile(save_path,[ID,'_binVessel']);
+    if exist([fname,'.nii.gz'],'file')
+        fprintf('Reading binary vessel map from file ...\n');
+        try
+            bin_vessels = niftiread([fname,'.nii.gz']);
+            flag = false;
+        catch err
+            err
+        end
+    end
+    if flag
+        fprintf('Binarizing vessel map ... ');
+        t = tic; 
+        info.Datatype = 'int8';
+        info.BitsPerPixel = 8;
+        bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
+        niftiwrite(bin_vessels,fname,'Compressed',true);
+        fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    end
     
     %% Generate CSA maps
-    fprintf('Generating CSA maps ... \n');
-    t = tic;
-    csa_map = CSA_create_maps(bin_vessels);
-    save(fullfile(save_path,[ID,'_CSA_skel.mat']),'csa_map');
+    flag = true;
+    fname = fullfile(save_path,[ID,'_CSA_skel']);
+    if exist([fname,'.nii.gz'],'file')
+        fprintf('Reading CSA from file ...\n');
+        csa_map = load([fname,'.nii.gz']);
+        if isfield(csa_map,'csa_map')
+            csa_map = csa_map.csa_map;
+            flag = false;
+        else
+            fprintf('-- invalid CSA file\n');
+        end
+    end
+    if flag
+        fprintf('Generating CSA maps ... \n');
+        t = tic;
+        csa_map = CSA_create_maps(bin_vessels);
+        niftiwrite(csa_map,fname,'Compressed',true);
+        fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    end
     clear bin_vessels;
-    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
     %% Frangi Filter
-    fprintf('Generating Frangi Filtered image ... ');
-    t = tic;
-    opt = struct('FrangiScaleRange',[0.5 5.5],...
-                 'FrangiScaleRatio',1,...
-                 'BlackWhite',false);
-    frangi_enhanced_vessels = FrangiFilter3D(ct.*segBW,opt) .* segBW; 
-    save(fullfile(save_path,[ID,'_enhancedVessel_frangi.mat']),'frangi_enhanced_vessels');
-    clear frangi_enhanced_vessels;
-    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    fname = fullfile(save_path,[ID,'_enhancedVessel_frangi']);
+    if exist([fname,'.nii.gz'],'file')
+        fprintf('Frangi Filtered image file found ...\n');
+    else
+        fprintf('Generating Frangi Filtered image ... \n');
+        t = tic;
+        opt = struct('FrangiScaleRange',[0.5 5.5],...
+                     'FrangiScaleRatio',1,...
+                     'BlackWhite',false);
+        frangi_enhanced_vessels = FrangiFilter3D(ct.*segBW,opt) .* segBW;
+        niftiwrite(frangi_enhanced_vessels,fname,'Compressed',true);
+        clear frangi_enhanced_vessels;
+        fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    end
 
     %% Curvilinear Filter
-    fprintf('Generating Curvilinear Filtered image ... \n');
-    t = tic;
-    curv_enhanced_vessels = vesselness3D(ct.*segBW, 0.5:1:5.5, [1,1,1], 1, true).*segBW;
-    save(fullfile(save_path,[ID,'_enhancedVessel_curv.mat']),'curv_enhanced_vessels');
-    clear curv_enhanced_vessels;
-    fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    fname = fullfile(save_path,[ID,'_enhancedVessel_curv']);
+    if exist([fname,'.nii.gz'],'file')
+        fprintf('Curvilinear filtered image file found ...\n');
+    else
+        fprintf('Generating Curvilinear Filtered image ... \n');
+        t = tic;
+        curv_enhanced_vessels = vesselness3D(ct.*segBW, 0.5:1:5.5, [1,1,1], 1, true).*segBW;
+        niftiwrite(curv_enhanced_vessels,fname,'Compressed',true);
+        clear curv_enhanced_vessels;
+        fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    end
     
     %% Tabulate results and save to subject directory
     fprintf('Tabulating results ... ');
@@ -249,7 +300,7 @@ function T = tabulateResults(id,ct,seg,vessels,csa)
     lobe = getLobeTags(seg);
     nlobes = numel(lobe);
     T = table('Size',[nlobes,14],...
-              'VariableTypes',{'string','string','double','double','double',...
+              'VariableTypes',{'cellstr','cellstr','double','double','double',...
                                'uint32','uint32','uint32',...
                                'double','double','double',...
                                'uint32','double','uint32'},...
@@ -261,8 +312,8 @@ function T = tabulateResults(id,ct,seg,vessels,csa)
     for i = 1:length(lobe)
         lobe_id = lobe(i).val;
         
-        T.ID(i) = id;
-        T.LOBE(i) = lobe(i).name;
+        T.ID{i} = id;
+        T.LOBE{i} = lobe(i).name;
         
         V = vessels .* (seg == lobe_id); % vessels in this lobe
         C = csa .* (seg == lobe_id); % CSA of vessels in this lobe
