@@ -296,7 +296,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         end
         rmdir(jobdir,'s');
         
-        tfname = fullfile(p.sv_path,sprintf('Results_%s.csv',slurm.jobname));
+        tfname = fullfile(p.sv_path,sprintf('vesselSeg_Results_%s.csv',slurm.jobname));
         fprintf('Saving tabulated results: %s',tfname);
         writetable(T,tfname);
         
