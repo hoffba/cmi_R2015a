@@ -277,11 +277,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
             
             if isempty(job(i).Tasks(1).Error)
                 fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
-                if i==1
-                    T = fetchOutputs(job(i));
-                else
-                    T(i,:) = fetchOutputs(job(i));
-                end
+                T = [T;fetchOutputs(job(i))];
             else
                 fprintf('Job %u failed after %.1f minutes.\n',i,dt(i));
                 errflag(i) = false;

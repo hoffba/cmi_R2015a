@@ -9,16 +9,17 @@ function T = dcmCatalog(varargin)
 
 opath = pwd;
 filt = {'*.1','*.dcm',''};
+fname = '';
 if nargin
-    % Folder selection
-    ind = find(isfolder(varargin),1);
-    if ~isempty(ind)
-        opath = varargin{ind};
-    end
-    % Filter selection
-    ind = find(cellfun(@(x)any(contains(x,'*')),varargin),1);
-    if ~isempty(ind)
-        filt = varargin{ind};
+    for i = 1:nargin
+        val = varargin{i};
+        if ischar(val) && isfolder(val) % Folder selection
+            opath = val;
+        elseif ischar(val) && strcmp(val(end-3:end),'.csv')
+            fname = val;
+        elseif iscellstr(val) && any(contains(val,'*'))
+            filt = val;
+        end
     end
 else
     % Use GUI to select folder:
@@ -26,6 +27,9 @@ else
     if ~opath
         return;
     end
+end
+if isempty(fname)
+    fname = fullfile(opath,'DICOMcatalog.csv');
 end
 
 dcmtags = {'PatientName','StudyID','StudyDate','PatientID','SeriesNumber',...
@@ -95,9 +99,8 @@ fprintf('\n');
 
 % Choose where to save results:
 % [fname,opath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
-fname = 'DICOMcatalog.csv';
 
 if ischar(opath)
     % Save results as CSV:
-    writetable(T,fullfile(opath,fname));
+    writetable(T,fname);
 end

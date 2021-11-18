@@ -304,6 +304,10 @@ for ifn = 1:nf
             yInt = -tinfo.MRScaleIntercept/ySlope;
         end
         timg = ySlope * double(dicomread(tinfo)) + yInt;
+        if isfield(tinfo,'SamplesPerPixel') && tinfo.SamplesPerPixel>1
+            % RGB data from ImBio
+            timg = permute(timg,[1,2,4,3]);
+        end
         if (length(tinfo.ImageType)>5) && strcmp(tinfo.ImageType(end-5:end),'MOSAIC')
             ns = int32(tinfo.LocationsInAcquisition(1));
             nslab = ceil(sqrt(double(ns)));
@@ -330,7 +334,7 @@ for ifn = 1:nf
         if isempty(dcmdata(j).img)
             dcmdata(j).img = timg;
         else
-            dcmdata(j).img(:,:,k) = timg;
+            dcmdata(j).img(:,:,k,:) = timg;
         end
     end
 end

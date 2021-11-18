@@ -1,4 +1,4 @@
-function [selected_data,fpath] = catalog_select_2(C)
+function [selected_data,fpath] = catalog_select_2(varargin)
 % GUI for selection of DICOM data from DICOMcatalog information
 %   For use in Ins/Exp CT analysis, looking for two matching scans per time
 % Input: C = table of DICOM information
@@ -9,7 +9,12 @@ function [selected_data,fpath] = catalog_select_2(C)
 %                                .StudyDate = string date
 %                                .Scans = structure array with scan info
 
-if nargin==0 || isempty(C)
+C = [];
+fpath = '';
+fname = '';
+cat_flag = false; % T/F run dcmCatalog
+
+if nargin==0
     fpath = uigetdir('Select folder for processing.');
     if ~fpath
         return;
@@ -22,22 +27,37 @@ if nargin==0 || isempty(C)
     if isempty(answer)
         return;
     elseif answer == 1
-        C = dcmCatalog(fpath);
-    else
-        C = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
+        cat_flag = true;
+    elseif answer > 1
+        fname = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
+        fpath = '';
+    end
+else
+    for ii = 1:nargin
+        val = varargin{ii};
+        if istable(val)
+            C = val;
+            cat_flag = false;
+            break;
+        elseif ischar(val) && isfolder(val)
+            fpath = val;
+            cat_flag = true;
+        elseif ischar(val) && strcmp(val(end-3:end),'.csv')
+            fname = val;
+        else
+            warning('Invalid input');
+            return;
+        end
     end
 end
-if ischar(C) % Read from input filename
-    if exist(C,'file') && strcmp(C(end-3:end),'.csv')
-        iopt = detectImportOptions(C);
-        C = readtable(C,iopt);
-    else
-        error('Invalid input string. Must be path to DICOMcatalog.csv file.');
-    end
-elseif ~istable(C)
-    error('Invalid input type.');
+
+if cat_flag || ~exist(fname,'file')
+    C = dcmCatalog(fpath,fname);
+elseif ~isempty(fname) && exist(fname,'file')
+    iopt = detectImportOptions(fname);
+    C = readtable(fname,iopt);
 else
-    fpath = pwd;
+    error('Invalid input string. Must be path to DICOMcatalog.csv file.');
 end
 
 %% Validate table input:

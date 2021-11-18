@@ -6,6 +6,8 @@ function res = Main_Pipeline_sub(expfname,insfname,procdir)
 % Pipeline consists of:
 % 1. 
 
+tt = tic;
+
 %% Check that data exists
 if ~exist(expfname,'file')
     warning('File does not exist: %s',expfname);
@@ -24,8 +26,8 @@ fn_log = fullfile(procdir,'pipeline_log.txt');
 fn_ext = '.nii.gz';
 check_EI = false;
 img = struct('mat',{[],[]},'info',{[],[]},'label',{[],[]});
-tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
-res.ID = extractBefore(tok{1}{1},'_');
+% tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
+% res.ID = extractBefore(tok{1}{1},'_');
 res.ID = '';
 res.Exp_DICOM = '';
 res.Ins_DICOM = '';
@@ -344,6 +346,8 @@ end
     
 %% Save Results Table:
 writetable(struct2table(res,'AsArray',true),fullfile(procdir,[res.ID,'_Results.csv']));
+
+writeLog(fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
 
 function writeLog(fn,str,varargin)
