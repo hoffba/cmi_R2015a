@@ -136,8 +136,8 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         jobname = sprintf('GL_vesselSeg_%s',tstr);
         fname = [jobname,'.sh'];
         part_str = 'standard';
-        pmem = 64; % max GB per process
-        ptime = 720; % max minutes per process
+        pmem = 32; % max GB per process
+        ptime = 360; % max minutes per process
         mxmem = 180; % 180GB max memory for standard node
         nf = numel(fn_ins);
         cores = min(min(nf,floor(mxmem/pmem))+1,36);
@@ -270,6 +270,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         % Wait for all jobs to complete
         errflag = true(nf,1);
         dt = zeros(nf,1);
+        T = [];
         for i = 1:nf
             wait(job(i));
             
@@ -296,12 +297,12 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         end
         rmdir(jobdir,'s');
         
+        fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
+            mean(dt(errflag)),std(dt(errflag)));
+        
         tfname = fullfile(p.sv_path,sprintf('vesselSeg_Results_%s.csv',slurm.jobname));
         fprintf('Saving tabulated results: %s',tfname);
         writetable(T,tfname);
-        
-        fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
-            mean(dt(errflag)),std(dt(errflag)));
         
     else
         error('Invalid input');

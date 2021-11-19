@@ -190,6 +190,8 @@ S = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
 for ilab = 1:numel(S)
     if isempty(S(ilab).tag)
         tstr = '';
+    elseif ischar(S(ilab).tag)
+        tstr = ['_',S(ilab).tag];
     else
         tstr = sprintf('_%u',S(ilab).tag);
     end
@@ -245,7 +247,8 @@ else
 end
 clear ins_reg;
 % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
-prmlabel = {'Norm','fSAD','Emph','PD','NS'};
+prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
+            [1,2],  3,      [4,5],  [8,9,10],   6    };
 prm(ismember(prm,1:2)) = 1; % Norm
 prm(prm==3)            = 2; % fSAD
 prm(ismember(prm,4:5)) = 3; % Emph
@@ -263,14 +266,15 @@ BW = logical(img.label);
 ulab = unique(img.label(BW));
 nlab = numel(ulab);
 tstr = '';
-for ilab = 1:(nlab+(nlab>1))
+for ilab = 1:(nlab+(nlab>1)) % Loop over Whole-lung then R/L
+    % Grab sub-region
     if ilab>1
         BW = img.label == (ulab(ilab-1));
         tstr = sprintf('_%u',ulab(ilab-1));
     end
     np = nnz(BW); % Normalize by number in mask or nnz in PRM?????????
-    for iprm = 1:numel(prmlabel)
-        res.(['PRM_',prmlabel{iprm},tstr]) = nnz(prm(BW)==iprm)/np*100;
+    for iprm = 1:size(prmlabel,2)
+        res.(['PRM_',prmlabel{1,iprm},tstr]) = nnz(ismember(prm(BW),prmlabel{2,iprm}))/np*100;
     end
 end
     
