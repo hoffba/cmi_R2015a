@@ -160,7 +160,7 @@ function T = vesselSeg_BH(varargin)
     fname = fullfile(save_path,[ID,'_CSA_skel']);
     if exist([fname,'.nii.gz'],'file')
         fprintf('Reading CSA from file ...\n');
-        csa_map = load([fname,'.nii.gz']);
+        csa_map = niftiread([fname,'.nii.gz']);
         if isfield(csa_map,'csa_map')
             csa_map = csa_map.csa_map;
             flag = false;

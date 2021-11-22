@@ -246,16 +246,12 @@ else
     end
 end
 clear ins_reg;
-% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
+
+%% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
 prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
             [1,2],  3,      [4,5],  [8,9,10],   6    };
-prm(ismember(prm,1:2)) = 1; % Norm
-prm(prm==3)            = 2; % fSAD
-prm(ismember(prm,4:5)) = 3; % Emph
-prm(prm==6)            = 5; % NS
-prm(ismember(prm,8:10))= 4; % PD
 
-% QC PRM
+%% QC PRM
 writeLog(fn_log,'Generating PRM Montage ...\n');
 QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm(:,:,ind))),...
     img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID)));
@@ -272,7 +268,12 @@ for ilab = 1:(nlab+(nlab>1)) % Loop over Whole-lung then R/L
         BW = img.label == (ulab(ilab-1));
         tstr = sprintf('_%u',ulab(ilab-1));
     end
-    np = nnz(BW); % Normalize by number in mask or nnz in PRM?????????
+    np = nnz(BW); % Normalize by number in mask
+    % 10-color PRM:
+    for iprm = 1:10
+        res.([sprintf('PRM_%u',iprm),tstr]) = nnz(prm(BW)==iprm)/np*100;
+    end
+    % 4 color PRM:
     for iprm = 1:size(prmlabel,2)
         res.(['PRM_',prmlabel{1,iprm},tstr]) = nnz(ismember(prm(BW),prmlabel{2,iprm}))/np*100;
     end
@@ -298,7 +299,7 @@ if all(cellfun(@(x)exist(x,'file'),fn_tprm))
                     BW = img.label == ulab(ilab-1);
                     tstr = sprintf('_%u',ulab(ilab-1));
                 end
-                res.(['tPRM_',prmlabel(iprm),upper(mflabel(imf)),tstr]) = mean(tprm(BW));
+                res.(strcat('tPRM_',prmlabel(iprm),upper(mflabel(imf)),tstr)) = mean(tprm(BW));
             end
         end
     end
