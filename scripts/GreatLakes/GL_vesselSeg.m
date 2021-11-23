@@ -137,7 +137,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         fname = [jobname,'.sh'];
         part_str = 'standard';
         pmem = 32; % max GB per process
-        ptime = 360; % max minutes per process
+        ptime = 720; % max minutes per process
         mxmem = 180; % 180GB max memory for standard node
         nf = numel(fn_ins);
         cores = min(min(nf,floor(mxmem/pmem))+1,36);
@@ -278,7 +278,8 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
             
             if isempty(job(i).Tasks(1).Error)
                 fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
-                T = [T;fetchOutputs(job(i))];
+                tT = fetchOutputs(job(i));
+                T = [T;tT{1}];
             else
                 fprintf('Job %u failed after %.1f minutes.\n',i,dt(i));
                 errflag(i) = false;

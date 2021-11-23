@@ -117,12 +117,7 @@ function T = vesselSeg_BH(varargin)
     if exist([fname,'.nii.gz'],'file')
         fprintf('Loading enhanced vessel map from file ...\n');
         vessels = niftiread([fname,'.nii.gz']);
-        if isfield(vessels,'vessels')
-            vessels = vessels.vessels;
-            flag = false;
-        else
-            fprintf('-- Invalid enhanced vessel file\n');
-        end
+        flag = false;
     end
     if flag
         fprintf('Calculating enhanced vessel maps ... \n');
@@ -161,12 +156,7 @@ function T = vesselSeg_BH(varargin)
     if exist([fname,'.nii.gz'],'file')
         fprintf('Reading CSA from file ...\n');
         csa_map = niftiread([fname,'.nii.gz']);
-        if isfield(csa_map,'csa_map')
-            csa_map = csa_map.csa_map;
-            flag = false;
-        else
-            fprintf('-- invalid CSA file\n');
-        end
+        flag = false;
     end
     if flag
         fprintf('Generating CSA maps ... \n');
