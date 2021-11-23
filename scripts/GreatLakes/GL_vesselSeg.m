@@ -220,8 +220,10 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         
         % Check for job array:
         slurm = getSLURM;
+        arraystr = '';
         if ~isempty(slurm.arraytaskid)
             fprintf('Running job number %u of %u\n',slurm.arraytaskid,njobs);
+            arraystr = sprintf('_%u',slurm.arraytaskid);
         end
         nf = numel(p.fn_ins);
         if ~isempty(slurm.arraytaskid)
@@ -301,7 +303,7 @@ function [fn_ins,fn_seg,sv_path] = GL_vesselSeg(varargin)
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
             mean(dt(errflag)),std(dt(errflag)));
         
-        tfname = fullfile(p.sv_path,sprintf('vesselSeg_Results_%s.csv',slurm.jobname));
+        tfname = fullfile(p.sv_path,sprintf('vesselSeg_Results_%s%s.csv',slurm.jobname,arraystr));
         fprintf('Saving tabulated results: %s',tfname);
         writetable(T,tfname);
         
