@@ -44,6 +44,7 @@ else
             cat_flag = true;
         elseif ischar(val) && strcmp(val(end-3:end),'.csv')
             fname = val;
+            fpath = fileparts(fname);
         else
             warning('Invalid input');
             return;
