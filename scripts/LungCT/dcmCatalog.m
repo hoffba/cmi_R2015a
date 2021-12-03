@@ -61,39 +61,44 @@ T = table('Size',[ndir,nvars],'VariableTypes',vtypes,'VariableNames',tvars);
 
 % Loop over all DICOM directories
 fprintf('Processing folder (of %u): ',ndir);
+Tflag = true(ndir,1);
 nchar = 0;
 for idir = 1:ndir
     ntxt = sprintf('%u',idir);
     fprintf([repmat('\b',1,nchar),'%s'],ntxt);
     nchar = numel(ntxt);
     
-    info = dicominfo(fullfile(D{idir},F{idir}{1}),'UseDictionaryVR',true);
-    for ifld = 1:ntags
-        ttag = dcmtags{ifld};
-        if isfield(info,ttag)
-            
-            if strcmp(ttag,'PatientName')
-                T.PatientName{idir} = info.PatientName.FamilyName;
-            elseif strcmp(ttag,'PixelSpacing')
-                T.dx(idir) = info.PixelSpacing(1);
-                T.dy(idir) = info.PixelSpacing(2);
-            else
-                val = info.(ttag);
-                if ischar(val)
-                    if iscellstr(T.(ttag))
-                        T.(ttag){idir} = val;
-                    else
-                        T.(ttag)(idir) = str2double(val);
-                    end
+    tname = fullfile(D{idir},F{idir}{1});
+    Tflag(idir) = isdicom(tname);
+    if Tflag(idir)
+        info = dicominfo(tname,'UseDictionaryVR',true);
+        for ifld = 1:ntags
+            ttag = dcmtags{ifld};
+            if isfield(info,ttag)
+
+                if strcmp(ttag,'PatientName')
+                    T.PatientName{idir} = info.PatientName.FamilyName;
+                elseif strcmp(ttag,'PixelSpacing')
+                    T.dx(idir) = info.PixelSpacing(1);
+                    T.dy(idir) = info.PixelSpacing(2);
                 else
-                    T.(ttag)(idir) = val;
+                    val = info.(ttag);
+                    if ischar(val)
+                        if iscellstr(T.(ttag))
+                            T.(ttag){idir} = val;
+                        else
+                            T.(ttag)(idir) = str2double(val);
+                        end
+                    else
+                        T.(ttag)(idir) = val;
+                    end
                 end
+
             end
-            
         end
+        T.Directory{idir} = D{idir};
+        T.Slices(idir) = length(F{idir});
     end
-    T.Directory{idir} = D{idir};
-    T.Slices(idir) = length(F{idir});
 end
 fprintf('\n');
 
