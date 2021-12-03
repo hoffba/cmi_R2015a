@@ -150,11 +150,11 @@ end
 writeLog(fn_log,'Generating EXP montage...\n');
 ind = 10:10:img(1).info.d(3);
 QCmontage('seg',cat(4,img(1).mat(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
-    fullfile(procdir,sprintf('%s.Montage.tiff',img(1).info.label)));
+    fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
 writeLog(fn_log,'Generating INSP montage...\n');
 ind = 10:10:img(2).info.d(3);
 QCmontage('seg',cat(4,img(2).mat(:,:,ind),img(2).label(:,:,ind)),img(2).info.voxsz,...
-    fullfile(procdir,sprintf('%s.Montage.tiff',img(2).info.label)));
+    fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
 
 %% ScatterNet for AT on Exp CT scan
 fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID,'scatnet',fn_ext));
