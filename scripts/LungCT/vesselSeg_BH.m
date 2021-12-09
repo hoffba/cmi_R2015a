@@ -165,7 +165,7 @@ function T = vesselSeg_BH(varargin)
         niftiwrite(csa_map,fname,'Compressed',true);
         fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     end
-    clear bin_vessels;
+%     clear bin_vessels;
     
     %% Frangi Filter
     fname = fullfile(save_path,[ID,'_enhancedVessel_frangi']);
@@ -199,7 +199,7 @@ function T = vesselSeg_BH(varargin)
     %% Tabulate results and save to subject directory
     fprintf('Tabulating results ... ');
     t = tic;
-    T = tabulateResults(ID,ct,seg,vessels,csa_map);
+    T = tabulateResults(ID,ct,seg,bin_vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_allMetrics.csv']));
     fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
