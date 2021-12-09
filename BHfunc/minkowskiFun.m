@@ -118,7 +118,7 @@ for ith = 1:nth
         if isnan(p.wnum(i))
             p.wnum(i) = nnz(wmask);
         end
-        normval = repmat(feval(p.func,wmask,p.voxsz,0), [1,4]); % Added by CJG 20210323
+        normval = repmat(feval(p.func,wmask,p.voxsz,0), [1,numel(p.ord)]); % Added by CJG 20210323
         normval(p.ord==p.nD) = p.wnum(i); % For normalizing X and alpha
         
         % Calculate MF values:

@@ -51,12 +51,12 @@ classdef PRMclass < Mat3Dclass
             self = self@Mat3Dclass(obj);
             % Find files containing PRM settings
             self.prmdir = fullfile(fileparts(which('cmi')),'PRMdefs');
-            if ~isdir(self.prmdir)
+            if ~isfolder(self.prmdir)
                 mkdir(self.prmdir);
             end
             pdefs = dir(fullfile(self.prmdir,'*PRMdef*.mat'));
             pdefs = {pdefs(:).name};
-            idef = find(~cellfun(@isempty,strfind(pdefs,'RGB')),1);
+            idef = find(contains(pdefs,'RGB'),1);
             if isempty(idef)
                 idef = 1;
             end
