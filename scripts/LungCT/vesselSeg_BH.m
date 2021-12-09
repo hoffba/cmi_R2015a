@@ -310,7 +310,7 @@ function T = tabulateResults(id,ct,seg,vessels,csa)
         
         T.VOLUME(i) = nnz(seg == lobe_id) * 0.625^3; %Convert num voxels into volume by multiplying by voxel dim
         T.VESSEL_VOLUME(i) = nnz(V) * 0.625^3;
-        T.PER_EMPH(i) = nnz((ct < -950) & (seg == lobe_id)) / T.VOLUME(i)*100;
+        T.PER_EMPH(i) = nnz((ct < -950) & (seg == lobe_id)) / nnz(seg == lobe_id)*100;
         
         fprintf('   Calculating size metrics\n');
         [T.NUM_VESSELS(i), T.NUM_COMPONENTS(i), T.NUM_ENDPOINTS(i)] = CSA_size_metrics(C);
