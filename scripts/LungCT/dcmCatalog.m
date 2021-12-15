@@ -89,7 +89,7 @@ for idir = 1:ndir
                         else
                             T.(ttag)(idir) = str2double(val);
                         end
-                    else
+                    elseif ~isempty(val)
                         T.(ttag)(idir) = val;
                     end
                 end
@@ -100,6 +100,7 @@ for idir = 1:ndir
         T.Slices(idir) = length(F{idir});
     end
 end
+T(~Tflag,:) = []; % Remove rows for non-DICOM
 fprintf('\n');
 
 % Choose where to save results:
