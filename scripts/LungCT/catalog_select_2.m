@@ -81,13 +81,13 @@ colnames = C.Properties.VariableNames;
 nfields = length(colnames);
 
 % Remove empty data and sort array
-C = sortrows(C,{'PatientName','StudyDate','SeriesNumber'});
+C = sortrows(C,{'PatientName','StudyID','StudyDate','SeriesNumber'});
 
 % Find groups of scans with unique PatientName and StudyDate
 if isnumeric(C.StudyDate)
     C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
 end
-[~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate));
+[~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate,C.StudyID));
 ngroups = max(ugroups_ic);
 
 %% Set up figure:
