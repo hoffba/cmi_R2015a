@@ -187,7 +187,7 @@ end
             checkValid(hObject);
         elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) % Edited PatientID
             % Set ID for all scans in this case group:
-            hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),3) = {eventdata.NewData};
+            hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),4) = {eventdata.NewData};
         else
             warning('Invalid PatientID, try again.');
             hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
