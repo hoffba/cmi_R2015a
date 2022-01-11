@@ -15,24 +15,31 @@ function T = vesselStats(id,ct,seg,vessels,csa)
                                'CSA_EXP_A','CSA_EXP_B','VESSEL_VOLUME_5DOWN',...
                                'NUM_VESSELS_5DOWN','VESSEL_VOLUME_5UP','NUM_VESSELS_5UP'});
 
-    for i = 1:length(lobe)
-        lobe_id = lobe(i).val;
+    for i = 0:length(lobe)
+        ii = i+1;
+        if i==0 % Whole-lung
+            mask = ismember(seg,[lobe.val]);
+            T.LOBE{ii} = 'WholeLung';
+        else
+            mask = seg == lobe(i).val;
+            T.LOBE{ii} = lobe(i).name;
+        end
+        np = nnz(mask);
         
-        T.ID{i} = id;
-        T.LOBE{i} = lobe(i).name;
+        T.ID{ii} = id;
         
-        V = vessels .* (seg == lobe_id); % vessels in this lobe
-        C = csa .* (seg == lobe_id); % CSA of vessels in this lobe
+        V = vessels .* mask; % vessels in this lobe
+        C = csa .* mask; % CSA of vessels in this lobe
         
-        T.VOLUME(i) = nnz(seg == lobe_id) * 0.625^3; %Convert num voxels into volume by multiplying by voxel dim
-        T.VESSEL_VOLUME(i) = nnz(V) * 0.625^3;
-        T.PER_EMPH(i) = nnz((ct < -950) & (seg == lobe_id)) / nnz(seg == lobe_id)*100;
+        T.VOLUME(ii) = np * 0.625^3; %Convert num voxels into volume by multiplying by voxel dim
+        T.VESSEL_VOLUME(ii) = nnz(V) * 0.625^3;
+        T.PER_EMPH(ii) = nnz((ct < -950) & mask) / np * 100;
         
         fprintf('   Calculating size metrics\n');
-        [T.NUM_VESSELS(i), T.NUM_COMPONENTS(i), T.NUM_ENDPOINTS(i)] = CSA_size_metrics(C);
-        [T.CSA_EXP_A(i), T.CSA_EXP_B(i)] = CSA_metrics(C);
-        [T.VESSEL_VOLUME_5DOWN(i), T.NUM_VESSELS_5DOWN(i)] = CSA_range_metrics(C < 5 & C > 0, C);
-        [T.VESSEL_VOLUME_5UP(i), T.NUM_VESSELS_5UP(i)] = CSA_range_metrics(C > 5, C);
+        [T.NUM_VESSELS(ii), T.NUM_COMPONENTS(ii), T.NUM_ENDPOINTS(ii)] = CSA_size_metrics(C);
+        [T.CSA_EXP_A(ii), T.CSA_EXP_B(ii)] = CSA_metrics(C);
+        [T.VESSEL_VOLUME_5DOWN(ii), T.NUM_VESSELS_5DOWN(ii)] = CSA_range_metrics(C < 5 & C > 0, C);
+        [T.VESSEL_VOLUME_5UP(ii), T.NUM_VESSELS_5UP(ii)] = CSA_range_metrics(C > 5, C);
 
     end
 end
