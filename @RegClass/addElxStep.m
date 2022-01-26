@@ -3,7 +3,7 @@ function addElxStep(self, type_str, varargin)
 
 opts = {'Translation','Euler','Similarity','Affine','Warp'};
 
-if nargin<1
+if nargin<2
     [sel,ok] = listdlg('ListString',opts,...
         'SelectionMode','single',...
         'Name','Transform Type');
