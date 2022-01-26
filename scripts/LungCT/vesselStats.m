@@ -17,7 +17,7 @@ function T = vesselStats(id,ct,seg,vessels,csa)
             'CSA_EXP_B',            'double';...
             'VESSEL_VOXELS_5DOWN',  'uint32';...
             'VESSEL_VOXELS_5UP',    'uint32'};
-    T = table('Size',[nlobes+1,size(vtypes,1)],'VariableTypes',vars(:,2)','VariableNames',vars(:,1)');
+    T = table('Size',[nlobes+1,size(vars,1)],'VariableTypes',vars(:,2)','VariableNames',vars(:,1)');
 
     for i = 0:length(lobe)
         ii = i+1;
