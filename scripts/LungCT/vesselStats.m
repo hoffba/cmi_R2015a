@@ -32,7 +32,8 @@ function T = vesselStats(id,ct,seg,vessels,csa)
         
         T.ID{ii} = id;
         
-        V = single(vessels) .* mask; % vessels in this lobe
+        V = logical(vessels) .* mask; % vessels in this lobe
+
         C = csa .* mask; % CSA of vessels in this lobe
         
         T.VOLUME(ii) = np * 0.625^3; %Convert num voxels into volume by multiplying by voxel dim
