@@ -17,7 +17,7 @@ function T = vesselStats(id,ct,seg,vessels,csa)
             'CSA_EXP_B',            'double';...
             'VESSEL_VOXELS_5DOWN',  'uint32';...
             'VESSEL_VOXELS_5UP',    'uint32'};
-    T = table('Size',[nlobes+1,size(vtypes,1)],'VariableTypes',vars(:,2)','VariableNames',vars(:,1)');
+    T = table('Size',[nlobes+1,size(vars,1)],'VariableTypes',vars(:,2)','VariableNames',vars(:,1)');
 
     for i = 0:length(lobe)
         ii = i+1;
@@ -32,7 +32,7 @@ function T = vesselStats(id,ct,seg,vessels,csa)
         
         T.ID{ii} = id;
         
-        V = vessels .* mask; % vessels in this lobe
+        V = single(vessels) .* mask; % vessels in this lobe
         C = csa .* mask; % CSA of vessels in this lobe
         
         T.VOLUME(ii) = np * 0.625^3; %Convert num voxels into volume by multiplying by voxel dim

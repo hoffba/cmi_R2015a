@@ -42,6 +42,7 @@ function T = vesselSeg_BH(varargin)
     
     %% Find and load INSP CT file:
     if flag
+        tag_type = 1;
         if ~contains(fn_ct,'.nii')
             warning('Invalid input CT file name: %s',fn_ct);
             return
@@ -52,18 +53,19 @@ function T = vesselSeg_BH(varargin)
             [~,fname] = fileparts(fn_ct);
             if ~startsWith(fname,'re_')
                 fprintf('  Resampling CT image ...\n');
-                ct = resample_subj(ct,info,fn_ct);
+                ct = resample_subj(ct,info,fn_ct,tag_type);
             end
         else
             error('Could not find file: %s',fn_ct);
         end
     elseif ~all(info.PixelDimensions==0.625)
                 fprintf('  Resampling CT image ...\n');
-        ct = resample_subj(ct,info,fullfile(save_path,[ID,'.ct.nii']));
+        ct = resample_subj(ct,info,fullfile(save_path,[ID,'.ct.nii']),tag_type);
     end
-    
+   
     %% Find INSP segmentation file:
     if flag
+        tag_type = 2;
         if ~contains(fn_seg,'.nii')
             warning('Invalid input segmentation file name: %s',fn_seg);
             return
@@ -74,14 +76,14 @@ function T = vesselSeg_BH(varargin)
             [~,fname] = fileparts(fn_seg);
             if ~startsWith(fname,'re_')
                 fprintf('  Resampling SEGMENTATION image ...\n');
-                seg = resample_subj(seg,info,fn_seg);
+                seg = resample_subj(seg,info,fn_seg,tag_type);
             end
         else
             error('Could not find file: %s',fn_seg);
         end
     elseif ~all(info.PixelDimensions==0.625)
                 fprintf('  Resampling SEGMENTATION image ...\n');
-        seg = resample_subj(seg,info,fullfile(save_path,[ID,'.lobe_segmentation.nii']));
+        seg = resample_subj(seg,info,fullfile(save_path,[ID,'.lobe_segmentation.nii']),tag_type);
     end
     
     %% Validate size of loaded data:
@@ -100,7 +102,7 @@ function T = vesselSeg_BH(varargin)
     lobe = getLobeTags(seg);
     se = strel('sphere',5);
     eroded_lobes = zeros(size(seg));
-    for i = 1:5
+    for i = 1:length(lobe)
         eroded_lobes(imerode(seg == lobe(i).val,se)) = lobe(i).val;
     end
     eroded_lobes = uint8(eroded_lobes);
@@ -168,33 +170,33 @@ function T = vesselSeg_BH(varargin)
 %     clear bin_vessels;
     
     %% Frangi Filter
-    fname = fullfile(save_path,[ID,'_enhancedVessel_frangi']);
-    if exist([fname,'.nii.gz'],'file')
-        fprintf('Frangi Filtered image file found ...\n');
-    else
-        fprintf('Generating Frangi Filtered image ... \n');
-        t = tic;
-        opt = struct('FrangiScaleRange',[0.5 5.5],...
-                     'FrangiScaleRatio',1,...
-                     'BlackWhite',false);
-        frangi_enhanced_vessels = FrangiFilter3D(ct.*segBW,opt) .* segBW;
-        niftiwrite(frangi_enhanced_vessels,fname,'Compressed',true);
-        clear frangi_enhanced_vessels;
-        fprintf('done (%s)\n\n',duration(0,0,toc(t)));
-    end
+%     fname = fullfile(save_path,[ID,'_enhancedVessel_frangi']);
+%     if exist([fname,'.nii.gz'],'file')
+%         fprintf('Frangi Filtered image file found ...\n');
+%     else
+%         fprintf('Generating Frangi Filtered image ... \n');
+%         t = tic;
+%         opt = struct('FrangiScaleRange',[0.5 5.5],...
+%                      'FrangiScaleRatio',1,...
+%                      'BlackWhite',false);
+%         frangi_enhanced_vessels = FrangiFilter3D(ct.*segBW,opt) .* segBW;
+%         niftiwrite(frangi_enhanced_vessels,fname,'Compressed',true);
+%         clear frangi_enhanced_vessels;
+%         fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+%     end
 
     %% Curvilinear Filter
-    fname = fullfile(save_path,[ID,'_enhancedVessel_curv']);
-    if exist([fname,'.nii.gz'],'file')
-        fprintf('Curvilinear filtered image file found ...\n');
-    else
-        fprintf('Generating Curvilinear Filtered image ... \n');
-        t = tic;
-        curv_enhanced_vessels = vesselness3D(ct.*segBW, 0.5:1:5.5, [1,1,1], 1, true).*segBW;
-        niftiwrite(curv_enhanced_vessels,fname,'Compressed',true);
-        clear curv_enhanced_vessels;
-        fprintf('done (%s)\n\n',duration(0,0,toc(t)));
-    end
+%     fname = fullfile(save_path,[ID,'_enhancedVessel_curv']);
+%     if exist([fname,'.nii.gz'],'file')
+%         fprintf('Curvilinear filtered image file found ...\n');
+%     else
+%         fprintf('Generating Curvilinear Filtered image ... \n');
+%         t = tic;
+%         curv_enhanced_vessels = vesselness3D(ct.*segBW, 0.5:1:5.5, [1,1,1], 1, true).*segBW;
+%         niftiwrite(curv_enhanced_vessels,fname,'Compressed',true);
+%         clear curv_enhanced_vessels;
+%         fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+%     end
     
     %% Tabulate results and save to subject directory
     fprintf('Tabulating results ... ');
@@ -208,9 +210,10 @@ function T = vesselSeg_BH(varargin)
 end
 
 %% Resample to 0.625mm isotropic
-function [I,info] = resample_subj(I,info,fname)
+function [I,info] = resample_subj(I,info,fname,tag_type)
     
-    if endsWith(fname,'.lobe_segmentation.nii.gz')
+%     if endsWith(fname,'.lobe_segmentation.nii.gz')
+    if tag_type == 2
         interpmethod = 'nearest';
     else
         interpmethod = 'linear';
@@ -240,7 +243,8 @@ end
 %% Windowed vessel segmentation
 function V = vesselSeg_boxes(ct, segBW)
     I = ct .* segBW;
-    I = Normalize(I);
+%     I = Normalize(I);
+    I = mat2gray(I);
     
     %Divide I into num_boxes pieces to fit into memory
     image_size = size(I);
