@@ -13,6 +13,9 @@ function lobe = getLobeTags(seg)
         % YACTA?
         lobeTag = 10:10:50;
         lobeName = {'LUL','LLL','RUL','RLL','RML'};
+    elseif all(ismember(10:10:20,utags))
+        lobeTag = [10 20];
+        lobeName = {'RL', 'LL'};
     else
         error('Could not match valid segmentation labeling schema: %s',num2str(utags'));
     end
