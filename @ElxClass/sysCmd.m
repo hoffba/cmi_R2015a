@@ -84,7 +84,7 @@ if ~isempty(str)
     % Concatenate system calls:
     str = sprintf(['%s',repmat([self.sepstr,'%s'],1,numel(str)-1)],str{:});
     if ispc
-        str = [self.xtstr,'title ',p.title,self.sepstr,str,wstr];
+        str = [self.xtstr,'title ',p.title,self.sepstr,str,'"',wstr];
     else
         str = [self.xtstr,'-T "',p.title,'" -e ''',str,'''',wstr];
     end
