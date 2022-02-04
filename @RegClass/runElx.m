@@ -236,7 +236,7 @@ if stat
         num2str(length(self.elxObj.Schedule)-1),'.txt']);
                     
     % Waiting for completion / running independently:
-    waitchk = qchk || self.waitchk;
+    waitchk = ~qchk || self.waitchk;
     
     % Use all cores (max number of threads):
     ncores = feature('numCores');
