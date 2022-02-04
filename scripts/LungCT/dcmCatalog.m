@@ -8,7 +8,7 @@ function T = dcmCatalog(varargin)
 %               e.g. '*.dcm' or {'*.1','*.dcm'}
 
 opath = pwd;
-filt = {'*.1','*.dcm',''};
+filt = {'*.1','*.dcm','','*.IMA'};
 fname = '';
 if nargin
     for i = 1:nargin
