@@ -31,7 +31,7 @@ else
                 varval = {cellfun(@str2double,tstr(2:end))};
             elseif startsWith(tstr,'[Pi linear regression values whole lung ->')
                 varname = strcat('Pi_regress_',{'a','slope','R^2'});
-                varval = regexp(tstr,': ([\d\.]+)','tokens');
+                varval = regexp(tstr,': ([\d\.-]+)','tokens');
                 varval = [varval{:}];
             else
                 go = false;
