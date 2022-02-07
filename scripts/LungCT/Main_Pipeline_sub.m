@@ -146,6 +146,48 @@ for itag = 1:2
     end
 end
 
+%% Airways
+for itag = 1:2
+    ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
+    airway_res = readYACTAairways(ydir);
+    
+    res.WallPct_3_8     = airway_res.Wall_pct__3_8_;
+    res.WallPct         = airway_res.Wall_pct;
+    res.WallPct_RUL     = airway_res.Wall_pct_RightUpperLobe;
+    res.WallPct_RML     = airway_res.Wall_pct_RightMidLobe;
+    res.WallPct_RULplus = airway_res.Wall_pct_RightUpperLobePlus;
+    res.WallPct_RLL     = airway_res.Wall_pct_RightLowerLobe;
+    res.WallPct_LUL     = airway_res.Wall_pct_LeftUpperLobe;
+    res.WallPct_LULplus = airway_res.Wall_pct_LeftUpperLobePlus;
+    res.WallPct_LLL     = airway_res.Wall_pct_LeftLowerLobe;
+    
+    res.Pi10            = airway_res.Pi10;
+    res.Pi10_RUL        = airway_res.Pi10_RUL;
+    res.Pi10_RML        = airway_res.Pi10_RML;
+    res.Pi10_RULplus    = airway_res.Pi10_RULplus;
+    res.Pi10_RLL        = airway_res.Pi10_RLL;
+    res.Pi10_LUL        = airway_res.Pi10_LUL;
+    res.Pi10_LULplus    = airway_res.Pi10_LULplus;
+    res.Pi10_LLL        = airway_res.Pi10_LLL;
+    
+    res.Pi15            = airway_res.Pi15;
+    
+    genstr = {'WT'};
+    segstr = { 'seg',   4   ;...
+               'subseg',5:7 };
+    lobestr = {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLL'};
+    for i = 1:numel(genstr)
+        for j = 1:2
+            for k = 1:numel(lobestr)
+                fldstr = sprintf('%s_%s_%s',genstr{i},segstr{j,1},regexprep(lobestr{k},'+','plus'));
+                vals = airway_res.(genstr{i}).(lobestr{k})(segstr{j,2});
+                vals = vals(vals>0);
+                res.(fldstr) = mean(vals);
+            end
+        end
+    end
+end
+
 %% QC segmentation
 writeLog(fn_log,'Generating EXP montage...\n');
 ind = 10:10:img(1).info.d(3);

@@ -82,6 +82,6 @@ end
 
 function vname = fixVarName(vname)
 
-vname = regexprep(vname,'%','Pct');
+vname = regexprep(vname,'%','_pct');
 vname = regexprep(vname,'+','plus');
 vname = matlab.lang.makeValidName(vname);
