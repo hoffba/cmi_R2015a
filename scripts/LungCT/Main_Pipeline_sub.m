@@ -181,11 +181,22 @@ for itag = 1:2
                 for k = 1:numel(lobestr)
                     fldstr = sprintf('%s_%s_%s',genstr{i},segstr{j,1},regexprep(lobestr{k},'+','plus'));
                     vals = airway_res.(genstr{i}).(lobestr{k})(segstr{j,2});
-                    vals = vals(vals>0);
-                    res.(fldstr) = mean(vals);
+                    res.(fldstr) = mean(vals(vals>0));
                 end
             end
         end
+        
+        res.BEI             = airway_res.BEI_Lung;
+        res.BEI_Right       = airway_res.BEI_Right;
+        res.BEI_Left        = airway_res.BEI_Left;
+        res.BEI_RUL         = airway_res.BEI_RUL;
+        res.BEI_RML         = airway_res.BEI_RML;
+        res.BEI_RULplus     = airway_res.BEI_RULplus;
+        res.BEI_RLL         = airway_res.BEI_RLL;
+        res.BEI_LUL         = airway_res.BEI_LUL;
+        res.BEI_LLi         = airway_res.BEI_LLi;
+        res.BEI_LULplus     = airway_res.BEI_LULplus;
+        res.BEI_LLL         = airway_res.BEI_LLL;
     end
 end
 
