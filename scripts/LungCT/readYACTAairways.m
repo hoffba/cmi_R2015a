@@ -44,7 +44,7 @@ else
     end
     
     % Initialize 7-generation table:
-    genT = table('Size',[7,12],'VariableTypes',[{'uint8'},repmat({'double'},1,11)]);
+    genT = table('Size',[0,12],'VariableTypes',[{'uint8'},repmat({'double'},1,11)]);
     genstr = {'Lumen [mm²] vs. Generations'         , 'LumenArea';...
               'Wall [mm²] vs. Generations'          , 'WallArea';...
               'LumenAndWall [mm²] vs. Generations'  , 'LumenAndWallArea';...
@@ -57,8 +57,19 @@ else
         if ~isempty(ind)
             ind = ind+2;
             genT.Properties.VariableNames = strsplit(str{ind},';');
+            
             for i = 1:7
-                genT(i,:) = cellfun(@str2double,strsplit(str{ind+i},';'),'UniformOutput',false);
+                tstr = str{ind+i};
+                if contains(tstr,';')
+                    vals = cellfun(@str2double,strsplit(tstr,';'),'UniformOutput',false);
+                    if vals{1}==i
+                        genT(i,:) = vals;
+                    else
+                        break
+                    end
+                else
+                    break
+                end
             end
             results.(genstr{j,2}) = genT;
         end
