@@ -96,10 +96,12 @@ if check_EI
     %   ** Need to double-check in case of mislabel
     
     %% Quick segmentation for Exp/Ins Identification:
-    img(1).label = getRespiratoryOrgans(img(1).mat);
-    img(2).label = getRespiratoryOrgans(img(2).mat);
+    img(1).label = getRespiratoryOrgans(medfilt2_3(img(1).mat));
+    img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
     
-    if (nnz(img(1).label)*img(1).info.voxvol) > (nnz(img(2).label)*img(2).info.voxvol)
+    flag = (nnz(img(1).label)*img(1).info.voxvol) > (nnz(img(2).label)*img(2).info.voxvol) ...
+        && (mean(img(1).mat(logical(img(1).label))) < mean(img(1).mat(logical(img(2).label))));
+    if flag
         writeLog(fn_log,'Swapping INS/EXP due to lung volume\n');
         img = img([2,1]);
         tstr = res.Exp_DICOM;
@@ -427,4 +429,9 @@ if fid
     fclose(fid);
 else
     fprintf('Could not open log file.\n');
+end
+
+function img = medfilt2_3(img)
+for i = 1:size(img,3)
+    img(:,:,i) = medfilt2(img(:,:,i));
 end
