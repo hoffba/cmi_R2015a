@@ -22,7 +22,7 @@ classdef ElxClass < handle
                 self.xtstr = '/opt/X11/bin/xterm -geometry 170x50 ';
                 self.sepstr = ' ; ';
             elseif ispc
-                self.xtstr = 'cmd /k "mode con: cols=100 lines=40 && ';
+                self.xtstr = 'cmd /c "mode con: cols=100 lines=40 && ';
                 self.sepstr = ' && ';
             else % Linux
                 self.elxdir = '/opt/elastix/bin/';

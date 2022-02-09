@@ -180,7 +180,9 @@ for itag = 1:2
             for j = 1:2
                 for k = 1:numel(lobestr)
                     fldstr = sprintf('%s_%s_%s',genstr{i},segstr{j,1},regexprep(lobestr{k},'+','plus'));
-                    vals = airway_res.(genstr{i}).(lobestr{k})(segstr{j,2});
+                    segind = segstr{j,2};
+                    vals = airway_res.(genstr{i}).(lobestr{k});
+                    vals = vals(segind(segind<=numel(vals)));
                     res.(fldstr) = mean(vals(vals>0));
                 end
             end
@@ -409,6 +411,7 @@ writetable(struct2table(res,'AsArray',true),fullfile(procdir,[res.ID,'_Results.c
 writeLog(fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
 
+
 function writeLog(fn,str,varargin)
 % write to command window
 fprintf(str,varargin{:});
@@ -421,4 +424,3 @@ if fid
 else
     fprintf('Could not open log file.\n');
 end
-
