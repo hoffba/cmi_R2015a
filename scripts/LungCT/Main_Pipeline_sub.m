@@ -1,10 +1,14 @@
-function res = Main_Pipeline_sub(expfname,insfname,procdir)
+function res = Main_Pipeline_sub(expfname,insfname,procdir,quickreg)
 
 % Input: catalog = cell array of dicom information in a directory generated
 %                   by the "dcmCatalog()" script
 
 % Pipeline consists of:
 % 1. 
+
+if nargin<4
+    quickreg = false;
+end
 
 tt = tic;
 
@@ -266,7 +270,7 @@ else
     writeLog(fn_log,'Performing registration...\n')
     lungreg_BH( img(1).mat, img(1).info, logical(img(1).label),...
                 img(2).mat, img(2).info, logical(img(2).label),...
-                res.ElxDir, res.ID, false, true);
+                res.ElxDir, res.ID, false, quickreg);
     % Move registered file out to procdir
     [~,outfn] = fileparts(img(2).info.name);
     outfn = fullfile(res.ElxDir,sprintf('%s_R.nii',outfn));
