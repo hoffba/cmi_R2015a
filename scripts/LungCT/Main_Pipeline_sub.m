@@ -6,6 +6,8 @@ function res = Main_Pipeline_sub(expfname,insfname,procdir,quickreg)
 % Pipeline consists of:
 % 1. 
 
+res = [];
+
 if nargin<4
     quickreg = false;
 end
