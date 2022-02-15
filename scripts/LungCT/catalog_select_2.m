@@ -81,7 +81,7 @@ colnames = C.Properties.VariableNames;
 nfields = length(colnames);
 
 % Remove empty data and sort array
-C = sortrows(C,{'PatientName','StudyID','StudyDate','SeriesNumber'});
+C = sortrows(C,{'PatientName','StudyDate','StudyID','SeriesNumber'});
 
 % Find groups of scans with unique PatientName and StudyDate
 if isnumeric(C.StudyDate)
@@ -89,6 +89,7 @@ if isnumeric(C.StudyDate)
 end
 [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate,C.StudyID));
 ngroups = max(ugroups_ic);
+
 
 %% Set up figure:
 scsz = get(0,'screensize'); % screen size
