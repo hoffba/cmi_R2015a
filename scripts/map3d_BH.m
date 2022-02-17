@@ -23,6 +23,8 @@ function m = map3d_BH(func,img,mask,varargin)
 %                       {@(img,mask) kurtosis(img(mask))} } , img , mask )
 %       m = map3d_BH( { {@(img,mask) mean(img(mask))} } , img , mask ,
 %                    'winRadius' , [10,10,10] , 'winStep' , [5,5,5] )
+%       To use GUI to select function handles:
+%           m = map3d_BH( [] , img , mask )
 %
 %   The following must be adhered to:
 %
