@@ -141,14 +141,14 @@ if isempty(C)
     selected_data = [];
 else
     empty_flag = false(ngroups,1);
-    selected_data = struct('PatientName',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
+    selected_data = struct('UMlabel',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
     for ig = 1:ngroups
         g_ind = ugroups_ic==ig;
         tC = C( g_ind & (C.Exp | C.Ins) ,:);
         if isempty(tC)
             empty_flag(ig) = true;
         else
-            selected_data(ig).PatientName = tC.PatientName{1};
+            selected_data(ig).UMlabel = tC.UMlabel{1};
             selected_data(ig).StudyDate = tC.StudyDate{1};
             selected_data(ig).Scans = table2struct([tC(tC.Exp,3:end);tC(tC.Ins,3:end)]);
             selected_data(ig).Scans(1).Tag = 'Exp';
