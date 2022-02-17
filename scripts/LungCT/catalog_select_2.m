@@ -76,12 +76,17 @@ C = movevars(C,req_fields,'Before',1);
 
 % Add Tag columns:
 nscans = size(C,1);
-C = addvars(C,false(nscans,1),false(nscans,1),'Before',1,'NewVariableNames',{'Exp','Ins'});
+UMlabel = C.PatientName;
+ind = cellfun(@(x)isempty(x)||strcmp(x,'Anonymous'),UMlabel);
+UMlabel(ind) = C.PatientID(ind);
+C = addvars(C,false(nscans,1),false(nscans,1),UMlabel,'Before',1,'NewVariableNames',{'Exp','Ins','UMlabel'});
 colnames = C.Properties.VariableNames;
 nfields = length(colnames);
 
 % Remove empty data and sort array
-C = sortrows(C,{'PatientName','StudyDate','StudyID','SeriesNumber'});
+C(cellfun(@isempty,C.UMlabel),:) = [];
+nscans = size(C,1);
+C = sortrows(C,{'UMlabel','StudyDate','StudyID','SeriesNumber'});
 
 % Find groups of scans with unique PatientName and StudyDate
 if isnumeric(C.StudyDate)
@@ -99,7 +104,7 @@ gap = 5;
 hf = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight]),...
     'Name','Select DICOMcatalog data for processing:');%,'CloseRequestFcn',@cancel_callback);
 
-colEdit = false(1,nfields); colEdit([1,2,4]) = true;
+colEdit = false(1,nfields); colEdit([1,2,3]) = true;
 colWidth = repmat({'auto'},1,nfields); colWidth(1:2) = {40,40};
 huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ], 'Data',C,...
     'ColumnEditable',colEdit,'CellEditCallback',@editCell,'ColumnWidth',colWidth);
@@ -108,7 +113,7 @@ huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ], 'Data',C,...
 % for i_fld = 1:(nfields-2)
 %     dtypes{i_fld} = class(C.(colnames{i_fld+2}));
 % end
-F = table('Size',[2,nfields-1],'VariableTypes',repmat({'cellstr'},1,nfields-1),'VariableNames',[{'Tag'},colnames(3:end)]);
+F = table('Size',[2,nfields-2],'VariableTypes',repmat({'cellstr'},1,nfields-2),'VariableNames',[{'Tag'},colnames(4:end)]);
 F.Tag = {'Exp';'Ins'};
 htfilt = uitable(hf,'Position',[ 1 , fheight-90 , fwidth , 90 ],...
     'Data',F,'ColumnEditable',[false,true(1,nfields-2)],'CellEditCallback',@applyFilter);
@@ -186,9 +191,9 @@ end
         if ismember(eventdata.Indices(2),[1,2])
             % Edited Tag
             checkValid(hObject);
-        elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) % Edited PatientID
+        elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) % Edited UMlabel
             % Set ID for all scans in this case group:
-            hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),4) = {eventdata.NewData};
+            hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),3) = {eventdata.NewData};
         else
             warning('Invalid PatientID, try again.');
             hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
