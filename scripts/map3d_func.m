@@ -1,9 +1,13 @@
-function func = map3d_select(varargin)
+function func = map3d_func(varargin)
 % Function for selecting and running a moving window process
 % Inputs follow Name/Value syntax:
 %       Name = function name, i.e. 'kurtosis' OR 'MF'
 %       Value = cell array of additional inputs for function handle
 %           i.e. for 'MF': {voxsz,ord}
+% Example:
+%   To return function handles for masked mean and Minkowski functional V (order 0),
+%       with voxel size of [0.5,0.5,1]:
+%       func = map3d_select('mean',{},'MF',{[0.5 0.5 1],[0]})
 
 guichk = nargin==0;
 opts = {'kurtosis', { @(img,mask)kurtosis(img(mask)) };...

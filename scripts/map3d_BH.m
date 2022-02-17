@@ -40,6 +40,11 @@ end
 
 tStart = tic;
 
+if isempty(func)
+    % Use GUI to select:
+    func = map3d_func;
+end
+
 % Parse inputs
 d = size(mask,1,2,3);
 p = parseInputs(varargin); % Next parse windowing options (Name/Value pairs)
