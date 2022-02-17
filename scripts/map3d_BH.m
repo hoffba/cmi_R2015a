@@ -18,6 +18,12 @@ function m = map3d_BH(func,img,mask,varargin)
 %           'winRadius':    Radius of cubic window (voxels, default [10,10,10])
 %           'winStep':      Increment between window locations (voxels)
 %
+%   Examples:
+%       m = map3d_BH( { {@(img,mask,voxsz,ord)calcMF3D(img,voxsz,ord), voxsz, 0:3 } ; ...
+%                       {@(img,mask) kurtosis(img(mask))} } , img , mask )
+%       m = map3d_BH( { {@(img,mask) mean(img(mask))} } , img , mask ,
+%                    'winRadius' , [10,10,10] , 'winStep' , [5,5,5] )
+%
 %   The following must be adhered to:
 %
 %       - 'img' and 'mask' must be 3D and agree in size
