@@ -1,4 +1,4 @@
-function res = Main_Pipeline_sub(expfname,insfname,procdir,quickreg)
+function res = Main_Pipeline_sub(basename,expfname,insfname,procdir,quickreg)
 
 % Input: catalog = cell array of dicom information in a directory generated
 %                   by the "dcmCatalog()" script
@@ -56,13 +56,14 @@ img(2).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./
 img(2).info.voxvol = prod(img(2).info.voxsz);
 img(2).info.name = img(2).info.label;
 
+res.ID = basename;
 if isfolder(expfname)
     res.Exp_DICOM = expfname;
-    res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
+%     res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
     check_EI = true;
 else
     tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
-    res.ID = tok{1}{1};
+%     res.ID = tok{1}{1};
     if ismember('_',res.ID)
         res.ID = extractBefore(tok{1}{1},'_');
     end
