@@ -61,12 +61,12 @@ if isfolder(expfname)
     res.Exp_DICOM = expfname;
 %     res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
     check_EI = true;
-else
-    tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
+% else
+%     tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
 %     res.ID = tok{1}{1};
-    if ismember('_',res.ID)
-        res.ID = extractBefore(tok{1}{1},'_');
-    end
+%     if ismember('_',res.ID)
+%         res.ID = extractBefore(tok{1}{1},'_');
+%     end
 end
 res.ElxDir = fullfile(procdir,sprintf('elastix_%s',res.ID));
 if isfolder(insfname)
