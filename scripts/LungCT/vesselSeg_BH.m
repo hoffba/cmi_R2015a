@@ -124,7 +124,7 @@ function T = vesselSeg_BH(varargin)
     if flag
         fprintf('Calculating enhanced vessel maps ... \n');
         t = tic;
-        vessels = single(vesselSeg_boxes(ct, segBW));
+        vessels = single(vesselSeg_subj_boxes(ct, segBW));
         vessels(isnan(vessels)) = 0;
         niftiwrite(vessels,fname,'Compressed',true);
         fprintf('done (%s)\n\n',duration(0,0,toc(t)));
@@ -147,7 +147,8 @@ function T = vesselSeg_BH(varargin)
         t = tic; 
         info.Datatype = 'int8';
         info.BitsPerPixel = 8;
-        bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
+        bin_vessels = binarizeVessels(vessels,eroded_lobes);
+%         bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
         niftiwrite(bin_vessels,fname,'Compressed',true);
         fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     end
