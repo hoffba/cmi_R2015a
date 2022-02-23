@@ -2,8 +2,12 @@ function [img,label,fov,orient,info] = readDICOM(varargin)
 
 fname = varargin{1};
 din = [];
-if nargin==2
+if nargin>1
     din = varargin{2};
+end
+noprompt = false;
+if nargin>2
+    noprompt = varargin{3};
 end
 % if strncmp(version('-release'),'2016',4)
 %     v = {'UseDictionaryVR',true};
@@ -427,8 +431,12 @@ if ~isempty(dcmdata)
         oloc = cat(1,dcmdata(:).SlicePos);
     end
     if gflag
-        answer = questdlg('How would you like to compile these slices?',...
-            'Gapped CT','Concatenate','Insert Gaps','Cancel','Concatenate');
+        if noprompt
+            answer = 'Concatenate';
+        else
+            answer = questdlg('How would you like to compile these slices?',...
+                'Gapped CT','Concatenate','Insert Gaps','Cancel','Concatenate');
+        end
         if ~strcmp(answer,'Cancel')
             tdata = dcmdata(1);
             if strcmp(answer,'Insert Gaps')
@@ -489,21 +497,25 @@ if ~isempty(dcmdata)
 %             dcmdata(1).AcquisitionNumber = cat(2,dcmdata(:).AcquisitionNumber);
 %             dcmdata(2:end) = [];
         else
-            str = strcat('(',cellfun(@(x)num2str(size(x,1)),{dcmdata(:).SlicePos},...
-                                     'UniformOutput',false),...
-                         ' Slices)',[dcmdata(:).Label]);
-            % Show saggital preview for each:
-            hf = figure('Colormap',gray);
-            nrow = round(sqrt(ndd));
-            ncol = ceil(ndd/nrow);
-            for imont = 1:ndd
-                subplot(nrow,ncol,imont),
-                imshow(squeeze(max(dcmdata(imont).img,[],2)),[]);
-                title(str{imont});
+            if noprompt
+                answer = 1;
+            else
+                str = strcat('(',cellfun(@(x)num2str(size(x,1)),{dcmdata(:).SlicePos},...
+                                         'UniformOutput',false),...
+                             ' Slices)',[dcmdata(:).Label]);
+                % Show saggital preview for each:
+                hf = figure('Colormap',gray);
+                nrow = round(sqrt(ndd));
+                ncol = ceil(ndd/nrow);
+                for imont = 1:ndd
+                    subplot(nrow,ncol,imont),
+                    imshow(squeeze(max(dcmdata(imont).img,[],2)),[]);
+                    title(str{imont});
+                end
+                answer = listdlg('ListString',str,'SelectionMode','single',...
+                                 'ListSize',[300,300]);
+                delete(hf);
             end
-            answer = listdlg('ListString',str,'SelectionMode','single',...
-                             'ListSize',[300,300]);
-            delete(hf);
             if isempty(answer)
                 return % User cancelled the load
             else

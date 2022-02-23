@@ -8,7 +8,7 @@ function res = Main_Pipeline_sub(basename,expfname,insfname,procdir,quickreg)
 
 res = [];
 
-if nargin<4
+if nargin<5
     quickreg = false;
 end
 
@@ -42,7 +42,11 @@ res.ProcDir = procdir;
 %% Load CT images
 % Exp
 writeLog(fn_log,'Loading EXP image...\n');
-[img(1).mat,label,fov,orient,info] = cmi_load(1,[],expfname);
+if isfolder(expfname)
+    [img(1).mat,label,fov,orient,info] = readDICOM(expfname,[],true);
+else
+    [img(1).mat,label,fov,orient,info] = cmi_load(1,[],expfname);
+end
 d = size(img(1).mat);
 img(1).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
 img(1).info.voxvol = prod(img(1).info.voxsz);
