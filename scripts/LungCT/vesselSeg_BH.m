@@ -41,8 +41,8 @@ function T = vesselSeg_BH(varargin)
     end
     
     %% Find and load INSP CT file:
+    tag_type = 1;
     if flag
-        tag_type = 1;
         if ~contains(fn_ct,'.nii')
             warning('Invalid input CT file name: %s',fn_ct);
             return
@@ -64,8 +64,8 @@ function T = vesselSeg_BH(varargin)
     end
    
     %% Find INSP segmentation file:
+    tag_type = 2;
     if flag
-        tag_type = 2;
         if ~contains(fn_seg,'.nii')
             warning('Invalid input segmentation file name: %s',fn_seg);
             return
@@ -241,30 +241,4 @@ function [I,info] = resample_subj(I,info,fname,tag_type)
     
 end
 
-%% Windowed vessel segmentation
-function V = vesselSeg_boxes(ct, segBW)
-    I = ct .* segBW;
-%     I = Normalize(I);
-    I = mat2gray(I);
-    
-    %Divide I into num_boxes pieces to fit into memory
-    image_size = size(I);
-    nblocks = ceil( prod(image_size) / 14e6 );
-    zlim = round(linspace(0,image_size(3),nblocks+1));
-
-    V = zeros(size(I));
-
-    for i = 1:nblocks
-        fprintf('   block %u/%u: %u - %u\n',i,nblocks,zlim(i)+1,zlim(i+1));
-        zind = (zlim(i)+1):zlim(i+1);
-        tmp = MTHT3D( I(:,:,zind),...
-                      0.5:1:5.5,...
-                      12,...  % orientations
-                      70,...  % beta
-                      0.5,... % alpha
-                      15,...  % c, for vesselness
-                      -1.3 ); % alfa, for Neuriteness
-        V(:,:,zind) = tmp .* segBW(:,:,zind);
-    end
-end
 
