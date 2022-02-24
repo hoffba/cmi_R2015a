@@ -54,7 +54,11 @@ img(1).info.name = img(1).info.label;
 
 % Ins
 writeLog(fn_log,'Loading INSP image...\n');
-[img(2).mat,label,fov,orient,info] = cmi_load(1,[],insfname);
+if isfolder(insfname)
+    [img(2).mat,label,fov,orient,info] = readDICOM(insfname,[],true);
+else
+    [img(2).mat,label,fov,orient,info] = cmi_load(1,[],insfname);
+end
 d = size(img(2).mat);
 img(2).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
 img(2).info.voxvol = prod(img(2).info.voxsz);
