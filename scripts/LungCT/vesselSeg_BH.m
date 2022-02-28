@@ -7,8 +7,14 @@ function T = vesselSeg_BH(varargin)
     T = [];
     tt = tic;
 
+    fn_ct = '';
+    fn_seg = '';
+    ct = [];
+    seg = [];
+    info = [];
+    
     %% Parse Inputs
-    flag = true; % load file flag
+    flag = false; % load file flag
     if nargin==3
         fn_ct = varargin{1};
         fn_seg = varargin{2};
@@ -42,7 +48,7 @@ function T = vesselSeg_BH(varargin)
     
     %% Find and load INSP CT file:
     tag_type = 1;
-    if flag
+    if isempty(ct)
         if ~contains(fn_ct,'.nii')
             warning('Invalid input CT file name: %s',fn_ct);
             return
@@ -65,7 +71,7 @@ function T = vesselSeg_BH(varargin)
    
     %% Find INSP segmentation file:
     tag_type = 2;
-    if flag
+    if isempty(seg)
         if ~contains(fn_seg,'.nii')
             warning('Invalid input segmentation file name: %s',fn_seg);
             return
@@ -114,14 +120,11 @@ function T = vesselSeg_BH(varargin)
     segBW = ismember(seg,[lobe.val]);
 
     %% Generate enhanced vessel maps
-    flag = true;
     fname = fullfile(save_path,[ID,'_enhancedVessel']);
-    if exist([fname,'.nii.gz'],'file')
+    if flag && exist([fname,'.nii.gz'],'file')
         fprintf('Loading enhanced vessel map from file ...\n');
         vessels = niftiread([fname,'.nii.gz']);
-        flag = false;
-    end
-    if flag
+    else
         fprintf('Calculating enhanced vessel maps ... \n');
         t = tic;
         vessels = single(vesselSeg_subj_boxes(ct, segBW));
@@ -131,37 +134,27 @@ function T = vesselSeg_BH(varargin)
     end
 
     %% Binarize vessels:
-    flag = true;
     fname = fullfile(save_path,[ID,'_binVessel']);
-    if exist([fname,'.nii.gz'],'file')
+    if flag && exist([fname,'.nii.gz'],'file')
         fprintf('Reading binary vessel map from file ...\n');
-        try
-            bin_vessels = niftiread([fname,'.nii.gz']);
-            flag = false;
-        catch err
-            err
-        end
-    end
-    if flag
+        bin_vessels = niftiread([fname,'.nii.gz']);
+    else
         fprintf('Binarizing vessel map ... ');
         t = tic; 
         info.Datatype = 'int8';
         info.BitsPerPixel = 8;
         bin_vessels = binarizeVessels(vessels,eroded_lobes);
 %         bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
-        niftiwrite(bin_vessels,fname,'Compressed',true);
+        niftiwrite(int8(bin_vessels),fname,'Compressed',true);
         fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     end
     
     %% Generate CSA maps
-    flag = true;
     fname = fullfile(save_path,[ID,'_CSA_skel']);
-    if exist([fname,'.nii.gz'],'file')
+    if flag && exist([fname,'.nii.gz'],'file')
         fprintf('Reading CSA from file ...\n');
         csa_map = niftiread([fname,'.nii.gz']);
-        flag = false;
-    end
-    if flag
+    else
         fprintf('Generating CSA maps ... \n');
         t = tic;
         csa_map = CSA_create_maps(bin_vessels);
@@ -172,7 +165,7 @@ function T = vesselSeg_BH(varargin)
     
     %% Frangi Filter
 %     fname = fullfile(save_path,[ID,'_enhancedVessel_frangi']);
-%     if exist([fname,'.nii.gz'],'file')
+%     if flag && exist([fname,'.nii.gz'],'file')
 %         fprintf('Frangi Filtered image file found ...\n');
 %     else
 %         fprintf('Generating Frangi Filtered image ... \n');
@@ -188,7 +181,7 @@ function T = vesselSeg_BH(varargin)
 
     %% Curvilinear Filter
 %     fname = fullfile(save_path,[ID,'_enhancedVessel_curv']);
-%     if exist([fname,'.nii.gz'],'file')
+%     if flag && exist([fname,'.nii.gz'],'file')
 %         fprintf('Curvilinear filtered image file found ...\n');
 %     else
 %         fprintf('Generating Curvilinear Filtered image ... \n');
