@@ -31,23 +31,17 @@ switch tag
             F(i) = getframe(hf,npos);
         end
     case 'prm'
-        % prm should be input as 10-region
         colormap(hf,[ gray(256) ;...
-                      0 1 0 ;... % 1 - Norm
-                      0 1 0 ;... % 2 - Norm
-                      1 1 0 ;... % 3 - fSAD
-                      1 0 0 ;... % 4 - Emph
-                      1 0 0 ;... % 5 - Emph
-                      1 1 1 ;... % 6 - NS
-                      1 1 1 ;... % 7 - n/a
-                      1 0 1 ;... % 8 - PD
-                      1 0 1 ;... % 9 - PD
-                      1 0 1 ]); % 10 - PD
+                      0 1 0 ;... % Norm
+                      1 1 0 ;... % fSAD
+                      1 0 0 ;... % Emph
+                      1 0 1 ;... % PD
+                      1 1 1 ]);  % NS
         prm = mat(:,:,:,2);
         mat = (max(min(mat(:,:,:,1),0),-1000)+1000)*256/1000 - 0.5;
         ind = prm>0;
         mat(ind) = prm(ind) + 255.5;
-        ha.CLim = [0 266];
+        ha.CLim = [0 261];
         for i = 1:nf
             im.CData = mat(:,:,i);
             F(i) = getframe(hf,npos);

@@ -303,15 +303,15 @@ QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,
 fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID,'prm',fn_ext));
 if exist(fn_PRM,'file')
     writeLog(fn_log,'Loading PRM from file...\n');
-    prm = int8(readNIFTI(fn_PRM));
+    prm10 = int8(readNIFTI(fn_PRM));
 else
     writeLog(fn_log,'Calculating PRM...\n');
-    [prm,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
+    [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
         fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID)));
 
     % Save PRM
     writeLog(fn_log,'Saving PRM as NIFTI ... ');
-    stat = cmi_save(0,prm,{'PRM'},img.info.fov,img.info.orient,fn_PRM);
+    stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,fn_PRM);
     if stat
         writeLog(fn_log,'  PRM saved\n');
     else
@@ -323,10 +323,14 @@ clear ins_reg;
 %% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
 prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
             [1,2],  3,      [4,5],  [8,9,10],   6    };
+prm5 = prm10;
+for i = 1:size(prmlabel,2)
+    prm5(ismember(prm10,prmlabel{2,i})) = i;
+end
 
 %% QC PRM
 writeLog(fn_log,'Generating PRM Montage ...\n');
-QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm(:,:,ind))),...
+QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
     img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID)));
     
 %% Tabulate PRM results:
@@ -344,11 +348,11 @@ for ilab = 1:(nlab+(nlab>1)) % Loop over Whole-lung then R/L
     np = nnz(BW); % Normalize by number in mask
     % 10-color PRM:
     for iprm = 1:10
-        res.([sprintf('PRM_%u',iprm),tstr]) = nnz(prm(BW)==iprm)/np*100;
+        res.([sprintf('PRM_%u',iprm),tstr]) = nnz(prm10(BW)==iprm)/np*100;
     end
     % 4 color PRM:
     for iprm = 1:size(prmlabel,2)
-        res.(['PRM_',prmlabel{1,iprm},tstr]) = nnz(ismember(prm(BW),prmlabel{2,iprm}))/np*100;
+        res.(['PRM_',prmlabel{1,iprm},tstr]) = nnz(prm5(BW)==iprm)/np*100;
     end
 end
     
@@ -359,7 +363,7 @@ fn_tprm = fullfile(procdir,...
     string(res.ID)+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
 if all(cellfun(@(x)exist(x,'file'),fn_tprm))
     writeLog(fn_log,'Loading tPRM from files ...\n');
-    clear prm;
+    clear prm5 prm10;
     for iprm = 1:numel(prmlabel)
         for imf = 1:numel(mflabel)
             writeLog(fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
@@ -381,14 +385,14 @@ else
     writeLog(fn_log,'Generating tPRM ...\n');
 
     %% Calculate MF values
-    p = minkowskiFun(prm,'thresh',1:4,...
+    p = minkowskiFun(prm5,'thresh',1:4,...
                          'tmode','==',...
                          'n',10*ones(1,3),...
                          'gridsp',5,...
                          'voxsz',img.info.voxsz,...
                          'mask',logical(img.label),...
                          'prog',0);
-    clear prm;
+    clear prm5;
 
     %% Interpolate to maps
     for ithresh = 1:size(p.MF,1)
