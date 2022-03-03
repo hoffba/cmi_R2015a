@@ -376,7 +376,7 @@ if all(cellfun(@(x)exist(x,'file'),fn_tprm))
                     BW = img.label == ulab(ilab-1);
                     tstr = sprintf('_%u',ulab(ilab-1));
                 end
-                res.(strcat('tPRM_',prmlabel(iprm),upper(mflabel(imf)),tstr)) = mean(tprm(BW));
+                res.('tPRM_'+prmlabel(iprm)+'_'+upper(mflabel(imf))+tstr) = mean(tprm(BW));
             end
         end
     end
