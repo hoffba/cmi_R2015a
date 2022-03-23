@@ -4,7 +4,7 @@ function status = cmi_save(maskflag,img,label,fov,orient,fname)
 
 if nargin > 1
     status = false;
-    if nargin < 5
+    if nargin < 6
         fname = '';
     end
     

@@ -17,18 +17,18 @@ if self.prm.check
         answer = hObject;
     end
     if ~isempty(answer)
+        fov = self.voxsz .* self.dims(1:3);
         if strcmp(answer,'Stats')
             [labels,pcts] = self.prm.getStats;
             assignin('base','prmStats',[labels;num2cell(pcts)]');
             stat = true;
         elseif strcmp(answer,'Image')
-            stat = cmi_save(false,self.prm.mat,{'PRM'},self.voxsz.*self.dims(1:3),self.orient);
+            stat = cmi_save(false,self.prm.mat,{'PRM'},fov,self.orient);
         elseif strcmp(answer,'VOI')
             ofname = fullfile(self.dir,[self.prm.dlabels{2},'_PRM']);
             labl = self.prm.prmmap(:,2);
             for i = 1:self.prm.nprm
-                stat = cmi_save(true,self.prm.mat==i,labl(i),self.voxsz.*self.dims(1:3),self.orient,...
-                    [ofname,labl{i},'_VOI.hdr']);
+                stat = cmi_save(true,self.prm.mat==i,labl(i),fov,self.orient,[ofname,labl{i},'_VOI.hdr']);
             end
         end
     end
