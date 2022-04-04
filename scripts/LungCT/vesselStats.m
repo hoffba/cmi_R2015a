@@ -44,7 +44,7 @@ function T = vesselStats(id,ct,seg,vessels,csa)
         [T.NUM_VESSELS(ii), T.NUM_COMPONENTS(ii), T.NUM_ENDPOINTS(ii)] = CSA_size_metrics(C);
         [T.CSA_EXP_A(ii), T.CSA_EXP_B(ii)] = CSA_metrics(C);
         T.VESSEL_VOXELS_5DOWN(ii) = nnz(getCSAvessVol(V,C,0,5));
-        T.VESSEL_VOXELS_5UP(ii) = nnz(vessels) - T.VESSEL_VOXELS_5DOWN(ii);
+        T.VESSEL_VOXELS_5UP(ii) = nnz(V) - T.VESSEL_VOXELS_5DOWN(ii);
 %         [T.VESSEL_VOLUME_5DOWN(ii), T.NUM_VESSELS_5DOWN(ii)] = CSA_range_metrics(C < 5 & C > 0, C);
 %         [T.VESSEL_VOLUME_5UP(ii), T.NUM_VESSELS_5UP(ii)] = CSA_range_metrics(C > 5, C);
 
