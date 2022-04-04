@@ -7,6 +7,8 @@ function varargout = yacta(fnames,varargin)
 %       ('airways', 'parenchyma', 'renderer', 'hide', 'exportlabels', 'yactascp')
 %           ** no optional inputs uses all
 %       ('wait' option to suspend action until completion of system call)
+% ** Options for YACTA are set in the yacta.ini file
+%       (typically found in C:\Users\<*username*>\AppData\Roaming\yacta64)
 
 if ischar(fnames)
     fnames =  {fnames};
