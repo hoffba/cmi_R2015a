@@ -14,15 +14,7 @@ end
 
 tt = tic;
 
-%% Check that data exists
-if ~exist(expfname,'file')
-    warning('File does not exist: %s',expfname);
-    return;
-end
-if ~exist(insfname,'file')
-    warning('File does not exist: %s',insfname);
-    return;
-end
+%% Initialize folders and log file
 if ~isfolder(procdir)
     mkdir(procdir);
 end
@@ -31,7 +23,7 @@ fn_log = fullfile(procdir,'pipeline_log.txt');
 %% Initialize parameters and results struct
 fn_ext = '.nii.gz';
 check_EI = false;
-img = struct('mat',{[],[]},'info',{[],[]},'label',{[],[]});
+img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{[],[]});
 % tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
 % res.ID = extractBefore(tok{1}{1},'_');
 res.ID = '';
@@ -44,25 +36,35 @@ res.ProcDir = procdir;
 writeLog(fn_log,'Loading EXP image...\n');
 if isfolder(expfname)
     [img(1).mat,label,fov,orient,info] = readDICOM(expfname,[],true);
-else
+elseif ~isempty(expfname)
     [img(1).mat,label,fov,orient,info] = cmi_load(1,[],expfname);
+else
+    warning('File does not exist: %s',expfname);
 end
-d = size(img(1).mat);
-img(1).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
-img(1).info.voxvol = prod(img(1).info.voxsz);
-img(1).info.name = img(1).info.label;
+img(1).flag = isempty(img(1).mat);
+if img(1).flag
+    d = size(img(1).mat);
+    img(1).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
+    img(1).info.voxvol = prod(img(1).info.voxsz);
+    img(1).info.name = img(1).info.label;
+end
 
 % Ins
 writeLog(fn_log,'Loading INSP image...\n');
 if isfolder(insfname)
     [img(2).mat,label,fov,orient,info] = readDICOM(insfname,[],true);
-else
+elseif ~isempty(insfname)
     [img(2).mat,label,fov,orient,info] = cmi_load(1,[],insfname);
+else
+    warning('File does not exist: %s',insfname);
 end
-d = size(img(2).mat);
-img(2).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
-img(2).info.voxvol = prod(img(2).info.voxsz);
-img(2).info.name = img(2).info.label;
+img(2).flag = isempty(img(2).mat);
+if img(2).flag
+    d = size(img(2).mat);
+    img(2).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
+    img(2).info.voxvol = prod(img(2).info.voxsz);
+    img(2).info.name = img(2).info.label;
+end
 
 res.ID = basename;
 if isfolder(expfname)
@@ -86,24 +88,26 @@ end
 svchk = false;
 tag = {'Exp','Ins'};
 for ii = 1:2
-    % Find orientation of shoulder bones to see if permute is needed
-    BW = img(ii).mat(:,:,end) > -150;
-    %BW = max(img(ii).mat(:,:,round(img(ii).info.d(3)/2):end)>800,[],3);
-    prop = regionprops(BW,'Orientation','Area');
-    if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
-        writeLog(fn_log,'Permuting %s\n',tag{ii});
-        img(ii).mat = permute(img(ii).mat,[2,1,3]);
-        img(ii).info.voxsz = img(ii).info.voxsz([2,1,3]);
-        img(ii).info.fov = img(ii).info.fov([2,1,3]);
-        img(ii).info.d = img(ii).info.d([2,1,3]);
-        img(ii).info.orient = img(ii).info.orient([2,1,3,4],[2,1,3,4]);
-        svchk = true;
+    if img(ii).flag
+        % Find orientation of shoulder bones to see if permute is needed
+        BW = img(ii).mat(:,:,end) > -150;
+        %BW = max(img(ii).mat(:,:,round(img(ii).info.d(3)/2):end)>800,[],3);
+        prop = regionprops(BW,'Orientation','Area');
+        if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
+            writeLog(fn_log,'Permuting %s\n',tag{ii});
+            img(ii).mat = permute(img(ii).mat,[2,1,3]);
+            img(ii).info.voxsz = img(ii).info.voxsz([2,1,3]);
+            img(ii).info.fov = img(ii).info.fov([2,1,3]);
+            img(ii).info.d = img(ii).info.d([2,1,3]);
+            img(ii).info.orient = img(ii).info.orient([2,1,3,4],[2,1,3,4]);
+            svchk = true;
+        end
     end
 end
 clear BW
 
 %% Identify Exp and Ins using lung volume; used for determining file name
-if check_EI
+if check_EI && img(1).flag && img(2).flag
     %   ** Need to double-check in case of mislabel
     
     %% Quick segmentation for Exp/Ins Identification:
@@ -129,152 +133,173 @@ img(2).info.name = [res.ID,'_Ins'];
 %% Save images:
 if svchk
     %% Save nii.gz files using ID and Tag
-    fn_exp = fullfile(procdir,sprintf('%s',res.ID,'.exp',fn_ext));
-    saveNIFTI(fn_exp,img(1).mat,img(1).info.label,img(1).info.fov,img(1).info.orient);
-    fn_ins = fullfile(procdir,sprintf('%s',res.ID,'.ins',fn_ext));
-    saveNIFTI(fn_ins,img(2).mat,img(2).info.label,img(2).info.fov,img(2).info.orient);
+    if img(1).flag
+        fn_exp = fullfile(procdir,sprintf('%s',res.ID,'.exp',fn_ext));
+        saveNIFTI(fn_exp,img(1).mat,img(1).info.label,img(1).info.fov,img(1).info.orient);
+    end
+    if img(2).flag
+        fn_ins = fullfile(procdir,sprintf('%s',res.ID,'.ins',fn_ext));
+        saveNIFTI(fn_ins,img(2).mat,img(2).info.label,img(2).info.fov,img(2).info.orient);
+    end
 end
 
 %% Generate Lung Segmentation [This is when VOI don't exist]
 fn_label = cell(2,1);
 for itag = 1:2
-    fn_label{itag} = fullfile(procdir,sprintf('%s.%s.label%s',res.ID,lower(tag{itag}),fn_ext));
-    writeLog(fn_log,'%s segmentation ... ',tag{itag});
-    if exist(fn_label{itag},'file')
-        writeLog(fn_log,'from file\n');
-        img(itag).label = readNIFTI(fn_label{itag});
-    else
-        writeLog(fn_log,'generating using YACTA\n');
-        ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
-        if ~isfolder(ydir)
-            mkdir(ydir);
+    if img(itag).flag
+        fn_label{itag} = fullfile(procdir,sprintf('%s.%s.label%s',res.ID,lower(tag{itag}),fn_ext));
+        writeLog(fn_log,'%s segmentation ... ',tag{itag});
+        if exist(fn_label{itag},'file')
+            writeLog(fn_log,'from file\n');
+            img(itag).label = readNIFTI(fn_label{itag});
+        else
+            writeLog(fn_log,'generating using YACTA\n');
+            ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
+            if ~isfolder(ydir)
+                mkdir(ydir);
+            end
+            tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
+            saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
+            yacta(tname,'wait');
+            tname = dir(sprintf('%s*explabels.mhd',tname));
+            img(itag).label = cmi_load(1,[],fullfile(ydir,tname.name));
+            % Clean-up
+            cln_fnames = [dir(fullfile(ydir,'*.mhd'));dir(fullfile(ydir,'*.raw'));dir(fullfile(ydir,'*.zraw'))];
+            for ifn = 1:numel(cln_fnames)
+                delete(fullfile(ydir,cln_fnames(ifn).name));
+            end
+            saveNIFTI(fn_label{itag},img(itag).label,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
         end
-        tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
-        saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
-        yacta(tname,'wait');
-        tname = dir(sprintf('%s*explabels.mhd',tname));
-        img(itag).label = cmi_load(1,[],fullfile(ydir,tname.name));
-        % Clean-up
-        cln_fnames = [dir(fullfile(ydir,'*.mhd'));dir(fullfile(ydir,'*.raw'));dir(fullfile(ydir,'*.zraw'))];
-        for ifn = 1:numel(cln_fnames)
-            delete(fullfile(ydir,cln_fnames(ifn).name));
-        end
-        saveNIFTI(fn_label{itag},img(itag).label,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
     end
 end
 
 %% Airways
 for itag = 1:2
-    ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
-    airway_res = readYACTAairways(ydir);
-    if ~isempty(airway_res)
-        res.WallPct_3_8     = airway_res.Wall_pct__3_8_;
-        res.WallPct         = airway_res.Wall_pct;
-        res.WallPct_RUL     = airway_res.Wall_pct_RightUpperLobe;
-        res.WallPct_RML     = airway_res.Wall_pct_RightMidLobe;
-        res.WallPct_RULplus = airway_res.Wall_pct_RightUpperLobePlus;
-        res.WallPct_RLL     = airway_res.Wall_pct_RightLowerLobe;
-        res.WallPct_LUL     = airway_res.Wall_pct_LeftUpperLobe;
-        res.WallPct_LULplus = airway_res.Wall_pct_LeftUpperLobePlus;
-        res.WallPct_LLL     = airway_res.Wall_pct_LeftLowerLobe;
+    if img(itag).flag
+        ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
+        airway_res = readYACTAairways(ydir);
+        if ~isempty(airway_res)
+            res.WallPct_3_8     = airway_res.Wall_pct__3_8_;
+            res.WallPct         = airway_res.Wall_pct;
+            res.WallPct_RUL     = airway_res.Wall_pct_RightUpperLobe;
+            res.WallPct_RML     = airway_res.Wall_pct_RightMidLobe;
+            res.WallPct_RULplus = airway_res.Wall_pct_RightUpperLobePlus;
+            res.WallPct_RLL     = airway_res.Wall_pct_RightLowerLobe;
+            res.WallPct_LUL     = airway_res.Wall_pct_LeftUpperLobe;
+            res.WallPct_LULplus = airway_res.Wall_pct_LeftUpperLobePlus;
+            res.WallPct_LLL     = airway_res.Wall_pct_LeftLowerLobe;
 
-        res.Pi10            = airway_res.Pi10;
-        res.Pi10_RUL        = airway_res.Pi10_RUL;
-        res.Pi10_RML        = airway_res.Pi10_RML;
-        res.Pi10_RULplus    = airway_res.Pi10_RULplus;
-        res.Pi10_RLL        = airway_res.Pi10_RLL;
-        res.Pi10_LUL        = airway_res.Pi10_LUL;
-        res.Pi10_LULplus    = airway_res.Pi10_LULplus;
-        res.Pi10_LLL        = airway_res.Pi10_LLL;
+            res.Pi10            = airway_res.Pi10;
+            res.Pi10_RUL        = airway_res.Pi10_RUL;
+            res.Pi10_RML        = airway_res.Pi10_RML;
+            res.Pi10_RULplus    = airway_res.Pi10_RULplus;
+            res.Pi10_RLL        = airway_res.Pi10_RLL;
+            res.Pi10_LUL        = airway_res.Pi10_LUL;
+            res.Pi10_LULplus    = airway_res.Pi10_LULplus;
+            res.Pi10_LLL        = airway_res.Pi10_LLL;
 
-        res.Pi15            = airway_res.Pi15;
+            res.Pi15            = airway_res.Pi15;
 
-        genstr = {'WT'};
-        segstr = { 'seg',   4   ;...
-                   'subseg',5:7 };
-        lobestr = {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLL'};
-        for i = 1:numel(genstr)
-            for j = 1:2
-                for k = 1:numel(lobestr)
-                    fldstr = sprintf('%s_%s_%s',genstr{i},segstr{j,1},regexprep(lobestr{k},'+','plus'));
-                    segind = segstr{j,2};
-                    vals = airway_res.(genstr{i}).(lobestr{k});
-                    vals = vals(segind(segind<=numel(vals)));
-                    res.(fldstr) = mean(vals(vals>0));
+            genstr = {'WT'};
+            segstr = { 'seg',   4   ;...
+                       'subseg',5:7 };
+            lobestr = {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLL'};
+            for i = 1:numel(genstr)
+                for j = 1:2
+                    for k = 1:numel(lobestr)
+                        fldstr = sprintf('%s_%s_%s',genstr{i},segstr{j,1},regexprep(lobestr{k},'+','plus'));
+                        segind = segstr{j,2};
+                        vals = airway_res.(genstr{i}).(lobestr{k});
+                        vals = vals(segind(segind<=numel(vals)));
+                        res.(fldstr) = mean(vals(vals>0));
+                    end
                 end
             end
+
+            res.BEI             = airway_res.BEI_Lung;
+            res.BEI_Right       = airway_res.BEI_Right;
+            res.BEI_Left        = airway_res.BEI_Left;
+            res.BEI_RUL         = airway_res.BEI_RUL;
+            res.BEI_RML         = airway_res.BEI_RML;
+            res.BEI_RULplus     = airway_res.BEI_RULplus;
+            res.BEI_RLL         = airway_res.BEI_RLL;
+            res.BEI_LUL         = airway_res.BEI_LUL;
+            res.BEI_LLi         = airway_res.BEI_LLi;
+            res.BEI_LULplus     = airway_res.BEI_LULplus;
+            res.BEI_LLL         = airway_res.BEI_LLL;
         end
-        
-        res.BEI             = airway_res.BEI_Lung;
-        res.BEI_Right       = airway_res.BEI_Right;
-        res.BEI_Left        = airway_res.BEI_Left;
-        res.BEI_RUL         = airway_res.BEI_RUL;
-        res.BEI_RML         = airway_res.BEI_RML;
-        res.BEI_RULplus     = airway_res.BEI_RULplus;
-        res.BEI_RLL         = airway_res.BEI_RLL;
-        res.BEI_LUL         = airway_res.BEI_LUL;
-        res.BEI_LLi         = airway_res.BEI_LLi;
-        res.BEI_LULplus     = airway_res.BEI_LULplus;
-        res.BEI_LLL         = airway_res.BEI_LLL;
     end
 end
 
 %% QC segmentation
-writeLog(fn_log,'Generating EXP montage...\n');
-ind = 10:10:img(1).info.d(3);
-QCmontage('seg',cat(4,img(1).mat(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
-    fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
-writeLog(fn_log,'Generating INSP montage...\n');
-ind = 10:10:img(2).info.d(3);
-QCmontage('seg',cat(4,img(2).mat(:,:,ind),img(2).label(:,:,ind)),img(2).info.voxsz,...
-    fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
+if img(1).flag
+    writeLog(fn_log,'Generating EXP montage...\n');
+    ind = 10:10:img(1).info.d(3);
+    QCmontage('seg',cat(4,img(1).mat(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
+        fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
+end
+if img(2).flag
+    writeLog(fn_log,'Generating INSP montage...\n');
+    ind = 10:10:img(2).info.d(3);
+    QCmontage('seg',cat(4,img(2).mat(:,:,ind),img(2).label(:,:,ind)),img(2).info.voxsz,...
+        fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
+end
 
 %% ScatterNet for AT on Exp CT scan
-fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID,'scatnet',fn_ext));
-writeLog(fn_log,'Air trapping map ... ');
-if exist(fn_scatnet,'file')
-    writeLog(fn_log,'from file\n');
-    atMap = cmi_load(1,img(1).info.d(1:3),fn_scatnet);
-else
-    writeLog(fn_log,'generating with ScatNet\n');
-    atMap = ScatNet(img(1).mat,logical(img(1).label),0);
-    cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
+if img(1).flag
+    fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID,'scatnet',fn_ext));
+    writeLog(fn_log,'Air trapping map ... ');
+    if exist(fn_scatnet,'file')
+        writeLog(fn_log,'from file\n');
+        atMap = cmi_load(1,img(1).info.d(1:3),fn_scatnet);
+    else
+        writeLog(fn_log,'generating with ScatNet\n');
+        atMap = ScatNet(img(1).mat,logical(img(1).label),0);
+        cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
+    end
 end
 
 %% Quantify unregistered CT scans
 writeLog(fn_log,'Quantifying unregistered statistics\n');
-S = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label,atMap);
-clear atMap;
-for ilab = 1:numel(S)
-    if isempty(S(ilab).tag)
-        tstr = '';
-    elseif ischar(S(ilab).tag)
-        tstr = ['_',S(ilab).tag];
-    else
-        tstr = sprintf('_%u',S(ilab).tag);
+if img(1).flag
+    S = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label,atMap);
+    clear atMap;
+    for ilab = 1:numel(S)
+        if isempty(S(ilab).tag)
+            tstr = '';
+        elseif ischar(S(ilab).tag)
+            tstr = ['_',S(ilab).tag];
+        else
+            tstr = sprintf('_%u',S(ilab).tag);
+        end
+        res.(['Exp_Vol',tstr]) = S(ilab).vol;
+        res.(['Exp_HU',tstr]) = S(ilab).mean;
+        res.(['Exp_856',tstr]) = S(ilab).exp856;
+        res.(['Exp_SNpct',tstr]) = S(ilab).SNpct;
+        res.(['Exp_SNmean',tstr]) = S(ilab).SNmean;
     end
-    res.(['Exp_Vol',tstr]) = S(ilab).vol;
-    res.(['Exp_HU',tstr]) = S(ilab).mean;
-    res.(['Exp_856',tstr]) = S(ilab).exp856;
-    res.(['Exp_SNpct',tstr]) = S(ilab).SNpct;
-    res.(['Exp_SNmean',tstr]) = S(ilab).SNmean;
 end
-S = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
-for ilab = 1:numel(S)
-    if isempty(S(ilab).tag)
-        tstr = '';
-    elseif ischar(S(ilab).tag)
-        tstr = ['_',S(ilab).tag];
-    else
-        tstr = sprintf('_%u',S(ilab).tag);
+if img(2).flag
+    S = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
+    for ilab = 1:numel(S)
+        if isempty(S(ilab).tag)
+            tstr = '';
+        elseif ischar(S(ilab).tag)
+            tstr = ['_',S(ilab).tag];
+        else
+            tstr = sprintf('_%u',S(ilab).tag);
+        end
+        res.(['Ins_Vol',tstr]) = S(ilab).vol;
+        res.(['Ins_HU',tstr]) = S(ilab).mean;
+        res.(['Ins_950',tstr]) = S(ilab).ins950;
+        res.(['Ins_810',tstr]) = S(ilab).ins810;
     end
-    res.(['Ins_Vol',tstr]) = S(ilab).vol;
-    res.(['Ins_HU',tstr]) = S(ilab).mean;
-    res.(['Ins_950',tstr]) = S(ilab).ins950;
-    res.(['Ins_810',tstr]) = S(ilab).ins810;
 end
 
 %% Register I2E
+if ~(img(1).flag && img(2).flag)
+    return;
+end
 fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID,'ins.reg',fn_ext));
 if exist(fn_reg,'file')
     writeLog(fn_log,'Loading registered INS from file...\n');
@@ -291,13 +316,14 @@ else
     ins_reg = readNIFTI(outfn);
     cmi_save(0,ins_reg,'Ins_R',img(1).info.fov,img(1).info.orient,fn_reg);
 end
-img(2) = [];
 
 %% QC registration
 writeLog(fn_log,'Saving Registration Montage ...\n');
 ind = 10:10:img(1).info.d(3);
 QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
     fullfile(procdir,sprintf('%s_Reg_Montage',res.ID)));
+img(2) = [];
+
 
 %% PRM calculation
 fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID,'prm',fn_ext));
