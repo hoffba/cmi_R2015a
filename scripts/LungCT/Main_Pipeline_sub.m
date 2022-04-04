@@ -4,7 +4,7 @@ function res = Main_Pipeline_sub(basename,expfname,insfname,procdir,quickreg)
 %                   by the "dcmCatalog()" script
 
 % Pipeline consists of:
-% 1. 
+% 1.
 
 res = [];
 
@@ -67,14 +67,14 @@ img(2).info.name = img(2).info.label;
 res.ID = basename;
 if isfolder(expfname)
     res.Exp_DICOM = expfname;
-%     res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
+    %     res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
     check_EI = true;
-% else
-%     tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
-%     res.ID = tok{1}{1};
-%     if ismember('_',res.ID)
-%         res.ID = extractBefore(tok{1}{1},'_');
-%     end
+    % else
+    %     tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
+    %     res.ID = tok{1}{1};
+    %     if ismember('_',res.ID)
+    %         res.ID = extractBefore(tok{1}{1},'_');
+    %     end
 end
 res.ElxDir = fullfile(procdir,sprintf('elastix_%s',res.ID));
 if isfolder(insfname)
@@ -105,11 +105,11 @@ clear BW
 %% Identify Exp and Ins using lung volume; used for determining file name
 if check_EI
     %   ** Need to double-check in case of mislabel
-    
+
     %% Quick segmentation for Exp/Ins Identification:
     img(1).label = getRespiratoryOrgans(medfilt2_3(img(1).mat));
     img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
-    
+
     flag = (nnz(img(1).label)*img(1).info.voxvol) > (nnz(img(2).label)*img(2).info.voxvol) ...
         && (mean(img(1).mat(logical(img(1).label))) < mean(img(1).mat(logical(img(2).label))));
     if flag
@@ -191,7 +191,7 @@ for itag = 1:2
 
         genstr = {'WT'};
         segstr = { 'seg',   4   ;...
-                   'subseg',5:7 };
+            'subseg',5:7 };
         lobestr = {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLL'};
         for i = 1:numel(genstr)
             for j = 1:2
@@ -204,7 +204,7 @@ for itag = 1:2
                 end
             end
         end
-        
+
         res.BEI             = airway_res.BEI_Lung;
         res.BEI_Right       = airway_res.BEI_Right;
         res.BEI_Left        = airway_res.BEI_Left;
@@ -272,160 +272,165 @@ for ilab = 1:numel(S)
     res.(['Ins_HU',tstr]) = S(ilab).mean;
     res.(['Ins_950',tstr]) = S(ilab).ins950;
     res.(['Ins_810',tstr]) = S(ilab).ins810;
+    res.(['Ins_810low',tstr]) = S(ilab).ins810low;
+    res.(['Ins_500',tstr]) = S(ilab).ins500;
 end
 
-%% Register I2E
-fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID,'ins.reg',fn_ext));
-if exist(fn_reg,'file')
-    writeLog(fn_log,'Loading registered INS from file...\n');
-    ins_reg = readNIFTI(fn_reg);
-else
-    writeLog(fn_log,'Performing registration...\n')
-    lungreg_BH( img(1).mat, img(1).info, logical(img(1).label),...
-                img(2).mat, img(2).info, logical(img(2).label),...
-                res.ElxDir, res.ID, false, quickreg);
-    % Move registered file out to procdir
-    [~,outfn] = fileparts(img(2).info.name);
-    outfn = fullfile(res.ElxDir,sprintf('%s_R.nii',outfn));
-    % Elastix won't save .nii.gz, so need to resave
-    ins_reg = readNIFTI(outfn);
-    cmi_save(0,ins_reg,'Ins_R',img(1).info.fov,img(1).info.orient,fn_reg);
-end
-img(2) = [];
+%% check if expfname and expfname are not the same (work around for single scan analysis)
+if ~strcmp(expfname,insfname)
 
-%% QC registration
-writeLog(fn_log,'Saving Registration Montage ...\n');
-ind = 10:10:img(1).info.d(3);
-QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
-    fullfile(procdir,sprintf('%s_Reg_Montage',res.ID)));
-
-%% PRM calculation
-fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID,'prm',fn_ext));
-if exist(fn_PRM,'file')
-    writeLog(fn_log,'Loading PRM from file...\n');
-    prm10 = int8(readNIFTI(fn_PRM));
-else
-    writeLog(fn_log,'Calculating PRM...\n');
-    [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
-        fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID)));
-
-    % Save PRM
-    writeLog(fn_log,'Saving PRM as NIFTI ... ');
-    stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,fn_PRM);
-    if stat
-        writeLog(fn_log,'  PRM saved\n');
+    %% Register I2E
+    fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID,'ins.reg',fn_ext));
+    if exist(fn_reg,'file')
+        writeLog(fn_log,'Loading registered INS from file...\n');
+        ins_reg = readNIFTI(fn_reg);
     else
-        writeLog(fn_log,'  Could not save PRM to file.\n');
+        writeLog(fn_log,'Performing registration...\n')
+        lungreg_BH( img(1).mat, img(1).info, logical(img(1).label),...
+            img(2).mat, img(2).info, logical(img(2).label),...
+            res.ElxDir, res.ID, false, quickreg);
+        % Move registered file out to procdir
+        [~,outfn] = fileparts(img(2).info.name);
+        outfn = fullfile(res.ElxDir,sprintf('%s_R.nii',outfn));
+        % Elastix won't save .nii.gz, so need to resave
+        ins_reg = readNIFTI(outfn);
+        cmi_save(0,ins_reg,'Ins_R',img(1).info.fov,img(1).info.orient,fn_reg);
     end
-end
-clear ins_reg;
+    img(2) = [];
 
-%% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
-prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
-            [1,2],  3,      [4,5],  [8,9,10],   6    };
-prm5 = prm10;
-for i = 1:size(prmlabel,2)
-    prm5(ismember(prm10,prmlabel{2,i})) = i;
-end
+    %% QC registration
+    writeLog(fn_log,'Saving Registration Montage ...\n');
+    ind = 10:10:img(1).info.d(3);
+    QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
+        fullfile(procdir,sprintf('%s_Reg_Montage',res.ID)));
 
-%% QC PRM
-writeLog(fn_log,'Generating PRM Montage ...\n');
-QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
-    img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID)));
-    
-%% Tabulate PRM results:
-writeLog(fn_log,'Tabulating PRM results...\n');
-BW = logical(img.label);
-ulab = unique(img.label(BW));
-nlab = numel(ulab);
-tstr = '';
-for ilab = 1:(nlab+(nlab>1)) % Loop over Whole-lung then R/L
-    % Grab sub-region
-    if ilab>1
-        BW = img.label == (ulab(ilab-1));
-        tstr = sprintf('_%u',ulab(ilab-1));
-    end
-    np = nnz(BW); % Normalize by number in mask
-    % 10-color PRM:
-    for iprm = 1:10
-        res.([sprintf('PRM_%u',iprm),tstr]) = nnz(prm10(BW)==iprm)/np*100;
-    end
-    % 4 color PRM:
-    for iprm = 1:size(prmlabel,2)
-        res.(['PRM_',prmlabel{1,iprm},tstr]) = nnz(prm5(BW)==iprm)/np*100;
-    end
-end
-    
-%% Calculate tPRM
-prmlabel = ["norm","fsad","emph","pd"];
-mflabel = ["v","s","b","x"];
-fn_tprm = fullfile(procdir,...
-    string(res.ID)+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
-if all(cellfun(@(x)exist(x,'file'),fn_tprm))
-    writeLog(fn_log,'Loading tPRM from files ...\n');
-    clear prm5 prm10;
-    for iprm = 1:numel(prmlabel)
-        for imf = 1:numel(mflabel)
-            writeLog(fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
-            tprm = readNIFTI(fn_tprm(imf,iprm));
-            for ilab = 1:(nlab+(nlab>1))
-                if ilab == 1
-                    BW = logical(img.label);
-                    tstr = '';
-                else
-                    BW = img.label == ulab(ilab-1);
-                    tstr = sprintf('_%u',ulab(ilab-1));
-                end
-                res.('tPRM_'+prmlabel(iprm)+'_'+upper(mflabel(imf))+tstr) = mean(tprm(BW));
-            end
+    %% PRM calculation
+    fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID,'prm',fn_ext));
+    if exist(fn_PRM,'file')
+        writeLog(fn_log,'Loading PRM from file...\n');
+        prm10 = int8(readNIFTI(fn_PRM));
+    else
+        writeLog(fn_log,'Calculating PRM...\n');
+        [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
+            fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID)));
+
+        % Save PRM
+        writeLog(fn_log,'Saving PRM as NIFTI ... ');
+        stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,fn_PRM);
+        if stat
+            writeLog(fn_log,'  PRM saved\n');
+        else
+            writeLog(fn_log,'  Could not save PRM to file.\n');
         end
     end
-else
-    t = tic;
-    writeLog(fn_log,'Generating tPRM ...\n');
+    clear ins_reg;
 
-    %% Calculate MF values
-    p = minkowskiFun(prm5,'thresh',1:4,...
-                         'tmode','==',...
-                         'n',10*ones(1,3),...
-                         'gridsp',5,...
-                         'voxsz',img.info.voxsz,...
-                         'mask',logical(img.label),...
-                         'prog',0);
-    clear prm5;
+    %% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
+    prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
+        [1,2],  3,      [4,5],  [8,9,10],   6    };
+    prm5 = prm10;
+    for i = 1:size(prmlabel,2)
+        prm5(ismember(prm10,prmlabel{2,i})) = i;
+    end
 
-    %% Interpolate to maps
-    for ithresh = 1:size(p.MF,1)
-        for imf = 1:size(p.MF,2)
-            writeLog(fn_log,'   %s - %s\n',prmlabel(ithresh),mflabel(imf));
-            
-            % Interpolate to image space
-            tstr = prmlabel(ithresh) + '.' + mflabel(imf);
-            writeLog(fn_log,'       Interpolating\n');
-            tprm = grid2img(p.MF(ithresh,imf,:),p.ind,p.mask,3,1);
+    %% QC PRM
+    writeLog(fn_log,'Generating PRM Montage ...\n');
+    QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
+        img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID)));
 
-            % Save tPRM image
-            writeLog(fn_log,'       Saving NIFTI\n');
-            cmi_save(0,tprm,{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
-
-            % Tabulate statistics
-            writeLog(fn_log,'       Tabulating means\n');
-            for ilab = 1:(nlab+(nlab>1))
-                if ilab==1
-                    BW = logical(img.label);
-                    fstr = '';
-                else
-                    BW = img.label==ulab(ilab-1);
-                    fstr = sprintf('_%u',ulab(ilab-1));
-                end
-                res.('tPRM_'+prmlabel(ithresh)+'_'+upper(mflabel(imf))+fstr) = mean(tprm(BW));
-            end
+    %% Tabulate PRM results:
+    writeLog(fn_log,'Tabulating PRM results...\n');
+    BW = logical(img.label);
+    ulab = unique(img.label(BW));
+    nlab = numel(ulab);
+    tstr = '';
+    for ilab = 1:(nlab+(nlab>1)) % Loop over Whole-lung then R/L
+        % Grab sub-region
+        if ilab>1
+            BW = img.label == (ulab(ilab-1));
+            tstr = sprintf('_%u',ulab(ilab-1));
+        end
+        np = nnz(BW); % Normalize by number in mask
+        % 10-color PRM:
+        for iprm = 1:10
+            res.([sprintf('PRM_%u',iprm),tstr]) = nnz(prm10(BW)==iprm)/np*100;
+        end
+        % 4 color PRM:
+        for iprm = 1:size(prmlabel,2)
+            res.(['PRM_',prmlabel{1,iprm},tstr]) = nnz(prm5(BW)==iprm)/np*100;
         end
     end
-    writeLog(fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
 
+    %% Calculate tPRM
+    prmlabel = ["norm","fsad","emph","pd"];
+    mflabel = ["v","s","b","x"];
+    fn_tprm = fullfile(procdir,...
+        string(res.ID)+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
+    if all(cellfun(@(x)exist(x,'file'),fn_tprm))
+        writeLog(fn_log,'Loading tPRM from files ...\n');
+        clear prm5 prm10;
+        for iprm = 1:numel(prmlabel)
+            for imf = 1:numel(mflabel)
+                writeLog(fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
+                tprm = readNIFTI(fn_tprm(imf,iprm));
+                for ilab = 1:(nlab+(nlab>1))
+                    if ilab == 1
+                        BW = logical(img.label);
+                        tstr = '';
+                    else
+                        BW = img.label == ulab(ilab-1);
+                        tstr = sprintf('_%u',ulab(ilab-1));
+                    end
+                    res.('tPRM_'+prmlabel(iprm)+'_'+upper(mflabel(imf))+tstr) = mean(tprm(BW));
+                end
+            end
+        end
+    else
+        t = tic;
+        writeLog(fn_log,'Generating tPRM ...\n');
+
+        %% Calculate MF values
+        p = minkowskiFun(prm5,'thresh',1:4,...
+            'tmode','==',...
+            'n',10*ones(1,3),...
+            'gridsp',5,...
+            'voxsz',img.info.voxsz,...
+            'mask',logical(img.label),...
+            'prog',0);
+        clear prm5;
+
+        %% Interpolate to maps
+        for ithresh = 1:size(p.MF,1)
+            for imf = 1:size(p.MF,2)
+                writeLog(fn_log,'   %s - %s\n',prmlabel(ithresh),mflabel(imf));
+
+                % Interpolate to image space
+                tstr = prmlabel(ithresh) + '.' + mflabel(imf);
+                writeLog(fn_log,'       Interpolating\n');
+                tprm = grid2img(p.MF(ithresh,imf,:),p.ind,p.mask,3,1);
+
+                % Save tPRM image
+                writeLog(fn_log,'       Saving NIFTI\n');
+                cmi_save(0,tprm,{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
+
+                % Tabulate statistics
+                writeLog(fn_log,'       Tabulating means\n');
+                for ilab = 1:(nlab+(nlab>1))
+                    if ilab==1
+                        BW = logical(img.label);
+                        fstr = '';
+                    else
+                        BW = img.label==ulab(ilab-1);
+                        fstr = sprintf('_%u',ulab(ilab-1));
+                    end
+                    res.('tPRM_'+prmlabel(ithresh)+'_'+upper(mflabel(imf))+fstr) = mean(tprm(BW));
+                end
+            end
+        end
+        writeLog(fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
+
+    end
 end
-    
 %% Save Results Table:
 writetable(struct2table(res,'AsArray',true),fullfile(procdir,[res.ID,'_Results.csv']));
 
