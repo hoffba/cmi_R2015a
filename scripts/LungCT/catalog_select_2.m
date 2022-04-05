@@ -124,11 +124,7 @@ uibutton(hf,'Position',[fwidth-50,1,50,20],...
 uibutton(hf,'Position',[fwidth-100-gap,1,50,20],...
     'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
 
-bgs_white = uistyle('BackgroundColor','white');
-bgs_gray = uistyle('BackgroundColor','#cecece');
-bgs_red = uistyle('BackgroundColor','#ffc4c4');
-
-gp_valid = true(ngroups,1);
+gp_valid = zeros(ngroups,1);
 
 pause(1);
 applyFilter;
@@ -141,18 +137,31 @@ if isempty(C)
     selected_data = [];
 else
     empty_flag = false(ngroups,1);
+    tagstr = cell(size(C,1),1);
+    tagstr(C.Exp) = {'Exp'};
+    tagstr(C.Ins) = {'Ins'};
+    C = addvars(C,tagstr,'After','Ins','NewVariableNames',{'Tag'});
+    tS = table2struct(C(1,3:end)); tS = tS([]);
     selected_data = struct('UMlabel',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
     for ig = 1:ngroups
         g_ind = ugroups_ic==ig;
-        tC = C( g_ind & (C.Exp | C.Ins) ,:);
+        tC = C( g_ind & (C.Exp | C.Ins),:);
         if isempty(tC)
             empty_flag(ig) = true;
         else
             selected_data(ig).UMlabel = tC.UMlabel{1};
             selected_data(ig).StudyDate = tC.StudyDate{1};
-            selected_data(ig).Scans = table2struct([tC(tC.Exp,3:end);tC(tC.Ins,3:end)]);
-            selected_data(ig).Scans(1).Tag = 'Exp';
-            selected_data(ig).Scans(2).Tag = 'Ins';
+            selected_data(ig).Scans = tS;
+            if any(tC.Exp)
+                selected_data(ig).Scans =        table2struct(tC(tC.Exp,3:end));
+            else
+                selected_data(ig).Scans(1).Directory = '';
+            end
+            if any(tC.Ins)
+                selected_data(ig).Scans(2) = table2struct(tC(tC.Ins,3:end));
+            else
+                selected_data(ig).Scans(2).Directory = '';
+            end
         end
     end
     selected_data(empty_flag) = [];
@@ -200,18 +209,33 @@ end
         end
     end
     function checkValid(~)
+        bgs_white = '#ffffff';
+        bgs_blue =  '#bbdffb';
+        bgs_green = '#99edc3';
+        bgs_red =   '#ffc4c4';
         for i = 1:ngroups
             irow = find(ugroups_ic==i);
             n_exp = nnz(huit.Data.Exp(irow));
             n_ins = nnz(huit.Data.Ins(irow));
-            gp_valid(i) = (n_exp==n_ins && ismember(n_exp,[0,1]));
-            if ~gp_valid(i)
-                addStyle(huit,bgs_red,'row',irow);
-            elseif rem(i,2)
-                addStyle(huit,bgs_white,'row',irow);
-            else
-                addStyle(huit,bgs_gray,'row',irow);
+            gp_valid(i) = n_exp + n_ins + (n_exp>1) + (n_ins>1);
+            switch gp_valid(i)
+                case 0 % Nothing selected
+                    tcolor = bgs_white;
+                case 1 % Either Exp OR Ins selected
+                    tcolor = bgs_blue;
+                case 2 % Both Exp AND Ins selected
+                    tcolor = bgs_green;
+                otherwise % Invalid number of Exp or Ins selected for case
+                    tcolor = bgs_red;
             end
+            if ~mod(i,2) % Even numbered groups, make color darker
+                hsv_color = rgb2hsv([ double(hex2dec(tcolor(2:3))),...
+                                      double(hex2dec(tcolor(4:5))),...
+                                      double(hex2dec(tcolor(6:7)))] /255);
+                hsv_color(3) = hsv_color(3)*0.9;
+                tcolor = hsv2rgb(hsv_color);
+            end
+            addStyle(huit,uistyle('BackgroundColor',tcolor),'row',irow);
         end
     end
     function clearTags(~,~)
@@ -220,7 +244,7 @@ end
     end
     function done_callback(hObject,~)
         % Check that each timepoint has Ins/Exp selected (and only one of each)
-        if any(~gp_valid)
+        if any(gp_valid>2)
             warning('Each time point must have either nothing tagged or one of each Exp/Ins.');
         else
             C = huit.Data;
