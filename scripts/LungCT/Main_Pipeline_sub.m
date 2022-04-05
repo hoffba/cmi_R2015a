@@ -39,7 +39,7 @@ if isfolder(expfname)
 elseif ~isempty(expfname)
     [img(1).mat,label,fov,orient,info] = cmi_load(1,[],expfname);
 else
-    warning('File does not exist: %s',expfname);
+    writeLog(fn_log,'  EXP image not loaded.\n');
 end
 img(1).flag = ~isempty(img(1).mat);
 if img(1).flag
@@ -56,7 +56,7 @@ if isfolder(insfname)
 elseif ~isempty(insfname)
     [img(2).mat,label,fov,orient,info] = cmi_load(1,[],insfname);
 else
-    warning('File does not exist: %s',insfname);
+    writeLog(fn_log,'  INS image not loaded.\n');
 end
 img(2).flag = ~isempty(img(2).mat);
 if img(2).flag
