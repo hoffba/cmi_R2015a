@@ -39,5 +39,7 @@ for i = 1:(n+(n>1))
     else % 'ins'
         S(i).ins950 = 100 * nnz(maskvals < -950) / nvox;
         S(i).ins810 = 100 * nnz((maskvals >= -810) & (maskvals < -250)) / nvox;
+        S(i).ins810low = 100 * nnz((maskvals >= -810) & (maskvals < -500)) / nvox;
+        S(i).ins500 = 100 * nnz((maskvals >= -500) & (maskvals < -0)) / nvox;
     end
 end
