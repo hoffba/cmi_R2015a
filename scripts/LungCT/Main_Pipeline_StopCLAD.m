@@ -19,8 +19,8 @@ for i = 1:ncases
     
     %% Start pipeline batch job
     fprintf('%s - starting Main_Pipeline_sub as batch job: #',basename);
-%     j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir}]);
-%     fprintf('%u\n',j(i).ID);
+    j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir}]);
+    fprintf('%u\n',j(i).ID);
 
-    Main_Pipeline_sub(basename,cases(i).Scans.Directory,procdir)
+%     Main_Pipeline_sub(basename,cases(i).Scans.Directory,procdir)
 end
