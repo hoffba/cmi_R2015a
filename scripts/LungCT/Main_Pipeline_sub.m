@@ -293,6 +293,8 @@ if img(2).flag
         res.(['Ins_HU',tstr]) = S(ilab).mean;
         res.(['Ins_950',tstr]) = S(ilab).ins950;
         res.(['Ins_810',tstr]) = S(ilab).ins810;
+        res.(['Ins_810low',tstr]) = S(ilab).ins810low; % GGO
+        res.(['Ins_500',tstr]) = S(ilab).ins500; % consolidation
     end
 end
 
