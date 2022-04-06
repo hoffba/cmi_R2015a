@@ -161,8 +161,8 @@ for itag = 1:2
             tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
             saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
             yacta(tname,'wait');
-            tname = dir(sprintf('%s*explabels.mhd',tname));
-            img(itag).label = cmi_load(1,[],fullfile(ydir,tname.name));
+            tname = dir(sprintf('%s*lung_lobes*explabels.mhd',tname));
+            img(itag).label = cmi_load(1,[],fullfile(ydir,tname(1).name));
             % Clean-up
             cln_fnames = [dir(fullfile(ydir,'*.mhd'));dir(fullfile(ydir,'*.raw'));dir(fullfile(ydir,'*.zraw'))];
             for ifn = 1:numel(cln_fnames)
