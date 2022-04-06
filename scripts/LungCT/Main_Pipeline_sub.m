@@ -161,13 +161,8 @@ for itag = 1:2
             tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
             saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
             yacta(tname,'wait');
-            tname = dir(sprintf('%s*explabels.mhd',tname));
+            tname = dir(sprintf('%s*_lung_lobes_*_explabels.mhd',tname));
             img(itag).label = cmi_load(1,[],fullfile(ydir,tname.name));
-            % Clean-up
-            cln_fnames = [dir(fullfile(ydir,'*.mhd'));dir(fullfile(ydir,'*.raw'));dir(fullfile(ydir,'*.zraw'))];
-            for ifn = 1:numel(cln_fnames)
-                delete(fullfile(ydir,cln_fnames(ifn).name));
-            end
             saveNIFTI(fn_label{itag},img(itag).label,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
         end
     end
@@ -257,6 +252,12 @@ if img(1).flag
         atMap = ScatNet(img(1).mat,logical(img(1).label),0);
         cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
     end
+end
+
+%% Vessel analysis
+if img(2).flag
+    t = vesselSeg_BH( img(2).mat , img(2).label , img(2).info , procdir );
+    
 end
 
 %% Quantify unregistered CT scans
