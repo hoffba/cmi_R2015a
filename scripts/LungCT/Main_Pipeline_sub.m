@@ -256,6 +256,7 @@ end
 
 %% Vessel analysis
 if img(2).flag
+    writeLog(fn_log,'Generating blood vessels...\n');
 t = vesselSeg_BH( img(2).mat , img(2).label , ...
     init_niftiinfo(img(2).info.label,img(2).info.voxsz,class(img(2).mat),img(2).info.d) , procdir );
     res.vessels = t;
