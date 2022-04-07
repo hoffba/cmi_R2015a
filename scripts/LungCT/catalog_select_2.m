@@ -1,4 +1,4 @@
-function [selected_data,fpath] = catalog_select_2(varargin)
+function [selected_data,fpath,opts] = catalog_select_2(varargin)
 % GUI for selection of DICOM data from DICOMcatalog information
 %   For use in Ins/Exp CT analysis, looking for two matching scans per time
 % Input: C = table of DICOM information
@@ -12,6 +12,7 @@ function [selected_data,fpath] = catalog_select_2(varargin)
 C = [];
 fpath = '';
 fname = '';
+opts = [];
 cat_flag = false; % T/F run dcmCatalog
 
 if nargin==0
@@ -103,10 +104,13 @@ fheight = scsz(4)*2/3;
 gap = 5;
 hf = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight]),...
     'Name','Select DICOMcatalog data for processing:');%,'CloseRequestFcn',@cancel_callback);
+htabgroup = uitabgroup(hf,'Position',[0,0,fwidth,fheight]);
+htab = uitab(htabgroup,'Title','Scans');
+htab(2) = uitab(htabgroup,'Title','Options');
 
 colEdit = false(1,nfields); colEdit([1,2,3]) = true;
 colWidth = repmat({'auto'},1,nfields); colWidth(1:2) = {40,40};
-huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ], 'Data',C,...
+huit = uitable(htab(1),'Position',[ 1 , 20 , fwidth , fheight-110 ], 'Data',C,...
     'ColumnEditable',colEdit,'CellEditCallback',@editCell,'ColumnWidth',colWidth);
 
 % dtypes = cell(1,nfields-2);
@@ -115,13 +119,13 @@ huit = uitable(hf,'Position',[ 1 , 20 , fwidth , fheight-110 ], 'Data',C,...
 % end
 F = table('Size',[2,nfields-2],'VariableTypes',repmat({'cellstr'},1,nfields-2),'VariableNames',[{'Tag'},colnames(4:end)]);
 F.Tag = {'Exp';'Ins'};
-htfilt = uitable(hf,'Position',[ 1 , fheight-90 , fwidth , 90 ],...
+htfilt = uitable(htab(1),'Position',[ 1 , fheight-90 , fwidth , 90 ],...
     'Data',F,'ColumnEditable',[false,true(1,nfields-2)],'CellEditCallback',@applyFilter);
 
-uibutton(hf,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
-uibutton(hf,'Position',[fwidth-50,1,50,20],...
+uibutton(htab(1),'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
+uibutton(htab(1),'Position',[fwidth-50,1,50,20],...
     'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
-uibutton(hf,'Position',[fwidth-100-gap,1,50,20],...
+uibutton(htab(1),'Position',[fwidth-100-gap,1,50,20],...
     'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
 
 gp_valid = zeros(ngroups,1);
@@ -242,13 +246,13 @@ end
         huit.Data(:,1:2) = {false};
         checkValid;
     end
-    function done_callback(hObject,~)
+    function done_callback(~,~)
         % Check that each timepoint has Ins/Exp selected (and only one of each)
         if any(gp_valid>2)
-            warning('Each time point must have either nothing tagged or one of each Exp/Ins.');
+            warning('No case can have more than one Exp/Ins selected.');
         else
             C = huit.Data;
-            hObject.Parent.delete;
+            huit.Parent.Parent.Parent.delete;
         end
     end
     function cancel_callback(hObject,~)

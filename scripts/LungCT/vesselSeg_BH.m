@@ -19,7 +19,7 @@ function T = vesselSeg_BH(varargin)
         fn_ct = varargin{1};
         fn_seg = varargin{2};
         save_path = varargin{3};
-    elseif nargin==5
+    elseif nargin==4
         flag = false;
         ct = varargin{1};
         seg = varargin{2};
@@ -36,7 +36,11 @@ function T = vesselSeg_BH(varargin)
     end
     
     %% Use base name as ID
-    [~,ID] = fileparts(fn_ct);
+    if flag
+        [~,ID] = fileparts(fn_ct);
+    else
+        ID = info.label;
+    end
     if startsWith(ID,'re_')
         ID(1:3) = [];
     end
