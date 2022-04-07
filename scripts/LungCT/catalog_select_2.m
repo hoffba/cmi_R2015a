@@ -252,7 +252,7 @@ end
             warning('No case can have more than one Exp/Ins selected.');
         else
             C = huit.Data;
-            huit.Parent.Parent.Parent.delete;
+            hf.delete;
         end
     end
     function cancel_callback(hObject,~)
