@@ -166,7 +166,7 @@ for itag = 1:2
             % Clean-up
             cln_fnames = [dir(fullfile(ydir,'*.mhd'));dir(fullfile(ydir,'*.raw'));dir(fullfile(ydir,'*.zraw'))];
             for ifn = 1:numel(cln_fnames)
-%                 delete(fullfile(ydir,cln_fnames(ifn).name));
+                delete(fullfile(ydir,cln_fnames(ifn).name));
             end
             saveNIFTI(fn_label{itag},img(itag).label,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
         end
