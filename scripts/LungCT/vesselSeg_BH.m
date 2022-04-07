@@ -39,7 +39,7 @@ function T = vesselSeg_BH(varargin)
     if flag
         [~,ID] = fileparts(fn_ct);
     else
-        ID = info.label;
+        ID = info.Description;
     end
     if startsWith(ID,'re_')
         ID(1:3) = [];
