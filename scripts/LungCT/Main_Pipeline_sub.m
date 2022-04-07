@@ -161,9 +161,7 @@ for itag = 1:2
             tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
             saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
             yacta(tname,'wait');
-            % needs to be consistent with yacta.ini line 40 (C:\Users\alejbell\AppData\Roaming\yacta64\yacta.ini)
-            % CJG uses ExportJobsMHD = lung_lobes.labelexport tbt_lobes.labelexport
-            tname = dir(sprintf('%s*lung_lobes*explabels.mhd',tname)); 
+            tname = dir(sprintf('%s*lung_lobes*explabels.mhd',tname));
             img(itag).label = cmi_load(1,[],fullfile(ydir,tname(1).name));
             % Clean-up
             cln_fnames = [dir(fullfile(ydir,'*.mhd'));dir(fullfile(ydir,'*.raw'));dir(fullfile(ydir,'*.zraw'))];
