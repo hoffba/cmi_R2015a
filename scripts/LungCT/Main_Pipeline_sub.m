@@ -259,7 +259,12 @@ if img(2).flag
     writeLog(fn_log,'Vessel analysis ...\n');
     t = vesselSeg_BH( img(2).mat , img(2).label , ...
         init_niftiinfo(img(2).info.label,img(2).info.voxsz,class(img(2).mat),img(2).info.d) , procdir );
-    res.vessels = t;
+    varnames = t.Properties.VariableNames;
+    for i = 3:numel(varnames)
+        for j = 1:size(t,1)
+            res.(sprintf('%s_%s',varnames{i},t.LOBE{j})) = t{j,i};
+        end
+    end
 end
 
 %% Quantify unregistered CT scans
