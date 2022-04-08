@@ -232,13 +232,13 @@ end
 if img(1).flag
     writeLog(fn_log,'Generating EXP montage...\n');
     ind = 10:10:img(1).info.d(3);
-    QCmontage('seg',cat(4,img(1).mat(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
+    QCmontage('seg',cat(4,img(1).mat(:,:,ind),logical(img(1).label(:,:,ind))),img(1).info.voxsz,...
         fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
 end
 if img(2).flag
     writeLog(fn_log,'Generating INSP montage...\n');
     ind = 10:10:img(2).info.d(3);
-    QCmontage('seg',cat(4,img(2).mat(:,:,ind),img(2).label(:,:,ind)),img(2).info.voxsz,...
+    QCmontage('seg',cat(4,img(2).mat(:,:,ind),logical(img(2).label(:,:,ind))),img(2).info.voxsz,...
         fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
 end
 
