@@ -3,9 +3,7 @@ function T = vesselStats(id,ct,seg,vessels,csa)
 
 fprintf('Tabulating vessel results:\n');
 
-%     lobe = getLobeTags(seg);
-lobe = unique(label(label>0));
-
+lobe = getLobeTags(seg);
 nlobes = numel(lobe);
 vars = {'ID',                   'cellstr';...
     'LOBE',                 'cellstr';...
@@ -21,11 +19,13 @@ vars = {'ID',                   'cellstr';...
     'VESSEL_VOXELS_5UP',    'uint32'};
 T = table('Size',[nlobes+1,size(vars,1)],'VariableTypes',vars(:,2)','VariableNames',vars(:,1)');
 
-for i = 0:length(lobe)
+for i = 0:nlobes
     ii = i+1;
     if i==0 % Whole-lung
         mask = ismember(seg,[lobe.val]);
         T.LOBE{ii} = 'WholeLung';
+    elseif nlobes<2
+        break;
     else
         mask = seg == lobe(i).val;
         T.LOBE{ii} = lobe(i).name;
@@ -42,7 +42,7 @@ for i = 0:length(lobe)
     T.VESSEL_VOLUME(ii) = nnz(V) * 0.625^3;
     T.PER_EMPH(ii) = nnz((ct < -950) & mask) / np * 100;
 
-    fprintf('   Calculating size metrics\n');
+    fprintf('   Calculating size metrics: %s\n',T.LOBE{ii});
     [T.NUM_VESSELS(ii), T.NUM_COMPONENTS(ii), T.NUM_ENDPOINTS(ii)] = CSA_size_metrics(C);
     [T.CSA_EXP_A(ii), T.CSA_EXP_B(ii)] = CSA_metrics(C);
     T.VESSEL_VOXELS_5DOWN(ii) = nnz(getCSAvessVol(V,C,0,5));

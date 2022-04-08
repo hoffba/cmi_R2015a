@@ -19,24 +19,7 @@ function T = vesselSeg_BH(varargin)
         fn_ct = varargin{1};
         fn_seg = varargin{2};
         save_path = varargin{3};
-    elseif nargin==4
-        flag = true;
-        ct = varargin{1};
-        seg = varargin{2};
-        info = varargin{3};
-        save_path = varargin{4};
-    else
-        error('Invalid inputs.')
-    end
-
-    %% Check save directory
-    fprintf('   Saving to folder: %s\n',save_path);
-    if ~isfolder(save_path)
-        mkdir(save_path);
-    end
-    
-    %% Use base name as ID
-    if flag
+        
         [~,ID] = fileparts(fn_ct);
         if startsWith(ID,'re_')
             ID(1:3) = [];
@@ -46,8 +29,21 @@ function T = vesselSeg_BH(varargin)
         elseif contains(ID,'.')
             ID = extractBefore(ID,'.');
         end
-    else
+    elseif nargin==4
+        ct = varargin{1};
+        seg = varargin{2};
+        info = varargin{3};
+        save_path = varargin{4};
+        
         ID = info.Description;
+    else
+        error('Invalid inputs.')
+    end
+
+    %% Check save directory
+    fprintf('   Saving to folder: %s\n',save_path);
+    if ~isfolder(save_path)
+        mkdir(save_path);
     end
     
     %% Find and load INSP CT file:
