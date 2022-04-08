@@ -124,6 +124,8 @@ if check_EI && img(1).flag && img(2).flag
         res.Ins_DICOM = tstr;
     end
     svchk = true;
+elseif xor(img(1).flag,img(2).flag)
+    svchk = true;
 end
 img(1).info.label = [res.ID,'_Exp'];
 img(2).info.label = [res.ID,'_Ins'];
@@ -257,8 +259,18 @@ end
 %% Vessel analysis
 if img(2).flag
     writeLog(fn_log,'Vessel analysis ...\n');
-    t = vesselSeg_BH( img(2).mat , img(2).label , ...
-        init_niftiinfo(img(2).info.label,img(2).info.voxsz,class(img(2).mat),img(2).info.d) , procdir );
+    fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID));
+    fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID));
+    if exist(fn_re_ins,'file') && exist(fn_re_seg,'file')
+        tinfo = niftiinfo(fn_re_ins);
+        tins = niftiread(tinfo);
+        tseg = niftiread(fn_re_seg);
+    else
+        tinfo = init_niftiinfo(res.ID,img(2).info.voxsz,class(img(2).mat),img(2).info.d);
+        tins = img(2).mat;
+        tseg = img(2).label;
+    end
+    t = vesselSeg_BH( tins , tseg , tinfo , procdir );
     varnames = t.Properties.VariableNames;
     for i = 3:numel(varnames)
         for j = 1:size(t,1)

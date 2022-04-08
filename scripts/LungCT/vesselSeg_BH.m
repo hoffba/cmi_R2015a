@@ -14,13 +14,13 @@ function T = vesselSeg_BH(varargin)
     info = [];
     
     %% Parse Inputs
-    flag = false; % load file flag
+    flag = true; % load file flag
     if nargin==3
         fn_ct = varargin{1};
         fn_seg = varargin{2};
         save_path = varargin{3};
     elseif nargin==4
-        flag = false;
+        flag = true;
         ct = varargin{1};
         seg = varargin{2};
         info = varargin{3};
@@ -38,21 +38,21 @@ function T = vesselSeg_BH(varargin)
     %% Use base name as ID
     if flag
         [~,ID] = fileparts(fn_ct);
+        if startsWith(ID,'re_')
+            ID(1:3) = [];
+        end
+        if contains(ID,'_')
+            ID = extractBefore(ID,'_');
+        elseif contains(ID,'.')
+            ID = extractBefore(ID,'.');
+        end
     else
         ID = info.Description;
-    end
-    if startsWith(ID,'re_')
-        ID(1:3) = [];
-    end
-    if contains(ID,'_')
-        ID = extractBefore(ID,'_');
-    elseif contains(ID,'.')
-        ID = extractBefore(ID,'.');
     end
     
     %% Find and load INSP CT file:
     tag_type = 1;
-    if isempty(ct)
+    if isempty(ct) % filename input
         if ~contains(fn_ct,'.nii')
             warning('Invalid input CT file name: %s',fn_ct);
             return
@@ -107,17 +107,23 @@ function T = vesselSeg_BH(varargin)
     info.ImageSize = size(ct);
     
     %% Save eroded lobe map:
-    fprintf('Eroding lobe map ... ');
-    t = tic;
     lobe = getLobeTags(seg);
-    se = strel('sphere',5);
-    eroded_lobes = zeros(size(seg));
-    for i = 1:length(lobe)
-        eroded_lobes(imerode(seg == lobe(i).val,se)) = lobe(i).val;
+    fname = fullfile(save_path,[ID,'_erodedLobes']);
+    if flag && exist([fname,'.nii.gz'],'file')
+        fprintf('Loading eroded lobe map from file ...\n');
+        eroded_lobes = niftiread([fname,'.nii.gz']);
+    else
+        fprintf('Eroding lobe map ... ');
+        t = tic;
+        se = strel('sphere',5);
+        eroded_lobes = zeros(size(seg));
+        for i = 1:length(lobe)
+            eroded_lobes(imerode(seg == lobe(i).val,se)) = lobe(i).val;
+        end
+        eroded_lobes = uint8(eroded_lobes);
+        niftiwrite(eroded_lobes,fullfile(save_path,[ID,'_erodedLobes']),'Compressed',true);
+        fprintf('done (%s)\n',duration(0,0,toc(t)));
     end
-    eroded_lobes = uint8(eroded_lobes);
-    niftiwrite(eroded_lobes,fullfile(save_path,[ID,'_erodedLobes']),'Compressed',true);
-    fprintf('done (%s)\n',duration(0,0,toc(t)));
     eroded_lobes = eroded_lobes > 0;
     
     %% Full lung volume:
@@ -200,7 +206,7 @@ function T = vesselSeg_BH(varargin)
     fprintf('Tabulating results ... ');
     t = tic;
     T = vesselStats(ID,ct,seg,bin_vessels,csa_map);
-    writetable(T,fullfile(save_path,[ID,'_allMetrics.csv']));
+    writetable(T,fullfile(save_path,[ID,'_vesselMetrics.csv']));
     fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
     fprintf('TOTAL processing time: %s',duration(0,0,toc(tt)));
@@ -233,7 +239,7 @@ function [I,info] = resample_subj(I,info,fname,tag_type)
     
     % Save resampled data to file:
     [subj_dir,fname] = fileparts(fname);
-    fname = fullfile(subj_dir,['re_',fname]);
+    fname = fullfile(subj_dir,['re_',fname,'.nii']);
     niftiwrite(cast(I,info.Datatype),fname,info,'Compressed',true);
     
 end
