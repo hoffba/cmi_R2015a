@@ -86,25 +86,28 @@ end
 
 %% Fix orientation of image:
 svchk = false;
+check_orient = 1; % just a way to skip check
 tag = {'Exp','Ins'};
-for ii = 1:2
-    if img(ii).flag
-        % Find orientation of shoulder bones to see if permute is needed
-        BW = img(ii).mat(:,:,end) > -150;
-        %BW = max(img(ii).mat(:,:,round(img(ii).info.d(3)/2):end)>800,[],3);
-        prop = regionprops(BW,'Orientation','Area');
-        if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
-            writeLog(fn_log,'Permuting %s\n',tag{ii});
-            img(ii).mat = permute(img(ii).mat,[2,1,3]);
-            img(ii).info.voxsz = img(ii).info.voxsz([2,1,3]);
-            img(ii).info.fov = img(ii).info.fov([2,1,3]);
-            img(ii).info.d = img(ii).info.d([2,1,3]);
-            img(ii).info.orient = img(ii).info.orient([2,1,3,4],[2,1,3,4]);
-            svchk = true;
+if check_orient == 1
+    for ii = 1:2
+        if img(ii).flag
+            % Find orientation of shoulder bones to see if permute is needed
+            BW = img(ii).mat(:,:,end) > -150;
+            %BW = max(img(ii).mat(:,:,round(img(ii).info.d(3)/2):end)>800,[],3);
+            prop = regionprops(BW,'Orientation','Area');
+            if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
+                writeLog(fn_log,'Permuting %s\n',tag{ii});
+                img(ii).mat = permute(img(ii).mat,[2,1,3]);
+                img(ii).info.voxsz = img(ii).info.voxsz([2,1,3]);
+                img(ii).info.fov = img(ii).info.fov([2,1,3]);
+                img(ii).info.d = img(ii).info.d([2,1,3]);
+                img(ii).info.orient = img(ii).info.orient([2,1,3,4],[2,1,3,4]);
+                svchk = true;
+            end
         end
     end
+    clear BW
 end
-clear BW
 
 %% Identify Exp and Ins using lung volume; used for determining file name
 if check_EI && img(1).flag && img(2).flag
@@ -184,6 +187,7 @@ for itag = 1:2
             res.WallPct_RLL     = airway_res.Wall_pct_RightLowerLobe;
             res.WallPct_LUL     = airway_res.Wall_pct_LeftUpperLobe;
             res.WallPct_LULplus = airway_res.Wall_pct_LeftUpperLobePlus;
+            res.WallPct_LLi     = airway_res.Wall_pct_LeftLingula;
             res.WallPct_LLL     = airway_res.Wall_pct_LeftLowerLobe;
 
             res.Pi10            = airway_res.Pi10;
@@ -193,6 +197,7 @@ for itag = 1:2
             res.Pi10_RLL        = airway_res.Pi10_RLL;
             res.Pi10_LUL        = airway_res.Pi10_LUL;
             res.Pi10_LULplus    = airway_res.Pi10_LULplus;
+            res.Pi10_LLi        = airway_res.Pi10_LLi;
             res.Pi10_LLL        = airway_res.Pi10_LLL;
 
             res.Pi15            = airway_res.Pi15;
@@ -200,7 +205,7 @@ for itag = 1:2
             genstr = {'WT'};
             segstr = { 'seg',   4   ;...
                        'subseg',5:7 };
-            lobestr = {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLL'};
+            lobestr = {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLi','LLL'};
             for i = 1:numel(genstr)
                 for j = 1:2
                     for k = 1:numel(lobestr)
