@@ -1,7 +1,11 @@
 % Determine lobe tags for various lung segmentations
 function lobe = getLobeTags(seg)
     utags = unique(seg(seg>0));
-    if all(ismember(1:5,utags))
+    if all(ismember(10:10:60,utags))
+        % YACTA?
+        lobeTag = 10:10:60;
+        lobeName = {'RUL','RML','RLL','LUL','LLi','LLL'};
+    elseif all(ismember(1:5,utags))
         % YACTA
         lobeTag = 1:5;
         lobeName = {'LUL','LLL','RUL','RLL','RML'};
@@ -9,10 +13,6 @@ function lobe = getLobeTags(seg)
         % ImBio
         lobeTag = [11,12,13,21,22];
         lobeName = {'RUL','RLL','RML','LUL','LLL'};
-    elseif all(ismember(10:10:50,utags))
-        % YACTA?
-        lobeTag = 10:10:50;
-        lobeName = {'LUL','LLL','RUL','RLL','RML'};
     elseif all(ismember(10:10:20,utags))
         lobeTag = [10 20];
         lobeName = {'RL', 'LL'};
