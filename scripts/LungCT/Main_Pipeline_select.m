@@ -37,6 +37,6 @@ for i = 1:ncases
     
     %% Start pipeline batch job
     fprintf('%s - starting Main_Pipeline_sub as batch job: #',basename);
-    j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{quickreg}],cluster_profile(:));
+    j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{quickreg}],cluster_profile{:});
     fprintf('%u\n',j(i).ID);
 end
