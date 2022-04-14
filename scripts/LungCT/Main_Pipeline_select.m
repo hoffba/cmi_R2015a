@@ -1,7 +1,21 @@
-function j = Main_Pipeline_select(dcmpath,svpath,quickreg)
+function j = Main_Pipeline_select(dcmpath,svpath,varargin)
 
-if nargin<3
-    quickreg = false;
+quickreg = false;
+cluster_profile = {};
+
+if ismember('quickreg',varargin)
+    quickreg = true;
+end
+if ismember('serial',varargin)
+    cluster_profile = {'Profile','cmi_1'};
+    if ~ismember('cmi_1',parallel.clusterProfiles)
+        mls_fname = fullfile(fileparts(which('cmi')),'cmi_1.mlsettings');
+        if exist(mls_fname,'file')
+            parallel.importProfile(mls_fname);
+        else
+            cluster_profile = {};
+        end
+    end
 end
 
 %% Find files
@@ -23,6 +37,6 @@ for i = 1:ncases
     
     %% Start pipeline batch job
     fprintf('%s - starting Main_Pipeline_sub as batch job: #',basename);
-    j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{quickreg}]);
+    j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{quickreg}],cluster_profile(:));
     fprintf('%u\n',j(i).ID);
 end
