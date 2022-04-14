@@ -1,6 +1,9 @@
-function S = CTlung_Unreg(tag,img,voxvol,label,atMap)
+function T = CTlung_Unreg(tag,img,voxvol,label,atMap)
 
-S = struct;
+T = [];
+if nargin<5
+    atMap = [];
+end
 
 % Filter the data
 if ismember(tag,{'exp','ins'})
@@ -14,36 +17,42 @@ else
     return;
 end
 
-lobe = getLobeTags(label);
-n = numel(lobe);
-% ulab = unique(label(label>0));
-% n = numel(ulab);
-for i = 0:n
-    if i==0
-        % Use whole lung mask
-        tmask = logical(label);
-        S(i+1).tag = 'WholeLung';
-    elseif n<1
-        break;
-    else
-        % Use sub-region in label
-        tmask = label==lobe(i).val;
-        S(i+1).tag = lobe(i).name;
+T = lobeLoop(label,@(mask,tag,img,voxvol,atMap)unreg_sub(mask,tag,img,voxvol,atMap),...
+    tag,img,voxvol,atMap);
+
+
+
+function T = unreg_sub(mask,tag,img,voxvol,atMap)
+
+if strcmp(tag,'exp')
+    vars = {'Exp_Vol',      'double';...
+            'Exp_HU',       'double';...
+            'Exp_856',      'double';...
+            'Exp_SNpct',    'double';...
+            'Exp_SNmean',   'double'};
+else
+    vars = {'Ins_Vol',      'double';...
+            'Ins_HU',       'double';...
+            'Ins_950',      'double';...
+            'Ins_810',      'double';...
+            'Ins_810low',   'double';...
+            'Ins_500',      'double'};
+end
+T = table('Size',[1,size(vars,1)],'VariableTypes',vars(:,2)','VariableNames',vars(:,1)');
+
+nvox = nnz(mask);
+maskvals = img(mask);
+T{1,1} = nvox * voxvol / 1e6;
+T{1,2} = mean(maskvals);
+if strcmp(tag,'exp')
+    T.Exp_856 = 100 * nnz(maskvals < -856) / nvox;
+    if ~isempty(atMap)
+        T.Exp_SNpct = 100 * nnz(atMap(mask)) / nvox;
+        T.Exp_SNmean = mean(img(logical(atMap)));
     end
-    nvox = nnz(tmask);
-    maskvals = img(tmask);
-    S(i+1).vol = nvox*voxvol/1e6;
-    S(i+1).mean = mean(maskvals);
-    if strcmp(tag,'exp')
-        S(i+1).exp856 = 100 * nnz(maskvals < -856) / nvox;
-        if nargin==5 && ~isempty(atMap)
-            S(i+1).SNpct = 100 * nnz(atMap(tmask)) / nvox;
-            S(i+1).SNmean = mean(img(logical(atMap)));
-        end
-    else % 'ins'
-        S(i+1).ins950 = 100 * nnz(maskvals < -950) / nvox;
-        S(i+1).ins810 = 100 * nnz((maskvals >= -810) & (maskvals < -250)) / nvox;
-        S(i+1).ins810low = 100 * nnz((maskvals >= -810) & (maskvals < -500)) / nvox;
-        S(i+1).ins500 = 100 * nnz((maskvals >= -500) & (maskvals < -0)) / nvox;
-    end
+else % 'ins'
+    T.Ins_950 = 100 * nnz(maskvals < -950) / nvox;
+    T.Ins_810 = 100 * nnz((maskvals >= -810) & (maskvals < -250)) / nvox;
+    T.Ins_810low = 100 * nnz((maskvals >= -810) & (maskvals < -500)) / nvox;
+    T.Ins_500 = 100 * nnz((maskvals >= -500) & (maskvals < -0)) / nvox;
 end
