@@ -21,13 +21,14 @@ function T = vesselSeg_BH(varargin)
         save_path = varargin{3};
         
         [~,ID] = fileparts(fn_ct);
-        if startsWith(ID,'re_')
-            ID(1:3) = [];
-        end
-        if contains(ID,'_')
-            ID = extractBefore(ID,'_');
+        tstr = extractBefore(ID,'.ins');
+        if ~isempty(tstr)
+            ID = tstr;
         elseif contains(ID,'.')
             ID = extractBefore(ID,'.');
+        end
+        if startsWith(ID,'re_')
+            ID(1:3) = [];
         end
     elseif nargin==4
         ct = varargin{1};
@@ -66,7 +67,7 @@ function T = vesselSeg_BH(varargin)
         end
     elseif ~all(info.PixelDimensions==0.625)
                 fprintf('  Resampling CT image ...\n');
-        ct = resample_subj(ct,info,fullfile(save_path,[ID,'.ct.nii']),tag_type);
+        ct = resample_subj(ct,info,fullfile(save_path,[ID,'.ins.nii']),tag_type);
     end
    
     %% Find INSP segmentation file:
@@ -89,7 +90,7 @@ function T = vesselSeg_BH(varargin)
         end
     elseif ~all(info.PixelDimensions==0.625)
                 fprintf('  Resampling SEGMENTATION image ...\n');
-        seg = resample_subj(seg,info,fullfile(save_path,[ID,'.lobe_segmentation.nii']),tag_type);
+        seg = resample_subj(seg,info,fullfile(save_path,[ID,'.ins.label.nii']),tag_type);
     end
     
     %% Validate size of loaded data:
@@ -117,7 +118,7 @@ function T = vesselSeg_BH(varargin)
             eroded_lobes(imerode(seg == lobe(i).val,se)) = lobe(i).val;
         end
         eroded_lobes = uint8(eroded_lobes);
-        niftiwrite(eroded_lobes,fullfile(save_path,[ID,'_erodedLobes']),'Compressed',true);
+        niftiwrite(eroded_lobes,fname,'Compressed',true);
         fprintf('done (%s)\n',duration(0,0,toc(t)));
     end
     eroded_lobes = eroded_lobes > 0;
@@ -201,7 +202,9 @@ function T = vesselSeg_BH(varargin)
     %% Tabulate results and save to subject directory
     fprintf('Tabulating results ... ');
     t = tic;
-    T = vesselStats(ID,ct,seg,bin_vessels,csa_map);
+    T = lobeLoop(seg,@(mask,ct,vessels,csa)vesselStats(mask,ct,vessels,csa),ct,bin_vessels,csa_map);
+    T = addvars(T,repmat({ID},size(T,1),1),'Before',1,'NewVariableNames',{'ID'});
+%     T = vesselStats(ID,ct,seg,bin_vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_vesselMetrics.csv']));
     fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
@@ -235,6 +238,10 @@ function [I,info] = resample_subj(I,info,fname,tag_type)
     
     % Save resampled data to file:
     [subj_dir,fname] = fileparts(fname);
+    tstr = extractBefore(fname,'.nii');
+    if ~isempty(tstr)
+        fname = tstr;
+    end
     fname = fullfile(subj_dir,['re_',fname,'.nii']);
     niftiwrite(cast(I,info.Datatype),fname,info,'Compressed',true);
     

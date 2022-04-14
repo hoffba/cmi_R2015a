@@ -275,52 +275,20 @@ if img(2).flag
         tins = img(2).mat;
         tseg = img(2).label;
     end
-    t = vesselSeg_BH( tins , tseg , tinfo , procdir );
-    varnames = t.Properties.VariableNames;
-    for i = 3:numel(varnames)
-        for j = 1:size(t,1)
-            res.(sprintf('%s_%s',varnames{i},t.LOBE{j})) = t{j,i};
-        end
-    end
+    T = vesselSeg_BH( tins , tseg , tinfo , procdir );
+    res = lobeTable2struct(T,res,3:size(T,2));
 end
 
 %% Quantify unregistered CT scans
 writeLog(fn_log,'Quantifying unregistered statistics\n');
 if img(1).flag
-    S = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label,atMap);
+    T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label,atMap);
     clear atMap;
-    for ilab = 1:numel(S)
-        if isempty(S(ilab).tag)
-            tstr = '';
-        elseif ischar(S(ilab).tag)
-            tstr = ['_',S(ilab).tag];
-        else
-            tstr = sprintf('_%u',S(ilab).tag);
-        end
-        res.(['Exp_Vol',tstr]) = S(ilab).vol;
-        res.(['Exp_HU',tstr]) = S(ilab).mean;
-        res.(['Exp_856',tstr]) = S(ilab).exp856;
-        res.(['Exp_SNpct',tstr]) = S(ilab).SNpct;
-        res.(['Exp_SNmean',tstr]) = S(ilab).SNmean;
-    end
+    res = lobeTable2struct(T,res,3:size(T,2));
 end
 if img(2).flag
-    S = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
-    for ilab = 1:numel(S)
-        if isempty(S(ilab).tag)
-            tstr = '';
-        elseif ischar(S(ilab).tag)
-            tstr = ['_',S(ilab).tag];
-        else
-            tstr = sprintf('_%u',S(ilab).tag);
-        end
-        res.(['Ins_Vol',tstr]) = S(ilab).vol;
-        res.(['Ins_HU',tstr]) = S(ilab).mean;
-        res.(['Ins_950',tstr]) = S(ilab).ins950;
-        res.(['Ins_810',tstr]) = S(ilab).ins810;
-        res.(['Ins_810low',tstr]) = S(ilab).ins810low; % GGO
-        res.(['Ins_500',tstr]) = S(ilab).ins500; % consolidation
-    end
+    T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
+    res = lobeTable2struct(T,res,3:size(T,2));
 end
 
 %% Register I2E
@@ -370,6 +338,11 @@ if img(1).flag && img(2).flag
         end
     end
     clear ins_reg;
+    
+    %% Tabulate 10-color PRM results
+    writeLog(fn_log,'Tabulating 10-color PRM results...\n');
+    T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
+    res = lobeTable2struct(T,res,3:size(T,2));
 
     %% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
     prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
@@ -378,34 +351,17 @@ if img(1).flag && img(2).flag
     for i = 1:size(prmlabel,2)
         prm5(ismember(prm10,prmlabel{2,i})) = i;
     end
+    clear prm10
 
     %% QC PRM
     writeLog(fn_log,'Generating PRM Montage ...\n');
     QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
         img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID)));
 
-    %% Tabulate PRM results:
-    writeLog(fn_log,'Tabulating PRM results...\n');
-    BW = logical(img.label);
-    ulab = unique(img.label(BW));
-    nlab = numel(ulab);
-    tstr = '';
-    for ilab = 1:(nlab+(nlab>1)) % Loop over Whole-lung then R/L
-        % Grab sub-region
-        if ilab>1
-            BW = img.label == (ulab(ilab-1));
-            tstr = sprintf('_%u',ulab(ilab-1));
-        end
-        np = nnz(BW); % Normalize by number in mask
-        % 10-color PRM:
-        for iprm = 1:10
-            res.([sprintf('PRM_%u',iprm),tstr]) = nnz(prm10(BW)==iprm)/np*100;
-        end
-        % 4 color PRM:
-        for iprm = 1:size(prmlabel,2)
-            res.(['PRM_',prmlabel{1,iprm},tstr]) = nnz(prm5(BW)==iprm)/np*100;
-        end
-    end
+    %% Tabulate 5-color PRM results
+    writeLog(fn_log,'Tabulating 5-color PRM results...\n');
+    T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
+    res = lobeTable2struct(T,res,3:size(T,2));
 
     %% Calculate tPRM
     prmlabel = ["norm","fsad","emph","pd"];
@@ -419,16 +375,9 @@ if img(1).flag && img(2).flag
             for imf = 1:numel(mflabel)
                 writeLog(fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
                 tprm = readNIFTI(fn_tprm(imf,iprm));
-                for ilab = 1:(nlab+(nlab>1))
-                    if ilab == 1
-                        BW = logical(img.label);
-                        tstr = '';
-                    else
-                        BW = img.label == ulab(ilab-1);
-                        tstr = sprintf('_%u',ulab(ilab-1));
-                    end
-                    res.('tPRM_'+prmlabel(iprm)+'_'+upper(mflabel(imf))+tstr) = mean(tprm(BW));
-                end
+                str = 'tPRM_'+prmlabel(iprm)+'_'+upper(mflabel(imf));
+                T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
+                res = lobeTable2struct(T,res,2);
             end
         end
     else
@@ -461,16 +410,9 @@ if img(1).flag && img(2).flag
 
                 % Tabulate statistics
                 writeLog(fn_log,'       Tabulating means\n');
-                for ilab = 1:(nlab+(nlab>1))
-                    if ilab==1
-                        BW = logical(img.label);
-                        fstr = '';
-                    else
-                        BW = img.label==ulab(ilab-1);
-                        fstr = sprintf('_%u',ulab(ilab-1));
-                    end
-                    res.('tPRM_'+prmlabel(ithresh)+'_'+upper(mflabel(imf))+fstr) = mean(tprm(BW));
-                end
+                str = 'tPRM_'+prmlabel(ithresh)+'_'+upper(mflabel(imf));
+                T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
+                res = lobeTable2struct(T,res,2);
             end
         end
         writeLog(fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
@@ -484,21 +426,50 @@ writetable(struct2table(res,'AsArray',true),fullfile(procdir,[res.ID,'_Results.c
 writeLog(fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
 
+function S = lobeTable2struct(T,S,vind)
+    varnames = T.Properties.VariableNames(vind);
+    for i = 1:numel(varnames)
+        for j = 1:size(T,1)
+            S.(sprintf('%s_%s',varnames{i},T.LOBE{j})) = T.(varnames{i})(j);
+        end
+    end
 
+function T = tabulatePRM(mask,prm,flag)
+    if flag % 10-color
+        vals = 1:10;
+        tag = cellfun(@num2str,num2cell(vals),'UniformOutput',false);
+    else % 5-color
+        vals = 1:5;
+        tag = {'Norm', 'fSAD', 'Emph', 'PD', 'NS'};
+    end
+    nv = numel(vals);
+    vname = strcat('PRM_',tag);
+    T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),...
+        'VariableNames',vname);
+    np = nnz(mask);
+    for i = 1:numel(vals)
+        T.(vname{i}) = nnz(prm(mask)==i)/np*100;
+    end
+    
+function T = tabulateTPRM(mask,tprm,str)
+    vname = sprintf('tPRM_%s',str);
+    T = table('Size',[1,1],'VariableTypes',{'double'},'VariableNames',{vname});
+    T.(vname) = mean(tprm(mask));
+    
 function writeLog(fn,str,varargin)
-% write to command window
-fprintf(str,varargin{:});
+    % write to command window
+    fprintf(str,varargin{:});
 
-% write to log file
-fid = fopen(fn,'a');
-if fid
-    fprintf(fid,str,varargin{:});
-    fclose(fid);
-else
-    fprintf('Could not open log file.\n');
-end
+    % write to log file
+    fid = fopen(fn,'a');
+    if fid
+        fprintf(fid,str,varargin{:});
+        fclose(fid);
+    else
+        fprintf('Could not open log file.\n');
+    end
 
 function img = medfilt2_3(img)
-for i = 1:size(img,3)
-    img(:,:,i) = medfilt2(img(:,:,i));
-end
+    for i = 1:size(img,3)
+        img(:,:,i) = medfilt2(img(:,:,i));
+    end
