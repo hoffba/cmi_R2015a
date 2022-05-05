@@ -262,21 +262,24 @@ if img(1).flag
 end
 
 %% Vessel analysis
-if img(2).flag
-    writeLog(fn_log,'Vessel analysis ...\n');
-    fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID));
-    fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID));
-    if exist(fn_re_ins,'file') && exist(fn_re_seg,'file')
-        tinfo = niftiinfo(fn_re_ins);
-        tins = niftiread(tinfo);
-        tseg = niftiread(fn_re_seg);
-    else
-        tinfo = init_niftiinfo(res.ID,img(2).info.voxsz,class(img(2).mat),img(2).info.d);
-        tins = img(2).mat;
-        tseg = img(2).label;
+skip_Vessel = 1;
+if skip_Vessel == 0
+    if img(2).flag
+        writeLog(fn_log,'Vessel analysis ...\n');
+        fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID));
+        fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID));
+        if exist(fn_re_ins,'file') && exist(fn_re_seg,'file')
+            tinfo = niftiinfo(fn_re_ins);
+            tins = niftiread(tinfo);
+            tseg = niftiread(fn_re_seg);
+        else
+            tinfo = init_niftiinfo(res.ID,img(2).info.voxsz,class(img(2).mat),img(2).info.d);
+            tins = img(2).mat;
+            tseg = img(2).label;
+        end
+        T = vesselSeg_BH( tins , tseg , tinfo , procdir );
+        res = lobeTable2struct(T,res,3:size(T,2));
     end
-    T = vesselSeg_BH( tins , tseg , tinfo , procdir );
-    res = lobeTable2struct(T,res,3:size(T,2));
 end
 
 %% Quantify unregistered CT scans
