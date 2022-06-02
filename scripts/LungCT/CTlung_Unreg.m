@@ -36,7 +36,9 @@ else
             'Ins_950',      'double';...
             'Ins_810',      'double';...
             'Ins_810low',   'double';...
-            'Ins_500',      'double'};
+            'Ins_500',      'double';...
+            'Ins_GGOI',     'double';...
+            'Ins_FIBI',     'double'};
 end
 T = table('Size',[1,size(vars,1)],'VariableTypes',vars(:,2)','VariableNames',vars(:,1)');
 
@@ -55,4 +57,6 @@ else % 'ins'
     T.Ins_810 = 100 * nnz((maskvals >= -810) & (maskvals < -250)) / nvox;
     T.Ins_810low = 100 * nnz((maskvals >= -810) & (maskvals < -500)) / nvox;
     T.Ins_500 = 100 * nnz((maskvals >= -500) & (maskvals < -0)) / nvox;
+    T.Ins_GGOI = 100 * nnz((maskvals >= -810) & (maskvals < -700)) / nvox;
+    T.Ins_FIBI = 100 * nnz((maskvals >= -700) & (maskvals < -0)) / nvox;
 end
