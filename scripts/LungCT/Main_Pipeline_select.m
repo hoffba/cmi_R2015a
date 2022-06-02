@@ -1,4 +1,4 @@
-function j = Main_Pipeline_select(dcmpath,svpath,varargin)
+function j = Main_Pipeline_select(varargin)
 % Start CT lung pipeline script (Main_Pipeline_sub) with GUI selection for
 % cases based on DCMcatalog.csv
 %
@@ -12,34 +12,45 @@ function j = Main_Pipeline_select(dcmpath,svpath,varargin)
 %       * runs cases serially in batch (1-worker)
 % Main_Pipeline_select( dcmpath, svpath, 'quickreg', 'serialbatch' )
 
-quickreg = false;
+dcmpath = '';
 cluster_profile = {};
 flag = false;
+opts = struct('sv_path','',...
+              'quickreg',false);
 
-if ismember('quickreg',varargin)
-    quickreg = true;
-end
-if ismember('serial',varargin)
-    flag = true;
-elseif ismember('serialbatch',varargin)
-    cluster_profile = {'Profile','cmi_1'};
-    if ~ismember('cmi_1',parallel.clusterProfiles)
-        mls_fname = fullfile(fileparts(which('cmi')),'cmi_1.mlsettings');
-        if exist(mls_fname,'file')
-            fprintf('Importing cluster profile: %s\n',mls_fname);
-            parallel.importProfile(mls_fname);
-        else
-            cluster_profile = {};
+if nargin
+    % Find directory inputs
+    pathi = find(cellfun(@isfolder,varargin),2);
+    if numel(pathi)
+        opts.dcmpath = varargin{pathi(1)};
+    end
+    if numel(pathi)>1
+        opts.sv_path = varargin{pathi(2)};
+    end
+    if ismember('quickreg',varargin)
+        opts.quickreg = true;
+    end
+    if ismember('serial',varargin)
+        flag = true;
+    elseif ismember('serialbatch',varargin)
+        cluster_profile = {'Profile','cmi_1'};
+        if ~ismember('cmi_1',parallel.clusterProfiles)
+            mls_fname = fullfile(fileparts(which('cmi')),'cmi_1.mlsettings');
+            if exist(mls_fname,'file')
+                fprintf('Importing cluster profile: %s\n',mls_fname);
+                parallel.importProfile(mls_fname);
+            else
+                fprintf('Could not find cluster profile: %s\n',mls_fname);
+                cluster_profile = {};
+            end
         end
     end
 end
 
+
 %% Find files
-if ischar(dcmpath)
-    if isfolder(dcmpath)
-        dcmpath = fullfile(dcmpath,'DICOMcatalog.csv');
-    end
-    cases = catalog_select_2(dcmpath);
+if ischar(opts.dcmpath) && ~isempty(opts.dcmpath)
+    [cases,opts] = catalog_select_2(dcmpath,opts);
 else
     error('Invalid input.')
 end
@@ -49,16 +60,16 @@ ncases = numel(cases);
 for i = 1:ncases
     
     basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
-    procdir = fullfile(svpath,basename);
+    procdir = fullfile(opts.sv_path,basename);
     
     if flag
         % Start pipeline in command window
         fprintf('%s - starting Main_Pipeline_sub case #%u\n',basename,i);
-        Main_Pipeline_sub(basename,cases(i).Scans.Directory,procdir,quickreg);
+        Main_Pipeline_sub(basename,cases(i).Scans.Directory,procdir,opts.quickreg);
     else
         % Start pipeline batch job
         fprintf('%s - starting Main_Pipeline_sub as batch job: #',basename);
-        j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{quickreg}],cluster_profile{:});
+        j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{opts.quickreg}],cluster_profile{:});
         fprintf('%u\n',j(i).ID);
     end
 end
