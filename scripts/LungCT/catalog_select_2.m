@@ -1,4 +1,4 @@
-function [selected_data,fpath,opts] = catalog_select_2(varargin)
+function [selected_data,fpath] = catalog_select_2(varargin)
 % GUI for selection of DICOM data from DICOMcatalog information
 %   For use in Ins/Exp CT analysis, looking for two matching scans per time
 % Input: C = table of DICOM information
@@ -12,7 +12,7 @@ function [selected_data,fpath,opts] = catalog_select_2(varargin)
 C = [];
 fpath = '';
 fname = '';
-opts = [];
+
 cat_flag = false; % T/F run dcmCatalog
 
 if nargin==0
@@ -47,8 +47,12 @@ else
             fname = val;
             fpath = fileparts(fname);
         else
-            warning('Invalid input');
-            return;
+            Dirnames = dir(fullfile(val.dcmpath,'*DICOMcatalog*.csv'));
+            fname = Dirnames.name;
+            fpath = Dirnames.folder;
+
+%             warning('Invalid input');
+%             return;
         end
     end
 end

@@ -50,7 +50,7 @@ end
 
 %% Find files
 if ischar(opts.dcmpath) && ~isempty(opts.dcmpath)
-    [cases,opts] = catalog_select_2(dcmpath,opts);
+    [cases,~] = catalog_select_2(opts); % what are the inputs for Ben?
 else
     error('Invalid input.')
 end
