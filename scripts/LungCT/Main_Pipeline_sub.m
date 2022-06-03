@@ -32,6 +32,7 @@ res.Ins_DICOM = '';
 res.ProcDir = procdir;
 
 %% Load CT images
+writeLog(fn_log,'Pipeline Processing: %s\n',basename);
 % Exp
 writeLog(fn_log,'Loading EXP image...\n');
 if isfolder(expfname)

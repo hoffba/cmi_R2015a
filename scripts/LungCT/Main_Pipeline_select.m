@@ -12,15 +12,15 @@ function j = Main_Pipeline_select(varargin)
 %       * runs cases serially in batch (1-worker)
 % Main_Pipeline_select( dcmpath, svpath, 'quickreg', 'serialbatch' )
 
-dcmpath = '';
 cluster_profile = {};
 flag = false;
-opts = struct('sv_path','',...
+opts = struct('dcmpath','',...
+              'sv_path','',...
               'quickreg',false);
 
 if nargin
     % Find directory inputs
-    pathi = find(cellfun(@isfolder,varargin),2);
+    pathi = find(cellfun(@(x)ischar(x) && isfolder(x),varargin),2);
     if numel(pathi)
         opts.dcmpath = varargin{pathi(1)};
     end
@@ -49,11 +49,7 @@ end
 
 
 %% Find files
-if ischar(opts.dcmpath) && ~isempty(opts.dcmpath)
-    [cases,~] = catalog_select_2(opts); % what are the inputs for Ben?
-else
-    error('Invalid input.')
-end
+[cases,opts] = catalog_select_2(opts);
 
 %% Loop over cases
 ncases = numel(cases);
