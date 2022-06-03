@@ -119,7 +119,7 @@ if check_EI && img(1).flag && img(2).flag
     img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
     
     flag = (nnz(img(1).label)*img(1).info.voxvol) > (nnz(img(2).label)*img(2).info.voxvol) ...
-        && (mean(img(1).mat(logical(img(1).label))) < mean(img(1).mat(logical(img(2).label))));
+        && (mean(img(1).mat(logical(img(1).label))) < mean(img(2).mat(logical(img(2).label))));
     if flag
         writeLog(fn_log,'Swapping INS/EXP due to lung volume\n');
         img = img([2,1]);
