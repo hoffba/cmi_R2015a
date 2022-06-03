@@ -341,12 +341,12 @@ end
         end
     end
     function setSavePath(tpath,~)
-        if nargin==0 || ~ischar(tpath)
+        if nargin==0 || isempty(tpath) || ~ischar(tpath)
             tpath = uigetdir('Select folder for saving results:');
         end
         if ~isempty(tpath)
             sv_path = tpath;
-            h.text_save.Text = sv_path;
+            h.text_save.Value = sv_path;
         end
     end
     function selectAll(~)
