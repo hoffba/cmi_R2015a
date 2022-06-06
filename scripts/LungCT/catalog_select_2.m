@@ -143,13 +143,20 @@ end
         h.panel_modules = uipanel(h.tab2,'Position',[5, fheight-305, 215, 225],'Title','Modules');
         uibutton(h.panel_modules,  'Position',[5,   185, 100, 20],'Text','Select All','ButtonPushedFcn',@selectAll);
         uibutton(h.panel_modules,  'Position',[110, 185, 100, 20],'Text','Clear All','ButtonPushedFcn',@clearAll);
-        h.unreg =   uicheckbox(h.panel_modules,'Position',[5,   160, 200, 20],'Text','Unreg','Value',opts.unreg);
-        h.airway =  uicheckbox(h.panel_modules,'Position',[5,   135, 200, 20],'Text','Airways','Value',opts.airway);
-        h.scatnet = uicheckbox(h.panel_modules,'Position',[5,   110, 200, 20],'Text','ScatNet','Value',opts.scatnet);
-        h.vessel =  uicheckbox(h.panel_modules,'Position',[5,    85, 200, 20],'Text','Vessels','Value',opts.vessel);
-        h.reg =     uicheckbox(h.panel_modules,'Position',[5,    60, 200, 20],'Text','Registration','Value',opts.reg);
-        h.prm =     uicheckbox(h.panel_modules,'Position',[5,    35, 200, 20],'Text','PRM','Value',opts.prm);
-        h.tprm =    uicheckbox(h.panel_modules,'Position',[5,    10, 200, 20],'Text','tPRM','Value',opts.tprm);
+        h.unreg =   uicheckbox(h.panel_modules,'Position',[5,   160, 200, 20],'Text','Unreg',...
+            'Value',opts.unreg,'ValueChangedFcn',@setOpts,'Tag','unreg');
+        h.airway =  uicheckbox(h.panel_modules,'Position',[5,   135, 200, 20],'Text','Airways',...
+            'Value',opts.airway,'ValueChangedFcn',@setOpts,'Tag','airway');
+        h.scatnet = uicheckbox(h.panel_modules,'Position',[5,   110, 200, 20],'Text','ScatNet',...
+            'Value',opts.scatnet,'ValueChangedFcn',@setOpts,'Tag','scatnet');
+        h.vessel =  uicheckbox(h.panel_modules,'Position',[5,    85, 200, 20],'Text','Vessels',...
+            'Value',opts.vessel,'ValueChangedFcn',@setOpts,'Tag','vessel');
+        h.reg =     uicheckbox(h.panel_modules,'Position',[5,    60, 200, 20],'Text','Registration',...
+            'Value',opts.reg,'ValueChangedFcn',@setOpts,'Tag','reg');
+        h.prm =     uicheckbox(h.panel_modules,'Position',[5,    35, 200, 20],'Text','PRM',...
+            'Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
+        h.tprm =    uicheckbox(h.panel_modules,'Position',[5,    10, 200, 20],'Text','tPRM',...
+            'Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
         h.panel_reg = uipanel(h.tab2,'Position',[225, fheight-305, 215, 225],'Title','Reg Options');
         h.reg_seg = uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Tranform Segmentation','Value',opts.reg_seg);
@@ -261,16 +268,20 @@ end
         h.fig.delete;
     end
     function setOpts(hObject,~)
-        
+        str = hObject.Tag;
+        if ismember(str,fieldnames(opts))
+            opts.(str) = hObject.Value;
+        end
     end
     function selectCatalog(str,~)
+        newC = [];
         if nargin==0 || isempty(str) || ~ischar(str)
             str = uigetdir('Select folder for processing.');
-        elseif istable(str)
-            C = str;
-            str = '';
         end
-        if isfolder(str)
+        if istable(str)
+            newC = str;
+            str = '';
+        elseif ischar(str) && isfolder(str)
             % Find existing DICOMcatalog files:
             fnames = dir(fullfile(fpath,'*DICOMcatalog*.csv'));
             answer = listdlg('PromptString','Select a catalog:',...
@@ -279,21 +290,23 @@ end
                 str = '';
             elseif answer == 1
                 % Generate DICOM catalog:
-                C = dcmCatalog(fpath,str);
+                newC = dcmCatalog(fpath,str);
                 str = '';
             elseif answer > 1
                 str = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
             end
         end
-        if exist(str,'file')
+        if ischar(str) && ~isempty(str) && exist(str,'file')==2
             iopt = detectImportOptions(str);
-            C = readtable(str,iopt);
+            newC = readtable(str,iopt);
         end
-        if ~isempty(C) % Set up the tables and data:
+        if ~isempty(newC) % Set up the tables and data:
             %% Validate table input:
-            colnames = C.Properties.VariableNames;
+            colnames = newC.Properties.VariableNames;
             i_member = ismember(req_fields,colnames);
-            if ~all(ismember(req_fields,colnames))
+            if all(ismember(req_fields,colnames))
+                C = newC;
+            else
                 error(['Missing required fields: ',strjoin(req_fields(~i_member),', ')]);
             end
             
