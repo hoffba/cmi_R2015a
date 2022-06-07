@@ -283,14 +283,14 @@ end
             str = '';
         elseif ischar(str) && isfolder(str)
             % Find existing DICOMcatalog files:
-            fnames = dir(fullfile(fpath,'*DICOMcatalog*.csv'));
+            fnames = dir(fullfile(str,'*DICOMcatalog*.csv'));
             answer = listdlg('PromptString','Select a catalog:',...
                 'ListString',{'* Create New *',fnames.name});
             if isempty(answer)
                 str = '';
             elseif answer == 1
                 % Generate DICOM catalog:
-                newC = dcmCatalog(fpath,str);
+                newC = dcmCatalog(str);
                 str = '';
             elseif answer > 1
                 str = fullfile(fnames(answer-1).folder,fnames(answer-1).name);

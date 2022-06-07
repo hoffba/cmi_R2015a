@@ -2,7 +2,9 @@
 function lobe = getLobeTags(seg)
     utags = unique(seg(seg>0));
     
-    if all(ismember(utags,[10,20]))
+    if isempty(utags)
+        lobeName = {}; lobeTag = {};
+    elseif all(ismember(utags,[10,20]))
         lobeTag = [10 20];
         lobeName = {'RL', 'LL'};
     elseif all(ismember(utags,10:10:60))

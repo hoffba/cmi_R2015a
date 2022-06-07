@@ -150,15 +150,12 @@ d = size(img);
 slc = round(2*d(3)/3);
 dopt = ~isempty(slc);
 
+answer = {num2str(sm), num2str(Ti), num2str(Tt), num2str(bt1), num2str(bt2),...
+          num2str(bt3), num2str(bt4)};
 if output == 0
     prompt = {'Smoothing','Lung Threshold','Trachea Threshold',...
         'Trachea Dilation','Lung Erosion','End Dilation','End Erosion'};
-    def = {num2str(sm),num2str(Ti),num2str(Tt),num2str(bt1),num2str(bt2),...
-        num2str(bt3),num2str(bt4)};
-    answer = inputdlg(prompt,'Input Parameters',1,def);
-else
-    answer = {num2str(sm),num2str(Ti),num2str(Tt),num2str(bt1),num2str(bt2),...
-        num2str(bt3),num2str(bt4)};
+    answer = inputdlg(prompt,'Input Parameters',1,answer);
 end
 
 if ~isempty(answer)

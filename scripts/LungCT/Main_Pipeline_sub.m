@@ -159,16 +159,19 @@ for itag = 1:2
             writeLog(fn_log,'from file\n');
             img(itag).label = readNIFTI(fn_label{itag});
         else
-            writeLog(fn_log,'generating using YACTA\n');
-            ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
-            if ~isfolder(ydir)
-                mkdir(ydir);
-            end
-            tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
-            saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
-            yacta(tname,'wait');
-            tname = dir(sprintf('%s*lung_lobes*explabels.mhd',tname));
-            img(itag).label = cmi_load(1,[],fullfile(ydir,tname(end).name));
+            img(itag).label = CTlung_segmentation(4,img(itag).mat,img(itag).info,img(itag).info.label,procdir,fn_log)
+            
+%             writeLog(fn_log,'generating using YACTA\n');
+%             ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
+%             if ~isfolder(ydir)
+%                 mkdir(ydir);
+%             end
+%             tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
+%             saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
+%             yacta(tname,'wait');
+%             tname = dir(sprintf('%s*lung_lobes*explabels.mhd',tname));
+%             img(itag).label = cmi_load(1,[],fullfile(ydir,tname(end).name));
+
             saveNIFTI(fn_label{itag},img(itag).label,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
         end
     end
@@ -460,19 +463,6 @@ function T = tabulateTPRM(mask,tprm,str)
     T = table('Size',[1,1],'VariableTypes',{'double'},'VariableNames',{vname});
     T.(vname) = mean(tprm(mask));
     
-function writeLog(fn,str,varargin)
-    % write to command window
-    fprintf(str,varargin{:});
-
-    % write to log file
-    fid = fopen(fn,'a');
-    if fid
-        fprintf(fid,str,varargin{:});
-        fclose(fid);
-    else
-        fprintf('Could not open log file.\n');
-    end
-
 function img = medfilt2_3(img)
     for i = 1:size(img,3)
         img(:,:,i) = medfilt2(img(:,:,i));
