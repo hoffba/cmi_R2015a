@@ -4,7 +4,7 @@ function writeLog(fn,str,varargin)
 fprintf(str,varargin{:});
 
 % write to log file
-if ischar(fn) && exist(fn,'file') && endsWith(fn,'_log.txt')
+if ischar(fn) && endsWith(fn,'_log.txt')
     fid = fopen(fn,'a');
     if fid
         fprintf(fid,str,varargin{:});
