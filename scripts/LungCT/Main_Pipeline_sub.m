@@ -159,7 +159,7 @@ for itag = 1:2
             writeLog(fn_log,'from file\n');
             img(itag).label = readNIFTI(fn_label{itag});
         else
-            img(itag).label = CTlung_segmentation(4,img(itag).mat,img(itag).info,img(itag).info.label,procdir,fn_log)
+            img(itag).label = CTlung_Segmentation(4,img(itag).mat,img(itag).info,img(itag).info.label,procdir,fn_log);
             
 %             writeLog(fn_log,'generating using YACTA\n');
 %             ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
