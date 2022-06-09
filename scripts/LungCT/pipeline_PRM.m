@@ -3,6 +3,10 @@ function [prm,info] = pipeline_PRM(exp,exp_info,mask,insR,svname)
 %% Load PRM options
 info = load(fullfile(fileparts(which('cmi')),'PRMdefs','PRMdef_AllLung_5Color.mat'));
 
+% 3D median filter on the images
+exp = medfilt3(exp);
+insR = medfilt3(insR);
+
 %% Initialize the CMI object
 img = ImageClass;
 img.setMat(cat(4,exp,insR),{'Exp','Ins'},exp_info.fov,exp_info.orient,'');

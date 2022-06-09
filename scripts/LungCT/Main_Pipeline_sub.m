@@ -349,7 +349,7 @@ if img(1).flag && img(2).flag
     %% Tabulate 10-color PRM results
     writeLog(fn_log,'Tabulating 10-color PRM results...\n');
     T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
-    res = lobeTable2struct(T,res,3:size(T,2));
+    res = lobeTable2struct(T,res,2:size(T,2));
 
     %% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
     prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
@@ -368,7 +368,7 @@ if img(1).flag && img(2).flag
     %% Tabulate 5-color PRM results
     writeLog(fn_log,'Tabulating 5-color PRM results...\n');
     T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
-    res = lobeTable2struct(T,res,3:size(T,2));
+    res = lobeTable2struct(T,res,2:size(T,2));
 
     %% Calculate tPRM
     prmlabel = ["norm","fsad","emph","pd"];
@@ -432,14 +432,6 @@ writetable(struct2table(res,'AsArray',true),fullfile(procdir,[res.ID,'_Results.c
 
 writeLog(fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
-
-function S = lobeTable2struct(T,S,vind)
-    varnames = T.Properties.VariableNames(vind);
-    for i = 1:numel(varnames)
-        for j = 1:size(T,1)
-            S.(sprintf('%s_%s',varnames{i},T.LOBE{j})) = T.(varnames{i})(j);
-        end
-    end
 
 function T = tabulatePRM(mask,prm,flag)
     if flag % 10-color
