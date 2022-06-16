@@ -204,9 +204,13 @@ function [T,ver] = vesselSeg_BH(varargin)
     %% Tabulate results and save to subject directory
     fprintf('Tabulating results ... ');
     t = tic;
-    T = vesselStats(ID,ct,seg,bin_vessels,csa_map);
+    T = lobeLoop(seg,@(mask,ins,binvessels,csa)vesselStats(mask,ins,binvessels,csa),ct,bin_vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_vesselMetrics.csv']));
     fprintf('done (%s)\n\n',duration(0,0,toc(t)));
+    
+    T = lobeTable2struct(T);
+    ID = {ID};
+    T = addvars(T,ID,'Before',1);
     
     fprintf('TOTAL processing time: %s',duration(0,0,toc(tt)));
     
