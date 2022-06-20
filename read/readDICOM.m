@@ -257,12 +257,15 @@ for ifn = 1:nf
             dcmdata(j).Label = {val};
             
             val = '';
-            if isfield(tinfo,'PatientIdentityRemoved') && strcmpi(tinfo.PatientIdentityRemoved,'yes')
+            if isfield(tinfo,'PatientIdentityRemoved') && strcmpi(tinfo.PatientIdentityRemoved,'yes') ...
+                    && isfield(tinfo,'PatientName')
                 if isfield(tinfo.PatientName,'FamilyName')
                     val = tinfo.PatientName.FamilyName;
                 end
             elseif isfield(tinfo,'PatientID')
                 val = tinfo.PatientID;
+            elseif isfield(tinfo,'StudyID')
+                val = tinfo.StudyID; % added this b/c some cases did not have PatientName tag in dicom
             end
             dcmdata(j).PatientID = val;
             
