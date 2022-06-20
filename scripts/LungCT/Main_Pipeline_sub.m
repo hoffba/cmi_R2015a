@@ -6,11 +6,12 @@ function res = Main_Pipeline_sub(basename,expfname,insfname,procdir,quickreg)
 % Pipeline consists of:
 % 1. 
 
-varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir','ElxDir','Region'};
+varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir','ElxDir','ROI'};
 Nv = numel(varnames);
 regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
 Nr = numel(regionnames);
 res = table('Size',[Nr,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames,'RowNames',regionnames);
+res.ROI = regionnames';
 
 if nargin<5
     quickreg = false;
