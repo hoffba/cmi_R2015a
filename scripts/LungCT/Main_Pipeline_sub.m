@@ -6,7 +6,11 @@ function res = Main_Pipeline_sub(basename,expfname,insfname,procdir,quickreg)
 % Pipeline consists of:
 % 1. 
 
-res = [];
+varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir','ElxDir','Region'};
+Nv = numel(varnames);
+regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
+Nr = numel(regionnames);
+res = table('Size',[Nr,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames,'RowNames',regionnames);
 
 if nargin<5
     quickreg = false;
@@ -26,10 +30,7 @@ check_EI = false;
 img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{[],[]});
 % tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
 % res.ID = extractBefore(tok{1}{1},'_');
-res.ID = '';
-res.Exp_DICOM = '';
-res.Ins_DICOM = '';
-res.ProcDir = procdir;
+res.ProcDir(:) = {procdir};
 
 %% Load CT images
 writeLog(fn_log,'Pipeline Processing: %s\n',basename);
@@ -67,9 +68,9 @@ if img(2).flag
     img(2).info.name = img(2).info.label;
 end
 
-res.ID = basename;
+res.ID(:) = {basename};
 if isfolder(expfname)
-    res.Exp_DICOM = expfname;
+    res.Exp_DICOM(:) = {expfname};
 %     res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
     check_EI = true;
 % else
@@ -79,9 +80,9 @@ if isfolder(expfname)
 %         res.ID = extractBefore(tok{1}{1},'_');
 %     end
 end
-res.ElxDir = fullfile(procdir,sprintf('elastix_%s',res.ID));
+res.ElxDir(:) = {fullfile(procdir,sprintf('elastix_%s',res.ID{1}))};
 if isfolder(insfname)
-    res.Ins_DICOM = insfname;
+    res.Ins_DICOM(:) = {insfname};
     check_EI = true;
 end
 
@@ -131,20 +132,20 @@ if check_EI && img(1).flag && img(2).flag
 elseif xor(img(1).flag,img(2).flag)
     svchk = true;
 end
-img(1).info.label = [res.ID,'_Exp'];
-img(2).info.label = [res.ID,'_Ins'];
-img(1).info.name = [res.ID,'_Exp'];
-img(2).info.name = [res.ID,'_Ins'];
+img(1).info.label = [res.ID{1},'_Exp'];
+img(2).info.label = [res.ID{1},'_Ins'];
+img(1).info.name = [res.ID{1},'_Exp'];
+img(2).info.name = [res.ID{1},'_Ins'];
 
 %% Save images:
 if svchk
     %% Save nii.gz files using ID and Tag
     if img(1).flag
-        fn_exp = fullfile(procdir,sprintf('%s',res.ID,'.exp',fn_ext));
+        fn_exp = fullfile(procdir,sprintf('%s',res.ID{1},'.exp',fn_ext));
         saveNIFTI(fn_exp,img(1).mat,img(1).info.label,img(1).info.fov,img(1).info.orient);
     end
     if img(2).flag
-        fn_ins = fullfile(procdir,sprintf('%s',res.ID,'.ins',fn_ext));
+        fn_ins = fullfile(procdir,sprintf('%s',res.ID{1},'.ins',fn_ext));
         saveNIFTI(fn_ins,img(2).mat,img(2).info.label,img(2).info.fov,img(2).info.orient);
     end
 end
@@ -153,7 +154,7 @@ end
 fn_label = cell(2,1);
 for itag = 1:2
     if img(itag).flag
-        fn_label{itag} = fullfile(procdir,sprintf('%s.%s.label%s',res.ID,lower(tag{itag}),fn_ext));
+        fn_label{itag} = fullfile(procdir,sprintf('%s.%s.label%s',res.ID{1},lower(tag{itag}),fn_ext));
         writeLog(fn_log,'%s segmentation ... ',tag{itag});
         if exist(fn_label{itag},'file')
             writeLog(fn_log,'from file\n');
@@ -183,56 +184,61 @@ for itag = 1:2
         ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
         airway_res = readYACTAairways(ydir);
         if ~isempty(airway_res)
-            res.WallPct_3_8     = airway_res.Wall_pct__3_8_;
-            res.WallPct         = airway_res.Wall_pct;
-            res.WallPct_RUL     = airway_res.Wall_pct_RightUpperLobe;
-            res.WallPct_RML     = airway_res.Wall_pct_RightMidLobe;
-            res.WallPct_RULplus = airway_res.Wall_pct_RightUpperLobePlus;
-            res.WallPct_RLL     = airway_res.Wall_pct_RightLowerLobe;
-            res.WallPct_LUL     = airway_res.Wall_pct_LeftUpperLobe;
-            res.WallPct_LULplus = airway_res.Wall_pct_LeftUpperLobePlus;
-            res.WallPct_LLi     = airway_res.Wall_pct_LeftLingula;
-            res.WallPct_LLL     = airway_res.Wall_pct_LeftLowerLobe;
+            
+            res = addTableVarVal(res,'WallPct_3_8','WholeLung',airway_res.Wall_pct__3_8_);
+            
+            res = addTableVarVal(res,'Wall_pct',{'WholeLung','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'},...
+                [ airway_res.Wall_pct;...
+                  airway_res.Wall_pct_RightUpperLobe;...
+                  airway_res.Wall_pct_RightMidLobe;...
+                  airway_res.Wall_pct_RightUpperLobePlus;...
+                  airway_res.Wall_pct_RightLowerLobe;...
+                  airway_res.Wall_pct_LeftUpperLobe;...
+                  airway_res.Wall_pct_LeftUpperLobePlus;...
+                  airway_res.Wall_pct_LeftLingula;...
+                  airway_res.Wall_pct_LeftLowerLobe ]);
 
-            res.Pi10            = airway_res.Pi10;
-            res.Pi10_RUL        = airway_res.Pi10_RUL;
-            res.Pi10_RML        = airway_res.Pi10_RML;
-            res.Pi10_RULplus    = airway_res.Pi10_RULplus;
-            res.Pi10_RLL        = airway_res.Pi10_RLL;
-            res.Pi10_LUL        = airway_res.Pi10_LUL;
-            res.Pi10_LULplus    = airway_res.Pi10_LULplus;
-            res.Pi10_LLi        = airway_res.Pi10_LLi;
-            res.Pi10_LLL        = airway_res.Pi10_LLL;
+            res = addTableVarVal(res,'Pi10',{'WholeLung','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'},...
+                [ airway_res.Pi10;...
+                  airway_res.Pi10_RUL;...
+                  airway_res.Pi10_RML;...
+                  airway_res.Pi10_RULplus;...
+                  airway_res.Pi10_RLL;...
+                  airway_res.Pi10_LUL;...
+                  airway_res.Pi10_LULplus;...
+                  airway_res.Pi10_LLi;...
+                  airway_res.Pi10_LLL ]);
 
-            res.Pi15            = airway_res.Pi15;
+            res = addTableVarVal(res,'Pi15','WholeLung',airway_res.Pi15);
 
             genstr = {'WT'};
             segstr = { 'seg',   4   ;...
                        'subseg',5:7 };
-            lobestr = {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLi','LLL'};
+            lobestr =  {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLi','LLL'};
+            lobestr2 = {'RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
             for i = 1:numel(genstr)
                 for j = 1:2
                     for k = 1:numel(lobestr)
-                        fldstr = sprintf('%s_%s_%s',genstr{i},segstr{j,1},regexprep(lobestr{k},'+','plus'));
                         segind = segstr{j,2};
                         vals = airway_res.(genstr{i}).(lobestr{k});
                         vals = vals(segind(segind<=numel(vals)));
-                        res.(fldstr) = mean(vals(vals>0));
+                        res = addTableVarVal(res,[genstr{i},'_',segstr{j,1}],lobestr2{k},mean(vals(vals>0)));
                     end
                 end
             end
 
-            res.BEI             = airway_res.BEI_Lung;
-            res.BEI_Right       = airway_res.BEI_Right;
-            res.BEI_Left        = airway_res.BEI_Left;
-            res.BEI_RUL         = airway_res.BEI_RUL;
-            res.BEI_RML         = airway_res.BEI_RML;
-            res.BEI_RULplus     = airway_res.BEI_RULplus;
-            res.BEI_RLL         = airway_res.BEI_RLL;
-            res.BEI_LUL         = airway_res.BEI_LUL;
-            res.BEI_LLi         = airway_res.BEI_LLi;
-            res.BEI_LULplus     = airway_res.BEI_LULplus;
-            res.BEI_LLL         = airway_res.BEI_LLL;
+            res = addTableVarVal(res,'BEI',{'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'},...
+                [ airway_res.BEI_Lung;...
+                  airway_res.BEI_Right;...
+                  airway_res.BEI_Left;...
+                  airway_res.BEI_RUL;...
+                  airway_res.BEI_RML;...
+                  airway_res.BEI_RULplus;...
+                  airway_res.BEI_RLL;...
+                  airway_res.BEI_LUL;...
+                  airway_res.BEI_LULplus;...
+                  airway_res.BEI_LLi;...
+                  airway_res.BEI_LLL ]);
         end
     end
 end
@@ -253,7 +259,7 @@ end
 
 %% ScatterNet for AT on Exp CT scan
 if img(1).flag
-    fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID,'scatnet',fn_ext));
+    fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet',fn_ext));
     writeLog(fn_log,'Air trapping map ... ');
     if exist(fn_scatnet,'file')
         writeLog(fn_log,'from file\n');
@@ -270,19 +276,19 @@ skip_Vessel = 1;
 if skip_Vessel == 0
     if img(2).flag
         writeLog(fn_log,'Vessel analysis ...\n');
-        fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID));
-        fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID));
+        fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID{1}));
+        fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID{1}));
         if exist(fn_re_ins,'file') && exist(fn_re_seg,'file')
             tinfo = niftiinfo(fn_re_ins);
             tins = niftiread(tinfo);
             tseg = niftiread(fn_re_seg);
         else
-            tinfo = init_niftiinfo(res.ID,img(2).info.voxsz,class(img(2).mat),img(2).info.d);
+            tinfo = init_niftiinfo(res.ID{1},img(2).info.voxsz,class(img(2).mat),img(2).info.d);
             tins = img(2).mat;
             tseg = img(2).label;
         end
         T = vesselSeg_BH( tins , tseg , tinfo , procdir );
-        res = lobeTable2struct(T,res,3:size(T,2));
+        res = addTableVarVal(res,T);
     end
 end
 
@@ -291,16 +297,16 @@ writeLog(fn_log,'Quantifying unregistered statistics\n');
 if img(1).flag
     T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label,atMap);
     clear atMap;
-    res = lobeTable2struct(T,res,3:size(T,2));
+    res = addTableVarVal(res,T);
 end
 if img(2).flag
     T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
-    res = lobeTable2struct(T,res,3:size(T,2));
+    res = addTableVarVal(res,T);
 end
 
 %% Register I2E
 if img(1).flag && img(2).flag
-    fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID,'ins.reg',fn_ext));
+    fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'ins.reg',fn_ext));
     if exist(fn_reg,'file')
         writeLog(fn_log,'Loading registered INS from file...\n');
         ins_reg = readNIFTI(fn_reg);
@@ -308,10 +314,10 @@ if img(1).flag && img(2).flag
         writeLog(fn_log,'Performing registration...\n')
         lungreg_BH( img(1).mat, img(1).info, logical(img(1).label),...
                     img(2).mat, img(2).info, logical(img(2).label),...
-                    res.ElxDir, res.ID, false, quickreg);
+                    res.ElxDir{1}, res.ID{1}, false, quickreg);
         % Move registered file out to procdir
         [~,outfn] = fileparts(img(2).info.name);
-        outfn = fullfile(res.ElxDir,sprintf('%s_R.nii',outfn));
+        outfn = fullfile(res.ElxDir{1},sprintf('%s_R.nii',outfn));
         % Elastix won't save .nii.gz, so need to resave
         ins_reg = readNIFTI(outfn);
         cmi_save(0,ins_reg,'Ins_R',img(1).info.fov,img(1).info.orient,fn_reg);
@@ -321,19 +327,19 @@ if img(1).flag && img(2).flag
     writeLog(fn_log,'Saving Registration Montage ...\n');
     ind = 10:10:img(1).info.d(3);
     QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
-        fullfile(procdir,sprintf('%s_Reg_Montage',res.ID)));
+        fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
     img(2) = [];
 
 
     %% PRM calculation
-    fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID,'prm',fn_ext));
+    fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));
     if exist(fn_PRM,'file')
         writeLog(fn_log,'Loading PRM from file...\n');
         prm10 = int8(readNIFTI(fn_PRM));
     else
         writeLog(fn_log,'Calculating PRM...\n');
         [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
-            fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID)));
+            fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1})));
 
         % Save PRM
         writeLog(fn_log,'Saving PRM as NIFTI ... ');
@@ -349,7 +355,7 @@ if img(1).flag && img(2).flag
     %% Tabulate 10-color PRM results
     writeLog(fn_log,'Tabulating 10-color PRM results...\n');
     T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
-    res = lobeTable2struct(T,res,2:size(T,2));
+    res = addTableVarVal(res,T);
 
     %% map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
     prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
@@ -363,18 +369,18 @@ if img(1).flag && img(2).flag
     %% QC PRM
     writeLog(fn_log,'Generating PRM Montage ...\n');
     QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
-        img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID)));
+        img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID{1})));
 
     %% Tabulate 5-color PRM results
     writeLog(fn_log,'Tabulating 5-color PRM results...\n');
     T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
-    res = lobeTable2struct(T,res,2:size(T,2));
+    res = addTableVarVal(res,T);
 
     %% Calculate tPRM
     prmlabel = ["norm","fsad","emph","pd"];
     mflabel = ["v","s","b","x"];
     fn_tprm = fullfile(procdir,...
-        string(res.ID)+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
+        string(res.ID{1})+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
     if all(cellfun(@(x)exist(x,'file'),fn_tprm))
         writeLog(fn_log,'Loading tPRM from files ...\n');
         clear prm5 prm10;
@@ -382,9 +388,9 @@ if img(1).flag && img(2).flag
             for imf = 1:numel(mflabel)
                 writeLog(fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
                 tprm = readNIFTI(fn_tprm(imf,iprm));
-                str = 'tPRM_'+prmlabel(iprm)+'_'+upper(mflabel(imf));
+                str = prmlabel(iprm)+'_'+upper(mflabel(imf));
                 T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                res = lobeTable2struct(T,res,2);
+                res = addTableVarVal(res,T);
             end
         end
     else
@@ -417,9 +423,9 @@ if img(1).flag && img(2).flag
 
                 % Tabulate statistics
                 writeLog(fn_log,'       Tabulating means\n');
-                str = 'tPRM_'+prmlabel(ithresh)+'_'+upper(mflabel(imf));
+                str = prmlabel(ithresh)+'_'+upper(mflabel(imf));
                 T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                res = lobeTable2struct(T,res,2);
+                res = addTableVarVal(res,T);
             end
         end
         writeLog(fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
@@ -428,7 +434,7 @@ if img(1).flag && img(2).flag
 end
     
 %% Save Results Table:
-writetable(struct2table(res,'AsArray',true),fullfile(procdir,[res.ID,'_Results.csv']));
+writetable(res,fullfile(procdir,[res.ID{1},'_PipelineResults.csv']));
 
 writeLog(fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
@@ -459,3 +465,48 @@ function img = medfilt2_3(img)
     for i = 1:size(img,3)
         img(:,:,i) = medfilt2(img(:,:,i));
     end
+    
+function T = addTableVarVal(T,varargin)
+    if nargin==2 && istable(varargin{1}) && strcmp(varargin{1}.Properties.VariableNames{1},'LOBE')
+        vals = varargin{1};
+        regionstr = vals.LOBE;
+        vals = removevars(vals,'LOBE');
+        varstr = vals.Properties.VariableNames;
+    elseif nargin==4
+        varstr = varargin{1};
+        regionstr = varargin{2};
+        vals = varargin{3};
+        if ischar(regionstr)
+            regionstr = {regionstr};
+        end
+        if ischar(varstr)
+            varstr = {varstr};
+        end
+        if numel(varstr)<size(vals,2)
+            varstr = strcat(varstr,'_',cellfun(@num2str,num2cell(1:size(vals,2)),'UniformOutput',false));
+        end
+    else
+        return;
+    end
+    if numel(regionstr)==size(vals,1)
+        for i = 1:numel(varstr)
+            if istable(vals)
+                tvals = vals.(vals.Properties.VariableNames{i});
+            else
+                tvals = vals(:,i);
+            end
+            switch class(tvals)
+                case 'cell'
+                    defval = {''};
+                case 'double'
+                    defval = nan;
+                otherwise
+                    defval = {};
+            end
+            if ~ismember(varstr{i},T.Properties.VariableNames)
+                T = addvars(T,repmat(defval,size(T,1),1),'NewVariableNames',varstr(i));
+            end
+            T.(varstr{i})(regionstr) = tvals;
+        end
+    end
+    

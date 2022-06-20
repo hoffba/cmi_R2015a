@@ -1,4 +1,4 @@
-function T = addResultToTable(T,tT)
+function T = addResultToTable(T,tT,varnames)
 % Add single-row table result (tT) to table T
 
     if size(tT,1)>1
@@ -6,6 +6,10 @@ function T = addResultToTable(T,tT)
         return;
     end
 
+    if ~isempty(varnames)
+        tT = tT(:,ismember(tT.Properties.VariableNames,varnames));
+    end
+    
     if isempty(T)
         T = tT;
         vtypes = varfun(@class,T,'OutputFormat','cell');

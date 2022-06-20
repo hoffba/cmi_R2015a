@@ -50,7 +50,7 @@ if strcmp(tag,'exp')
     T.Exp_856 = 100 * nnz(maskvals < -856) / nvox;
     if ~isempty(atMap)
         T.Exp_SNpct = 100 * nnz(atMap(mask)) / nvox;
-        T.Exp_SNmean = mean(img(logical(atMap)));
+        T.Exp_SNmean = mean(img(logical(atMap(mask))));
     end
 else % 'ins'
     T.Ins_950 = 100 * nnz(maskvals < -950) / nvox;

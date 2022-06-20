@@ -17,9 +17,11 @@ for i = 1:(n+3)
     elseif i==3
         mask = ismember(seg,[lobe(startsWith({lobe.name},'L')).val]);
         LOBE{i} = 'LL';
-    else
+    elseif ~ismember(lobe(i-3).name,LOBE)
         mask = seg == lobe(i-3).val;
         LOBE{i} = lobe(i-3).name;
+    else
+        break
     end
     res{i} = feval(fcnhandle,mask,varargin{:});
 end
