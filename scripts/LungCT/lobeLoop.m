@@ -3,7 +3,7 @@ function res = lobeLoop(seg,fcnhandle,varargin)
 lobe = getLobeTags(seg);
 n = numel(lobe);
 res = cell(n,1);
-LOBE = cell(n,1);
+LOBE = cell(1);
 
 for i = 1:(n+3)    
     if i==1 % Whole-lung
