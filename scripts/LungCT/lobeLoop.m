@@ -27,4 +27,4 @@ for i = 1:(n+3)
 end
 
 res = vertcat(res{:});
-res = addvars(res,LOBE,'Before',1);
+res = addvars(res,LOBE','Before',1);

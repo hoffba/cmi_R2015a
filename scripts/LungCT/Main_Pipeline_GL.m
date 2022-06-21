@@ -17,8 +17,12 @@ flag = false;
 opts = struct('dcmpath','',...
               'sv_path','',...
               'quickreg',false);
+GLflag = false;
 
 if nargin
+    if isnumeric(varargin{1})
+        GLflag = logical(varargin{1});
+    end
     % Find directory inputs
     pathi = find(cellfun(@(x)ischar(x) && isfolder(x),varargin),2);
     if numel(pathi)
@@ -33,108 +37,108 @@ if nargin
 end
 
 
-%% Find files
-[cases,opts] = catalog_select_3(opts);
+if ~ GLflag
+    
+% ~~~~~~~~~~~~~~~~~~~~~
+% ~~ LOCAL EXECUTION ~~
+% ~~~~~~~~~~~~~~~~~~~~~
+    
+    %% Find files
+    [cases,opts] = catalog_select_3(opts);
 
-%% Make sure the save directory is on Turbo, for access from GL
-[~,TF] = checkTurboPath(opts.savepath);
-if TF
-    error('Save path must be on Turbo for access from Great Lakes.');
-end
+    %% Make sure the save directory is on Turbo, for access from GL
+    [~,TF] = checkTurboPath(opts.savepath);
+    if TF
+        error('Save path must be on Turbo for access from Great Lakes.');
+    end
 
-%% Determine batch setup
-if ismember('serial',varargin)
-    flag = true;
-elseif ismember('serialbatch',varargin)
-    cluster_profile = {'Profile','cmi_1'};
-    if ~ismember('cmi_1',parallel.clusterProfiles)
-        mls_fname = fullfile(fileparts(which('cmi')),'cmi_1.mlsettings');
-        if exist(mls_fname,'file')
-            fprintf('Importing cluster profile: %s\n',mls_fname);
-            parallel.importProfile(mls_fname);
+    %% Determine batch setup
+    if ismember('serial',varargin)
+        flag = true;
+    elseif ismember('serialbatch',varargin)
+        cluster_profile = {'Profile','cmi_1'};
+        if ~ismember('cmi_1',parallel.clusterProfiles)
+            mls_fname = fullfile(fileparts(which('cmi')),'cmi_1.mlsettings');
+            if exist(mls_fname,'file')
+                fprintf('Importing cluster profile: %s\n',mls_fname);
+                parallel.importProfile(mls_fname);
+            else
+                fprintf('Could not find cluster profile: %s\n',mls_fname);
+                cluster_profile = {};
+            end
+        end
+    end
+
+    %% Set up cluster properties
+    c = parcluster;
+    jobdir = fullfile(c.JobStorageLocation,sprintf('pipeline_local_%u',char(datetime('now','Format','yyyyMMddHHmmss'))));
+    mkdir(jobdir);
+    c.JobStorageLocation = jobdir;
+
+    %% Loop over cases for local processing
+    ncases = numel(cases);
+    procdir = cell(ncases,1);
+    for i = 1:ncases
+
+        basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
+        procdir{i} = fullfile(opts.sv_path,basename);
+
+        if flag
+            % Start pipeline in command window
+            fprintf('%s - starting pipeline_local case #%u\n',basename,i);
+            pipeline_local(basename,cases(i).Scans.Directory,procdir{i});
         else
-            fprintf('Could not find cluster profile: %s\n',mls_fname);
-            cluster_profile = {};
+            % Start pipeline batch job
+            fprintf('%s - starting Main_Pipeline_sub as batch job: #',basename);
+            j(i) = batch(@pipeline_local,1,[{basename},{cases(i).Scans.Directory},procdir(i)],cluster_profile{:});
+            fprintf('%u\n',j(i).ID);
         end
     end
-end
-    
-%% Set up cluster properties
-c = parcluster;
-jobdir = fullfile(c.JobStorageLocation,sprintf('pipeline_local_%u',char(datetime('now','Format','yyyyMMddHHmmss'))));
-mkdir(jobdir);
-c.JobStorageLocation = jobdir;
 
-%% Loop over cases for local processing
-ncases = numel(cases);
-procdir = cell(ncases,1);
-for i = 1:ncases
-    
-    basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
-    procdir{i} = fullfile(opts.sv_path,basename);
-    fn_log = 
-    
-    if flag
-        % Start pipeline in command window
-        fprintf('%s - starting pipeline_local case #%u\n',basename,i);
-        pipeline_local(basename,cases(i).Scans.Directory,procdir{i});
-    else
-        % Start pipeline batch job
-        fprintf('%s - starting Main_Pipeline_sub as batch job: #',basename);
-        j(i) = batch(@pipeline_local,1,[{basename},{cases(i).Scans.Directory},procdir(i)],cluster_profile{:});
-        fprintf('%u\n',j(i).ID);
-    end
-end
-
-% Wait for all jobs to complete
-errflag = true(ncases,1);
-dt = zeros(ncases,1);
-for i = 1:ncases
-    wait(job(i));
-    if ~isempty(job(i).Tasks(1).Error) || strcmp(job(i).State,'failed')
-        errflag(i) = false;
-        getReport(job(i).Tasks(1).Error)
-    else
-        % Compile statistics:
-        dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
-        val = job(i).fetchOutputs;
-        val = val{1};
-        if size(val,1)>1
-            val = lobeTable2struct(val);
+    % Wait for all jobs to complete
+    errflag = true(ncases,1);
+    dt = zeros(ncases,1);
+    for i = 1:ncases
+        wait(job(i));
+        if ~isempty(job(i).Tasks(1).Error) || strcmp(job(i).State,'failed')
+            errflag(i) = false;
+            getReport(job(i).Tasks(1).Error)
+        else
+            % Compile statistics:
+            dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
+            val = job(i).fetchOutputs;
+            val = val{1};
+            if size(val,1)>1
+                val = lobeTable2struct(val);
+            end
+            if isstruct(val)
+                val = struct2table(val);
+            end
+            T = [T;val];
         end
-        if isstruct(val)
-            val = struct2table(val);
-        end
-        T = [T;val];
+        fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
+        fprintf('  State: %s\n',job(i).State);
+        job(i).diary
+
+        % Delete job files:
+        job(i).delete;
+
     end
-    fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
-    fprintf('  State: %s\n',job(i).State);
-    job(i).diary
+    rmdir(jobdir,'s');
 
-    % Delete job files:
-    job(i).delete;
+    %% Generate files and copy command for Great Lakes execution
+
+else
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~
+% ~~ GREATLAKES EXECUTION ~~
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 end
-rmdir(jobdir,'s');
 
-%% Generate files and copy command for Great Lakes execution
+function pipeline_local(basename,expfname,insfname,procdir)
 
-
-
-function GLinputs = pipeline_local(basename,expfname,insfname,procdir)
-
-varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir','ElxDir','ROI'};
-Nv = numel(varnames);
-regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
-Nr = numel(regionnames);
-res = table('Size',[Nr,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames,'RowNames',regionnames);
-res.ROI = regionnames';
-
-if nargin<5
-    quickreg = false;
-end
-
-tt = tic;
+t = tic;
 
 %% Initialize folders and log file
 if ~isfolder(procdir)
@@ -146,9 +150,6 @@ fn_log = fullfile(procdir,'pipeline_log.txt');
 fn_ext = '.nii.gz';
 check_EI = false;
 img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{[],[]});
-% tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
-% res.ID = extractBefore(tok{1}{1},'_');
-res.ProcDir(:) = {procdir};
 
 %% Load CT images
 writeLog(fn_log,'Pipeline Processing: %s\n',basename);
@@ -189,14 +190,7 @@ end
 res.ID(:) = {basename};
 if isfolder(expfname)
     res.Exp_DICOM(:) = {expfname};
-%     res.ID = sprintf('%s_%s',info.meta.PatientID,info.meta.StudyDate);
     check_EI = true;
-% else
-%     tok = regexp(expfname,'\\([^\\\.]+)\.','tokens');
-%     res.ID = tok{1}{1};
-%     if ismember('_',res.ID)
-%         res.ID = extractBefore(tok{1}{1},'_');
-%     end
 end
 res.ElxDir(:) = {fullfile(procdir,sprintf('elastix_%s',res.ID{1}))};
 if isfolder(insfname)
@@ -279,22 +273,33 @@ for itag = 1:2
             img(itag).label = readNIFTI(fn_label{itag});
         else
             img(itag).label = CTlung_Segmentation(4,img(itag).mat,img(itag).info,img(itag).info.label,procdir,fn_log);
-            
-%             writeLog(fn_log,'generating using YACTA\n');
-%             ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
-%             if ~isfolder(ydir)
-%                 mkdir(ydir);
-%             end
-%             tname = fullfile(ydir,sprintf('%s.mhd',img(itag).info.label));
-%             saveMHD(tname,img(itag).mat,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
-%             yacta(tname,'wait');
-%             tname = dir(sprintf('%s*lung_lobes*explabels.mhd',tname));
-%             img(itag).label = cmi_load(1,[],fullfile(ydir,tname(end).name));
-
             saveNIFTI(fn_label{itag},img(itag).label,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
         end
     end
 end
+
+dt = toc(t);
+writeLog(fn_log,'Local processing completed after %.1f minutes\n',dt/60);
+
+function T = pipeline_GL(varargin)
+
+varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir','ElxDir','ROI'};
+Nv = numel(varnames);
+regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
+Nr = numel(regionnames);
+res = table('Size',[Nr,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames,'RowNames',regionnames);
+res.ROI = regionnames';
+
+if nargin<5
+    quickreg = false;
+end
+
+
+
+
+
+
+
 
 %% Airways
 for itag = 1:2
