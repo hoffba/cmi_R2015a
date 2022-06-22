@@ -12,7 +12,7 @@ function [selected_data,opts] = catalog_select_3(varargin)
 
 selected_data = [];
 opts = struct('dcmpath','',...
-              'sv_path','',...
+              'save_path','',...
               'quickreg',false,...
               'unreg',true,...
               'airway',true,...
@@ -26,33 +26,10 @@ opts = struct('dcmpath','',...
 gp_valid = [];
 ugroups_ic = []; % unique group indices
 ngroups = 0;     % number of cases available with unique ID and date
-sv_path = '';
-fpath = pwd;
 C = [];
 
 %% Parse inputs:
-if nargin
-    % Parse input directories
-    ind = find(cellfun(@(x)ischar(x)&&isfolder(x),varargin),2);
-    if numel(ind)
-        fpath = varargin{ind(1)};
-    end
-    if numel(ind)>1
-        sv_path = varargin{ind(2)};
-    end
-    
-    % Parse input options
-    ind = find(cellfun(@isstruct,varargin),1);
-    if ind 
-        fldnames = fieldnames(opts);
-        for fldi = 1:numel(fldnames)
-            if isfield(varargin{ind},fldnames{fldi})
-                opts.(fldnames{fldi}) = varargin{ind}.(fldnames{fldi});
-            end
-        end
-    end
-end
-
+validateInputs(varargin);
 
 %% Required catalog fields:
 req_fields = {'SeriesDescription',...
@@ -72,7 +49,7 @@ selectCatalog(opts.dcmpath);
 figure(h.fig);
 
 %% Set path for saving results:
-setSavePath(opts.sv_path);
+setSavePath(opts.save_path);
 
 %% End script when window closes
 waitfor(h.fig);
@@ -112,6 +89,14 @@ if ~isempty(C)
 end
 
 %% Set up callbacks:
+    function validateInputs(varargin)
+        p = inputParser;
+        addParameter(p,'dcm_path',@(x)ischar(x)&&isfolder(x));
+        addParameter(p,'save_path',@(x)ischar(x)&&isfolder(x));
+        addParameter(p,'opts',@isstruct);
+        p = parse(p,varargin);
+        
+    end
     function h = initFig
         % Set up figure:
         scsz = get(0,'screensize'); % screen size
@@ -253,7 +238,6 @@ end
             C = h.table_select.Data;
             
             % Set up options structure
-            opts.sv_path = sv_path;
             flds = {'unreg','airway','scatnet','vessel','reg','prm','tprm','quickreg','reg_seg'};
             for iflds = 1:numel(flds)
                 opts.(flds{iflds}) = h.(flds{iflds}).Value;
@@ -358,8 +342,8 @@ end
             tpath = uigetdir('Select folder for saving results:');
         end
         if ~isempty(tpath)
-            sv_path = tpath;
-            h.text_save.Value = sv_path;
+            opts.save_path = tpath;
+            h.text_save.Value = tpath;
         end
     end
     function selectAll(~)

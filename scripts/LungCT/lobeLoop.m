@@ -25,6 +25,7 @@ for i = 1:(n+3)
     end
     res{i} = feval(fcnhandle,mask,varargin{:});
 end
+LOBE = LOBE';
 
 res = vertcat(res{:});
-res = addvars(res,LOBE','Before',1);
+res = addvars(res,LOBE,'Before',1);
