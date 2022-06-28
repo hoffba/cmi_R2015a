@@ -89,13 +89,18 @@ if ~isempty(C)
 end
 
 %% Set up callbacks:
-    function validateInputs(varargin)
+    function validateInputs(inputs)
         p = inputParser;
         addParameter(p,'dcm_path',@(x)ischar(x)&&isfolder(x));
         addParameter(p,'save_path',@(x)ischar(x)&&isfolder(x));
         addParameter(p,'opts',@isstruct);
-        p = parse(p,varargin);
-        
+        p = parse(p,inputs{:});
+        opts.dcm_path = p.Results.dcm_path;
+        opts.save_path = p.Results.save_path;
+        flds = fieldnames(p.Results.opts);
+        for i = 1:numel(flds)
+            
+        end
     end
     function h = initFig
         % Set up figure:

@@ -1,12 +1,7 @@
 function T = addResultToTable(T,tT,varnames)
-% Add single-row table result (tT) to table T
+% Add table result (tT) to table T
 
-    if size(tT,1)>1
-        warning('Result to add must be single-row table.');
-        return;
-    end
-
-    if ~isempty(varnames)
+    if nargin==3 && ~isempty(varnames)
         tT = tT(:,ismember(tT.Properties.VariableNames,varnames));
     end
     
@@ -19,9 +14,13 @@ function T = addResultToTable(T,tT,varnames)
         T = addprop(T,{'defvals'},{'variable'});
         T.Properties.CustomProperties.defvals = defvals;
     else
+        nr0 = size(T,1);
+        [nr,nc] = size(tT);
+        
         % Add new row of defaults
-        T = [T;T.Properties.CustomProperties.defvals];
-        for j = 1:size(tT,2) % Loop over varables
+        T = [T;repmat(T.Properties.CustomProperties.defvals,nr,1)];
+        
+        for j = 1:nc % Loop over varables
             vname = tT.Properties.VariableNames{j};
             if ~ismember(vname,T.Properties.VariableNames)
                 % Determine variable type and default value
@@ -40,6 +39,6 @@ function T = addResultToTable(T,tT,varnames)
                     'After',tT.Properties.VariableNames(j-1),...
                     'NewVariableNames',vname);
             end
-            T.(vname)(end) = tT.(vname);
+            T.(vname)((nr0+1):end) = tT.(vname);
         end
     end

@@ -27,7 +27,8 @@ function[V_bin] = binarizeVessels(V, eroded_lobes, ptg)
 %  local contrast
 % lc = 0.05;
 %     V_bin_orig_adp = bernsen(V, [2*floor(size(V)/92)+1], lc);
-    iter = ceil(square(ceil(ptg.*10))/2);
+    J = ceil(ptg.*10);
+    iter = ceil((J^2)/2);
     if(iter > 10)
         iter = 11;
     end

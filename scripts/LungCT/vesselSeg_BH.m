@@ -4,7 +4,7 @@ function [T,ver] = vesselSeg_BH(varargin)
 % t = vesselSeg_BH( fname_ins , fname_seg , save_path )
 % t = vesselSeg_BH( ins , seg , info , save_path )
 
-    ver = 'vesselSeg_BH SR-20220523';
+    ver = 'vesselSeg_BH SR-20220623';
 
     T = [];
     tt = tic;
@@ -208,9 +208,9 @@ function [T,ver] = vesselSeg_BH(varargin)
     writetable(T,fullfile(save_path,[ID,'_vesselMetrics.csv']));
     fprintf('done (%s)\n\n',duration(0,0,toc(t)));
     
-    T = lobeTable2struct(T);
-    ID = {ID};
-    T = addvars(T,ID,'Before',1);
+%     T = lobeTable2struct(T);
+%     ID = {ID};
+%     T = addvars(T,ID,'Before',1);
     
     fprintf('TOTAL processing time: %s',duration(0,0,toc(tt)));
     

@@ -11,7 +11,7 @@ function lobe = getLobeTags(seg)
         % YACTA?
         lobeTag = 10:10:60;
         lobeName = {'RUL','RML','RLL','LUL','LLi','LLL'};
-    elseif all(ismember(utags,1:5))
+    elseif all(ismember(utags,[1:5,30,255]))
         % YACTA
         lobeTag = 1:5;
         lobeName = {'LUL','LLL','RUL','RLL','RML'};
