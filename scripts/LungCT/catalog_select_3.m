@@ -90,8 +90,14 @@ if ~isempty(C)
     selected_data(empty_flag) = [];
     
     %% Save selections to catalog file:
-    C = removevars(C,{'Ins','Exp'});
-    writetable(C,fullfile(opts.dcmpath,'DICOMcatalog_select.csv'));
+    fname = opts.dcmpath;
+    if ~isempty(fname)
+        C = removevars(C,{'Ins','Exp'});
+        if isfolder(fname)
+            fname = fullfile(fname,'DICOMcatalog_select.csv');
+        end
+        writetable(C,fname);
+    end
 
 end
 
