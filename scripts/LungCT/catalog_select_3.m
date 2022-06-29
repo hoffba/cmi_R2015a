@@ -104,8 +104,8 @@ end
 %% Set up callbacks:
     function validateInputs(inputs)
         p = inputParser;
-        addParameter(p,'dcm_path',pwd,@(x)ischar(x)&&isfolder(x));
-        addParameter(p,'save_path',pwd,@(x)ischar(x)&&isfolder(x));
+        addParameter(p,'dcm_path','',@(x)ischar(x)&&isfolder(x));
+        addParameter(p,'save_path','',@(x)ischar(x)&&isfolder(x));
         addParameter(p,'opts',opts,@isstruct);
         parse(p,inputs{:});
         opts.dcm_path = p.Results.dcm_path;
@@ -340,19 +340,19 @@ end
             end
 
             % Remove empty data and sort array
-            C(cellfun(@isempty,C.UMlabel),:) = [];
-            C = sortrows(C,{'UMlabel','StudyDate','StudyID','SeriesNumber'});
-
-            % Find groups of scans with unique PatientName and StudyDate
-            if isnumeric(C.StudyDate)
-                C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
-            end
             if ismember('CaseNumber',colnames)
                 ugroups_ic = C.CaseNumber;
             else
+                C(cellfun(@isempty,C.UMlabel),:) = [];
+                C = sortrows(C,{'StudyDate','StudyID','SeriesNumber'});
+
+                % Find groups of scans with unique PatientName and StudyDate
+                if isnumeric(C.StudyDate)
+                    C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+                end
                 [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate,C.StudyID));
             end
-            ngroups = max(ugroups_ic);
+            ngroups = numel(unique(ugroups_ic));
 
             gp_valid = zeros(ngroups,1);
             
@@ -370,7 +370,7 @@ end
             set(h.table_filter,'Data',fC,'ColumnEditable',[false,true(1,nv)],'ColumnWidth',[{80},colWidth(3:end)]);
             
             pause(1);
-            applyFilter;
+            checkValid;
             
         end
         h.text_cat.Value = str;
