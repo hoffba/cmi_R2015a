@@ -45,7 +45,7 @@ h = initFig;
 drawnow;
 
 %% Set catalog display:
-selectCatalog(opts.dcmpath);
+opts.dcmpath = selectCatalog(opts.dcmpath);
 figure(h.fig);
 
 %% Set path for saving results:
@@ -54,13 +54,16 @@ setSavePath(opts.save_path);
 %% End script when window closes
 waitfor(h.fig);
 
-%% Set up output structure:
+%% Gather outputs
 if ~isempty(C)
-    empty_flag = false(ngroups,1);
-    tagstr = cell(size(C,1),1);
+    %% Determine tags:
+    tagstr = repmat({''},size(C,1),1);
     tagstr(C.Exp) = {'Exp'};
     tagstr(C.Ins) = {'Ins'};
-    C = addvars(C,tagstr,'After','Ins','NewVariableNames',{'Tag'});
+    C = addvars(C,ugroups_ic,tagstr,'Before',1,'NewVariableNames',{'CaseNumber','Tag'});
+    
+    %% Set up output structure:
+    empty_flag = false(ngroups,1);
     tS = table2struct(C(1,3:end)); tS = tS([]);
     selected_data = struct('UMlabel',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
     for ig = 1:ngroups
@@ -86,20 +89,26 @@ if ~isempty(C)
     end
     selected_data(empty_flag) = [];
     
+    %% Save selections to catalog file:
+    C = removevars(C,{'Ins','Exp'});
+    writetable(C,fullfile(opts.dcmpath,'DICOMcatalog_select.csv'));
+
 end
 
 %% Set up callbacks:
     function validateInputs(inputs)
         p = inputParser;
-        addParameter(p,'dcm_path',@(x)ischar(x)&&isfolder(x));
-        addParameter(p,'save_path',@(x)ischar(x)&&isfolder(x));
-        addParameter(p,'opts',@isstruct);
-        p = parse(p,inputs{:});
+        addParameter(p,'dcm_path',pwd,@(x)ischar(x)&&isfolder(x));
+        addParameter(p,'save_path',pwd,@(x)ischar(x)&&isfolder(x));
+        addParameter(p,'opts',opts,@isstruct);
+        parse(p,inputs{:});
         opts.dcm_path = p.Results.dcm_path;
         opts.save_path = p.Results.save_path;
         flds = fieldnames(p.Results.opts);
         for i = 1:numel(flds)
-            
+            if isfield(opts,flds{i})
+                opts.(flds{i}) = p.Results.opts.(flds{i});
+            end
         end
     end
     function h = initFig
@@ -262,7 +271,7 @@ end
             opts.(str) = hObject.Value;
         end
     end
-    function selectCatalog(str,~)
+    function str = selectCatalog(str,~)
         newC = [];
         if nargin==0 || isempty(str) || ~ischar(str)
             str = uigetdir('Select folder for processing.');
@@ -280,12 +289,12 @@ end
             elseif answer == 1
                 % Generate DICOM catalog:
                 newC = dcmCatalog(str);
-                str = '';
+                str = fullfile(str,'DICOMcatalog.csv');
             elseif answer > 1
                 str = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
             end
         end
-        if ischar(str) && ~isempty(str) && exist(str,'file')==2
+        if isempty(newC) && ischar(str) && exist(str,'file')==2
             iopt = detectImportOptions(str);
             newC = readtable(str,iopt);
         end
@@ -305,12 +314,24 @@ end
 
             % Add Tag columns:
             nscans = size(C,1);
-            UMlabel = C.PatientName;
-            ind = cellfun(@(x)isempty(x)||strcmp(x,'Anonymous'),UMlabel);
-            UMlabel(ind) = C.PatientID(ind);
-            C = addvars(C,false(nscans,1),false(nscans,1),UMlabel,'Before',1,'NewVariableNames',{'Exp','Ins','UMlabel'});
+            C = addvars(C,false(nscans,1),false(nscans,1),'Before',1,'NewVariableNames',{'Exp','Ins'});
             colnames = C.Properties.VariableNames;
             nfields = length(colnames);
+            
+            % Check for saved selections:
+            if ismember('Tag',colnames)
+                C.Exp(strcmp(C.Tag,'Exp')) = true;
+                C.Ins(strcmp(C.Tag,'Ins')) = true;
+                C = removevars(C,'Tag');
+            end
+            if ismember('UMlabel',colnames)
+                C = movevars(C,'UMlabel','After','Ins');
+            else
+                UMlabel = C.PatientName;
+                ind = cellfun(@(x)isempty(x)||strcmp(x,'Anonymous'),UMlabel);
+                UMlabel(ind) = C.PatientID(ind);
+                C = addvars(C,UMlabel,'After','Ins');
+            end
 
             % Remove empty data and sort array
             C(cellfun(@isempty,C.UMlabel),:) = [];
@@ -320,7 +341,11 @@ end
             if isnumeric(C.StudyDate)
                 C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
             end
-            [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate,C.StudyID));
+            if ismember('CaseNumber',colnames)
+                ugroups_ic = C.CaseNumber;
+            else
+                [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate,C.StudyID));
+            end
             ngroups = max(ugroups_ic);
 
             gp_valid = zeros(ngroups,1);
@@ -340,7 +365,9 @@ end
             
             pause(1);
             applyFilter;
+            
         end
+        h.text_cat.Value = str;
     end
     function setSavePath(tpath,~)
         if nargin==0 || isempty(tpath) || ~ischar(tpath)
@@ -351,10 +378,10 @@ end
             h.text_save.Value = tpath;
         end
     end
-    function selectAll(~)
+    function selectAll(~,~)
         set([h.unreg,h.airway,h.scatnet,h.vessel,h.reg,h.prm,h.tprm],'Value',1);
     end
-    function clearAll(~)
+    function clearAll(~,~)
         set([h.unreg,h.airway,h.scatnet,h.vessel,h.reg,h.prm,h.tprm],'Value',0);
     end
 end

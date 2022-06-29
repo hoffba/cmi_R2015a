@@ -49,7 +49,7 @@ end
 
 
 %% Find files
-[cases,opts] = catalog_select_2(opts);
+[cases,opts] = catalog_select_3('opts',opts);
 
 %% Loop over cases
 ncases = numel(cases);
@@ -61,11 +61,11 @@ for i = 1:ncases
     if flag
         % Start pipeline in command window
         fprintf('%s - starting Main_Pipeline_sub case #%u\n',basename,i);
-        Main_Pipeline_sub(basename,cases(i).Scans.Directory,procdir,opts.quickreg);
+        Main_Pipeline_sub(basename,cases(i).Scans.Directory,procdir,opts);
     else
         % Start pipeline batch job
         fprintf('%s - starting Main_Pipeline_sub as batch job: #',basename);
-        j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{opts.quickreg}],cluster_profile{:});
+        j(i) = batch(@Main_Pipeline_sub,1,[{basename},{cases(i).Scans.Directory},{procdir},{opts}],cluster_profile{:});
         fprintf('%u\n',j(i).ID);
     end
 end
