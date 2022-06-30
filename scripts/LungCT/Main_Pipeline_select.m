@@ -56,7 +56,7 @@ ncases = numel(cases);
 for i = 1:ncases
     
     basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
-    procdir = fullfile(opts.sv_path,basename);
+    procdir = fullfile(opts.save_path,basename);
     
     if flag
         % Start pipeline in command window

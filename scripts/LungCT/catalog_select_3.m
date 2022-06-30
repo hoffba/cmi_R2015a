@@ -340,16 +340,16 @@ end
             end
 
             % Remove empty data and sort array
+            % Find groups of scans with unique PatientName and StudyDate
+            if isnumeric(C.StudyDate)
+                C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+            end
             if ismember('CaseNumber',colnames)
                 ugroups_ic = C.CaseNumber;
+                C = removevars(C,'CaseNumber');
             else
                 C(cellfun(@isempty,C.UMlabel),:) = [];
                 C = sortrows(C,{'StudyDate','StudyID','SeriesNumber'});
-
-                % Find groups of scans with unique PatientName and StudyDate
-                if isnumeric(C.StudyDate)
-                    C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
-                end
                 [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate,C.StudyID));
             end
             ngroups = numel(unique(ugroups_ic));
