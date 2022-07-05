@@ -11,7 +11,7 @@ function [selected_data,opts] = catalog_select_3(varargin)
 
 
 selected_data = [];
-opts = struct('dcmpath','',...
+opts = struct('dcm_path','',...
               'save_path','',...
               'quickreg',false,...
               'unreg',true,...
@@ -45,7 +45,7 @@ h = initFig;
 drawnow;
 
 %% Set catalog display:
-opts.dcmpath = selectCatalog(opts.dcmpath);
+opts.dcm_path = selectCatalog(opts.dcm_path);
 figure(h.fig);
 
 %% Set path for saving results:
@@ -90,7 +90,7 @@ if ~isempty(C)
     selected_data(empty_flag) = [];
     
     %% Save selections to catalog file:
-    fname = opts.dcmpath;
+    fname = opts.dcm_path;
     if ~isempty(fname)
         C = removevars(C,{'Ins','Exp'});
         if isfolder(fname)
@@ -349,8 +349,8 @@ end
                 C = removevars(C,'CaseNumber');
             else
                 C(cellfun(@isempty,C.UMlabel),:) = [];
-                C = sortrows(C,{'StudyDate','StudyID','SeriesNumber'});
-                [~,~,ugroups_ic] = unique(strcat(C.PatientName,C.StudyDate,C.StudyID));
+                C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
+                [~,~,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName,C.StudyID));
             end
             ngroups = numel(unique(ugroups_ic));
 
