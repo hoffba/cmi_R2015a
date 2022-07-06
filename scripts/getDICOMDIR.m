@@ -1,10 +1,9 @@
 function T = getDICOMDIR(dcm_path)
 
-
 fn_dcmdir = fullfile(dcm_path,'DICOMDIR.mat');
 if exist(fn_dcmdir,'file')
     T = load(fn_dcmdir);
-    
+    T = T.T;
 else
     fn = dir(dcm_path);
     fn(1:2) = [];
@@ -14,10 +13,10 @@ else
     vnames = {'StudyDate','StudyID','PatientName','SeriesNumber','DicomList'};
     T = table('Size',[0,numel(vnames)],'VariableTypes',vtypes,'VariableNames',vnames);
 
-    fprintf('%5.1f%%',0);
+    fprintf('Reading DICOM info: %4.1f%%',0);
     for i = 1:numel(fn)
         if ~mod(i,round(N/1000))
-            fprintf('\b\b\b\b\b\b%5.1f%%',i/N*100);
+            fprintf('\b\b\b\b\b%5.1f%%',i/N*100);
         end
         if isdicom(fullfile(dcm_path,fn(i).name))
             info = dicominfo(fullfile(dcm_path,fn(i).name));
@@ -35,6 +34,6 @@ else
     end
     fprintf('\n');
 
-    % save(fullfile(dcm_path,'DICOMDIR.mat'),'T');
+    save(fn_dcmdir,'T');
 
 end
