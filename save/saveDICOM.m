@@ -4,6 +4,7 @@ status = false;
 if nargin<1
     [FileName,PathName,FilterIndex] = uigetfile('*.*','Select data File for Conversion to Dicom.');
     img = niftiread(fullfile(PathName,FileName));
+    img = img(:,:,end:-1:1);
     info = niftiinfo(fullfile(PathName,FileName));
     label = 'temp';
     fov = size(img) .* info.PixelDimensions;
@@ -45,14 +46,18 @@ info.SpacingBetweenSlices = sthk;
 info.SliceThickness = sthk;
 info.SeriesInstanceUID = dicomuid;
 info.StudyInstanceUID = dicomuid;
+info.RescaleIntercept = -1024;
+info.RescaleSlope = 1;
+info.Modality = 'CT';
+info.RescaleType = 'HU';
 
 for ivec = 1:nv
     info.AcquisitionNumber = ivec;
-    info.RescaleIntercept = imin(ivec);
-    info.RescaleSlope = (imax(ivec) - imin(ivec))/mxscale;
-    if info.RescaleSlope == 0
-        info.RescaleSlope = 1;
-    end
+%     info.RescaleIntercept = imin(ivec);
+%     info.RescaleSlope = (imax(ivec) - imin(ivec))/mxscale;
+%     if info.RescaleSlope == 0
+%         info.RescaleSlope = 1;
+%     end
     info.SeriesDescription = label{ivec};
     info.ImagePositionPatient = [0,0,spos];
 
@@ -104,8 +109,8 @@ addParameter(p,'ImageOrientationPatient',[0;1;0;1;0;0],@(x)isnumeric(x)&&(numel(
 addParameter(p,'PixelSpacing',ones(1,2),@(x)isnumeric(x)&&(numel(x)==2));
 addParameter(p,'SpacingBetweenSlices',1,@isvector);
 addParameter(p,'SliceThickness',1,@isvector);
-addParameter(p,'RescaleSlope',1,@isvector);
-addParameter(p,'RescaleIntercept',0,@isvector);
+% addParameter(p,'RescaleSlope',1,@isvector);
+% addParameter(p,'RescaleIntercept',0,@isvector);
 % addParameter(p,'SeriesInstanceUID',dicomuid,@ischar);
 % addParameter(p,'StudyInstanceUID',dicomuid,@ischar);
 parse(p,info{:});
