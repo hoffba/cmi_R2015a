@@ -1,5 +1,5 @@
 % RegClass function
-function stat = runElx(self,hObject,~)
+function [stat,cmdstr] = runElx(self,hObject,~)
 
 if isa(hObject,'matlab.ui.control.UIControl')
     switch hObject.Tag

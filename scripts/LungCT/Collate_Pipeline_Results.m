@@ -14,6 +14,5 @@ for i = 1:N
     addResultToTable(T,tT,varnames);
 end
 
-
 nowstring = char(datetime('now','Format','yyyyMMddHHmmss'));
 writetable(T,fullfile(save_path,['Collated_Pipeline_Results_',nowstring,'.csv']))

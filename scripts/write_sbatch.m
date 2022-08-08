@@ -14,7 +14,7 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
 %     username = your UniqueName for email notifications
 %     mailtype = comma-separated list of events for email (BEGIN,END,FAIL)
 
-    [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,username,mailtype] ...
+    [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,username,mailtype,mods] ...
         = parseInputs(fname,jobname,fcn,varargin);
 
     stat = false;
@@ -57,6 +57,12 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
             mem_mx = 1538;
     end
 
+    % Determine modules needed:
+    modstr = 'module load matlab\n\n';
+    for i = 1:numel(mods)
+        modstr = [modstr,'module load ',mods{i},'\n\n'];
+    end
+    
     fprintf('Writing SBATCH file: %s\n',inputs_fname);
    
     str = sprintf('#!/bin/bash\n\n'); % The interpreter used to execute the script
@@ -81,7 +87,7 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
                         '   echo "Running on"\n',...
                         '   scontrol show hostnames $SLURM_JOB_NODELIST\n',...
                         'fi\n\n',...
-                        'module load matlab\n\n',...
+                        modstr,...
                         'my_job_header\n\n',... % Script for printing info about job environment
                         'echo -n "My job array ID is:  "\n',...
                         'env | grep ARRAY_TASK_ID\n\n',...
@@ -99,7 +105,7 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
     
 end
 
-function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,username,mailtype] ...
+function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,username,mailtype,mods] ...
     = parseInputs(fname,jobname,fcn,in)
     p = inputParser;
     p.addRequired('fname',@ischar);
@@ -113,6 +119,7 @@ function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,usern
     p.addParameter('array',[],@isnumeric);
     p.addParameter('username','',@(x)ischar(x)&&isempty(regexp(x,'[^a-z]','once')));
     p.addParameter('mailtype','END',@(x)ischar(x)&&all(ismember(strsplit(x,','),{'BEGIN','END','FAIL'})));
+    p.addParameter('mods',{},@iscellstr);
     p.parse(fname,jobname,fcn,in{:});
     
     % fname
@@ -132,4 +139,5 @@ function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,usern
     mailtype = p.Results.mailtype;
     part_str = p.Results.partition;
     array = round(p.Results.array);
+    mods = p.Results.mods;
 end

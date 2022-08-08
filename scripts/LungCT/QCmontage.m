@@ -60,5 +60,5 @@ end
 figure(hf),montage(mat/255,'Size',montsz);
 
 %% Print the figure:
-print(hf,fname,'-dtiff');
+print(hf,[fname,'.tif'],'-dtiff');
 delete(hf);

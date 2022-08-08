@@ -18,6 +18,7 @@ opts = struct('dcm_path','',...
               'save_path','',...
               'quickreg',false);
 
+%% Determine input options
 if nargin
     opts.dcm_path = varargin{1};
     if nargin>1
@@ -42,7 +43,6 @@ if nargin
         end
     end
 end
-
 
 %% Find files
 [cases,opts] = catalog_select_3('opts',opts);

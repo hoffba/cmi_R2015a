@@ -1,21 +1,33 @@
 function T = Main_Pipeline_GL_sub(procdir,opts)
 % Pipeline processing on Great Lakes
 
+tt = tic;
+
 fn_ext = '.nii.gz';
 fn_log = fullfile(procdir,'pipeline_log.txt');
 
 % Load results file
 [~,ID] = fileparts(procdir);
 fn_res = fullfile(fullfile(procdir,[ID,'_PipelineResults.csv']));
-res = readtable(fn_res);
+if exist(fn_res,'file')
+    res = readtable(fn_res);
+else
+    varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir'};
+    Nv = numel(varnames);
+    res = table('Size',[1,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames);
+    res.ID = {ID};
+    res.ProcDir = procdir;
+end
 regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
 Nr = numel(regionnames);
 
 % Modify results to be in lobe format:
-res.ElxDir = {fullfile(procdir,sprintf('elastix_%s',ID))};
-res = repmat(res,Nr,1);
-res.Properties.RowNames = regionnames;
-res.ROI = regionnames';
+res.ElxDir(:) = {fullfile(procdir,sprintf('elastix_%s',ID))};
+if size(res,1)==1
+    res = repmat(res,Nr,1);
+    res.Properties.RowNames = regionnames;
+    res.ROI = regionnames';
+end
 
 % Load images
 img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{[],[]});
@@ -38,10 +50,40 @@ if exist(fn_ins,'file')
     img(2).flag = true;
 end
 
+% Load segmentations
+fn_exp_seg = fullfile(procdir,[ID,'.exp.label',fn_ext]);
+if exist(fn_exp_seg,'file')
+    img(1).label = cmi_load(1,[],fn_exp_seg);
+else
+    img(1).label = getRespiratoryOrgans(medfilt2_3(img(1).mat));
+end
+fn_ins_seg = fullfile(procdir,[ID,'.ins.label',fn_ext]);
+if exist(fn_ins_seg,'file')
+    img(2).label = cmi_load(1,[],fn_ins_seg);
+else
+    img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
+end
+
+% QC segmentation
+if img(1).flag
+    writeLog(fn_log,'Generating EXP montage...\n');
+    ind = 10:10:img(1).info.d(3);
+    QCmontage('seg',cat(4,img(1).mat(:,:,ind),logical(img(1).label(:,:,ind))),img(1).info.voxsz,...
+        fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
+end
+if img(2).flag
+    writeLog(fn_log,'Generating INSP montage...\n');
+    ind = 10:10:img(2).info.d(3);
+    QCmontage('seg',cat(4,img(2).mat(:,:,ind),logical(img(2).label(:,:,ind))),img(2).info.voxsz,...
+        fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
+end
+
 % Airways
+ei_str = {'Exp','Ins'};
 for itag = 1:2
     if img(itag).flag
-        ydir = fullfile(procdir,['yacta_',img(itag).info.name]);
+        ydir = fullfile(procdir,['yacta_',ID,'_',ei_str{itag}]);
+        writeLog(fn_log,'YACTA directory: %s\n',ydir);
         airway_res = readYACTAairways(ydir);
         if ~isempty(airway_res)
             
@@ -103,20 +145,6 @@ for itag = 1:2
     end
 end
 
-% QC segmentation
-if img(1).flag
-    writeLog(fn_log,'Generating EXP montage...\n');
-    ind = 10:10:img(1).info.d(3);
-    QCmontage('seg',cat(4,img(1).mat(:,:,ind),logical(img(1).label(:,:,ind))),img(1).info.voxsz,...
-        fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
-end
-if img(2).flag
-    writeLog(fn_log,'Generating INSP montage...\n');
-    ind = 10:10:img(2).info.d(3);
-    QCmontage('seg',cat(4,img(2).mat(:,:,ind),logical(img(2).label(:,:,ind))),img(2).info.voxsz,...
-        fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
-end
-
 % ScatterNet for AT on Exp CT scan
 if img(1).flag
     fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet',fn_ext));
@@ -132,7 +160,7 @@ if img(1).flag
 end
 
 % Vessel analysis
-skip_Vessel = 1;
+skip_Vessel = 0;
 if skip_Vessel == 0
     if img(2).flag
         writeLog(fn_log,'Vessel analysis ...\n');
@@ -171,16 +199,17 @@ if img(1).flag && img(2).flag
         writeLog(fn_log,'Loading registered INS from file...\n');
         ins_reg = readNIFTI(fn_reg);
     else
-        writeLog(fn_log,'Performing registration...\n')
+        writeLog(fn_log,'Performing registration...\nelxdir : %s\n',res.ElxDir{1})
         lungreg_BH( img(1).mat, img(1).info, logical(img(1).label),...
             img(2).mat, img(2).info, logical(img(2).label),...
-            res.ElxDir{1}, res.ID{1}, false, quickreg);
+            res.ElxDir{1}, res.ID{1}, false, opts.quickreg);
         % Move registered file out to procdir
         [~,outfn] = fileparts(img(2).info.name);
         outfn = fullfile(res.ElxDir{1},sprintf('%s_R.nii',outfn));
         % Elastix won't save .nii.gz, so need to resave
         ins_reg = readNIFTI(outfn);
-        cmi_save(0,ins_reg,'Ins_R',img(1).info.fov,img(1).info.orient,fn_reg);
+        gzip(outfn);
+        movefile([outfn,'.gz'],fn_reg);
     end
     
     % QC registration
@@ -189,7 +218,6 @@ if img(1).flag && img(2).flag
     QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
         fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
     img(2) = [];
-    
     
     % PRM calculation
     fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));

@@ -1,4 +1,4 @@
-function j = lungreg_BH(exp,exp_info,exp_mask,ins,ins_info,ins_mask,elxdir,ID,qcheck,flag) 
+function lungreg_BH(exp,exp_info,exp_mask,ins,ins_info,ins_mask,elxdir,ID,qcheck,quickreg) 
 %OLD --lungreg_BH(ID,elxdir,regObj,qcheck)
 
 % ***_info = struct with fields:
@@ -44,7 +44,7 @@ else
     qcheck = logical(qcheck);
 end
 if nargin<10
-    flag = false;
+    quickreg = false;
 end
 
 %% Set up Reg object:
@@ -97,7 +97,7 @@ SP_A = [50 50];
 SP_a = [100000 25000];
 samp = [5000 5000];
 gridsp = [5*ones(1,3),2*ones(1,3)];
-if flag
+if quickreg
     nres = 1;
 end
 
@@ -152,7 +152,8 @@ disp([ID,': Enqueue Registration:'])
 regObj.cmiObj(1).setVec(1);
 regObj.cmiObj(2).setVec(1);
 regObj.setWait(~qcheck);
-regObj.runElx(qcheck);
+[stat,cmdstr] = regObj.runElx(qcheck);
+fprintf('Elastix command:\n%s\n',cmdstr);
 pause(1);
 
 delete(regObj);
