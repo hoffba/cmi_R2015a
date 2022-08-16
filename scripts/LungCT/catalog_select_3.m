@@ -141,7 +141,7 @@ end
             'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
 
         %% Tab 2: Settings and options
-        uitextarea(h.tab2,'Position',[5,   fheight-50, 100,        20],'Editable',0,'Value','UMID:');
+        uitextarea(h.tab2,'Position',[5,   fheight-50, 100,        20],'Editable',0,'Value','uniquename:');
         h.edit_username = uieditfield(h.tab2,'Position',[110, fheight-50, 300, 20],'Editable',1,'ValueChangedFcn',@setOpts,'Tag','username');
         uibutton(h.tab2,  'Position',[5,   fheight-75, 100,        20],'Text','Select Catalog:','ButtonPushedFcn',@selectCatalog);
         h.text_cat = uitextarea(h.tab2,'Position',[110, fheight-75, fwidth-115, 20],'Editable',0);

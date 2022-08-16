@@ -104,7 +104,7 @@ if batchtype~=1
 end
 
 GL_run(opts.username, 'Main_Pipeline_GL_sub', {procdir,opts}, [true,false], [false,true],...
-    'mods',{'Bioinformatics elastix'},'ProcessMemory',12)
+    'ProcessMemory',24)
 
 
 function res = pipeline_local(ID,expfname,insfname,procdir)
