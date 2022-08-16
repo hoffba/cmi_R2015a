@@ -1,4 +1,5 @@
 function flag = CTlung_ReadImages(ct)
+% Output: flag = true: loaded from DICOM ; false: loaded from NIFTI
 
 fprintf('\nReading image data from file ... ID = %s\n',ct.id)
 

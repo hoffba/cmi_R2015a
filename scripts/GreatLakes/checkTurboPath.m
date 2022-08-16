@@ -1,15 +1,20 @@
-function [fn,shortpath,flag,drivebase] = checkTurboPath(fnames,drivebase)
+function [fn,flag,LOC_turbo_dir] = checkTurboPath(fnames,turboID)
 % Inputs:
 %       fnames:     <cellstr> OR <char> files to check
-%       drivebase:  <char> local path to Turbo 
+%       turboID:    <char> account ID for Turbo (e.g. 'umms-cgalban') 
 % Outputs:
 %       fn:         <cellstr> files that pass the test
 %       shortpath:  <cell(cellstr)> corresponding path directories split 
 %       flag:       <TF> which filenames were not on Turbo
 
 if nargin < 2
-    netdrives = findNetDrives('umms-cgalban');
-    drivebase = netdrives.Drive;
+    turboID = 'umms-cgalban';
+end
+GL_turbo_dir = ['/nfs/turbo/',turboID];
+LOC_turbo_dir = '';
+if ispc
+    netdrives = findNetDrives(turboID);
+    LOC_turbo_dir = netdrives.Drive;
 end
 
 if ischar(fnames)
@@ -18,25 +23,17 @@ end
 nf = numel(fnames);
 flag = false(nf,1); % flag fnames to remove
 fn = cell(nf,1);
-shortpath = cell(nf,1);
 for i = 1:nf
-    str = strsplit(fnames{i},filesep);
-    if ~strcmp(str{1},drivebase)
-        flag(i) = true;
-        fprintf('File not on Turbo: %s\n',fnames{i});
+    if startsWith(fnames{i},GL_turbo_dir)
+        fn{i} = fnames{i};
     else
-        if isfolder(fnames{i})
-            if nf == 1
-                shortpath{i} = str;
-            else
-                flag(i) = true;
-                fprintf('Value must be a file path, not directory: %s\n',fnames{i});
-            end
+        str = strsplit(fnames{i},filesep);
+        if isempty(LOC_turbo_dir) || strcmp(str{1},LOC_turbo_dir)
+            fn{i} = strjoin([GL_turbo_dir,str(2:end)],'/');
         else
-            shortpath{i} = str(1:end-1);
-            fn(i) = str(end);
+            flag(i) = true;
+            fprintf('File not on Turbo: %s\n',fnames{i});
         end
     end
 end
 fn(flag) = [];
-shortpath(flag) = [];

@@ -89,6 +89,6 @@ if ~isempty(str)
         case 2 % PC
             str = [self.xtstr,'title ',p.title,self.sepstr,str,'"',wstr];
         case 4 % Cluster
-            str = [str,self.sepstr,wstr];
+            str = [self.xtstr,str,self.sepstr,wstr];
     end
 end
