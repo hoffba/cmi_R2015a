@@ -72,6 +72,9 @@ if ~isempty(C)
         if isempty(tC)
             empty_flag(ig) = true;
         else
+            if isa(tC.UMlabel,'double') % CJG changed b/c error for double in lin 78
+                tC.UMlabel = num2cell(tC.UMlabel);
+            end
             selected_data(ig).UMlabel = tC.UMlabel{1};
             selected_data(ig).StudyDate = tC.StudyDate{1};
             selected_data(ig).Scans = tS;
