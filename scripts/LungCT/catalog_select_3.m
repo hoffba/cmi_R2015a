@@ -62,6 +62,10 @@ if ~isempty(C)
     tagstr(C.Ins) = {'Ins'};
     C = addvars(C,ugroups_ic,tagstr,'Before',1,'NewVariableNames',{'CaseNumber','Tag'});
     
+    if isa(C.UMlabel,'double') % CJG changed b/c error for double in lin 78
+        C.UMlabel = cellstr(strcat('ID',int2str(C.UMlabel)));
+    end
+
     %% Set up output structure:
     empty_flag = false(ngroups,1);
     tS = table2struct(C(1,3:end)); tS = tS([]);
@@ -72,9 +76,6 @@ if ~isempty(C)
         if isempty(tC)
             empty_flag(ig) = true;
         else
-            if isa(tC.UMlabel,'double') % CJG changed b/c error for double in lin 78
-                tC.UMlabel = num2cell(tC.UMlabel);
-            end
             selected_data(ig).UMlabel = tC.UMlabel{1};
             selected_data(ig).StudyDate = tC.StudyDate{1};
             selected_data(ig).Scans = tS;
