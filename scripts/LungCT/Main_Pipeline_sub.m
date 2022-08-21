@@ -99,7 +99,7 @@ end
 
 %% Fix orientation of image:
 svchk = false;
-check_orient = 1; % just a way to skip check
+check_orient = 0; % just a way to skip check
 tag = {'Exp','Ins'};
 if check_orient == 1
     for ii = 1:2
@@ -302,7 +302,18 @@ if opts.vessel
             tseg = img(2).label;
         end
         T = vesselSeg_BH( tins , tseg , tinfo , procdir );
-        res = addTableVarVal(res,T);
+
+        idx = find(matches(res.Properties.RowNames,T.LOBE));
+        res = renamevars(res,'ROI','LOBE');
+        colRange = (size(res,2)+1):(size(res,2)+size(T(:,2:end),2));
+        res(idx,colRange)=T(:,2:end);
+        res.Properties.VariableNames(colRange) = T.Properties.VariableNames(2:end);
+        
+%         res = join(T,res,'Keys','LOBE');
+%         res = movevars(res,T.Properties.VariableNames(2:end),'After','BEI');
+%         res = movevars(res,'LOBE','After','ElxDir');
+
+%         res = addTableVarVal(res,T); % original code
     end
 end
 
