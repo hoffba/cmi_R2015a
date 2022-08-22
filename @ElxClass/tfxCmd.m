@@ -45,17 +45,6 @@ if length(pp.tp)~=nf
     pp.tp = repmat(pp.tp,nf,1);
 end
 
-% n_ext = 0;
-if ~isempty(pp.outfn)
-    if ispc
-        cpexec = 'rename';
-    elseif self.sys == 4
-        cpexec = 
-    else
-        cpexec = 'mv';
-    end
-end
-
 if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
     outchk = length(pp.outfn)==nf;
     str = cell(1+outchk,nf);
@@ -87,11 +76,6 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
                     str{2,i} = ['rename result ',outfn,' ',fullfile(odir,'result.???')];
                 otherwise
                     str{2,i} = ['mv "',fullfile(odir,'result.???'),'" "',outfn,'.???"'];
-            end
-            if self.sys == 4 % Great Lakes
-                str{2,i} = []
-            else
-                str{2,i} = [cpexec,' "',fullfile(odir,'result.???'),'" "',outfn,'.???"'];
             end
         end
     end
