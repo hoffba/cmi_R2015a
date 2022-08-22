@@ -83,9 +83,12 @@ if ~isempty(str)
     end
     % Concatenate system calls:
     str = sprintf(['%s',repmat([self.sepstr,'%s'],1,numel(str)-1)],str{:});
-    if ispc
-        str = [self.xtstr,'title ',p.title,self.sepstr,str,'"',wstr];
-    else
-        str = [self.xtstr,'-T "',p.title,'" -e ''',str,'''',wstr];
+    switch self.sys
+        case [1,3] % Mac / Linux
+            str = [self.xtstr,'-T "',p.title,'" -e ''',str,'''',wstr];
+        case 2 % PC
+            str = [self.xtstr,'title ',p.title,self.sepstr,str,'"',wstr];
+        case 4 % Cluster
+            str = [self.xtstr,str,self.sepstr,wstr];
     end
 end

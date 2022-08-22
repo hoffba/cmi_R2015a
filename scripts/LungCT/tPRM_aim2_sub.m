@@ -11,9 +11,11 @@ edges((nc+3):(nc+2):end) = [];
 str_MF = ["V_e4","S_e4","B_e5","X_e5"];
 str_PRM = ["Norm","fSAD","emph","PD"];
 strPRMMF_label = reshape(str_PRM + "_" + str_MF',1,[]);
-T = table('Size',[15,23],...
-    'VariableTypes',[{'cellstr','int8','single','int32','single','int32','single'},repmat({'single'},1,16)],...
-    'VariableNames',[{'ID','Vemph_Contour','Lobe','Lobe_Nvox','Lobe_Vol','Contour_Nvox','Contour_Vol'},strPRMMF_label]);
+vars = [{'cellstr','int8','single','int32','single','int32','single','single'},repmat({'single'},1,16) ; ...
+    {'ID','Vemph_Contour','Lobe','Lobe_Nvox','Lobe_Vol','Contour_Nvox','Contour_Vol','V_emph_e4_yr5'},strPRMMF_label];
+T = table('Size',[nc*5,size(vars,2)],...
+          'VariableTypes',vars(1,:),...
+          'VariableNames',vars(2,:));
 T.Vemph_Contour = repmat(Vcontour',[5,1]);
 T.Lobe = reshape(repmat([11 12 13 21 22],[nc,1]),[],1);
 
@@ -31,7 +33,7 @@ if isempty(ind)
 else
     fn_ExpL00 = fname{ind};
     info = niftiinfo(fullfile(procdir,fn_ExpL00));
-    label = niftiread(info);
+    label = single(niftiread(info));
     
     lobes = unique(label); lobes(lobes==0)=[]; % set ExpL00 as vector "Lobes"
     % Relabel lobes so that it is easier to label Vemph threshold in each
@@ -90,7 +92,7 @@ else
     for icont = 1:nc
         fVemph05(Vemph05>=Vcontour(icont)) = icont; % V>=0.25
     end
-    clear Vemph05
+    Vemph05 = Vemph05(lungmask);
 
     % Unique labels for lobe and contour
     lobeVemph05 = label + fVemph05;
@@ -129,7 +131,7 @@ else
                 if isempty(ind)
                     warning('%s: tPRM file not found: %s',ID,strPRMMF_label{j});
                 else
-                    V = nan(15,1);
+                    V = zeros(15,1);
 
                     tPRMData = niftiread(fullfile(procdir,fname{ind}));
                     tPRMData = tPRMData(lungmask);
@@ -138,7 +140,10 @@ else
                         % Find tPRM yr0 means within region
                         [r,c,~] = find(idxBinRe==binList(binI));
                         [~,loc] = ismember(bin,idxBinRe(r,c:end));
-                        V(idxBin==binList(binI)) = mean(tPRMData(logical(loc)));
+                        ind = idxBin==binList(binI);
+                        loc = logical(loc);
+                        V(ind) = mean(tPRMData(loc));
+                        T.V_emph_e4_yr5(ind) = mean(Vemph05(loc));
                     end
 
                     % Add results to table:

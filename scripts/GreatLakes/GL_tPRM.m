@@ -137,7 +137,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         fname = [jobname,'.sh'];
         part_str = 'standard';
         pmem = 12; % max GB per process
-        ptime = 60; % max minutes per process
+        ptime = 120; % max minutes per process
         mxmem = 180; % 180GB max memory for standard node
         nf = numel(fn_prm);
         cores = min(min(nf,floor(mxmem/pmem))+1,36);
@@ -226,12 +226,11 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         end
         nf = numel(p.fn_prm);
         if ~isnan(jobnum)
-            ind = round((nf/njobs)*[jobnum-1 jobnum]);
+            ind = round((nf/njobs)*[jobnum-1 jobnum]) + [1,0];
             
             fprintf('ind: %u-%u\n',ind+[1,0]);
-            p
             
-            ind = (ind(1)+1):ind(2);
+            ind = ind(1):ind(2);
         else
             ind = 1:nf;
         end
@@ -241,7 +240,7 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         c = parcluster;
         jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobname,jobnum));
         mkdir(jobdir);
-        c.JobStorageLocation = jobdir
+        c.JobStorageLocation = jobdir;
         
         % Start batch jobs
         fn_base = cell(1,nf);
@@ -258,25 +257,25 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
         end
         
         % Initialize table for statistics:
-        T = table('Size',[nf,20],'VariableTypes',repmat({'double'},1,20),...
-            'VariableNames',reshape(append({'fSAD','emph','PD','Norm'},'_',{'%','V_e4','S_e4','B_e5','X_e5'}'),[],1),...
-            'RowNames',fn_base);
+        T = [];
         
         % Wait for all jobs to complete
         errflag = true(nf,1);
         dt = zeros(nf,1);
         for i = 1:nf
             wait(job(i));
-            dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
-            fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
-            if strcmp(job(i).State,'failed')
+            if ~isempty(job(i).Tasks(1).Error) || strcmp(job(i).State,'failed')
                 errflag(i) = false;
-                fprintf(job(i).Tasks(1).ErrorMessage);
+                getReport(job(i).Tasks(1).Error)
+            else
+                % Compile statistics:
+                dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
+                val = job(i).fetchOutputs;
+                T = [T;struct2table(val{1})];
             end
-            
-            % Compile statistics:
-            val = job(i).fetchOutputs;
-            T(i,:) = num2cell(val{1});
+            fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
+            fprintf('  State: %s\n',job(i).State);
+            job(i).diary
             
             % Delete job files:
             job(i).delete;
@@ -297,113 +296,3 @@ function [fn_prm,fn_seg,sv_path] = GL_tPRM(varargin)
 
 end
 
-function val = job_tPRM(fn_prm,fn_seg,sv_path)
-% Perform tPRM processing 
-% Inputs: fn_prm = full filename of PRM classification map (as seen by GL)
-%         fn_seg = full filename of segmentation map (as seen by GL)
-%         sv_path = path to save resulting tPRM maps into
-    
-    fn_base = regexp(fn_prm,'/([^./]+)\.','tokens');
-    fn_base = fn_base{1}{1};
-    if isfolder('/tmpssd')
-        tmpdir = '/tmpssd';
-    elseif isfolder('/tmp')
-        tmpdir = '/tmp';
-    else
-        tmpdir = sv_path;
-    end
-
-    % Load PRM map
-    fprintf('Loading PRM map: %s\n',fn_prm);
-    info_prm = niftiinfo(fn_prm);
-    prm = niftiread(info_prm);
-    voxsz = info_prm.PixelDimensions;
-
-    % Load lobe segmentation
-    fprintf('Loading segmentation: %s\n',fn_seg);
-    info_seg = niftiinfo(fn_seg);
-    seg = niftiread(info_seg);
-    % Only need total lung segmentation for this:
-    seg = ismember(seg,[11,12,13,21,22]);
-    nseg = nnz(seg);
-
-    % Set up labels for results
-    info_sv = info_prm;
-    info_sv.Datatype = 'int16';
-    info_sv.BitsPerPixel = 16;
-    prmclass = struct('val',    { 3 ,     (4:5) , (8:10) , (1:2) },...
-                      'label',  { 'fSAD', 'emph', 'PD' ,   'Norm' });
-    nprm = length(prmclass);
-    MF_label = {'V_e4','S_e4','B_e5','X_e5'};
-
-    % Sub-classify PRM:
-    prm_sub = zeros(size(prm));
-    for i = 1:nprm
-        prm_sub(ismember(prm,prmclass(i).val)) = i;
-    end
-    
-    % Generate MF values
-    fprintf('Calculating Minkowski functionals ...\n');
-    p = minkowskiFun(prm_sub,'thresh',1:nprm,'tmode','==','n',[10,10,10],'gridsp',[5,5,5],'voxsz',voxsz,'mask',seg);
-    
-    % Re-grid, scale, and save as .nii.gz
-    scale=[10000 10000 1e5 1e5];
-    val = nan(1,20); % [ PRM%(x4) , fSAD-MF(x4) , etc. ]
-    for iprm = 1:nprm
-        ii = (iprm-1)*5 + 1;
-        val(ii) = nnz(prm_sub==iprm)/nseg*100;
-        for imf = 1:4
-            fn_out = [fn_base,'_',prmclass(iprm).label,'_',MF_label{imf},'.nii'];
-            svname = fullfile(tmpdir,fn_out);
-            fprintf('Saving MF result: %s.gz\n',svname);
-            tprm = grid2img(p.MF(iprm,imf,:),p.ind,seg,3,1) * scale(imf);
-            
-            % Calculate whole-lung means:
-            val(ii+imf) = mean(tprm(seg));
-            
-            % write to /tmpssd or /tmp folder to save read/write time on the zip
-            niftiwrite(int16(tprm),svname,info_sv,'Compressed',true);
-            if ~strcmp(tmpdir,sv_path)
-                fprintf('Moving to: %s\n   ... ',sv_path);
-                stat = movefile([svname,'.gz'],sv_path);
-                if stat
-                    fprintf('done\n');
-                else
-                    fprintf('failed\n');
-                end
-            end
-        end
-    end
-    
-end
-
-function [fn,shortpath,flag] = checkTurboPath(fnames,dcode)
-    if ischar(fnames)
-        fnames = {fnames};
-    end
-    nf = numel(fnames);
-    flag = false(nf,1); % flag fnames to remove
-    fn = cell(nf,1);
-    shortpath = cell(nf,1);
-    for i = 1:nf
-        str = strsplit(fnames{i},'\');
-        if ~strcmp(str{1},dcode)
-            flag(i) = true;
-            fprintf('File not on Turbo: %s\n',fnames{i});
-        else
-            if isfolder(fnames{i})
-                if nf == 1
-                    shortpath{i} = str;
-                else
-                    flag(i) = true;
-                    fprintf('Value must be a file path, not directory: %s\n',fnames{i});
-                end
-            else
-                shortpath{i} = str(1:end-1);
-                fn(i) = str(end);
-            end
-        end
-    end
-    fn(flag) = [];
-    shortpath(flag) = [];
-end

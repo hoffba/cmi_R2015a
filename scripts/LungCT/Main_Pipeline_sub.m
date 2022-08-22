@@ -319,7 +319,7 @@ end
 
 %% Quantify unregistered CT scans
 if opts.unreg
-    writeLog(fn_log,'Quantifying unregistered statistics\n');
+    writeLog(fn_log,'\nQuantifying unregistered statistics\n');
     if img(1).flag
         T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label,atMap);
         clear atMap;

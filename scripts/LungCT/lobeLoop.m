@@ -18,7 +18,7 @@ for i = 1:(n+3)
         mask = ismember(seg,[lobe(startsWith({lobe.name},'L')).val]);
         LOBE{i} = 'LL';
     elseif ~ismember(lobe(i-3).name,LOBE)
-        mask = seg == lobe(i-3).val;
+        mask = ismember(seg,lobe(i-3).val);
         LOBE{i} = lobe(i-3).name;
     else
         break

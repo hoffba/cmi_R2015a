@@ -11,7 +11,8 @@ function [selected_data,opts] = catalog_select_3(varargin)
 
 
 selected_data = [];
-opts = struct('dcm_path','',...
+opts = struct('username','',...
+              'dcm_path','',...
               'save_path','',...
               'quickreg',false,...
               'unreg',true,...
@@ -44,12 +45,12 @@ req_fields = {'SeriesDescription',...
 h = initFig;
 drawnow;
 
-%% Set catalog display:
-opts.dcm_path = selectCatalog(opts.dcm_path);
-figure(h.fig);
-
-%% Set path for saving results:
-setSavePath(opts.save_path);
+% %% Set catalog display:
+% opts.dcm_path = selectCatalog(opts.dcm_path);
+% figure(h.fig);
+% 
+% %% Set path for saving results:
+% setSavePath(opts.save_path);
 
 %% End script when window closes
 waitfor(h.fig);
@@ -108,8 +109,8 @@ end
 %% Set up callbacks:
     function validateInputs(inputs)
         p = inputParser;
-        addParameter(p,'dcm_path','',@(x)ischar(x)&&isfolder(x));
-        addParameter(p,'save_path','',@(x)ischar(x)&&isfolder(x));
+        addParameter(p,'dcm_path','',@(x)ischar(x)&&(isempty(x)||isfolder(x)));
+        addParameter(p,'save_path','',@(x)ischar(x)&&(isempty(x)||isfolder(x)));
         addParameter(p,'opts',opts,@isstruct);
         parse(p,inputs{:});
         opts.dcm_path = p.Results.dcm_path;
@@ -130,8 +131,8 @@ end
         h.fig = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight]),...
             'Name','Select DICOMcatalog data for processing:');%,'CloseRequestFcn',@cancel_callback);
         h.tabgroup = uitabgroup(h.fig,'Position',[0,0,fwidth,fheight]);
-        h.tab1 = uitab(h.tabgroup,'Title','Scans');
         h.tab2 = uitab(h.tabgroup,'Title','Options');
+        h.tab1 = uitab(h.tabgroup,'Title','Scans');
 
         %% Tab 1: tables for selecting images, and execution buttons
         h.table_select = uitable(h.tab1,'Position',[ 1 , 20 , fwidth , fheight-130 ],'CellEditCallback',@editCell);
@@ -144,12 +145,14 @@ end
             'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
 
         %% Tab 2: Settings and options
-        uibutton(h.tab2,  'Position',[5,   fheight-50, 100,        20],'Text','Select Catalog:','ButtonPushedFcn',@selectCatalog);
-        h.text_cat = uitextarea(h.tab2,'Position',[110, fheight-50, fwidth-115, 20],'Editable',0);
-        uibutton(h.tab2,  'Position',[5,   fheight-75, 100,        20],'Text','Save To:','ButtonPushedFcn',@setSavePath);
-        h.text_save = uitextarea(h.tab2,'Position',[110, fheight-75, fwidth-115, 20],'Editable',0);
+        uitextarea(h.tab2,'Position',[5,   fheight-50, 100,        20],'Editable',0,'Value','uniquename:');
+        h.edit_username = uieditfield(h.tab2,'Position',[110, fheight-50, 300, 20],'Editable',1,'ValueChangedFcn',@setOpts,'Tag','username');
+        uibutton(h.tab2,  'Position',[5,   fheight-75, 100,        20],'Text','Select Catalog:','ButtonPushedFcn',@selectCatalog);
+        h.text_cat = uitextarea(h.tab2,'Position',[110, fheight-75, fwidth-115, 20],'Editable',0);
+        uibutton(h.tab2,  'Position',[5,   fheight-100, 100,        20],'Text','Save To:','ButtonPushedFcn',@setSavePath);
+        h.text_save = uitextarea(h.tab2,'Position',[110, fheight-100, fwidth-115, 20],'Editable',0);
 
-        h.panel_modules = uipanel(h.tab2,'Position',[5, fheight-305, 215, 225],'Title','Modules');
+        h.panel_modules = uipanel(h.tab2,'Position',[5, fheight-330, 215, 225],'Title','Modules');
         uibutton(h.panel_modules,  'Position',[5,   185, 100, 20],'Text','Select All','ButtonPushedFcn',@selectAll);
         uibutton(h.panel_modules,  'Position',[110, 185, 100, 20],'Text','Clear All','ButtonPushedFcn',@clearAll);
         h.unreg =   uicheckbox(h.panel_modules,'Position',[5,   160, 200, 20],'Text','Unreg',...
@@ -167,7 +170,7 @@ end
         h.tprm =    uicheckbox(h.panel_modules,'Position',[5,    10, 200, 20],'Text','tPRM',...
             'Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
-        h.panel_reg = uipanel(h.tab2,'Position',[225, fheight-305, 215, 225],'Title','Reg Options');
+        h.panel_reg = uipanel(h.tab2,'Position',[225, fheight-330, 215, 225],'Title','Reg Options');
         h.reg_seg = uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Tranform Segmentation','Value',opts.reg_seg);
         h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration','Value',opts.quickreg);
 

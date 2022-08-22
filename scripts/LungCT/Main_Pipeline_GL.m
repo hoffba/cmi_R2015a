@@ -13,9 +13,10 @@ function Main_Pipeline_GL(batchtype)
 % Main_Pipeline_select( dcmpath, svpath, 'quickreg', 'serialbatch' )
 
 cluster_profile = {};
-opts = struct('dcmpath','',...
-              'sv_path','',...
-              'quickreg',false);
+opts = struct('username','',...  % UMID
+    'dcm_path','',...  % Location of DICOM data
+    'save_path','',... % Directory containing case folders (procdirs)
+    'quickreg',false);
 
 if nargin
     batchtype = find(strcmp(batchtype,{'serial','batch','serialbatch'}),1);
@@ -25,12 +26,12 @@ if nargin
 else % Default to 'serial'
     batchtype = 1;
 end
-    
+
 % Find files
-[cases,opts] = catalog_select_3(opts);
+[cases,opts] = catalog_select_3('opts',opts);
 
 % Make sure the save directory is on Turbo, for access from GL
-[~,flag_turbo] = checkTurboPath(opts.savepath);
+[~,flag_turbo] = checkTurboPath(opts.save_path);
 if flag_turbo
     error('Save path must be on Turbo for access from Great Lakes.');
 end
@@ -51,7 +52,7 @@ if batchtype==3
 end
 
 % Set up cluster properties
-if ~flag
+if batchtype~=1
     c = parcluster;
     jobdir = fullfile(c.JobStorageLocation,sprintf('pipeline_local_%u',char(datetime('now','Format','yyyyMMddHHmmss'))));
     mkdir(jobdir);
@@ -63,8 +64,8 @@ ncases = numel(cases);
 procdir = cell(ncases,1);
 for i = 1:ncases
     basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
-    procdir{i} = fullfile(opts.sv_path,basename);
-    if flag
+    procdir{i} = fullfile(opts.save_path,basename);
+    if batchtype==1
         % Start pipeline in command window
         fprintf('%s - starting pipeline_local case #%u\n',basename,i);
         pipeline_local(basename,cases(i).Scans.Directory,procdir{i});
@@ -77,7 +78,7 @@ for i = 1:ncases
 end
 
 % Wait for all jobs to complete
-if ~flag
+if batchtype~=1
     errflag = true(ncases,1);
     dt = zeros(ncases,1);
     for i = 1:ncases
@@ -92,171 +93,161 @@ if ~flag
         fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
         fprintf('  State: %s\n',job(i).State);
         job(i).diary
-
+        
         % Delete job files:
         job(i).delete;
-
+        
     end
 end
-rmdir(jobdir,'s');
+if batchtype~=1
+    rmdir(jobdir,'s');
+end
 
-GL_run(username, 'Main_Pipeline_GL_sub', {procdir,opts}, [true,false], [false,true])
+GL_run(opts.username, 'Main_Pipeline_GL_sub', {procdir,opts}, [true,false], [false,true],...
+    'ProcessMemory',24)
 
 
 function res = pipeline_local(ID,expfname,insfname,procdir)
 % Local execution for YACTA segmentation and airways analysis
 % * procdir must be on Turbo for Great Lakes to have access to it
 
-    t = tic;
+t = tic;
 
-    % Initialize results table
-    varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir'};
-    Nv = numel(varnames);
-    res = table('Size',[1,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames);
-    res.ID = {ID};
-    
-    % Initialize folders and log file
-    if ~isfolder(procdir)
-        mkdir(procdir);
-    end
-    fn_log = fullfile(procdir,'pipeline_log.txt');
+% Initialize results table
+varnames = {'ID','Exp_DICOM','Ins_DICOM','ProcDir'};
+Nv = numel(varnames);
+res = table('Size',[1,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames);
+res.ID = {ID};
+res.ProcDir = procdir;
 
-    % Initialize parameters and results struct
-    fn_ext = '.nii.gz';
-    check_EI = false;
-    img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{[],[]});
+% Initialize folders and log file
+if ~isfolder(procdir)
+    mkdir(procdir);
+end
+fn_log = fullfile(procdir,'pipeline_log.txt');
+writeLog(fn_log,'%s\n',ID);
 
-    % Load CT images
-    writeLog(fn_log,'Pipeline Processing: %s\n',ID);
-    % Exp
-    writeLog(fn_log,'Loading EXP image...\n');
-    if isfolder(expfname)
-        [img(1).mat,label,fov,orient,info] = readDICOM(expfname,[],true);
-    elseif ~isempty(expfname)
-        [img(1).mat,label,fov,orient,info] = cmi_load(1,[],expfname);
+% Initialize parameters and results struct
+fn_ext = '.nii.gz';
+img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{'',''},'dcmpath',{'',''});
+
+fn = fullfile(procdir,string(ID)+[".exp",".exp.label";".ins",".ins.label"]+fn_ext);
+fnflag = cellfun(@(x)exist(x,'file'),fn);
+if any(~fnflag(:,1))
+    % If either image is missing, must redo all from DICOM
+    fnflag(:) = false;
+end
+
+% Load CT data
+tagstr = {'Exp','Ins'};
+fn_in = {expfname,insfname};
+for i = 1:2
+    orientchk = false;
+    % CT from DICOM
+    writeLog(fn_log,'%s : CT ... ',tagstr{i});
+    if fnflag(i,1)
+        writeLog(fn_log,'file found: %s\n',fn{i,1});
+        if ~fnflag(i,2)
+            % Need to load image for segmentation
+            writeLog(fn_log,'   Loading for segmentation.');
+            [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
+        end
     else
-        writeLog(fn_log,'  EXP image not loaded.\n');
+        writeLog(fn_log,'   loading data ... ',fn{i,1});
+        if isfolder(fn_in{i})
+            writeLog(fn_log,'from DICOM');
+            [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],true);
+            img(i).dcmpath = fn_in{i};
+            orientchk = true;
+        elseif ~isempty(fn_in{i})
+            writeLog(fn_log,'from file')
+            [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
+        else
+            writeLog(fn_log,'image not loaded.\n');
+        end
     end
-    img(1).flag = ~isempty(img(1).mat);
-    if img(1).flag
-        d = size(img(1).mat);
-        img(1).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
-        img(1).info.voxvol = prod(img(1).info.voxsz);
-        img(1).info.name = img(1).info.label;
+    
+    % Set image info
+    img(i).flag = ~isempty(img(i).mat);
+    if img(i).flag
+        d = size(img(i).mat);
+        img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
+        img(i).info.voxvol = prod(img(i).info.voxsz);
+        img(i).info.name = img(i).info.label;
     end
+    
+    % Check orientation using a bone threshold
+    if orientchk
+        % Find orientation of shoulder bones to see if permute is needed
+        BW = img(i).mat(:,:,end) > -150;
+        %BW = max(img(ii).mat(:,:,round(img(ii).info.d(3)/2):end)>800,[],3);
+        prop = regionprops(BW,'Orientation','Area');
+        if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
+            writeLog(fn_log,'Permuting %s\n',tagstr{i});
+            img(i).mat = permute(img(i).mat,[2,1,3]);
+            img(i).info.voxsz = img(i).info.voxsz([2,1,3]);
+            img(i).info.fov = img(i).info.fov([2,1,3]);
+            img(i).info.d = img(i).info.d([2,1,3]);
+            img(i).info.orient = img(i).info.orient([2,1,3,4],[2,1,3,4]);
+        end
+    end
+end
 
-    % Ins
-    writeLog(fn_log,'Loading INSP image...\n');
-    if isfolder(insfname)
-        [img(2).mat,label,fov,orient,info] = readDICOM(insfname,[],true);
-    elseif ~isempty(insfname)
-        [img(2).mat,label,fov,orient,info] = cmi_load(1,[],insfname);
+% Check for Exp/Ins
+if any(~fnflag(:,1)) && img(1).flag && img(2).flag
+    %   ** Need to double-check in case of mislabel
+    
+    % Quick segmentation for Exp/Ins Identification:
+    seg1 = getRespiratoryOrgans(medfilt2_3(img(1).mat));
+    seg2 = getRespiratoryOrgans(medfilt2_3(img(2).mat));
+    
+    flag = (nnz(seg1)*img(1).info.voxvol) > (nnz(seg2)*img(2).info.voxvol) ...
+        && (mean(img(1).mat(logical(seg1))) < mean(img(2).mat(logical(seg2))));
+    if flag
+        writeLog(fn_log,'Swapping INS/EXP due to lung volume\n');
+        img = img([2,1]);
+    end
+    clear seg1 seg2
+end
+res.Exp_DICOM = {img(1).dcmpath};
+res.Ins_DICOM = {img(2).dcmpath};
+img(1).info.label = [ID,'_Exp'];
+img(2).info.label = [ID,'_Ins'];
+img(1).info.name =  [ID,'_Exp'];
+img(2).info.name =  [ID,'_Ins'];
+
+% Generate YACTA segmentations
+for i = 1:2
+    writeLog(fn_log,'%s : Segmentation ... ',tagstr{i});
+    if fnflag(i,2)
+        writeLog(fn_log,'file found: %s\n',fn{i,2});
     else
-        writeLog(fn_log,'  INS image not loaded.\n');
+        writeLog(fn_log,'generating new ...\n');
+        seg = CTlung_Segmentation(4,img(i).mat,img(i).info,img(i).info.label,procdir,fn_log);
     end
-    img(2).flag = ~isempty(img(2).mat);
-    if img(2).flag
-        d = size(img(2).mat);
-        img(2).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
-        img(2).info.voxvol = prod(img(2).info.voxsz);
-        img(2).info.name = img(2).info.label;
-    end
-
-    if isfolder(expfname)
-        res.Exp_DICOM = {expfname};
-        check_EI = true;
-    end
-    if isfolder(insfname)
-        res.Ins_DICOM = {insfname};
-        check_EI = true;
-    end
-
-    % Fix orientation of image:
-    svchk = false;
-    check_orient = 1; % just a way to skip check
-    tag = {'Exp','Ins'};
-    if check_orient == 1
-        for ii = 1:2
-            if img(ii).flag
-                % Find orientation of shoulder bones to see if permute is needed
-                BW = img(ii).mat(:,:,end) > -150;
-                %BW = max(img(ii).mat(:,:,round(img(ii).info.d(3)/2):end)>800,[],3);
-                prop = regionprops(BW,'Orientation','Area');
-                if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
-                    writeLog(fn_log,'Permuting %s\n',tag{ii});
-                    img(ii).mat = permute(img(ii).mat,[2,1,3]);
-                    img(ii).info.voxsz = img(ii).info.voxsz([2,1,3]);
-                    img(ii).info.fov = img(ii).info.fov([2,1,3]);
-                    img(ii).info.d = img(ii).info.d([2,1,3]);
-                    img(ii).info.orient = img(ii).info.orient([2,1,3,4],[2,1,3,4]);
-                    svchk = true;
-                end
-            end
-        end
-        clear BW
-    end
-
-    % Identify Exp and Ins using lung volume; used for determining file name
-    if check_EI && img(1).flag && img(2).flag
-        %   ** Need to double-check in case of mislabel
-
-        % Quick segmentation for Exp/Ins Identification:
-        img(1).label = getRespiratoryOrgans(medfilt2_3(img(1).mat));
-        img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
-
-        flag = (nnz(img(1).label)*img(1).info.voxvol) > (nnz(img(2).label)*img(2).info.voxvol) ...
-            && (mean(img(1).mat(logical(img(1).label))) < mean(img(2).mat(logical(img(2).label))));
-        if flag
-            writeLog(fn_log,'Swapping INS/EXP due to lung volume\n');
-            img = img([2,1]);
-            tstr = res.Exp_DICOM;
-            res.Exp_DICOM = res.Ins_DICOM;
-            res.Ins_DICOM = tstr;
-        end
-        svchk = true;
-    elseif xor(img(1).flag,img(2).flag)
-        svchk = true;
-    end
-    img(1).info.label = [ID,'_Exp'];
-    img(2).info.label = [ID,'_Ins'];
-    img(1).info.name =  [ID,'_Exp'];
-    img(2).info.name =  [ID,'_Ins'];
-
-    % Save images:
-    if svchk
-        % Save nii.gz files using ID and Tag
-        if img(1).flag
-            fn_exp = fullfile(procdir,sprintf('%s',ID,'.exp',fn_ext));
-            saveNIFTI(fn_exp,img(1).mat,img(1).info.label,img(1).info.fov,img(1).info.orient);
-        end
-        if img(2).flag
-            fn_ins = fullfile(procdir,sprintf('%s',ID,'.ins',fn_ext));
-            saveNIFTI(fn_ins,img(2).mat,img(2).info.label,img(2).info.fov,img(2).info.orient);
-        end
-    end
-
-    % Generate Lung Segmentation [This is when VOI don't exist]
-    fn_label = cell(2,1);
-    for itag = 1:2
-        if img(itag).flag
-            fn_label{itag} = fullfile(procdir,sprintf('%s.%s.label%s',ID,lower(tag{itag}),fn_ext));
-            writeLog(fn_log,'%s segmentation ... ',tag{itag});
-            if exist(fn_label{itag},'file')
-                writeLog(fn_log,'from file\n');
-                img(itag).label = readNIFTI(fn_label{itag});
-            else
-                img(itag).label = CTlung_Segmentation(4,img(itag).mat,img(itag).info,img(itag).info.label,procdir,fn_log);
-                saveNIFTI(fn_label{itag},img(itag).label,img(itag).info.label,img(itag).info.fov,img(itag).info.orient);
-            end
-        end
-    end
-
-    dt = toc(t);
-    writeLog(fn_log,'Local processing completed after %.1f minutes\n',dt/60);
     
-    % Save results to CSV file:
-    writetable(res,fullfile(procdir,[ID,'_PipelineResults.csv']));
-    
-    
+    if img(i).flag
+        % Save image:
+        if ~fnflag(i,1)
+            saveNIFTI(fn{i,1},img(i).mat,img(i).info.label,img(i).info.fov,img(i).info.orient);
+        end
+        % Save segmentation
+        if ~fnflag(i,2)
+            saveNIFTI(fn{i,2},seg,img(i).info.label,img(i).info.fov,img(i).info.orient);
+        end
+    end
+end
+
+dt = toc(t);
+writeLog(fn_log,'Local processing completed after %.1f minutes\n',dt/60);
+
+% Save results to CSV file:
+writetable(res,fullfile(procdir,[ID,'_PipelineResults.csv']));
+
+function img = medfilt2_3(img)
+for i = 1:size(img,3)
+    img(:,:,i) = medfilt2(img(:,:,i));
+end
+
 
 

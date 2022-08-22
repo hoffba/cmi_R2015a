@@ -151,7 +151,7 @@ function [T,ver] = vesselSeg_BH(varargin)
         t = tic; 
         info.Datatype = 'int8';
         info.BitsPerPixel = 8;
-        perLaa = sum((ct(:) < -950).*logical(segBW(:))) / sum(segBW(:) > 0);
+        perLaa = nnz(ct(segBW) < -950) / nnz(segBW);
         bin_vessels = binarizeVessels(vessels,eroded_lobes,perLaa);
 %         bin_vessels = int8(activecontour(vessels,imbinarize(vessels,'adaptive').*eroded_lobes,5,'Chan-Vese'));
         niftiwrite(int8(bin_vessels),fname,'Compressed',true);

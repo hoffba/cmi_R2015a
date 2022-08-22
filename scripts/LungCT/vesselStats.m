@@ -30,4 +30,3 @@ if any(C,'all')
 %         [T.VESSEL_VOLUME_5DOWN(ii), T.NUM_VESSELS_5DOWN(ii)] = CSA_range_metrics(C < 5 & C > 0, C);
 %         [T.VESSEL_VOLUME_5UP(ii), T.NUM_VESSELS_5UP(ii)] = CSA_range_metrics(C > 5, C);
 end
-
