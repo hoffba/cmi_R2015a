@@ -22,7 +22,8 @@ opts = struct('username','',...
               'reg',true,...
               'prm',true,...
               'tprm',true,...
-              'reg_seg',true);
+              'reg_seg',true,...
+              'orient_check',true);
     
 gp_valid = [];
 ugroups_ic = []; % unique group indices
@@ -173,6 +174,9 @@ end
         h.panel_reg = uipanel(h.tab2,'Position',[225, fheight-330, 215, 225],'Title','Reg Options');
         h.reg_seg = uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Tranform Segmentation','Value',opts.reg_seg);
         h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration','Value',opts.quickreg);
+        
+        h.panel_other = uipanel(h.tab2,'Position',[445, fheight-330, 215, 225],'Title','Other Options');
+        h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation','Value',opts.orient_check);
 
     end
 
@@ -381,6 +385,7 @@ end
             
         end
         h.text_cat.Value = str;
+        figure(h.fig);
     end
     function setSavePath(tpath,~)
         if nargin==0 || isempty(tpath) || ~ischar(tpath)
@@ -390,6 +395,7 @@ end
             opts.save_path = tpath;
             h.text_save.Value = tpath;
         end
+        figure(h.fig);
     end
     function selectAll(~,~)
         set([h.unreg,h.airway,h.scatnet,h.vessel,h.reg,h.prm,h.tprm],'Value',1);
