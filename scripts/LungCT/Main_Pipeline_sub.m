@@ -99,9 +99,8 @@ end
 
 %% Fix orientation of image:
 svchk = false;
-check_orient = 0; % just a way to skip check
 tag = {'Exp','Ins'};
-if check_orient == 1
+if opts.orient_check
     for ii = 1:2
         if img(ii).flag
             % Find orientation of shoulder bones to see if permute is needed

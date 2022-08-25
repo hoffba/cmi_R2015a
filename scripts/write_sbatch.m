@@ -63,7 +63,7 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
         modstr = [modstr,'module load ',mods{i},'\n\n'];
     end
     
-    fprintf('Writing SBATCH file: %s\n',inputs_fname);
+    fprintf('Writing SBATCH file: %s\n',fname);
    
     str = sprintf('#!/bin/bash\n\n'); % The interpreter used to execute the script
     str = [str,sprintf('#“#SBATCH” directives that convey submission options:\n\n')];

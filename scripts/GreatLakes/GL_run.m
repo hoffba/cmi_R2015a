@@ -29,7 +29,7 @@ if nargin~=2
     % Determine SBATCH inputs
     nowstring = char(datetime('now','Format','yyyyMMddHHmmss'));
     jobname = sprintf('%s_%s',opts.function_string,nowstring);
-    fname = [jobname,'.sh'];
+    fname = [opts.username,'_',jobname,'.sh'];
 
     % Calculate number of nodes
     cores = min(min(opts.Niter,floor(opts.MaxMem/opts.ProcessMemory))+1,36);

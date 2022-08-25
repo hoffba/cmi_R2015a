@@ -79,6 +79,7 @@ if img(2).flag
 end
 
 % Airways
+if opts.airway
 ei_str = {'Exp','Ins'};
 for itag = 1:2
     if img(itag).flag
@@ -143,6 +144,7 @@ for itag = 1:2
                 airway_res.BEI_LLL ]);
         end
     end
+end
 end
 
 % ScatterNet for AT on Exp CT scan
