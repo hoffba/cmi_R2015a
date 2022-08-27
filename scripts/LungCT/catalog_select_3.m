@@ -172,11 +172,14 @@ end
             'Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
         h.panel_reg = uipanel(h.tab2,'Position',[225, fheight-330, 215, 225],'Title','Reg Options');
-        h.reg_seg = uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Tranform Segmentation','Value',opts.reg_seg);
-        h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration','Value',opts.quickreg);
+        h.reg_seg = uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Tranform Segmentation',...
+            'Value',opts.reg_seg,'ValueChangedFcn',@setOpts,'Tag','reg_seg');
+        h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration',...
+            'Value',opts.quickreg,'ValueChangedFcn',@setOpts,'Tag','quickreg');
         
         h.panel_other = uipanel(h.tab2,'Position',[445, fheight-330, 215, 225],'Title','Other Options');
-        h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation','Value',opts.orient_check);
+        h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
+            'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
 
     end
 
