@@ -237,7 +237,12 @@ for ifn = 1:nf
             end
             dcmdata(j).SlcThk = val;
             
-            dcmdata(j).Orient = tinfo.ImageOrientationPatient;
+            val = [1 0 0 0 1 0];
+            if isfield(tinfo, 'ImageOrientationPatient')
+                val = tinfo.ImageOrientationPatient;
+            end
+            dcmdata(j).Orient = val;
+
             
             val = '';
             if isfield(tinfo,'StudyDescription')
