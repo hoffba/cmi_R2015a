@@ -1,4 +1,5 @@
-function QCmontage(tag,mat,voxsz,fname)
+function cdata = QCmontage(tag,mat,voxsz,fname)
+cdata = [];
 nf = size(mat,3);
 
 % Find system screen size
@@ -60,5 +61,5 @@ end
 figure(hf),montage(mat/255,'Size',montsz);
 
 %% Print the figure:
-print(hf,[fname,'.tif'],'-dtiff');
+cdata = print(hf,[fname,'.tif'],'-dtiff');
 delete(hf);

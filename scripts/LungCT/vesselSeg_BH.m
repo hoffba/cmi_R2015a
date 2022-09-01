@@ -105,7 +105,7 @@ function [T,ver] = vesselSeg_BH(varargin)
     info.ImageSize = size(ct);
     
     %% Save eroded lobe map:
-    lobe = getLobeTags(seg);
+    lobeval = unique(seg(seg~=0));
     fname = fullfile(save_path,[ID,'_erodedLobes']);
     if flag && exist([fname,'.nii.gz'],'file')
         fprintf('Loading eroded lobe map from file ...\n');
@@ -115,8 +115,8 @@ function [T,ver] = vesselSeg_BH(varargin)
         t = tic;
         se = strel('sphere',5);
         eroded_lobes = zeros(size(seg));
-        for i = 1:length(lobe)
-            eroded_lobes(imerode(seg == lobe(i).val,se)) = lobe(i).val;
+        for i = 1:numel(lobeval)
+                eroded_lobes(imerode(seg == lobeval(i),se)) = lobeval(i);
         end
         eroded_lobes = uint8(eroded_lobes);
         niftiwrite(eroded_lobes,fullfile(save_path,[ID,'_erodedLobes']),'Compressed',true);
@@ -125,7 +125,7 @@ function [T,ver] = vesselSeg_BH(varargin)
     eroded_lobes = eroded_lobes > 0;
     
     %% Full lung volume:
-    segBW = ismember(seg,[lobe.val]);
+    segBW = logical(seg);
 
     %% Generate enhanced vessel maps
     fname = fullfile(save_path,[ID,'_enhancedVessel']);

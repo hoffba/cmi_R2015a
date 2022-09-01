@@ -46,6 +46,13 @@ req_fields = {'SeriesDescription',...
 h = initFig;
 drawnow;
 
+if ~isempty(opts.dcm_path)
+    selectCatalog(opts.dcm_path);
+end
+if ~isempty(opts.save_path)
+    setSavePath(opts.save_path);
+end
+
 % %% Set catalog display:
 % opts.dcm_path = selectCatalog(opts.dcm_path);
 % figure(h.fig);
@@ -147,7 +154,8 @@ end
 
         %% Tab 2: Settings and options
         uitextarea(h.tab2,'Position',[5,   fheight-50, 100,        20],'Editable',0,'Value','uniquename:');
-        h.edit_username = uieditfield(h.tab2,'Position',[110, fheight-50, 300, 20],'Editable',1,'ValueChangedFcn',@setOpts,'Tag','username');
+        h.edit_username = uieditfield(h.tab2,'Position',[110, fheight-50, 300, 20],'Editable',1,...
+            'ValueChangedFcn',@setOpts,'Tag','username','Value',opts.username);
         uibutton(h.tab2,  'Position',[5,   fheight-75, 100,        20],'Text','Select Catalog:','ButtonPushedFcn',@selectCatalog);
         h.text_cat = uitextarea(h.tab2,'Position',[110, fheight-75, fwidth-115, 20],'Editable',0);
         uibutton(h.tab2,  'Position',[5,   fheight-100, 100,        20],'Text','Save To:','ButtonPushedFcn',@setSavePath);
@@ -177,7 +185,11 @@ end
         h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration',...
             'Value',opts.quickreg,'ValueChangedFcn',@setOpts,'Tag','quickreg');
         
-        h.panel_other = uipanel(h.tab2,'Position',[445, fheight-330, 215, 225],'Title','Other Options');
+        h.panel_yacta = uipanel(h.tab2,'Position',[445, fheight-330, 215, 225],'Title','YACTA Options');
+%         h.y_airways
+%         h.y_parenchyma
+        
+        h.panel_other = uipanel(h.tab2,'Position',[665, fheight-330, 215, 225],'Title','Other Options');
         h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
             'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
 

@@ -64,17 +64,17 @@ else
     img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
 end
 
-% QC segmentation
+QC segmentation
 if img(1).flag
     writeLog(fn_log,'Generating EXP montage...\n');
     ind = 10:10:img(1).info.d(3);
-    QCmontage('seg',cat(4,img(1).mat(:,:,ind),logical(img(1).label(:,:,ind))),img(1).info.voxsz,...
+    cdata = QCmontage('seg',cat(4,img(1).mat(:,:,ind),logical(img(1).label(:,:,ind))),img(1).info.voxsz,...
         fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
 end
 if img(2).flag
     writeLog(fn_log,'Generating INSP montage...\n');
     ind = 10:10:img(2).info.d(3);
-    QCmontage('seg',cat(4,img(2).mat(:,:,ind),logical(img(2).label(:,:,ind))),img(2).info.voxsz,...
+    cdata = QCmontage('seg',cat(4,img(2).mat(:,:,ind),logical(img(2).label(:,:,ind))),img(2).info.voxsz,...
         fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
 end
 
@@ -324,7 +324,9 @@ if img(1).flag && img(2).flag
 end
 
 % Save Results Table:
-writetable(res,fullfile(procdir,[res.ID{1},'_PipelineResults.csv']));
+if istable(res)
+    writetable(res,fullfile(procdir,[res.ID{1},'_PipelineResults.csv']));
+end
 
 writeLog(fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
