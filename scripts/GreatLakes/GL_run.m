@@ -28,8 +28,8 @@ if nargin~=2
 
     % Determine SBATCH inputs
     nowstring = char(datetime('now','Format','yyyyMMddHHmmss'));
-    jobname = sprintf('%s_%s',opts.function_string,nowstring);
-    fname = [opts.username,'_',jobname,'.sh'];
+    jobname = sprintf('%s_%s_%s',opts.username,opts.function_string,nowstring);
+    fname = [jobname,'.sh'];
 
     % Calculate number of nodes
     cores = min(min(opts.Niter,floor(opts.MaxMem/opts.ProcessMemory))+1,36);
@@ -151,12 +151,6 @@ else
                 dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
                 val = job(i).fetchOutputs;
                 val = val{1};
-                if size(val,1)>1
-                    val = lobeTable2struct(val);
-                end
-                if isstruct(val)
-                    val = struct2table(val);
-                end
                 if istable(val)
                     T = [T;val];
                 end

@@ -40,7 +40,7 @@ switch method
         if ~isempty(resname)
             seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
         end
-        if ~any(seg,'all')
+        if ~all(ismember(10:10:60,seg))
             writeLog(logfn,'- - Lobe segmentation failed. Checking for lungs...');
             resname = dir([tname,'*lung_right_left*explabels.mhd']);
             if ~isempty(resname)

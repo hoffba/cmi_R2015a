@@ -64,7 +64,7 @@ else
     img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
 end
 
-QC segmentation
+% QC segmentation
 if img(1).flag
     writeLog(fn_log,'Generating EXP montage...\n');
     ind = 10:10:img(1).info.d(3);

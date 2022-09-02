@@ -61,5 +61,6 @@ end
 figure(hf),montage(mat/255,'Size',montsz);
 
 %% Print the figure:
-cdata = print(hf,[fname,'.tif'],'-dtiff');
+print(hf,[fname,'.tif'],'-dtiff');
+cdata = print('-RGBImage','-noui');
 delete(hf);

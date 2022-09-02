@@ -9,13 +9,8 @@ function lobe = getLobeTags(seg)
         lobeName = {'RL', 'LL'};
     elseif all(ismember(utags,10:10:60)) % <- ******
         % YACTA
-        if all(ismember(10:10:60,seg))
-            lobeTag = {10,20,30,40,50,60,[10,20],[40,50]};
-            lobeName = {'RUL','RML','RLL','LUL','LLi','LLL','RULplus','LULplus'};
-        else
-            lobeTag = {[10,20,30],[40,50,60]};
-            lobeName = {'RL','LL'};
-        end
+        lobeTag = {10,20,30,40,50,60,[10,20],[40,50]};
+        lobeName = {'RUL','RML','RLL','LUL','LLi','LLL','RULplus','LULplus'};
     elseif all(ismember(utags,[1:5,30,255]))
         % YACTA
         lobeTag = num2cell(1:5);
