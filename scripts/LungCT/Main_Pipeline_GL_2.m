@@ -32,9 +32,10 @@ mkdir(jobdir);
 c.JobStorageLocation = jobdir;
 
 % Run as batch with parpool size of 6
-np = min(10,numel(cases));
+myCluster = parcluster('local');
+np = min(myCluster.NumWorkers,numel(cases));
 fprintf('Running local processes as batch with pool size of %u\nPlease wait at least an hour before starting GL process\n',np);
-batch(@pipeline_loop,0,{cases},'Pool',np);
+batch(myCluster,@pipeline_loop,0,{cases},'Pool',np);
 
 GL_run(opts.username, 'Main_Pipeline_GL_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
     'ProcessMemory',24,'ProcessTime',720)

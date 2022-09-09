@@ -18,14 +18,14 @@ opts = struct('username','',...  % UMID
     'save_path','',... % Directory containing case folders (procdirs)
     'quickreg',false);
 
-if nargin
-    batchtype = find(strcmp(batchtype,{'serial','batch','serialbatch'}),1);
-    if isempty(batchtype)
-        error('Invalid batchtype input.');
-    end
-else % Default to 'serial'
-    batchtype = 1;
-end
+% if nargin
+%     batchtype = find(strcmp(batchtype,{'serial','batch','serialbatch'}),1);
+%     if isempty(batchtype)
+%         error('Invalid batchtype input.');
+%     end
+% else % Default to 'serial'
+%     batchtype = 1;
+% end
 
 % Find files
 [cases,opts] = catalog_select_3('opts',opts);
@@ -36,20 +36,20 @@ if flag_turbo
     error('Save path must be on Turbo for access from Great Lakes.');
 end
 
-% Determine batch setup
-if batchtype==3
-    cluster_profile = {'Profile','cmi_1'};
-    if ~ismember('cmi_1',parallel.clusterProfiles)
-        mls_fname = fullfile(fileparts(which('cmi')),'cmi_1.mlsettings');
-        if exist(mls_fname,'file')
-            fprintf('Importing cluster profile: %s\n',mls_fname);
-            parallel.importProfile(mls_fname);
-        else
-            fprintf('Could not find cluster profile: %s\n',mls_fname);
-            cluster_profile = {};
-        end
-    end
-end
+% % Determine batch setup
+% if batchtype==3
+%     cluster_profile = {'Profile','cmi_1'};
+%     if ~ismember('cmi_1',parallel.clusterProfiles)
+%         mls_fname = fullfile(fileparts(which('cmi')),'cmi_1.mlsettings');
+%         if exist(mls_fname,'file')
+%             fprintf('Importing cluster profile: %s\n',mls_fname);
+%             parallel.importProfile(mls_fname);
+%         else
+%             fprintf('Could not find cluster profile: %s\n',mls_fname);
+%             cluster_profile = {};
+%         end
+%     end
+% end
 
 % Set up cluster properties
 if batchtype~=1
@@ -59,9 +59,13 @@ if batchtype~=1
     c.JobStorageLocation = jobdir;
 end
 
+% Run as batch with parpool size of 6
+batch(@pipeline_loop,0,{},'Pool',6);
+
+
 % Loop over cases for local processing
-ncases = numel(cases);
-procdir = cell(ncases,1);
+% ncases = numel(cases);
+% procdir = cell(ncases,1);
 for i = 1:ncases
     basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
     procdir{i} = fullfile(opts.save_path,basename);
@@ -104,8 +108,17 @@ if batchtype~=1
 end
 
 GL_run(opts.username, 'Main_Pipeline_GL_sub', {procdir,opts}, [true,false], [false,true],...
-    'ProcessMemory',24)
+    'ProcessMemory',24,'ProcessTime',60*12)
 
+function procdir = pipeline_loop(cases,save_path)
+% Loop function for inside batch process
+ncases = numel(cases);
+procdir = cell(ncases,1);
+parfor i = 1:ncases
+    basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
+    procdir{i} = fullfile(save_path,basename);
+    pipeline_local(basename,cases(i).Scans.Directory,procdir{i});
+end
 
 function res = pipeline_local(ID,expfname,insfname,procdir)
 % Local execution for YACTA segmentation and airways analysis
