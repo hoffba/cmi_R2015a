@@ -399,6 +399,7 @@ end
             checkValid;
             
         end
+        opts.dcm_path = str;
         h.text_cat.Value = str;
         figure(h.fig);
     end
