@@ -249,8 +249,8 @@ if img(1).flag && img(2).flag
     
     % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
     prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
-        [1,2],  3,      [4,5],  [8,9,10],   6    };
-    prm5 = prm10;
+                [1,2],  3,      [4,5],  [8,9,10],   6    };
+    prm5 = int8(zeros(size(prm10)));
     for i = 1:size(prmlabel,2)
         prm5(ismember(prm10,prmlabel{2,i})) = i;
     end
@@ -273,7 +273,7 @@ if img(1).flag && img(2).flag
         string(res.ID{1})+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
     if all(cellfun(@(x)exist(x,'file'),fn_tprm))
         writeLog(fn_log,'Loading tPRM from files ...\n');
-        clear prm5 prm10;
+        clear prm5;
         for iprm = 1:numel(prmlabel)
             for imf = 1:numel(mflabel)
                 writeLog(fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
@@ -309,7 +309,7 @@ if img(1).flag && img(2).flag
                 
                 % Save tPRM image
                 writeLog(fn_log,'       Saving NIFTI\n');
-                cmi_save(0,tprm,{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
+                cmi_save(0,single(tprm),{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
                 
                 % Tabulate statistics
                 writeLog(fn_log,'       Tabulating means\n');
