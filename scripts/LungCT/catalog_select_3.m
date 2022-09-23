@@ -22,13 +22,27 @@ opts = struct('username','',...
               'reg',true,...
               'prm',true,...
               'tprm',true,...
-              'reg_seg',true,...
+              'reg_seg',false,...
               'orient_check',true);
-    
-gp_valid = [];
+          
+C = [];          % full catalog table
+
+% Scan groups
 ugroups_ic = []; % unique group indices
 ngroups = 0;     % number of cases available with unique ID and date
-C = [];
+gp_valid = [];   
+
+% Page groups
+gp_per_page = 5; % Number of groups to show per page
+pageN = 0;       % number of pages in catalog
+curr_page = 0;   % current page number
+page_ic = [];    % current catalog indices for displaying (only shows 5 cases at once, per page, to limit lag)
+
+% Set colors:
+bgs_white = '#ffffff';
+bgs_blue =  '#bbdffb';
+bgs_green = '#99edc3';
+bgs_red =   '#ffc4c4';
 
 %% Parse inputs:
 validateInputs(varargin);
@@ -52,13 +66,6 @@ end
 if ~isempty(opts.save_path)
     setSavePath(opts.save_path);
 end
-
-% %% Set catalog display:
-% opts.dcm_path = selectCatalog(opts.dcm_path);
-% figure(h.fig);
-% 
-% %% Set path for saving results:
-% setSavePath(opts.save_path);
 
 %% End script when window closes
 waitfor(h.fig);
@@ -109,7 +116,12 @@ if ~isempty(C)
         if isfolder(fname)
             fname = fullfile(fname,'DICOMcatalog_select.csv');
         end
-        writetable(C,fname);
+        try
+            writetable(C,fname);
+        catch
+            fname = fullfile(fileparts(fname),sprintf('DICOMcatalog_select_%s.csv',datestr(datetime('now'),'yyyymmddHHMMSS')));
+            writetable(C,fname);
+        end
     end
 
 end
@@ -146,10 +158,22 @@ end
         h.table_select = uitable(h.tab1,'Position',[ 1 , 20 , fwidth , fheight-130 ],'CellEditCallback',@editCell);
         h.table_filter = uitable(h.tab1,'Position',[ 1 , fheight-115 , fwidth , 90 ],'CellEditCallback',@applyFilter);
 
-        uibutton(h.tab1,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
-        uibutton(h.tab1,'Position',[fwidth-50,1,50,20],...
+        uibutton(  h.tab1,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
+        
+        uitextarea(h.tab1,'Position',[fwidth/2-300,1,135,20],'Editable',0,'Value','Groups per page:');
+        h.edit_page_groups = uieditfield(h.tab1,'numeric','Position',[fwidth/2-165,1,50,20],...
+            'Editable',1,'Value',gp_per_page,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','edit_gp_per');
+        
+        uitextarea(h.tab1,'Position',[fwidth/2-105,1,60,20],'Editable',0,'Value','Page:');
+        uibutton(  h.tab1,'Position',[fwidth/2-45,1,20,20],'Text','<','Tag','decr','ButtonPushedFcn',@setPage);
+        h.text_page = uieditfield(h.tab1,'numeric','Position',[fwidth/2-25,1,50,20],...
+            'Editable',1,'Value',0,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','text_page');
+        uibutton(  h.tab1,'Position',[fwidth/2+25,1,20,20],'Text','>','Tag','incr','ButtonPushedFcn',@setPage);
+        h.text_pageN = uitextarea(h.tab1,'Position',[fwidth/2+45,1,60,20],'Editable',0,'Value','of 0');
+        
+        uibutton(  h.tab1,'Position',[fwidth-50,1,50,20],...
             'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
-        uibutton(h.tab1,'Position',[fwidth-100-gap,1,50,20],...
+        uibutton(  h.tab1,'Position',[fwidth-100-gap,1,50,20],...
             'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
 
         %% Tab 2: Settings and options
@@ -181,7 +205,7 @@ end
 
         h.panel_reg = uipanel(h.tab2,'Position',[225, fheight-330, 215, 225],'Title','Reg Options');
         h.reg_seg = uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Tranform Segmentation',...
-            'Value',opts.reg_seg,'ValueChangedFcn',@setOpts,'Tag','reg_seg');
+            'Value',opts.reg_seg,'ValueChangedFcn',@setOpts,'Tag','reg_seg','Enable','off');
         h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration',...
             'Value',opts.quickreg,'ValueChangedFcn',@setOpts,'Tag','quickreg');
         
@@ -194,7 +218,50 @@ end
             'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
 
     end
-
+    function setPage(hObject,eventData)
+        if isnumeric(hObject)
+            hObject = round(hObject);
+            if hObject>0 && hObject<pageN
+                curr_page = hObject;
+            else
+                warning('Invalid numerical input. Max page = %s',pageN);
+            end
+        elseif isprop(hObject,'Tag') % incr/decr button
+            switch hObject.Tag
+                case 'incr'
+                    curr_page = curr_page + 1;
+                case 'decr'
+                    curr_page = curr_page - 1;
+                case 'text_page'
+                    val = round(eventData.Value);
+                    if val>0 && val<=ngroups
+                        curr_page = val;
+                    else
+                        h.text_page.Value = eventData.PreviousValue;
+                        return;
+                    end
+                case 'edit_gp_per'
+                    val = round(eventData.Value);
+                    if val>0
+                        gp_per_page = val;
+                        pageN = ceil(ngroups/gp_per_page);
+                        h.edit_gp_per_page.Value = gp_per_page;
+                        h.text_pageN.Value = sprintf('of %u',pageN);
+                    else
+                        h.edit_gp_per_page.Value = eventData.PreviousValue;
+                        return;
+                    end
+                otherwise
+                    return;
+            end
+        else % Invalid input
+            return;
+        end
+        h.text_page.Value = curr_page;
+        page_ic = ismember(ugroups_ic,(gp_per_page*(curr_page-1))+1:min(ngroups,gp_per_page*curr_page));
+        h.table_select.Data = C(page_ic,:);
+        applyFilter;
+    end
     function applyFilter(~,eventdata)
         nscans = size(h.table_select.Data,1);
         
@@ -206,6 +273,7 @@ end
         
         % Set tags:
         for i = rowi
+            ei_str = h.table_filter.Data{i,1}{1};
             if any(~cellfun(@isempty,table2cell(h.table_filter.Data(i,2:end))))
                 TF = true(nscans,1);
                 filtnames = h.table_filter.ColumnName(2:end);
@@ -214,28 +282,33 @@ end
                     filtval = h.table_filter.Data.(filtnames{j}){i};
                     if iscell(h.table_select.Data.(filtnames{j}))
                         % String comparison
-                        TF = TF & contains(C.(filtnames{j}),filtval);
+                        TF = TF & contains(h.table_select.Data.(filtnames{j}),filtval);
                     elseif isnumeric(h.table_select.Data.(filtnames{j}))
                         % Numeric comparison
-                        TF = TF & (C.(filtnames{j})==str2double(filtval));
+                        TF = TF & (h.table_select.Data.(filtnames{j})==str2double(filtval));
                     end
                 end
             else
                 TF = false(nscans,1);
             end
-            h.table_select.Data.(h.table_filter.Data{i,1}{1}) = TF;
+            h.table_select.Data.(ei_str) = TF;
+            C.(ei_str)(page_ic) = TF;
         end
 
         checkValid;
+        nnz(C.Exp)
     end
 
     function editCell(hObject,eventdata)
         if ismember(eventdata.Indices(2),[1,2])
             % Edited EXP/INS Tag
-            checkValid(hObject);
+            checkValid;
         elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) % Edited UMlabel
             % Set ID for all scans in this case group:
-            hObject.Data(ugroups_ic==ugroups_ic(eventdata.Indices(1)),3) = {eventdata.NewData};
+            page_group_ic = ugroups_ic(page_ic);
+            sub_ic = page_group_ic==page_group_ic(eventdata.Indices(1));
+            hObject.Data(sub_ic,3) = {eventdata.NewData};
+            C(page_ic(sub_ic),3) = {eventdata.NewData};
         else
             warning('Invalid PatientID, try again.');
             hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
@@ -243,12 +316,10 @@ end
     end
 
     function checkValid(~)
-        bgs_white = '#ffffff';
-        bgs_blue =  '#bbdffb';
-        bgs_green = '#99edc3';
-        bgs_red =   '#ffc4c4';
-        for i = 1:ngroups
-            irow = find(ugroups_ic==i);
+        page_group_ic = ugroups_ic(page_ic);
+        ugroup = unique(page_group_ic);
+        for i = 1:numel(ugroup)
+            irow = find(page_group_ic==ugroup(i));
             n_exp = nnz(h.table_select.Data.Exp(irow));
             n_ins = nnz(h.table_select.Data.Ins(irow));
             gp_valid(i) = n_exp + n_ins + (n_exp>1) + (n_ins>1);
@@ -274,6 +345,7 @@ end
     end
     function clearTags(~,~)
         h.table_select.Data(:,1:2) = {false};
+        C(page_ic,1:2) = {false};
         checkValid;
     end
     function done_callback(~,~)
@@ -281,8 +353,6 @@ end
         if any(gp_valid>2)
             warning('No case can have more than one Exp/Ins selected.');
         else
-            C = h.table_select.Data;
-            
             % Set up options structure
             flds = {'unreg','airway','scatnet','vessel','reg','prm','tprm','quickreg','reg_seg'};
             for iflds = 1:numel(flds)
@@ -348,7 +418,6 @@ end
             nscans = size(C,1);
             C = addvars(C,false(nscans,1),false(nscans,1),'Before',1,'NewVariableNames',{'Exp','Ins'});
             colnames = C.Properties.VariableNames;
-            nfields = length(colnames);
             
             % Check for saved selections:
             if ismember('Tag',colnames)
@@ -371,29 +440,41 @@ end
                 C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
             end
             if ismember('CaseNumber',colnames)
-                ugroups_ic = C.CaseNumber;
                 C = removevars(C,'CaseNumber');
-            else
-                C(cellfun(@isempty,C.UMlabel),:) = [];
-                C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
-                [~,~,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName,C.StudyID));
             end
-            ngroups = numel(unique(ugroups_ic));
+            % Remove cases with no identifiers
+            C(cellfun(@isempty,C.UMlabel),:) = [];
+            % Sort by identifiers
+            C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
+            % Find case groupings
+            if isnumeric(C.PatientName)
+                C.PatientName = cellfun(@num2str,num2cell(C.PatientName),'UniformOutput',false);
+            end
+            [ugroups,~,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName,C.StudyID));
+            ngroups = numel(ugroups);
 
-            gp_valid = zeros(ngroups,1);
-            
-            %% Set table data:
-            colEdit = false(1,nfields); colEdit([1,2,3]) = true;
-            colWidth = repmat({'auto'},1,nfields); colWidth(1:2) = {40,40};
-            set(h.table_select,'Data',C,'ColumnEditable',colEdit,'ColumnWidth',colWidth);
+            gp_valid = zeros(ngroups,1); % Initialize group validation
+        
+            % Set page info
+            pageN = ceil(ngroups/5);
+            h.text_pageN.Value = sprintf('of %u',pageN);
             
             %% Set filter table:
+            nfields = numel(C.Properties.VariableNames);
+            colEdit = false(1,nfields); colEdit([1,2,3]) = true;
+            colWidth = repmat({'auto'},1,nfields); colWidth(1:2) = {40,40};
             nv = size(C,2)-3;
             fC = table('Size',[2,nv],...
                 'VariableTypes',repmat({'cellstr'},1,nv),...
                 'VariableNames',C.Properties.VariableNames(4:end));
             fC = addvars(fC,{'Exp';'Ins'},'Before',1,'NewVariableNames',{'Tag'});
             set(h.table_filter,'Data',fC,'ColumnEditable',[false,true(1,nv)],'ColumnWidth',[{80},colWidth(3:end)]);
+            
+            %% Set table data:
+            setPage(1);
+            
+            % Set table properties
+            set(h.table_select,'ColumnEditable',colEdit,'ColumnWidth',colWidth);
             
             pause(1);
             checkValid;
