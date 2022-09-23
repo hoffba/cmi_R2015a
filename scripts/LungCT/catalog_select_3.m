@@ -160,16 +160,16 @@ end
 
         uibutton(  h.tab1,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
         
-        uitextarea(h.tab1,'Position',[fwidth/2-300,1,135,20],'Editable',0,'Value','Groups per page:');
+        uilabel(h.tab1,'Position',[fwidth/2-300,1,135,20],'HorizontalAlignment','right','Text','Groups per page: ');
         h.edit_page_groups = uieditfield(h.tab1,'numeric','Position',[fwidth/2-165,1,50,20],...
             'Editable',1,'Value',gp_per_page,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','edit_gp_per');
         
-        uitextarea(h.tab1,'Position',[fwidth/2-105,1,60,20],'Editable',0,'Value','Page:');
+        uilabel(h.tab1,'Position',[fwidth/2-105,1,60,20],'HorizontalAlignment','right','Text','Page: ');
         uibutton(  h.tab1,'Position',[fwidth/2-45,1,20,20],'Text','<','Tag','decr','ButtonPushedFcn',@setPage);
         h.text_page = uieditfield(h.tab1,'numeric','Position',[fwidth/2-25,1,50,20],...
             'Editable',1,'Value',0,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','text_page');
         uibutton(  h.tab1,'Position',[fwidth/2+25,1,20,20],'Text','>','Tag','incr','ButtonPushedFcn',@setPage);
-        h.text_pageN = uitextarea(h.tab1,'Position',[fwidth/2+45,1,60,20],'Editable',0,'Value','of 0');
+        h.text_pageN = uilabel(h.tab1,'Position',[fwidth/2+45,1,60,20],'Text',' of 0');
         
         uibutton(  h.tab1,'Position',[fwidth-50,1,50,20],...
             'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
