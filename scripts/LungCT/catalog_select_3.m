@@ -457,7 +457,7 @@ end
         
             % Set page info
             pageN = ceil(ngroups/5);
-            h.text_pageN.Value = sprintf('of %u',pageN);
+            h.text_pageN.Text = sprintf('of %u',pageN);
             
             %% Set filter table:
             nfields = numel(C.Properties.VariableNames);
