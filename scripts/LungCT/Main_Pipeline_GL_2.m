@@ -43,9 +43,21 @@ GL_run(opts.username, 'Main_Pipeline_GL_sub', {{cases.procdir}',opts}, [true,fal
 function pipeline_loop(cases)
 % Loop function for inside batch process
 ncases = numel(cases);
-parfor i = 1:ncases
-    pipeline_local(cases(i).basename,cases(i).Scans.Directory,cases(i).procdir);
+
+% Start queue for cases:
+f(1:10) = parallel.FevalFuture;
+for i = 1:ncases
+    f(i) = parfeval(@(x,y,z,k)pipeline_local(x,y,z,k),0,cases(i).basename,cases(i).Scans.Directory,cases(i).procdir);
 end
+
+% Flag processes as the complete
+for i = 1:ncases
+    completedIdx = fetchNext(f);
+    fprintf('Finished process #%d of %d: %s\n', completedIdx, ncases, cases(completedIdx).basename);
+end
+% parfor i = 1:ncases
+%     pipeline_local(cases(i).basename,cases(i).Scans.Directory,cases(i).procdir);
+% end
 
 function res = pipeline_local(ID,expfname,insfname,procdir)
 % Local execution for YACTA segmentation and airways analysis
