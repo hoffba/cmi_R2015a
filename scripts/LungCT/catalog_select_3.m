@@ -246,7 +246,7 @@ end
                         gp_per_page = val;
                         pageN = ceil(ngroups/gp_per_page);
                         h.edit_gp_per_page.Value = gp_per_page;
-                        h.text_pageN.Value = sprintf('of %u',pageN);
+                        h.text_pageN.Text = sprintf('of %u',pageN);
                     else
                         h.edit_gp_per_page.Value = eventData.PreviousValue;
                         return;
@@ -260,10 +260,10 @@ end
         h.text_page.Value = curr_page;
         page_ic = ismember(ugroups_ic,(gp_per_page*(curr_page-1))+1:min(ngroups,gp_per_page*curr_page));
         h.table_select.Data = C(page_ic,:);
-        applyFilter;
+        checkValid();
     end
     function applyFilter(~,eventdata)
-        nscans = size(h.table_select.Data,1);
+        nscans = size(C,1);
         
         if nargin==0 % filter all
             rowi = 1:2;
@@ -280,28 +280,28 @@ end
                 filtnames(cellfun(@isempty,table2cell(h.table_filter.Data(i,2:end)))) = [];
                 for j = 1:numel(filtnames)
                     filtval = h.table_filter.Data.(filtnames{j}){i};
-                    if iscell(h.table_select.Data.(filtnames{j}))
+                    if iscell(C.(filtnames{j}))
                         % String comparison
-                        TF = TF & contains(h.table_select.Data.(filtnames{j}),filtval);
-                    elseif isnumeric(h.table_select.Data.(filtnames{j}))
+                        TF = TF & contains(C.(filtnames{j}),filtval);
+                    elseif isnumeric(C.(filtnames{j}))
                         % Numeric comparison
-                        TF = TF & (h.table_select.Data.(filtnames{j})==str2double(filtval));
+                        TF = TF & (C.(filtnames{j})==str2double(filtval));
                     end
                 end
             else
                 TF = false(nscans,1);
             end
-            h.table_select.Data.(ei_str) = TF;
-            C.(ei_str)(page_ic) = TF;
+            C.(ei_str) = TF;
+            h.table_select.Data.(ei_str) = TF(page_ic);
         end
 
         checkValid;
-        nnz(C.Exp)
     end
 
     function editCell(hObject,eventdata)
         if ismember(eventdata.Indices(2),[1,2])
             % Edited EXP/INS Tag
+            C{eventdata.Indices(1)+find(page_ic,1)-1,eventdata.Indices(2)} = eventdata.NewData;
             checkValid;
         elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) % Edited UMlabel
             % Set ID for all scans in this case group:
@@ -377,6 +377,9 @@ end
         newC = [];
         if nargin==0 || isempty(str) || ~ischar(str)
             str = uigetdir('Select folder for processing.');
+            if isnumeric(str) % Cancel button was selected
+                return;
+            end
         end
         if istable(str)
             newC = str;
@@ -457,7 +460,7 @@ end
         
             % Set page info
             pageN = ceil(ngroups/5);
-            h.text_pageN.Value = sprintf('of %u',pageN);
+            h.text_pageN.Text = sprintf('of %u',pageN);
             
             %% Set filter table:
             nfields = numel(C.Properties.VariableNames);
