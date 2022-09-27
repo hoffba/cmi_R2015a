@@ -45,7 +45,7 @@ function pipeline_loop(cases)
 ncases = numel(cases);
 
 % Start queue for cases:
-f(1:10) = parallel.FevalFuture;
+f(1:ncases) = parallel.FevalFuture;
 for i = 1:ncases
     f(i) = parfeval(@(x,y,z,k)pipeline_local(x,y,z,k),0,cases(i).basename,cases(i).Scans.Directory,cases(i).procdir);
 end
@@ -55,6 +55,7 @@ for i = 1:ncases
     completedIdx = fetchNext(f);
     fprintf('Finished process #%d of %d: %s\n', completedIdx, ncases, cases(completedIdx).basename);
 end
+
 % parfor i = 1:ncases
 %     pipeline_local(cases(i).basename,cases(i).Scans.Directory,cases(i).procdir);
 % end
@@ -170,15 +171,15 @@ img(2).info.name =  [ID,'_Ins'];
 
 % Generate YACTA segmentations
 for i = 1:2
-    writeLog(fn_log,'%s : Segmentation ... ',tagstr{i});
-    if fnflag(i,2)
-        writeLog(fn_log,'file found: %s\n',fn{i,2});
-    else
-        writeLog(fn_log,'generating new ...\n');
-        seg = CTlung_Segmentation(4,img(i).mat,img(i).info,img(i).info.label,procdir,fn_log);
-    end
-    
     if img(i).flag
+        writeLog(fn_log,'%s : Segmentation ... ',tagstr{i});
+        if fnflag(i,2)
+            writeLog(fn_log,'file found: %s\n',fn{i,2});
+        else
+            writeLog(fn_log,'generating new ...\n');
+            seg = CTlung_Segmentation(4,img(i).mat,img(i).info,img(i).info.label,procdir,fn_log);
+        end
+        
         % Save image:
         if ~fnflag(i,1)
             saveNIFTI(fn{i,1},img(i).mat,img(i).info.label,img(i).info.fov,img(i).info.orient);

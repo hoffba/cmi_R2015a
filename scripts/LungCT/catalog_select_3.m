@@ -459,7 +459,7 @@ end
             gp_valid = zeros(ngroups,1); % Initialize group validation
         
             % Set page info
-            pageN = ceil(ngroups/5);
+            pageN = ceil(ngroups/gp_per_page);
             h.text_pageN.Text = sprintf('of %u',pageN);
             
             %% Set filter table:
