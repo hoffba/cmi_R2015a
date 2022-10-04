@@ -47,6 +47,10 @@ end
 %% Find files
 [cases,opts] = catalog_select_3('opts',opts);
 
+if ~any(ismember({'serial','serialbatch'},varargin))
+    parpool('local',opts.par_size);
+end
+
 %% Loop over cases
 ncases = numel(cases);
 for i = 1:ncases
