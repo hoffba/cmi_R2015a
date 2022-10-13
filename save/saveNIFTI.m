@@ -3,11 +3,16 @@ function status = saveNIFTI(fname,img,label,fov,orient)
 
 %% Generate NIfTI metadata
 d = size(img);
-info = init_niftiinfo(label,fov./d(1:3),class(img),d);
-if islogical(img)
-    img = int8(img);
-    info.Datatype = 'int8';
+dtype = class(img);
+switch dtype
+    case 'double'
+        dtype = 'single';
+        img = single(img);
+    case 'logical'
+        dtype = 'int8';
+        img = int8(img);
 end
+info = init_niftiinfo(label,fov./d(1:3),dtype,d);
 gz_flag = strcmp(fname(end-2:end),'.gz');
 if gz_flag
     svname = fname(1:end-3);

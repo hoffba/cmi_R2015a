@@ -15,10 +15,9 @@ for i = 1:length(reqflds)
 end
 
 %% CJG commented out this part
-% Uncommented by BAH 20210625
 % Permute from YXZ to XYZ:
-img = permute(img,[2,1,3,4]);
-fov = fov([2,1,3]);
+% img = permute(img,[2,1,3,4]);
+% fov = fov([2,1,3]);
 %%
 
 [d(1),d(2),d(3),nv] = size(img);

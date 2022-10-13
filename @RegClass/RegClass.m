@@ -4,6 +4,7 @@ classdef RegClass < handle
         % GUI and options
         guicheck = true; % Determines whether to show GUI or not
         h                % structure of all GUI handles
+        fn_log           % log filename
         
         % Elastix parameters / functions:
         elxObj  % ElxClass object for storing/executing Elastix commands
