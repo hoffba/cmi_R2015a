@@ -1,4 +1,4 @@
-function Main_Pipeline_GL_2(opts,debug)
+function results = Main_Pipeline_GL_2(opts)
 % Start CT lung pipeline script (Main_Pipeline_sub) with GUI selection for
 % cases based on DCMcatalog.csv
 
@@ -8,9 +8,6 @@ if ~nargin
         'dcm_path','',...  % Location of DICOM data
         'save_path','',... % Directory containing case folders (procdirs)
         'quickreg',false);
-end
-if nargin<2
-    debug = false;
 end
 
 % Find files
@@ -28,47 +25,89 @@ for i = 1:ncases
     cases(i).procdir = fullfile(opts.save_path,cases(i).basename);
 end
 
-if debug
-    for i = 1:ncases
-        pipeline_local(cases(i).basename,cases(i).Scans.Directory,cases(i).procdir,opts);
+% Determine how to run the pipeline, based on opts.cluster:
+%  - 'GL'    = run DICOM loading and YACTA locally, then the rest on GL
+%  - 'batch' = run full pipeline locally in batch job
+%  - 'debug' = run full pipeline locally in command window
+c = parcluster('local');
+nworkers_orig = c.NumWorkers;
+if strcmp(opts.cluster,'debug')
+    
+%~~~~~~~~~ debug ~~~~~~~~~
+    results = [];
+    for i = ncases
+        res = pipeline_full(cases(i),opts);
+        if ~isempty(res) && istable(res) && (isempty(results) || (size(res,2)==size(results,2)))
+            results = [results;res];
+        end
     end
 else
     % Set up cluster properties
-    c = parcluster;
-    jobdir = fullfile(c.JobStorageLocation,sprintf('pipeline_local_%u',char(datetime('now','Format','yyyyMMddHHmmss'))));
+    jobdir = fullfile(c.JobStorageLocation,...
+        sprintf('pipeline_local_%s',char(datetime('now','Format','yyyyMMddHHmmss'))));
     mkdir(jobdir);
     c.JobStorageLocation = jobdir;
-
-    % Run as batch with parpool size of 6
-    myCluster = parcluster('local');
-    np = min(myCluster.NumWorkers-1,numel(cases));
-    fprintf('Running local processes as batch with pool size of %u\nPlease wait at least an hour before starting GL process\n',np);
-    batch(myCluster,@pipeline_loop,0,{cases,opts},'Pool',np);
+    np = min([c.NumWorkers-1,numel(cases),opts.par_size]);
+    if strcmp(opts.cluster,'GL') % Run DICOM load and YACTA locally, then the rest on GL
+        
+%~~~~~~~~~ GL ~~~~~~~~~
+        fprintf(['Running local processes as batch with pool size of %d\n',...
+                 'Please wait at least an hour before starting GL process\n'],np);
+        batch(@pipeline_loop,1,{cases,opts},'Pool',nworkers_orig,'Pool',np);
+        GL_run(opts.username, 'Main_Pipeline_GL_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
+            'ProcessMemory',24,'ProcessTime',720)
+    else
+        
+%~~~~~~~~~ batch ~~~~~~~~~
+        fprintf('Running FULL PIPELINE in batch with pool size of %d\n',np);
+        batch(@pipeline_loop,1,{cases,opts},'Pool',np);
+    end
 end
 
-GL_run(opts.username, 'Main_Pipeline_GL_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
-    'ProcessMemory',24,'ProcessTime',720)
+function results = pipeline_loop(cases,opts)
+results = [];
 
-function pipeline_loop(cases,opts)
 % Loop function for inside batch process
 ncases = numel(cases);
 
-% Start queue for cases:
 f(1:ncases) = parallel.FevalFuture;
-for i = 1:ncases
-    fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
-    f(i) = parfeval(@(x,y,z,k,l)pipeline_local(x,y,z,k,l),0,cases(i).basename,cases(i).Scans.Directory,cases(i).procdir,opts);
+switch opts.cluster
+    case 'GL' 
+        % Start queue for local processes:
+        for i = 1:ncases
+            fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
+            f(i) = parfeval(@(x,y,z,k,l)pipeline_local(x,y,z,k,l),0,...
+                cases(i).basename,cases(i).Scans.Directory,cases(i).procdir,opts);
+        end
+        % Flag processes as the complete
+        for i = 1:ncases
+            idx = fetchNext(f);
+            fprintf('Finished process #%d of %d: %s\n', idx, ncases, cases(idx).basename);
+        end
+    case 'batch' % Run full process locally in a batch job
+        % Start queue for parallel processes:
+        for i = 1:ncases
+            fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
+            f(i) = parfeval(@(x,y)pipeline_full(x,y),1,cases(i),opts);
+        end
+        % Flag processes as the complete
+        for i = 1:ncases
+            [idx,res] = fetchNext(f);
+            fprintf('Finished process #%d of %d: %s\n', idx, ncases, cases(idx).basename);
+            % Gather results
+            if ~isempty(res) && istable(res) &&(isempty(results) || (size(res,2)==size(results,2)))
+                results = [results;res];
+            end
+        end
+        % Write compiled results to CSV
+        if ~isempty(results) && istable(results)
+            writetable(results,fullfile(opts.save_path,'Pipeline_Results.csv'));
+        end
 end
 
-% Flag processes as they complete
-for i = 1:ncases
-    completedIdx = fetchNext(f);
-    fprintf('Finished process #%d of %d: %s\n', completedIdx, ncases, cases(completedIdx).basename);
-end
-
-% parfor i = 1:ncases
-%     pipeline_local(cases(i).basename,cases(i).Scans.Directory,cases(i).procdir);
-% end
+function res = pipeline_full(case_i,opts)
+pipeline_local(case_i.basename,case_i.Scans.Directory,case_i.procdir,opts);
+res = Main_Pipeline_GL_sub(case_i.procdir,opts);
 
 function res = pipeline_local(ID,expfname,insfname,procdir,opts)
 % Local execution for YACTA segmentation and airways analysis
