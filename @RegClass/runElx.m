@@ -23,8 +23,10 @@ if any(strcmp(isamp,'RandomSparseMask')) && ~self.cmiObj(1).img.mask.check
 end
 
 stat = self.cmiObj(1).img.check && self.cmiObj(2).img.check;
-hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
-hw.Children.Title.Interpreter = 'none';
+if self.guicheck
+    hw = waitbar(0,'Setting up Elastix inputs ... Initial Transform');
+    hw.Children.Title.Interpreter = 'none';
+end
 
 elxC = {};
 
@@ -56,7 +58,7 @@ for i = 1:2
     self.elxObj.setPar(1:npar,[labl{i},'ImagePyramid'],[labl{i},str,'ImagePyramid']);
 end
 
-% Pre-processing & save temporary .nii files
+% Pre-processing & save temporary image files
 if stat
     
     % Get geometry for both images:
@@ -66,14 +68,18 @@ if stat
     morient = self.cmiObj(2).img.orient;
        
     % Set filenames:
+    temp_ext = '.nii';
+    if self.elxObj.sys == 4 % GL doesn't seem to like nifti files
+        temp_ext = '.mhd';
+    end
     [~,outfn] = fileparts(self.cmiObj(2).img.name);
-    outfn = fullfile(self.odir,[outfn,'_R.nii']);
-    origfn = fullfile(self.odir,'elxtemp-origm.nii');
-    fname = fullfile(self.odir,'elxtemp-f.nii');
-    mname = fullfile(self.odir,'elxtemp-m.nii');
-    fmskname = fullfile(self.odir,'elxtemp-fMask.nii');
-    mmskname = fullfile(self.odir,'elxtemp-mMask.nii');
-    tmskname = fullfile(self.odir,'elxtemp-tMask.nii');
+    outfn = fullfile(self.odir,[outfn,'_R',temp_ext]);
+    origfn = fullfile(self.odir,['elxtemp-origm',temp_ext]);
+    fname = fullfile(self.odir,['elxtemp-f',temp_ext]);
+    mname = fullfile(self.odir,['elxtemp-m',temp_ext]);
+    fmskname = fullfile(self.odir,['elxtemp-fMask',temp_ext]);
+    mmskname = fullfile(self.odir,['elxtemp-mMask',temp_ext]);
+    tmskname = fullfile(self.odir,['elxtemp-tMask',temp_ext]);
     
     % Filter settings:
     if any(self.filtN(:)>0)
@@ -92,21 +98,31 @@ if stat
     end
     
     % Save original moving image:
-    waitbar(0.1,hw,'Saving Original Moving Image ...');
+    str = 'Saving Original Moving Image ...\n';
+    if self.guicheck
+        waitbar(0.1,hw,str);
+    end
+    writeLog(self.fn_log,str)
     timg = self.cmiObj(2).img.mat(:,:,:,self.cmiObj(2).vec);
-    stat = saveNIFTI(origfn,timg,[],mfov,morient);
+    stat = cmi_save(0,timg,'',mfov,morient,origfn);
     
     % Moving Image:
-    if stat
+    if stat(1)
         if ~isempty(filtN) && any(filtN(2,:))
             % Apply image filter
-            waitbar(0.25,hw,'Filtering Moving Image ...');
+            str = 'Filtering Moving Image ...\n';
+            if self.guicheck
+                waitbar(0.25,hw,str);
+            end
+            writeLog(self.fn_log,str)
             if strcmp(self.ftype,'Gaussian')
                 timg = feval(func,timg,filtN(2,:));
             else
                 for islc = 1:size(timg,3)
                     timg(:,:,islc) = feval(func,timg(:,:,islc),filtN(2,:));
-                    waitbar(islc/size(timg,3),hw);
+                    if self.guicheck
+                        waitbar(islc/size(timg,3),hw);
+                    end
                 end
             end
         end
@@ -138,21 +154,31 @@ if stat
             end
         end
         % Save moving image:
-        waitbar(0.35,hw,'Saving Processed Moving Image ...');
-        stat = saveNIFTI(mname,timg,[],mfov,morient);
+        str = 'Saving Processed Moving Image ...\n';
+        if self.guicheck
+            waitbar(0.35,hw,str);
+        end
+        writeLog(self.fn_log,str)
+        stat = cmi_save(0,timg,[],mfov,morient,mname);
     end
         
     % Fixed Image:
-    if stat
+    if stat(1)
         timg = self.cmiObj(1).img.mat(:,:,:,self.cmiObj(1).vec);
         if ~isempty(filtN) && any(filtN(1,:))
-            waitbar(0.5,hw,'Filtering Fixed Image ...');
+            str = 'Filtering Fixed Image ...';
+            if self.guicheck
+                waitbar(0.5,hw,str);
+            end
+            writeLog(self.fn_log,str);
             if strcmp(self.ftype,'Gaussian')
                 timg = feval(func,timg,filtN(2,:));
             else
                 for islc = 1:size(timg,3)
                     timg(:,:,islc) = feval(func,timg(:,:,islc),filtN(1,:));
-                    waitbar(islc/size(timg,3),hw);
+                    if self.guicheck
+                        waitbar(islc/size(timg,3),hw);
+                    end
                 end
             end
         end
@@ -184,50 +210,61 @@ if stat
             end
         end
         % Save fixed image:
-        waitbar(0.6,hw,'Saving Processed Fixed Image ...');
-        stat = saveNIFTI(fname,timg,[],ffov,forient);
+        str = 'Saving Processed Fixed Image ...\n';
+        if self.guicheck
+            waitbar(0.6,hw,str);
+        end
+        writeLog(self.fn_log,str);
+        stat = cmi_save(0,timg,[],ffov,forient,fname);
     end
     
     % Moving VOI to transform along with image:
-    addstr = '';
-    if stat && self.Tvoi
-        waitbar(0.65,hw,'Saving moving VOI for transform ...');
-        stat = saveNIFTI(tmskname,self.cmiObj(2).img.mask.mat,[],mfov,morient);
+    if stat(1) && self.Tvoi
+        str = 'Saving moving VOI for transform ...\n';
+        if self.guicheck
+            waitbar(0.65,hw,str);
+        end
+        writeLog(self.fn_log,str);
+        stat = cmi_save(1,self.cmiObj(2).img.mask.mat,[],mfov,morient,tmskname);
         elxC = [elxC,'tMask',tmskname];
-        % CJG 20200208 commented 'addstr' getting error with test.txt
-%         addstr = strcat(addstr,...
-%             '; sed ''s/Final[A-Za-z]*Interpolator/FinalNearestNeighborInterpolator/'' <',...
-%             test.txt,' >test2.txt');
         fullfile(self.odir,[self.cmiObj(2).img.name,'_VOI_R.nii'])
     end
     
     % Fixed VOI surface mesh points to transform:
-    if stat && self.Tsurf
+    if stat(1) && self.Tsurf
     end
     
     % Dilate and save moving mask:
-    if stat && self.cmiObj(2).img.mask.check
-        waitbar(0.75,hw,['Dilating and Saving Moving VOI ...',mmskname]);
+    if stat(1) && self.cmiObj(2).img.mask.check
+        str = ['Dilating and Saving Moving VOI ...\n',mmskname];
+        if self.guicheck
+            waitbar(0.75,hw,str);
+        end
+        writeLog(self.fn_log,str);
         elxC = [elxC,'mMask',mmskname];
-        stat = saveNIFTI(mmskname,...
-                       voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
-                       [],mfov,morient);
+        stat = cmi_save(1,voiDilate(self.cmiObj(2).img.mask.mat,self.dilateN(2,:)),...
+                       '',mfov,morient,mmskname);
     end
     
     % Dilate and save fixed mask:
-    if stat && self.cmiObj(1).img.mask.check
-        waitbar(0.85,hw,['Dilating and Saving Moving VOI ...',fmskname]);
+    if stat(1) && self.cmiObj(1).img.mask.check
+        str = ['Dilating and Saving Moving VOI ...\n',fmskname];
+        if self.guicheck
+            waitbar(0.85,hw,str);
+        end
+        writeLog(self.fn_log,str);
         elxC = [elxC,'fMask',fmskname];
-        stat = saveNIFTI(fmskname,...
-                       voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
-                       [],ffov,forient);
+        stat = cmi_save(1,voiDilate(self.cmiObj(1).img.mask.mat,self.dilateN(1,:)),...
+                       '',ffov,forient,fmskname);
     end
     
     
 end
-delete(hw);
+if self.guicheck
+    delete(hw);
+end
 
-if stat
+if stat(1)
     
     % Name of xterm window:
     namestr = ['Elastix Registration: ',self.cmiObj(2).img.name,...
@@ -286,7 +323,7 @@ if stat
                 self.job(nj+1) = tjob;
             end
         end
-        disp(['Added to queue: ',namestr]);
+        writeLog(self.fn_log,'Added to queue: %s\n',namestr);
     else
         stat = ~system(cmdstr);
     end

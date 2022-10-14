@@ -20,8 +20,6 @@ end
 T = lobeLoop(label,@(mask,tag,img,voxvol,atMap)unreg_sub(mask,tag,img,voxvol,atMap),...
     tag,img,voxvol,atMap);
 
-
-
 function T = unreg_sub(mask,tag,img,voxvol,atMap)
 
 if strcmp(tag,'exp')

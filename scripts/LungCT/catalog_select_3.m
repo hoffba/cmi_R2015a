@@ -11,7 +11,8 @@ function [selected_data,opts] = catalog_select_3(varargin)
 
 
 selected_data = [];
-opts = struct('par_size',5,...
+opts = struct('cluster','GL',...
+              'par_size',5,...
               'username','',...
               'dcm_path','',...
               'save_path','',...
@@ -233,10 +234,14 @@ end
         h.panel_other = uipanel(h.tab2,'Position',[665, fheight-330, 215, 225],'Title','Other Options');
         h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
             'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
-        uilabel(h.panel_other,'Position',[5, 160, 70, 20],'HorizontalAlignment','right','Text','Parallel Pool Size:');
-        h.edit_npar = uieditfield(h.panel_other,'numeric','Position',[75,160,50,20],...
+        bg = uibuttongroup(h.panel_other,'Position',[5,85,205,95],'Title','Cluster:','SelectionChangedFcn',@setOpts);
+        h.radio_GL = uiradiobutton(bg,'Position',[5,55,195,20],'Text','Great Lakes','Tag','GL');
+        h.radio_Batch = uiradiobutton(bg,'Position',[5,30,195,20],'Text','Local Batch','Tag','batch');
+        h.radio_Debug = uiradiobutton(bg,'Position',[5,5,195,20],'Text','Debug','Tag','debug');
+                uilabel(h.panel_other,'Position',[5, 55, 120, 20],'Text','Parallel Pool Size:');
+        h.edit_npar = uieditfield(h.panel_other,'numeric','Position',[125,55,50,20],'Enable',false,...
             'Editable',1,'Value',opts.par_size,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','par_size');
-        
+
     end
     function setPage(hObject,eventData)
         if isnumeric(hObject)
@@ -387,10 +392,15 @@ end
         opts = [];
         h.fig.delete;
     end
-    function setOpts(hObject,~)
-        str = hObject.Tag;
-        if ismember(str,fieldnames(opts))
-            opts.(str) = hObject.Value;
+    function setOpts(hObject,eData)
+        if isa(hObject,'matlab.ui.container.ButtonGroup')
+            h.edit_npar.Enable = strcmp(eData.NewValue.Tag,'batch');
+            opts.cluster = eData.NewValue.Tag;
+        else
+            str = hObject.Tag;
+            if ismember(str,fieldnames(opts))
+                opts.(str) = hObject.Value;
+            end
         end
     end
     function str = selectCatalog(str,~)

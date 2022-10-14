@@ -32,7 +32,16 @@ if nargin~=2
     fname = [jobname,'.sh'];
 
     % Calculate number of nodes
-    cores = min(min(opts.Niter,floor(opts.MaxMem/opts.ProcessMemory))+1,36);
+    % Max cores are adjusted smalled than max to make sure jobs can find an available partition
+    switch opts.Partition 
+        case 'standard'
+            core_max = 30;
+        case 'largemem'
+            core_max = 24;
+        otherwise
+            core_max = 20;
+    end 
+    cores = min(min(opts.Niter,floor(opts.MaxMem/opts.ProcessMemory))+1,core_max);
     walltime = opts.ProcessTime*ceil(opts.Niter/(cores-1));
     if isnan(opts.Nodes)
         opts.Nodes = ceil(walltime/(14*24*60)); % 14 days max walltime
@@ -145,14 +154,20 @@ else
             wait(job(i));
             if ~isempty(job(i).Tasks(1).Error) || strcmp(job(i).State,'failed')
                 errflag(i) = false;
-                getReport(job(i).Tasks(1).Error)
+                try
+                    getReport(job(i).Tasks(1).Error)
+                catch
+                    job(i).Tasks(1).Error
+                end
             else
                 % Compile statistics:
                 dt(i) = minutes(job(i).FinishDateTime - job(i).StartDateTime);
                 val = job(i).fetchOutputs;
                 val = val{1};
-                if istable(val)
+                if istable(val) && ~isempty(val) && (isempty(T) || (size(val,2) == size(T,2)))
                     T = [T;val];
+                elseif ischar(val)
+                    fprintf(val);
                 end
             end
             fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
@@ -171,11 +186,11 @@ else
         if ~isnan(jobnum)
             jobnum_str = num2str(jobnum);
         end
-        svname = fullfile(tempdir,sprintf('%s_%s_Results.csv',jobname,jobnum_str));
+        svname = fullfile(tempdir,sprintf('%s_%s_Results',jobname,jobnum_str));
         if istable(T)
-            writetable(T,svname,'WriteRowNames',true);
+            writetable(T,[svname,'.csv'],'WriteRowNames',true);
         else
-            save(svname,T);
+            save([svname,'.mat'],T);
         end
         
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
