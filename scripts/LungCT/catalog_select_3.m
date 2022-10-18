@@ -13,6 +13,9 @@ function [selected_data,opts] = catalog_select_3(varargin)
 selected_data = [];
 opts = struct('cluster','GL',...
               'par_size',5,...
+              'cluster_type','auto',...
+              'mem',24,...
+              'nnodes',1,...
               'username','',...
               'dcm_path','',...
               'save_path','',...
@@ -230,23 +233,35 @@ end
         h.panel_yacta = uipanel(h.tab2,'Position',[445, fheight-330, 215, 225],'Title','YACTA Options');
 %         h.y_airways
 %         h.y_parenchyma
-        
-        h.panel_other = uipanel(h.tab2,'Position',[665, fheight-330, 215, 225],'Title','Other Options');
-        h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
-            'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
-        bg = uibuttongroup(h.panel_other,'Position',[5,85,205,95],'Title','Cluster:','SelectionChangedFcn',@setOpts);
+
+        h.panel_cluster = uipanel(h.tab2,'Position',[665, fheight-330, 215, 225],'Title','Cluster Options');
+        bg = uibuttongroup(h.panel_cluster,'Position',[5,110,205,95],'Title','Cluster:',...
+            'SelectionChangedFcn',@setOpts,'Tag','cluster');
         h.radio_GL = uiradiobutton(bg,'Position',[5,55,195,20],'Text','Great Lakes','Tag','GL');
         h.radio_Batch = uiradiobutton(bg,'Position',[5,30,195,20],'Text','Local Batch','Tag','batch');
         h.radio_Debug = uiradiobutton(bg,'Position',[5,5,195,20],'Text','Debug','Tag','debug');
-                uilabel(h.panel_other,'Position',[5, 55, 120, 20],'Text','Parallel Pool Size:');
-        h.edit_npar = uieditfield(h.panel_other,'numeric','Position',[125,55,50,20],'Enable',false,...
+        uilabel(h.panel_cluster,'Position',[5, 80, 120, 20],'Text','Parallel Pool Size:');
+        h.edit_npar = uieditfield(h.panel_cluster,'numeric','Position',[125,80,50,20],'Enable',false,...
             'Editable',1,'Value',opts.par_size,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','par_size');
-
+        uilabel(h.panel_cluster,'Position',[5, 55, 120, 20],'Text','Partition Type:');
+        h.partition = uidropdown(h.panel_cluster,'Position',[125,55,80,20],...
+            'Items',{'auto','standard','largemem'},'ValueChangedFcn',@setOpts,'Tag','partition');
+        uilabel(h.panel_cluster,'Position',[5, 30, 120, 20],'Text','Memory / process: ');
+        h.edit_mem = uieditfield(h.panel_cluster,'numeric','Position',[125, 30, 50, 20],...
+            'Editable',1,'Value',opts.mem,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','mem');
+        uilabel(h.panel_cluster,'Position',[5, 5, 120, 20],'Text','Number of Nodes: ');
+        h.nnodes = uidropdown(h.panel_cluster,'Position',[125, 5, 80, 20],...
+            'Items',{'1','2','3','4','5'},'ItemsData',1:5,'ValueChangedFcn',@setOpts,'Tag','nnodes');
+        
+        h.panel_other = uipanel(h.tab2,'Position',[5, fheight-560, 215, 225],'Title','Other Options');
+        h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
+            'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
+        
     end
     function setPage(hObject,eventData)
         if isnumeric(hObject)
             hObject = round(hObject);
-            if hObject>0 && hObject<pageN
+            if hObject>0 && hObject<=pageN
                 curr_page = hObject;
             else
                 warning('Invalid numerical input. Max page = %s',pageN);
@@ -393,14 +408,24 @@ end
         h.fig.delete;
     end
     function setOpts(hObject,eData)
-        if isa(hObject,'matlab.ui.container.ButtonGroup')
-            h.edit_npar.Enable = strcmp(eData.NewValue.Tag,'batch');
-            opts.cluster = eData.NewValue.Tag;
-        else
-            str = hObject.Tag;
-            if ismember(str,fieldnames(opts))
-                opts.(str) = hObject.Value;
-            end
+        tag = hObject.Tag;
+        switch tag
+            case 'cluster'
+                h.edit_npar.Enable = strcmp(eData.NewValue.Tag,'batch');
+                set([h.partition,h.edit_mem,h.nnodes],'Enable',strcmp(eData.NewValue.Tag,'GL'));
+                opts.cluster = eData.NewValue.Tag;
+            case 'partition'
+                Ncases = numel(unique(ugroups_ic(C.Exp|C.Ins)));
+                stat = checkSLURM(numcases,eData.Value,opts.mem,opts.nnodes);
+                opts.partition = eData.Value;
+            case 'mem'
+                opts.mem = eData.Value;
+            case 'nnodes'
+                opts.nnodes = eData.Value;
+            otherwise
+                if ismember(tag,fieldnames(opts))
+                    opts.(tag) = hObject.Value;
+                end
         end
     end
     function str = selectCatalog(str,~)
@@ -469,8 +494,11 @@ end
 
             % Remove empty data and sort array
             % Find groups of scans with unique PatientName and StudyDate
-            if isnumeric(C.StudyDate)
-                C.StudyDate = cellfun(@num2str,num2cell(C.StudyDate),'UniformOutput',false);
+            tlabel = {'StudyID','StudyDate','PatientName'};
+            for i = 1:numel(tlabel)
+                if isnumeric(C.(tlabel{i}))
+                    C.(tlabel{i}) = cellfun(@num2str,num2cell(C.(tlabel{i})),'UniformOutput',false);
+                end
             end
             if ismember('CaseNumber',colnames)
                 C = removevars(C,'CaseNumber');
@@ -480,10 +508,7 @@ end
             % Sort by identifiers
             C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
             % Find case groupings
-            if isnumeric(C.PatientName)
-                C.PatientName = cellfun(@num2str,num2cell(C.PatientName),'UniformOutput',false);
-            end
-            [ugroups,~,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName,C.StudyID));
+            [ugroups,~,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
             ngroups = numel(ugroups);
 
             gp_valid = zeros(ngroups,1); % Initialize group validation
