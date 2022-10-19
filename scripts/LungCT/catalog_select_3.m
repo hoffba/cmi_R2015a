@@ -347,7 +347,7 @@ end
             % Set ID for all scans in this case group:
             page_group_ic = ugroups_ic(page_ic);
             sub_ic = page_group_ic==page_group_ic(eventdata.Indices(1));
-            hObject.Data(sub_ic,3) = {eventdata.NewData};
+            hObject.Data(sub_ic,3) = {regexprep(eventdata.NewData,' ','_')};
             C(page_ic(sub_ic),3) = {eventdata.NewData};
         else
             warning('Invalid PatientID, try again.');
@@ -491,6 +491,7 @@ end
                 UMlabel(ind) = C.PatientID(ind);
                 C = addvars(C,UMlabel,'After','Ins');
             end
+            C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
 
             % Remove empty data and sort array
             % Find groups of scans with unique PatientName and StudyDate
