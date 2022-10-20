@@ -236,7 +236,7 @@ if stat
     
     % Dilate and save moving mask:
     if stat(1) && self.cmiObj(2).img.mask.check
-        str = ['Dilating and Saving Moving VOI ...\n',mmskname];
+        str = 'Dilating and Saving Moving VOI ...\n';
         if self.guicheck
             waitbar(0.75,hw,str);
         end
@@ -248,7 +248,7 @@ if stat
     
     % Dilate and save fixed mask:
     if stat(1) && self.cmiObj(1).img.mask.check
-        str = ['Dilating and Saving Moving VOI ...\n',fmskname];
+        str = 'Dilating and Saving Fixed VOI ...\n';
         if self.guicheck
             waitbar(0.85,hw,str);
         end

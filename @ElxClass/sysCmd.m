@@ -25,6 +25,7 @@ p.addParameter('jacmat',false,@islogical);
 p.addParameter('def',false,@islogical);
 p.addParameter('outfn',{},@(x)ischar(x)||iscellstr(x));
 p.addParameter('tMask','',@ischar);
+p.addParameter('guicheck',false,@islogical);
 % Parse inputs:
 parse(p,odir,varargin{:});
 iflds = setdiff(p.Parameters,p.UsingDefaults);
@@ -87,7 +88,7 @@ if ~isempty(str)
         case [1,3] % Mac / Linux
             str = [self.xtstr,'-T "',p.title,'" -e ''',str,'''',wstr];
         case 2 % PC
-            str = [self.xtstr,'title ',p.title,self.sepstr,str,'"',wstr];
+            str = [self.xtstr,'title "',p.title,'"',self.sepstr,str,wstr];
         case 4 % Cluster
             str = [self.xtstr,str,self.sepstr,wstr];
     end

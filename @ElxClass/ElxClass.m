@@ -11,7 +11,7 @@ classdef ElxClass < handle
         Tx0guess = struct('i',{},'fname',{},'fpath',{}); % File names of initial guess transform (.txt)
         Tx0              % Initial transformation(s) (before optimization)
         Schedule = {};   % Schedule of coregistration parameters
-        outfmt = '.nii.gz' % Image output format
+        outfmt = '.nii' % Image output format
         sys = 0;
         
     end
@@ -26,7 +26,7 @@ classdef ElxClass < handle
                 self.sys = 1;
             elseif ispc
                 fprintf('ElxClass : Windows\n');
-                self.xtstr = 'cmd /c "mode con: cols=100 lines=40 && ';
+                self.xtstr = 'cmd /c mode con: cols=100 lines=40 && ';
                 self.sepstr = ' && ';
                 self.sys = 2;
             else % Linux

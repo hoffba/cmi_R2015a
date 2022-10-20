@@ -204,13 +204,28 @@ try
             elxdir = fullfile(procdir,sprintf('elastix_%s',ID));
             writeLog(opts.fn_log,'Performing registration...\nelxdir : %s\n',elxdir)
             pipeline_reg( img , elxdir , res.ID{1} , opts );
+            
             % Move registered file out to procdir
             [~,outfn] = fileparts(img(2).info.name);
-            outfn = fullfile(elxdir,sprintf('%s_R.nii',outfn));
-            % Elastix won't save .nii.gz, so need to resave
-            ins_reg = readNIFTI(outfn);
-            gzip(outfn);
-            movefile([outfn,'.gz'],fn_reg);
+            fn_move = {'spatialJacobian',       '.jac';...
+                       'FullSpatialJacobian',   '.fulljac';...
+                       'DeformationFields',     '.def';...
+                       [outfn,'_R'],            '.ins.reg'};
+            nf = size(fn_move,1);
+            for i = 1:nf
+                fn = dir(fullfile(elxdir,[fn_move{i,1},'*']));
+                if ~isempty(fn)
+                    writeLog(opts.fn_log,'Re-saving: %s\n',fn_move{i,1});
+                    timg = cmi_load(1,[],fullfile(elxdir,fn(1).name));
+                    cmi_save(0,timg,fn_move{i,1},img(1).info.fov,img(1).info.orient,...
+                        fullfile(procdir,sprintf('%s%s%s',res.ID{1},fn_move{i,2},fn_ext)));
+                    if i==nf
+                        ins_reg = timg;
+                        clear timg;
+                    end
+                end
+            end
+            
         end
 
         % QC registration
@@ -221,6 +236,7 @@ try
         img(2) = [];
 
         % PRM calculation
+        prm10 = [];
         fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));
         if exist(fn_PRM,'file')
             writeLog(opts.fn_log,'Loading PRM from file...\n');
@@ -241,84 +257,86 @@ try
         end
         clear ins_reg;
 
-        % Tabulate 10-color PRM results
-        writeLog(opts.fn_log,'Tabulating 10-color PRM results...\n');
-        T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
-        res = addTableVarVal(res,T);
+        if ~isempty(prm10)
+            % Tabulate 10-color PRM results
+            writeLog(opts.fn_log,'Tabulating 10-color PRM results...\n');
+            T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
+            res = addTableVarVal(res,T);
 
-        % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
-        prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
-                    [1,2],  3,      [4,5],  [8,9,10],   6    };
-        prm5 = int8(zeros(size(prm10)));
-        for i = 1:size(prmlabel,2)
-            prm5(ismember(prm10,prmlabel{2,i})) = i;
-        end
-        clear prm10
-
-        % QC PRM
-        writeLog(opts.fn_log,'Generating PRM Montage ...\n');
-        QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
-            img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID{1})));
-
-        % Tabulate 5-color PRM results
-        writeLog(opts.fn_log,'Tabulating 5-color PRM results...\n');
-        T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
-        res = addTableVarVal(res,T);
-
-        % Calculate tPRM
-        prmlabel = ["norm","fsad","emph","pd"];
-        mflabel = ["v","s","b","x"];
-        fn_tprm = fullfile(procdir,...
-            string(res.ID{1})+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
-        if all(cellfun(@(x)exist(x,'file'),fn_tprm))
-            writeLog(opts.fn_log,'Loading tPRM from files ...\n');
-            clear prm5;
-            for iprm = 1:numel(prmlabel)
-                for imf = 1:numel(mflabel)
-                    writeLog(opts.fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
-                    tprm = readNIFTI(fn_tprm(imf,iprm));
-                    str = prmlabel(iprm)+'_'+upper(mflabel(imf));
-                    T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                    res = addTableVarVal(res,T);
-                end
+            % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
+            prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
+                        [1,2],  3,      [4,5],  [8,9,10],   6    };
+            prm5 = int8(zeros(size(prm10)));
+            for i = 1:size(prmlabel,2)
+                prm5(ismember(prm10,prmlabel{2,i})) = i;
             end
-        elseif opts.tprm
-            t = tic;
-            writeLog(opts.fn_log,'Generating tPRM ...\n');
+            clear prm10
 
-            % Calculate MF values
-            p = minkowskiFun(prm5,'thresh',1:4,...
-                'tmode','==',...
-                'n',10*ones(1,3),...
-                'gridsp',5,...
-                'voxsz',img.info.voxsz,...
-                'mask',logical(img.label),...
-                'prog',0);
-            clear prm5;
+            % QC PRM
+            writeLog(opts.fn_log,'Generating PRM Montage ...\n');
+            QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
+                img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID{1})));
 
-            % Interpolate to maps
-            for ithresh = 1:size(p.MF,1)
-                for imf = 1:size(p.MF,2)
-                    writeLog(opts.fn_log,'   %s - %s\n',prmlabel(ithresh),mflabel(imf));
+            % Tabulate 5-color PRM results
+            writeLog(opts.fn_log,'Tabulating 5-color PRM results...\n');
+            T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
+            res = addTableVarVal(res,T);
 
-                    % Interpolate to image space
-                    tstr = prmlabel(ithresh) + '.' + mflabel(imf);
-                    writeLog(opts.fn_log,'       Interpolating\n');
-                    tprm = grid2img(p.MF(ithresh,imf,:),p.ind,p.mask,3,1);
-
-                    % Save tPRM image
-                    writeLog(opts.fn_log,'       Saving NIFTI\n');
-                    cmi_save(0,single(tprm),{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
-
-                    % Tabulate statistics
-                    writeLog(opts.fn_log,'       Tabulating means\n');
-                    str = prmlabel(ithresh)+'_'+upper(mflabel(imf));
-                    T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                    res = addTableVarVal(res,T);
+            % Calculate tPRM
+            prmlabel = ["norm","fsad","emph","pd"];
+            mflabel = ["v","s","b","x"];
+            fn_tprm = fullfile(procdir,...
+                string(res.ID{1})+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
+            if all(cellfun(@(x)exist(x,'file'),fn_tprm))
+                writeLog(opts.fn_log,'Loading tPRM from files ...\n');
+                clear prm5;
+                for iprm = 1:numel(prmlabel)
+                    for imf = 1:numel(mflabel)
+                        writeLog(opts.fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
+                        tprm = readNIFTI(fn_tprm(imf,iprm));
+                        str = prmlabel(iprm)+'_'+upper(mflabel(imf));
+                        T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
+                        res = addTableVarVal(res,T);
+                    end
                 end
-            end
-            writeLog(opts.fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
+            elseif opts.tprm
+                t = tic;
+                writeLog(opts.fn_log,'Generating tPRM ...\n');
 
+                % Calculate MF values
+                p = minkowskiFun(prm5,'thresh',1:4,...
+                    'tmode','==',...
+                    'n',10*ones(1,3),...
+                    'gridsp',5,...
+                    'voxsz',img.info.voxsz,...
+                    'mask',logical(img.label),...
+                    'prog',0);
+                clear prm5;
+
+                % Interpolate to maps
+                for ithresh = 1:size(p.MF,1)
+                    for imf = 1:size(p.MF,2)
+                        writeLog(opts.fn_log,'   %s - %s\n',prmlabel(ithresh),mflabel(imf));
+
+                        % Interpolate to image space
+                        tstr = prmlabel(ithresh) + '.' + mflabel(imf);
+                        writeLog(opts.fn_log,'       Interpolating\n');
+                        tprm = grid2img(p.MF(ithresh,imf,:),p.ind,p.mask,3,1);
+
+                        % Save tPRM image
+                        writeLog(opts.fn_log,'       Saving NIFTI\n');
+                        cmi_save(0,single(tprm),{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
+
+                        % Tabulate statistics
+                        writeLog(opts.fn_log,'       Tabulating means\n');
+                        str = prmlabel(ithresh)+'_'+upper(mflabel(imf));
+                        T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
+                        res = addTableVarVal(res,T);
+                    end
+                end
+                writeLog(opts.fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
+
+            end
         end
     end
 
