@@ -195,7 +195,8 @@ try
     end
 
     % Register I2E
-    if img(1).flag && img(2).flag
+    if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
+        ins_reg = [];
         fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'ins.reg',fn_ext));
         if exist(fn_reg,'file')
             writeLog(opts.fn_log,'Loading registered INS from file...\n');
@@ -235,6 +236,18 @@ try
             fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
         img(2) = [];
 
+        fn_jac = fullfile(procdir,sprintf('%s.jac%s',res.ID{1},fn_ext));
+        if opts.jac
+            if exist(fn_jac,'file')
+                writeLog(opts.fn_log,'Analyzing Jacobian map...\n');
+                jac = cmi_load(1,[],fn_jac);
+                T = lobeLoop(img.label,@(mask,jac)tabulateJac(mask,jac),jac);
+                res = addTableVarVal(res,T);
+            else
+                writeLog(opts.fn_log,'Jacobian file not found.\n');
+            end
+        end
+        
         % PRM calculation
         prm10 = [];
         fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));
@@ -351,6 +364,11 @@ end
 
 writeLog(opts.fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
+function T = tabulateJac(mask,jac)
+    vname = {'Jac_mean'};
+    nv = numel(vname);
+    T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),'VariableNames',vname);
+    T.Jac_mean = mean(jac(mask));
 
 function T = tabulatePRM(mask,prm,flag)
     if flag % 10-color
@@ -408,13 +426,12 @@ function T = addTableVarVal(T,varargin)
             else
                 tvals = vals(:,i);
             end
-            switch class(tvals)
-                case 'cell'
-                    defval = {''};
-                case 'double'
-                    defval = nan;
-                otherwise
-                    defval = {};
+            if iscell(tvals)
+                defval = {''};
+            elseif isnumeric(tvals)
+                defval = nan;
+            else
+                defval = {[]};
             end
             if ~ismember(varstr{i},T.Properties.VariableNames)
                 T = addvars(T,repmat(defval,size(T,1),1),'NewVariableNames',varstr(i));

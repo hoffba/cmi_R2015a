@@ -238,8 +238,9 @@ end
         bg = uibuttongroup(h.panel_cluster,'Position',[5,110,205,95],'Title','Cluster:',...
             'SelectionChangedFcn',@setOpts,'Tag','cluster');
         h.radio_GL = uiradiobutton(bg,'Position',[5,55,195,20],'Text','Great Lakes','Tag','GL');
-        h.radio_Batch = uiradiobutton(bg,'Position',[5,30,195,20],'Text','Local Batch','Tag','batch');
-        h.radio_Debug = uiradiobutton(bg,'Position',[5,5,195,20],'Text','Debug','Tag','debug');
+        h.radio_batch = uiradiobutton(bg,'Position',[5,30,195,20],'Text','Local Batch','Tag','batch');
+        h.radio_debug = uiradiobutton(bg,'Position',[5,5,195,20],'Text','Debug','Tag','debug');
+        h.(sprintf('radio_%s',opts.cluster)).Value = true;
         uilabel(h.panel_cluster,'Position',[5, 80, 120, 20],'Text','Parallel Pool Size:');
         h.edit_npar = uieditfield(h.panel_cluster,'numeric','Position',[125,80,50,20],'Enable',false,...
             'Editable',1,'Value',opts.par_size,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','par_size');
