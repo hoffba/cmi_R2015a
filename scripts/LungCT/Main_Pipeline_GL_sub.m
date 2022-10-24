@@ -226,7 +226,6 @@ try
                     end
                 end
             end
-            
         end
 
         % QC registration
@@ -369,6 +368,7 @@ function T = tabulateJac(mask,jac)
     nv = numel(vname);
     T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),'VariableNames',vname);
     T.Jac_mean = mean(jac(mask));
+    T.Jac_var = var(jac(mask));
 
 function T = tabulatePRM(mask,prm,flag)
     if flag % 10-color
