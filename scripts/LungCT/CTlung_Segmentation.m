@@ -35,7 +35,7 @@ switch method
         end
         tname = fullfile(ydir,sprintf('%s.mhd',id));
         saveMHD(tname,ct,id,info.fov,info.orient);
-        yacta(tname,'wait');
+        yacta(tname,'wait','airways','renderer','hide','exportlabels','yactascp');
         resname = dir([tname,'*lung_lobes*explabels.mhd']);
         if ~isempty(resname)
             seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
