@@ -17,6 +17,9 @@ try
     fn_res = fullfile(fullfile(procdir,[ID,'_PipelineResults.csv']));
     if exist(fn_res,'file')
         res = readtable(fn_res,'Delimiter',',');
+        if size(res,1)==1
+            res = repmat(res,Nr,1);
+        end
     else
         varnames = {'ID','Exp_DICOM','Ins_DICOM'};
         Nv = numel(varnames);
