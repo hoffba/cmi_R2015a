@@ -360,6 +360,9 @@ try
         writetable(res,fullfile(procdir,[res.ID{1},'_PipelineResults.csv']));
     end
     
+    % Need to remove rownames for future concatenation
+    res.Properties.RowNames = {};
+    
 catch err
     writeLog(opts.fn_log,'Pipeline ERROR:\n%s',getReport(err));
 end
