@@ -52,7 +52,7 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
         str{1,i} = [fullfile(self.elxdir,'transformix'),...
                ' -out "',pp.odir,'"',...
                ' -tp "',pp.tp{i},'"'];
-        if ~isempty(pp.in)
+        if ~isempty(pp.in{i})
             str{1,i} = [str{1,i},' -in "',pp.in{i},'"'];
         end
         if pp.jac

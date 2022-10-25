@@ -205,11 +205,11 @@ try
     if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
         ins_reg = [];
         fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'ins.reg',fn_ext));
+        elxdir = fullfile(procdir,sprintf('elastix_%s',ID));
         if exist(fn_reg,'file')
             writeLog(opts.fn_log,'Loading registered INS from file...\n');
             ins_reg = readNIFTI(fn_reg);
         elseif opts.reg
-            elxdir = fullfile(procdir,sprintf('elastix_%s',ID));
             writeLog(opts.fn_log,'Performing registration...\nelxdir : %s\n',elxdir)
             pipeline_reg( img , elxdir , res.ID{1} , opts );
             
@@ -242,15 +242,41 @@ try
             fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
         img(2) = [];
 
+        % Jacobian analysis
         fn_jac = fullfile(procdir,sprintf('%s.jac%s',res.ID{1},fn_ext));
         if opts.jac
+            jac = [];
             if exist(fn_jac,'file')
                 writeLog(opts.fn_log,'Analyzing Jacobian map...\n');
                 jac = cmi_load(1,[],fn_jac);
-                T = lobeLoop(img.label,@(mask,jac)tabulateJac(mask,jac),jac);
-                res = addTableVarVal(res,T);
             else
                 writeLog(opts.fn_log,'Jacobian file not found.\n');
+                if isfolder(elxdir)
+                    writeLog(opts.fn_log,'Calculating Jacobian from Transform Parameters.\n');
+                    
+                    fn = dir(fullfile(elxdir,'TransformParameters.?.txt'));
+                    fn = fullfile(elxdir,fn(end).name);
+                    
+                    % Fix transform parameter filenames in the transform chain
+                    fixTransformParameter(fn);
+                    
+                    elxObj = ElxClass;
+                    str = elxObj.sysCmd(elxdir,'tp',fullfile(elxdir,fn(end).name),'jac',true,'wait',true);
+                    system(str);
+                    
+                    % Re-save Jacobian map to subject folder:
+                    fn_jac_elx = fullfile(elxdir,'spatialJacobian.nii');
+                    if exist(fn_jac_elx,'file')
+                        jac = cmi_load(1,[],fn_jac_elx);
+                        cmi_save(0,jac,'spatialJacobian',img(1).info.fov,img(1).info.orient,fn_jac);
+                    else
+                        writeLog(opts.fn_log,'Jacobian processing failed.\n');
+                    end
+                end
+            end
+            if ~isempty(jac)
+                T = lobeLoop(img.label,@(mask,jac)tabulateJac(mask,jac),jac);
+                res = addTableVarVal(res,T);
             end
         end
         
