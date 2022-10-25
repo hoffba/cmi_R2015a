@@ -263,6 +263,7 @@ try
                     elxObj = ElxClass;
                     str = elxObj.sysCmd(elxdir,'tp',fullfile(elxdir,fn(end).name),'jac',true,'wait',true);
                     system(str);
+                    clear elxObj;
                     
                     % Re-save Jacobian map to subject folder:
                     fn_jac_elx = fullfile(elxdir,'spatialJacobian.nii');
