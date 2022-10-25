@@ -130,7 +130,7 @@ try
                            'BEI',       'BEI_LLL',      'LLL'};
                     for ifld = 1:size(fld,1)
                         if isfield(airway_res,fld{ifld,1})
-                            res = addTableVarVal(res,fld{ifld,1},fld{ifld,2},airway_res.(fld{ifld,3}));
+                            res = addTableVarVal(res,fld{ifld,1},fld{ifld,3},airway_res.(fld{ifld,2}));
                         end
                     end
 
@@ -261,7 +261,7 @@ try
                     fixTransformParameter(fn);
                     
                     elxObj = ElxClass;
-                    str = elxObj.sysCmd(elxdir,'tp',fullfile(elxdir,fn(end).name),'jac',true,'wait',true);
+                    str = elxObj.sysCmd(elxdir,'tp',fn,'jac',true,'wait',true);
                     system(str);
                     clear elxObj;
                     
