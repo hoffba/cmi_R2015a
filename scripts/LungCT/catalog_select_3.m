@@ -514,6 +514,16 @@ end
             ngroups = numel(ugroups);
 
             gp_valid = zeros(ngroups,1); % Initialize group validation
+            
+            % Fix DICOM location
+            if ischar(str)
+                cat_path = fileparts(str);
+                for ifn = 1:size(C,1)
+                    [~,cat_folder] = fileparts(cat_path);
+                    tpath = extractAfter(C.Directory{ifn},cat_folder);
+                    C.Directory{ifn} = fullfile(cat_path,tpath);
+                end
+            end
         
             % Set page info
             pageN = ceil(ngroups/gp_per_page);
