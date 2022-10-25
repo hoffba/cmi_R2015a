@@ -130,7 +130,7 @@ try
                            'BEI',       'BEI_LLL',      'LLL'};
                     for ifld = 1:size(fld,1)
                         if isfield(airway_res,fld{ifld,1})
-                            res = addTableVarVal(res,fld{ifld,1},fld{ifld,2},airway.res.(fld{ifld,3}));
+                            res = addTableVarVal(res,fld{ifld,1},fld{ifld,2},airway_res.(fld{ifld,3}));
                         end
                     end
 
@@ -391,13 +391,13 @@ try
         writetable(res,fullfile(procdir,[res.ID{1},'_PipelineResults.csv']));
     end
     
-    % Need to remove rownames for future concatenation
-    res.Properties.RowNames = {};
-    
 catch err
     writeLog(opts.fn_log,'Pipeline ERROR:\n%s',getReport(err));
 end
 
+% Need to remove rownames for future concatenation
+res.Properties.RowNames = {};
+    
 writeLog(opts.fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
 function T = tabulateJac(mask,jac)

@@ -92,7 +92,7 @@ switch opts.cluster
             fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
             f(i) = parfeval(@(x,y)pipeline_full(x,y),1,cases(i),opts);
         end
-        % Flag processes as the complete
+        % Flag processes as they complete
         for i = 1:ncases
             [idx,res] = fetchNext(f);
             fprintf('Finished process #%d of %d: %s\n', idx, ncases, cases(idx).basename);
