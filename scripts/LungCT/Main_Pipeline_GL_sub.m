@@ -270,6 +270,7 @@ try
                     if exist(fn_jac_elx,'file')
                         jac = cmi_load(1,[],fn_jac_elx);
                         cmi_save(0,jac,'spatialJacobian',img(1).info.fov,img(1).info.orient,fn_jac);
+                        delete(fn_jac_elx);
                     else
                         writeLog(opts.fn_log,'Jacobian processing failed.\n');
                     end
