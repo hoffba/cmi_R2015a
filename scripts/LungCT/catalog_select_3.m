@@ -559,7 +559,7 @@ end
         if nargin==0 || isempty(tpath) || ~ischar(tpath)
             tpath = uigetdir('Select folder for saving results:');
         end
-        if ~isempty(tpath)
+        if tpath
             opts.save_path = tpath;
             h.text_save.Value = tpath;
         end

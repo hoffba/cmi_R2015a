@@ -398,7 +398,12 @@ try
 
     % Save Results Table:
     if istable(res)
-        writetable(res,fullfile(procdir,[res.ID{1},'_PipelineResults.csv']));
+        fn_res = fullfile(procdir,[res.ID{1},'_PipelineResults.csv']);
+        if exist(fn_res,'file')
+            old_res = readtable(fn_res);
+            res = addTableVarVal(old_res,res);
+        end
+        writetable(res,fn_res);
     end
     
 catch err
@@ -443,47 +448,4 @@ function img = medfilt2_3(img)
     for i = 1:size(img,3)
         img(:,:,i) = medfilt2(img(:,:,i));
     end
-    
-function T = addTableVarVal(T,varargin)
-    if nargin==2 && istable(varargin{1}) && strcmp(varargin{1}.Properties.VariableNames{1},'LOBE')
-        vals = varargin{1};
-        regionstr = vals.LOBE;
-        vals = removevars(vals,'LOBE');
-        varstr = vals.Properties.VariableNames;
-    elseif nargin==4
-        varstr = varargin{1};
-        regionstr = varargin{2};
-        vals = varargin{3};
-        if ischar(regionstr)
-            regionstr = {regionstr};
-        end
-        if ischar(varstr)
-            varstr = {varstr};
-        end
-        if numel(varstr)<size(vals,2)
-            varstr = strcat(varstr,'_',cellfun(@num2str,num2cell(1:size(vals,2)),'UniformOutput',false));
-        end
-    else
-        return;
-    end
-    if numel(regionstr)==size(vals,1)
-        for i = 1:numel(varstr)
-            if istable(vals)
-                tvals = vals.(varstr{i});
-            else
-                tvals = vals(:,i);
-            end
-            if iscell(tvals)
-                defval = {''};
-            elseif isnumeric(tvals)
-                defval = nan;
-            else
-                defval = {[]};
-            end
-            if ~ismember(varstr{i},T.Properties.VariableNames)
-                T = addvars(T,repmat(defval,size(T,1),1),'NewVariableNames',varstr(i));
-            end
-            T.(varstr{i})(regionstr) = tvals;
-        end
-    end
-    
+   

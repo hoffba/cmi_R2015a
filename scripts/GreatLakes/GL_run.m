@@ -49,7 +49,7 @@ if nargin~=2
 
     % Recalculate taking into account #nodes
     opts.Niter = ceil(opts.Niter/opts.Nodes);
-    cores = min(min(opts.Niter,floor(opts.MaxMem/opts.ProcessMemory))+1,36);
+    cores = min(min(opts.Niter,floor(opts.MaxMem/opts.ProcessMemory))+1,core_max);
     mem = opts.ProcessMemory * (cores-1);
     walltime = opts.ProcessTime*ceil(opts.Niter/(cores-1));
     if walltime > (14*24*60) % 14 day max walltime
