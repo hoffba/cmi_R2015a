@@ -35,12 +35,13 @@ switch method
         end
         tname = fullfile(ydir,sprintf('%s.mhd',id));
         saveMHD(tname,ct,id,info.fov,info.orient);
-        yacta(tname,'wait','airways','renderer','hide','exportlabels','yactascp');
+        yacta(tname,'wait');
+%         yacta(tname,'wait','airways','renderer','hide','exportlabels','yactascp');
         resname = dir([tname,'*lung_lobes*explabels.mhd']);
         if ~isempty(resname)
             seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
         end
-        if ~all(ismember(10:10:60,seg))
+        if nnz(seg)<10^3
             writeLog(logfn,'- - Lobe segmentation failed. Checking for lungs...');
             resname = dir([tname,'*lung_right_left*explabels.mhd']);
             if ~isempty(resname)

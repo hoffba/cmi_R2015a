@@ -158,35 +158,44 @@ try
     end
 
     % ScatterNet for AT on Exp CT scan
-    if opts.scatnet && img(1).flag
-        fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet',fn_ext));
-        writeLog(opts.fn_log,'Air trapping map ... ');
-        if exist(fn_scatnet,'file')
-            writeLog(opts.fn_log,'from file\n');
-            atMap = cmi_load(1,img(1).info.d(1:3),fn_scatnet);
-        else
-            writeLog(opts.fn_log,'generating with ScatNet\n');
-            atMap = ScatNet(img(1).mat,logical(img(1).label),0);
-            cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
+    atMap = [];
+    try
+        if opts.scatnet && img(1).flag
+            fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet',fn_ext));
+            writeLog(opts.fn_log,'Air trapping map ... ');
+            if exist(fn_scatnet,'file')
+                writeLog(opts.fn_log,'from file\n');
+                atMap = cmi_load(1,img(1).info.d(1:3),fn_scatnet);
+            else
+                writeLog(opts.fn_log,'generating with ScatNet\n');
+                atMap = ScatNet(img(1).mat,logical(img(1).label),0);
+                cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
+            end
         end
+    catch err
+        writeLog(opts.fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
     end
 
     % Vessel analysis
-    if opts.vessel && img(2).flag
-        writeLog(opts.fn_log,'Vessel analysis ...\n');
-        fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID{1}));
-        fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID{1}));
-        if exist(fn_re_ins,'file') && exist(fn_re_seg,'file')
-            tinfo = niftiinfo(fn_re_ins);
-            tins = niftiread(tinfo);
-            tseg = niftiread(fn_re_seg);
-        else
-            tinfo = init_niftiinfo(res.ID{1},img(2).info.voxsz,class(img(2).mat),img(2).info.d);
-            tins = img(2).mat;
-            tseg = img(2).label;
+    try
+        if opts.vessel && img(2).flag
+            writeLog(opts.fn_log,'Vessel analysis ...\n');
+            fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID{1}));
+            fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID{1}));
+            if exist(fn_re_ins,'file') && exist(fn_re_seg,'file')
+                tinfo = niftiinfo(fn_re_ins);
+                tins = niftiread(tinfo);
+                tseg = niftiread(fn_re_seg);
+            else
+                tinfo = init_niftiinfo(res.ID{1},img(2).info.voxsz,class(img(2).mat),img(2).info.d);
+                tins = img(2).mat;
+                tseg = img(2).label;
+            end
+            T = pipeline_vesselseg( tins, tseg, tinfo, procdir, opts, opts.fn_log);
+            res = addTableVarVal(res,T);
         end
-        T = pipeline_vesselseg( tins, tseg, tinfo, procdir, opts, opts.fn_log);
-        res = addTableVarVal(res,T);
+    catch err
+        writeLog(opts.fn_log,'Vessel Analysis FAILED:\n%s\n',getReport(err));
     end
 
     % Quantify unregistered CT scans

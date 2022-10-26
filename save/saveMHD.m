@@ -16,8 +16,9 @@ end
 
 %% CJG commented out this part
 % Permute from YXZ to XYZ:
-% img = permute(img,[2,1,3,4]);
-% fov = fov([2,1,3]);
+img = permute(img,[2,1,3,4]);
+fov = fov([2,1,3]);
+orient = orient([2,1,3,4],[2,1,3,4]);
 %%
 
 [d(1),d(2),d(3),nv] = size(img);

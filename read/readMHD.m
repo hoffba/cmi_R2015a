@@ -138,8 +138,8 @@ elseif hchk && exist(rawfname,'file')
     end
 end
 
-% perm = [2,1,3];
-% img = permute(img,perm);
-% fov = fov(perm);
-% orient = orient([perm,4],[perm,4]);
+perm = [2,1,3];
+img = permute(img,perm);
+fov = fov(perm);
+orient = orient([perm,4],[perm,4]);
 
