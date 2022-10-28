@@ -184,14 +184,18 @@ else
         tempdir = checkTurboPath(p.TempDir);
         jobnum_str = '';
         if ~isnan(jobnum)
-            jobnum_str = num2str(jobnum);
+            jobnum_str = [num2str(jobnum),'_'];
         end
-        svname = fullfile(tempdir,sprintf('%s_%s_Results',jobname,jobnum_str));
+        svname = fullfile(tempdir,sprintf('%s_%sResults',jobname,jobnum_str));
+        fprintf('Attempting to save results:\n');
         if istable(T)
-            writetable(T,[svname,'.csv'],'WriteRowNames',true);
+            svname = [svname,'.csv'];
+            writetable(T,svname,'WriteRowNames',true);
         else
-            save([svname,'.mat'],T);
+            svname = [svname,'.mat'];
+            save(svname,T);
         end
+        fprintf('   ... %s\n',svname);
         
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
             mean(dt(errflag)),std(dt(errflag)));

@@ -67,11 +67,16 @@ if stat
     forient = self.cmiObj(1).img.orient;
     morient = self.cmiObj(2).img.orient;
        
-    % Set filenames:
-    temp_ext = '.nii';
+    % Determine what file type to use:
+    temp_ext = '.mhd';
     if self.elxObj.sys == 4 % GL doesn't seem to like nifti files
         temp_ext = '.mhd';
     end
+    for i = 1:numel(self.elxObj.Schedule)
+        self.elxObj.setPar(i,'ResultImageFormat',temp_ext(2:end));
+    end
+    
+    % Set filenames:
     [~,outfn] = fileparts(self.cmiObj(2).img.name);
     outfn = fullfile(self.odir,[outfn,'_R',temp_ext]);
     origfn = fullfile(self.odir,['elxtemp-origm',temp_ext]);

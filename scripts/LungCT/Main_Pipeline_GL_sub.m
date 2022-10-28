@@ -8,7 +8,8 @@ try
     fn_ext = '.nii.gz';
     opts.fn_log = fullfile(procdir,'pipeline_log.txt');
 
-    writeLog(opts.fn_log,'\n\nStarting Pipeline Process : %s\n',datestr(datetime('now'),0));
+    nowstr = datestr(datetime('now'),0);
+    writeLog(opts.fn_log,'\n\nStarting Pipeline Process : %s\n',nowstr);
     
     % Load results file
     [~,ID] = fileparts(procdir);
@@ -28,6 +29,12 @@ try
     end
     res.Properties.RowNames = regionnames;
     res.ROI = regionnames';
+    fld = {'ID','Exp_DICOM','Ins_DICOM'};
+    for i = 1:numel(fld)
+        if isnumeric(res.(fld{i}))
+            res.(fld{i}) = arrayfun(@num2str,res.(fld{i}),'UniformOutput',false);
+        end
+    end
 
     % Load images
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]});
@@ -233,9 +240,15 @@ try
                 fn = dir(fullfile(elxdir,[fn_move{i,1},'*']));
                 if ~isempty(fn)
                     writeLog(opts.fn_log,'Re-saving: %s\n',fn_move{i,1});
-                    timg = cmi_load(1,[],fullfile(elxdir,fn(1).name));
+                    fn_elx = fullfile(elxdir,fn(1).name);
+                    timg = cmi_load(1,[],fn_elx);
                     cmi_save(0,timg,fn_move{i,1},img(1).info.fov,img(1).info.orient,...
                         fullfile(procdir,sprintf('%s%s%s',res.ID{1},fn_move{i,2},fn_ext)));
+                    % Delete image from elxreg_ folder:
+                    delete(fn_elx);
+                    if endsWith(fn_elx,'.mhd')
+                        delete([fn_elx(1:end-3),'raw']);
+                    end
                     if i==nf
                         ins_reg = timg;
                         clear timg;
@@ -397,13 +410,11 @@ try
     end
 
     % Save Results Table:
+    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',res.ID{1},opts.timestamp));
+    save([fn_res,'.mat'],'res');
     if istable(res)
-        fn_res = fullfile(procdir,[res.ID{1},'_PipelineResults.csv']);
-        if exist(fn_res,'file')
-            old_res = readtable(fn_res);
-            res = addTableVarVal(old_res,res);
-        end
-        writetable(res,fn_res);
+        fn_res = [fn_res,'.csv'];
+        writetable(res,[fn_res,'.csv']);
     end
     
 catch err
