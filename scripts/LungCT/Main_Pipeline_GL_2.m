@@ -12,6 +12,9 @@ end
 
 % Find files
 [cases,opts] = catalog_select_3('opts',opts);
+if isempty(cases)
+    return;
+end
 ncases = numel(cases);
 
 % Make sure the save directory is on Turbo, for access from GL
