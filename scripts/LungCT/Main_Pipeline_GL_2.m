@@ -73,7 +73,7 @@ results = [];
 ncases = numel(cases);
 
 f(1:ncases) = parallel.FevalFuture;
-switch opts.cluste
+switch opts.cluster
     case 'GL' 
         % Start queue for local processes:
         for i = 1:ncases

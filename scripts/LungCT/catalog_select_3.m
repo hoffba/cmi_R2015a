@@ -432,7 +432,7 @@ end
     function str = selectCatalog(str,~)
         newC = [];
         if nargin==0 || isempty(str) || ~ischar(str)
-            str = uigetdir('Select folder for processing.');
+            str = uigetdir(fileparts(opts.dcm_path),'Select folder for processing.');
             if isnumeric(str) % Cancel button was selected
                 return;
             end
@@ -557,7 +557,7 @@ end
     end
     function setSavePath(tpath,~)
         if nargin==0 || isempty(tpath) || ~ischar(tpath)
-            tpath = uigetdir('Select folder for saving results:');
+            tpath = uigetdir(opts.save_path,'Select folder for saving results:');
         end
         if tpath
             opts.save_path = tpath;

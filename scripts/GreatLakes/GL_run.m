@@ -27,8 +27,7 @@ if nargin~=2
     opts = parseInputs(varargin{:});
 
     % Determine SBATCH inputs
-    nowstring = char(datetime('now','Format','yyyyMMddHHmmss'));
-    jobname = sprintf('%s_%s_%s',opts.username,opts.function_string,nowstring);
+    jobname = sprintf('%s_%s_%s',opts.username,opts.function_string,opts.TimeStamp);
     fname = [jobname,'.sh'];
 
     % Calculate number of nodes
@@ -214,6 +213,7 @@ addParameter(p,'ProcessTime',60,@isscalar);
 addParameter(p,'ProcessMemory',6,@isscalar);
 addParameter(p,'Partition','auto',@(x)ismember(x,{'auto','standard','largemem'}));
 addParameter(p,'mods',{},@iscellstr);
+addParameter(p,'TimeStamp','',@ischar);
 parse(p,varargin{:});
 opts = p.Results;
 
