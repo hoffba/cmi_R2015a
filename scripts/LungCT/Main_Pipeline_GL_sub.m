@@ -8,7 +8,8 @@ try
     fn_ext = '.nii.gz';
     opts.fn_log = fullfile(procdir,'pipeline_log.txt');
 
-    writeLog(opts.fn_log,'\n\nStarting Pipeline Process : %s\n',datestr(datetime('now'),0));
+    nowstr = datestr(datetime('now'),0);
+    writeLog(opts.fn_log,'\n\nStarting Pipeline Process : %s\n',nowstr);
     
     % Load results file
     [~,ID] = fileparts(procdir);
@@ -28,6 +29,12 @@ try
     end
     res.Properties.RowNames = regionnames;
     res.ROI = regionnames';
+    fld = {'ID','Exp_DICOM','Ins_DICOM'};
+    for i = 1:numel(fld)
+        if isnumeric(res.(fld{i}))
+            res.(fld{i}) = arrayfun(@num2str,res.(fld{i}),'UniformOutput',false);
+        end
+    end
 
     % Load images
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]});
@@ -233,9 +240,15 @@ try
                 fn = dir(fullfile(elxdir,[fn_move{i,1},'*']));
                 if ~isempty(fn)
                     writeLog(opts.fn_log,'Re-saving: %s\n',fn_move{i,1});
-                    timg = cmi_load(1,[],fullfile(elxdir,fn(1).name));
+                    fn_elx = fullfile(elxdir,fn(1).name);
+                    timg = cmi_load(1,[],fn_elx);
                     cmi_save(0,timg,fn_move{i,1},img(1).info.fov,img(1).info.orient,...
                         fullfile(procdir,sprintf('%s%s%s',res.ID{1},fn_move{i,2},fn_ext)));
+                    % Delete image from elxreg_ folder:
+                    delete(fn_elx);
+                    if endsWith(fn_elx,'.mhd')
+                        delete([fn_elx(1:end-3),'raw']);
+                    end
                     if i==nf
                         ins_reg = timg;
                         clear timg;
@@ -293,22 +306,24 @@ try
         
         % PRM calculation
         prm10 = [];
-        fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));
-        if exist(fn_PRM,'file')
-            writeLog(opts.fn_log,'Loading PRM from file...\n');
-            prm10 = int8(readNIFTI(fn_PRM));
-        elseif opts.prm
-            writeLog(opts.fn_log,'Calculating PRM...\n');
-            [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
-                fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1})));
+        if opts.prm
+            fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));
+            if exist(fn_PRM,'file')
+                writeLog(opts.fn_log,'Loading PRM from file...\n');
+                prm10 = int8(readNIFTI(fn_PRM));
+            elseif opts.prm
+                writeLog(opts.fn_log,'Calculating PRM...\n');
+                [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
+                    fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1})));
 
-            % Save PRM
-            writeLog(opts.fn_log,'Saving PRM as NIFTI ... ');
-            stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,fn_PRM);
-            if stat
-                writeLog(opts.fn_log,'  PRM saved\n');
-            else
-                writeLog(opts.fn_log,'  Could not save PRM to file.\n');
+                % Save PRM
+                writeLog(opts.fn_log,'Saving PRM as NIFTI ... ');
+                stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,fn_PRM);
+                if stat
+                    writeLog(opts.fn_log,'  PRM saved\n');
+                else
+                    writeLog(opts.fn_log,'  Could not save PRM to file.\n');
+                end
             end
         end
         clear ins_reg;
@@ -339,71 +354,71 @@ try
             res = addTableVarVal(res,T);
 
             % Calculate tPRM
-            prmlabel = ["norm","fsad","emph","pd"];
-            mflabel = ["v","s","b","x"];
-            fn_tprm = fullfile(procdir,...
-                string(res.ID{1})+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
-            if all(cellfun(@(x)exist(x,'file'),fn_tprm))
-                writeLog(opts.fn_log,'Loading tPRM from files ...\n');
-                clear prm5;
-                for iprm = 1:numel(prmlabel)
-                    for imf = 1:numel(mflabel)
-                        writeLog(opts.fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
-                        tprm = readNIFTI(fn_tprm(imf,iprm));
-                        str = prmlabel(iprm)+'_'+upper(mflabel(imf));
-                        T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                        res = addTableVarVal(res,T);
+            if opts.tprm
+                prmlabel = ["norm","fsad","emph","pd"];
+                mflabel = ["v","s","b","x"];
+                fn_tprm = fullfile(procdir,...
+                    string(res.ID{1})+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
+                if all(cellfun(@(x)exist(x,'file'),fn_tprm))
+                    writeLog(opts.fn_log,'Loading tPRM from files ...\n');
+                    clear prm5;
+                    for iprm = 1:numel(prmlabel)
+                        for imf = 1:numel(mflabel)
+                            writeLog(opts.fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
+                            tprm = readNIFTI(fn_tprm(imf,iprm));
+                            str = prmlabel(iprm)+'_'+upper(mflabel(imf));
+                            T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
+                            res = addTableVarVal(res,T);
+                        end
                     end
-                end
-            elseif opts.tprm
-                t = tic;
-                writeLog(opts.fn_log,'Generating tPRM ...\n');
+                elseif opts.tprm
+                    t = tic;
+                    writeLog(opts.fn_log,'Generating tPRM ...\n');
 
-                % Calculate MF values
-                p = minkowskiFun(prm5,'thresh',1:4,...
-                    'tmode','==',...
-                    'n',10*ones(1,3),...
-                    'gridsp',5,...
-                    'voxsz',img.info.voxsz,...
-                    'mask',logical(img.label),...
-                    'prog',0);
-                clear prm5;
+                    % Calculate MF values
+                    p = minkowskiFun(prm5,'thresh',1:4,...
+                        'tmode','==',...
+                        'n',10*ones(1,3),...
+                        'gridsp',5,...
+                        'voxsz',img.info.voxsz,...
+                        'mask',logical(img.label),...
+                        'prog',0);
+                    clear prm5;
 
-                % Interpolate to maps
-                for ithresh = 1:size(p.MF,1)
-                    for imf = 1:size(p.MF,2)
-                        writeLog(opts.fn_log,'   %s - %s\n',prmlabel(ithresh),mflabel(imf));
+                    % Interpolate to maps
+                    for ithresh = 1:size(p.MF,1)
+                        for imf = 1:size(p.MF,2)
+                            writeLog(opts.fn_log,'   %s - %s\n',prmlabel(ithresh),mflabel(imf));
 
-                        % Interpolate to image space
-                        tstr = prmlabel(ithresh) + '.' + mflabel(imf);
-                        writeLog(opts.fn_log,'       Interpolating\n');
-                        tprm = grid2img(p.MF(ithresh,imf,:),p.ind,p.mask,3,1);
+                            % Interpolate to image space
+                            tstr = prmlabel(ithresh) + '.' + mflabel(imf);
+                            writeLog(opts.fn_log,'       Interpolating\n');
+                            tprm = grid2img(p.MF(ithresh,imf,:),p.ind,p.mask,3,1);
 
-                        % Save tPRM image
-                        writeLog(opts.fn_log,'       Saving NIFTI\n');
-                        cmi_save(0,single(tprm),{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
+                            % Save tPRM image
+                            writeLog(opts.fn_log,'       Saving NIFTI\n');
+                            cmi_save(0,single(tprm),{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
 
-                        % Tabulate statistics
-                        writeLog(opts.fn_log,'       Tabulating means\n');
-                        str = prmlabel(ithresh)+'_'+upper(mflabel(imf));
-                        T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                        res = addTableVarVal(res,T);
+                            % Tabulate statistics
+                            writeLog(opts.fn_log,'       Tabulating means\n');
+                            str = prmlabel(ithresh)+'_'+upper(mflabel(imf));
+                            T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
+                            res = addTableVarVal(res,T);
+                        end
                     end
-                end
-                writeLog(opts.fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
+                    writeLog(opts.fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
 
+                end
             end
         end
     end
 
     % Save Results Table:
+    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',res.ID{1},opts.timestamp));
+    save([fn_res,'.mat'],'res');
     if istable(res)
-        fn_res = fullfile(procdir,[res.ID{1},'_PipelineResults.csv']);
-        if exist(fn_res,'file')
-            old_res = readtable(fn_res);
-            res = addTableVarVal(old_res,res);
-        end
-        writetable(res,fn_res);
+        fn_res = [fn_res,'.csv'];
+        writetable(res,[fn_res,'.csv']);
     end
     
 catch err

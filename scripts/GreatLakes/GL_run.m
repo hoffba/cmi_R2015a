@@ -27,8 +27,7 @@ if nargin~=2
     opts = parseInputs(varargin{:});
 
     % Determine SBATCH inputs
-    nowstring = char(datetime('now','Format','yyyyMMddHHmmss'));
-    jobname = sprintf('%s_%s_%s',opts.username,opts.function_string,nowstring);
+    jobname = sprintf('%s_%s_%s',opts.username,opts.function_string,opts.TimeStamp);
     fname = [jobname,'.sh'];
 
     % Calculate number of nodes
@@ -184,14 +183,18 @@ else
         tempdir = checkTurboPath(p.TempDir);
         jobnum_str = '';
         if ~isnan(jobnum)
-            jobnum_str = num2str(jobnum);
+            jobnum_str = [num2str(jobnum),'_'];
         end
-        svname = fullfile(tempdir,sprintf('%s_%s_Results',jobname,jobnum_str));
+        svname = fullfile(tempdir,sprintf('%s_%sResults',jobname,jobnum_str));
+        fprintf('Attempting to save results:\n');
         if istable(T)
-            writetable(T,[svname,'.csv'],'WriteRowNames',true);
+            svname = [svname,'.csv'];
+            writetable(T,svname,'WriteRowNames',true);
         else
-            save([svname,'.mat'],T);
+            svname = [svname,'.mat'];
+            save(svname,T);
         end
+        fprintf('   ... %s\n',svname);
         
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
             mean(dt(errflag)),std(dt(errflag)));
@@ -210,6 +213,7 @@ addParameter(p,'ProcessTime',60,@isscalar);
 addParameter(p,'ProcessMemory',6,@isscalar);
 addParameter(p,'Partition','auto',@(x)ismember(x,{'auto','standard','largemem'}));
 addParameter(p,'mods',{},@iscellstr);
+addParameter(p,'TimeStamp','',@ischar);
 parse(p,varargin{:});
 opts = p.Results;
 

@@ -12,6 +12,9 @@ end
 
 % Find files
 [cases,opts] = catalog_select_3('opts',opts);
+if isempty(cases)
+    return;
+end
 ncases = numel(cases);
 
 % Make sure the save directory is on Turbo, for access from GL
@@ -33,6 +36,7 @@ end
 %  - 'debug' = run full pipeline locally in command window
 c = parcluster('local');
 nworkers_orig = c.NumWorkers;
+opts.timestamp = char(datetime('now','Format','yyyyMMddHHmmss'));
 if strcmp(opts.cluster,'debug')
     
 %~~~~~~~~~ debug ~~~~~~~~~
@@ -45,8 +49,7 @@ if strcmp(opts.cluster,'debug')
     end
 else
     % Set up cluster properties
-    jobdir = fullfile(c.JobStorageLocation,...
-        sprintf('pipeline_local_%s',char(datetime('now','Format','yyyyMMddHHmmss'))));
+    jobdir = fullfile(c.JobStorageLocation,sprintf('pipeline_local_%s',opts.timestamp));
     mkdir(jobdir);
     c.JobStorageLocation = jobdir;
     np = min([c.NumWorkers-1,numel(cases),opts.par_size]);
@@ -57,7 +60,7 @@ else
                  'Please wait at least an hour before starting GL process\n'],np);
         batch(@pipeline_loop,1,{cases,opts},'Pool',nworkers_orig,'Pool',np);
         GL_run(opts.username, 'Main_Pipeline_GL_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
-            'ProcessMemory',24,'ProcessTime',720)
+            'ProcessMemory',24,'ProcessTime',720,'TimeStamp',opts.timestamp)
     else
         
 %~~~~~~~~~ batch ~~~~~~~~~
@@ -135,7 +138,7 @@ try
 
     % Initialize parameters and results struct
     fn_ext = '.nii.gz';
-    img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{'',''},'dcmpath',{'',''});
+    img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{'',''},'dcmpath',{'Unknown','Unknown'});
 
     fn = fullfile(procdir,string(ID)+[".exp",".exp.label";".ins",".ins.label"]+fn_ext);
     fnflag = cellfun(@(x)exist(x,'file'),fn);

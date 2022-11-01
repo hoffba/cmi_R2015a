@@ -9,7 +9,7 @@ function [selected_data,opts] = catalog_select_3(varargin)
 %                                .StudyDate = string date
 %                                .Scans = structure array with scan info
 
-
+go = false;
 selected_data = [];
 opts = struct('cluster','GL',...
               'par_size',5,...
@@ -81,7 +81,7 @@ end
 waitfor(h.fig);
 
 %% Gather outputs
-if ~isempty(C)
+if ~isempty(C) && go
     %% Determine tags:
     tagstr = repmat({''},size(C,1),1);
     tagstr(C.Exp) = {'Exp'};
@@ -399,7 +399,7 @@ end
             for iflds = 1:numel(flds)
                 opts.(flds{iflds}) = h.(flds{iflds}).Value;
             end
-            
+            go = true;
             h.fig.delete;
         end
     end
@@ -432,7 +432,7 @@ end
     function str = selectCatalog(str,~)
         newC = [];
         if nargin==0 || isempty(str) || ~ischar(str)
-            str = uigetdir('Select folder for processing.');
+            str = uigetdir(fileparts(opts.dcm_path),'Select folder for processing.');
             if isnumeric(str) % Cancel button was selected
                 return;
             end
@@ -557,7 +557,7 @@ end
     end
     function setSavePath(tpath,~)
         if nargin==0 || isempty(tpath) || ~ischar(tpath)
-            tpath = uigetdir('Select folder for saving results:');
+            tpath = uigetdir(opts.save_path,'Select folder for saving results:');
         end
         if tpath
             opts.save_path = tpath;
