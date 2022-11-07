@@ -101,7 +101,7 @@ switch opts.cluster
             fprintf('Finished process #%d of %d: %s\n', idx, ncases, cases(idx).basename);
             % Gather results
             if ~isempty(res) && istable(res) &&(isempty(results) || (size(res,2)==size(results,2)))
-                results = [results;{res}]; % CJG 20221028 make res a cell
+                results = [results;res];
             end
         end
         % Write compiled results to CSV
