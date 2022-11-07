@@ -30,12 +30,14 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
             str = {'Neighborhood'};
             defs = {'3 3'};
             nchk = true;
-            func = @(x,opts) medfilt2(x,opts{1});
+            func = { @(x,opts) medfilt2(x,opts{1}) ,...
+                     @(x,opts) medfilt3(x,opts{1}) };
         case 'gauss'
             str = {'Sigma'};
             defs = {'0.5 0.5'};
             nchk = true;
-            func = @(x,opts) imgaussfilt(x,opts{1});
+            func = { @(x,opts) imgaussfilt(x,opts{1}) ,...
+                     @(x,opts) imgaussfilt3(x,opts{1}) };
         case 'wiener'
             str = {'Neighborhood'};
             defs = {'3 3'};
@@ -89,12 +91,13 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
     if go
         ct = 0;
         ntot = self.dims(3)*length(vec);
-        hw = waitbar(0,'Applying 2D image filter:');
+        hw = waitbar(0,'Applying filter:');
         tmat = nan([self.dims(1:3),length(vec)]);
         for v = 1:length(vec)
-            if strcmpi(ftype,'median') && numel(opts{1}) == 3
+            if iscell(func) && numel(opts{1})==3
                 waitbar(0,hw,'Applying 3D image filter:');
-                tmat(:,:,:,v) = medfilt3(self.mat(:,:,:,vec(v)),opts{1});
+                tmat(:,:,:,v) = feval(func{2},self.mat(:,:,:,vec(v)),opts);
+%                 tmat(:,:,:,v) = medfilt3(self.mat(:,:,:,vec(v)),opts{1});
             else
                 for i = 1:self.dims(3)
                     tmat(:,:,i,v) = feval(func,self.mat(:,:,i,vec(v)),opts);

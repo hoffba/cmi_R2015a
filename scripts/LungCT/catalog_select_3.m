@@ -41,6 +41,8 @@ C = [];          % full catalog table
 ugroups_ic = []; % unique group indices
 ngroups = 0;     % number of cases available with unique ID and date
 gp_valid = [];   
+gp_caselabel = {};  % Full label for saving case files - <UMlabel>_<StudyDate>
+gp_sel = [];        % TF - which groups are selected
 
 % Page groups
 gp_per_page = 5; % Number of groups to show per page
@@ -340,31 +342,52 @@ end
     end
 
     function editCell(hObject,eventdata)
+        C_ind = eventdata.Indices(1)+find(page_ic,1)-1;
+        gp = ugroups_ic(C_ind);
         if ismember(eventdata.Indices(2),[1,2])
             % Edited EXP/INS Tag
-            C{eventdata.Indices(1)+find(page_ic,1)-1,eventdata.Indices(2)} = eventdata.NewData;
-            checkValid;
-        elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) % Edited UMlabel
+            C{C_ind,eventdata.Indices(2)} = eventdata.NewData;
+            
+            % Update case selection status
+            gp_sel(gp) = any(C.Exp(ugroups_ic==gp)|C.Ins(ugroups_ic==gp));
+            
+        elseif isempty(regexp(eventdata.NewData , '[/\*:?"<>|]', 'once')) 
+            % Edited UMlabel
             % Set ID for all scans in this case group:
-            page_group_ic = ugroups_ic(page_ic);
-            sub_ic = page_group_ic==page_group_ic(eventdata.Indices(1));
-            hObject.Data(sub_ic,3) = {regexprep(eventdata.NewData,' ','_')};
-            C(page_ic(sub_ic),3) = {eventdata.NewData};
+            str = regexprep(eventdata.NewData,' ','_'); % replace spaces with underscore
+            hObject.Data(ugroups_ic(page_ic)==gp,3) = {str}; % update page table for case
+            C(ugroups_ic==gp,3) = {eventdata.NewData}; % update C data for case
+            
+            % Update case name
+            gp_caselabel{gp} = strcat(str,'_',C.StudyDate{C_ind});
+            
         else
             warning('Invalid PatientID, try again.');
             hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
         end
+        checkValid;
     end
 
     function checkValid(~)
         page_group_ic = ugroups_ic(page_ic);
         ugroup = unique(page_group_ic);
         for i = 1:numel(ugroup)
+            gp_ind = i+(curr_page-1)*gp_per_page;
             irow = find(page_group_ic==ugroup(i));
             n_exp = nnz(h.table_select.Data.Exp(irow));
             n_ins = nnz(h.table_select.Data.Ins(irow));
-            gp_valid(i) = n_exp + n_ins + (n_exp>1) + (n_ins>1);
-            switch gp_valid(i)
+            gp_valid(gp_ind) = n_exp + n_ins;
+            if gp_valid(gp_ind)
+                % Check for multiple selections:
+                if (n_exp>1) || (n_ins>1)
+                    gp_valid(gp_ind) = 3;
+                end
+                % Check for duplicate UMlabel: gp_umlabel
+                if nnz(strcmp(gp_caselabel(gp_ind),gp_caselabel(gp_sel)))>1
+                    gp_valid(gp_ind) = 4;
+                end
+            end
+            switch gp_valid(gp_ind)
                 case 0 % Nothing selected
                     tcolor = bgs_white;
                 case 1 % Either Exp OR Ins selected
@@ -391,8 +414,10 @@ end
     end
     function done_callback(~,~)
         % Check that each timepoint has Ins/Exp selected (and only one of each)
-        if any(gp_valid>2)
+        if any(gp_valid == 3)
             warning('No case can have more than one Exp/Ins selected.');
+        elseif any(gp_valid == 4)
+            warning('Each case must have a unique UMlabel.');
         else
             % Set up options structure
             flds = {'unreg','airway','scatnet','vessel','reg','prm','tprm','quickreg','reg_seg'};
@@ -488,8 +513,11 @@ end
                 C = movevars(C,'UMlabel','After','Ins');
             else
                 UMlabel = C.PatientName;
+                
+                % Try setting empty/anonymouse names using PatientID instead
                 ind = cellfun(@(x)isempty(x)||strcmp(x,'Anonymous'),UMlabel);
                 UMlabel(ind) = C.PatientID(ind);
+                
                 C = addvars(C,UMlabel,'After','Ins');
             end
             C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
@@ -510,10 +538,16 @@ end
             % Sort by identifiers
             C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
             % Find case groupings
-            [ugroups,~,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
-            ngroups = numel(ugroups);
+            [~,ugroups_ia,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
+            ngroups = numel(ugroups_ia);
 
-            gp_valid = zeros(ngroups,1); % Initialize group validation
+            % Initialize group info
+            gp_valid = zeros(ngroups,1); % group validation
+            gp_caselabel = strcat(C.UMlabel(ugroups_ia),'_',C.StudyDate(ugroups_ia));
+            gp_sel = false(ngroups,1);
+            for i = 1:ngroups
+                gp_sel(i) = any(C.Exp(ugroups_ic==i) | C.Ins(ugroups_ic==i));
+            end
             
             % Fix DICOM location
             if ischar(str)
