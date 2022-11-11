@@ -305,7 +305,7 @@ try
         end
         
         % Blood density change map:
-        if opts.bd
+        if opts.dBlood
             dBlood = [];
             fn_dBlood = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'dblood',fn_ext));
             if exist(fn_dBlood,'file')
