@@ -299,10 +299,29 @@ try
                 end
             end
             if ~isempty(jac)
-                T = lobeLoop(img.label,@(mask,jac)tabulateJac(mask,jac),jac);
+                T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
             end
         end
+        
+        % Blood density change map:
+        if opts.bd
+            dBlood = [];
+            fn_dBlood = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'dblood',fn_ext));
+            if exist(fn_dBlood,'file')
+                writeLog(opts.fn_log,'Loading dBlood from file...\n');
+                dBlood = readNIFTI(fn_dBlood);
+            elseif exist('ins_reg','var') && exist('jac','var')
+                writeLog(opts.fn_log,'Calculating dBlood...\n');
+                dBlood = pipeline_blood_density(img(1).mat,ins_reg,jac,img(1).label);
+                cmi_save(0,dBlood,{'dBlood'},img(1).info.fov,img(1).info.orient,fn_dBlood);
+            end
+            if ~isempty(dBlood)
+                T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),dBlood,'dBlood');
+                res = addTableVarVal(res,T);
+            end
+        end
+        clear jac
         
         % PRM calculation
         prm10 = [];
@@ -311,7 +330,7 @@ try
             if exist(fn_PRM,'file')
                 writeLog(opts.fn_log,'Loading PRM from file...\n');
                 prm10 = int8(readNIFTI(fn_PRM));
-            elseif opts.prm
+            else
                 writeLog(opts.fn_log,'Calculating PRM...\n');
                 [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
                     fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1})));
@@ -430,12 +449,12 @@ res.Properties.RowNames = {};
     
 writeLog(opts.fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
 
-function T = tabulateJac(mask,jac)
-    vname = {'Jac_mean'};
+function T = tabulateStats(mask,A,str)
+    vname = strcat(str,{'_mean','_var'});
     nv = numel(vname);
     T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),'VariableNames',vname);
-    T.Jac_mean = mean(jac(mask));
-    T.Jac_var = var(jac(mask));
+    T.(vname{1}) = mean(A(mask));
+    T.(vname{2}) = var(A(mask));
 
 function T = tabulatePRM(mask,prm,flag)
     if flag % 10-color

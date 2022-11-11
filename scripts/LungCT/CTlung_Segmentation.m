@@ -37,20 +37,21 @@ switch method
         saveMHD(tname,ct,id,info.fov,info.orient);
         yacta(tname,'wait');
 %         yacta(tname,'wait','airways','renderer','hide','exportlabels','yactascp');
-        resname = dir([tname,'*lung_lobes*explabels.mhd']);
+        resname = dir(fullfile(ydir,'*lung_lobes*explabels.mhd'));
         if ~isempty(resname)
             seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
         end
         if nnz(seg)<10^3
             writeLog(logfn,'- - Lobe segmentation failed. Checking for lungs...');
-            resname = dir([tname,'*lung_right_left*explabels.mhd']);
+            resname = dir(fullfile(ydir,'*lung_right_left*explabels.mhd'));
             if ~isempty(resname)
                 seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
             end
-            if any(seg,'all')
+            if nnz(seg)<10^3
                 writeLog(logfn,' Using R/L segmentation\n');
             else
                 writeLog(logfn,' FAILED\n');
+                seg = false;
             end
         end
     otherwise

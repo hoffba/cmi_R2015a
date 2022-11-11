@@ -187,8 +187,8 @@ try
             % Check orientation using a bone threshold
             if orientchk && opts.orient_check
                 % Find orientation of shoulder bones to see if permute is needed
-                BW = img(i).mat(:,:,end) > -150;
-                %BW = max(img(ii).mat(:,:,round(img(ii).info.d(3)/2):end)>800,[],3);
+%                 BW = img(i).mat(:,:,end) > -150;
+                BW = max(img(i).mat(:,:,round(img(i).info.d(3)/2):end)>800,[],3);
                 prop = regionprops(BW,'Orientation','Area');
                 if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
                     writeLog(fn_log,'Permuting %s\n',tagstr{i});
@@ -241,7 +241,7 @@ try
                 saveNIFTI(fn{i,1},img(i).mat,img(i).info.label,img(i).info.fov,img(i).info.orient);
             end
             % Save segmentation
-            if ~fnflag(i,2)
+            if ~fnflag(i,2) && numel(seg)>1
                 saveNIFTI(fn{i,2},seg,img(i).info.label,img(i).info.fov,img(i).info.orient);
             end
         end
