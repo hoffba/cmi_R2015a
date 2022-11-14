@@ -231,7 +231,6 @@ end
             'Value',opts.Tvoi,'ValueChangedFcn',@setOpts,'Tag','Tvoi');
         h.Tsurf = uicheckbox(h.panel_reg,'Position',[5,35,200,20],'Text','Transform Surface',...
             'Value',opts.Tsurf,'ValueChangedFcn',@setOpts,'Tag','Tsurf');
-        h.
         
         h.panel_yacta = uipanel(h.tab2,'Position',[445, fheight-330, 215, 225],'Title','YACTA Options');
 %         h.y_airways
