@@ -420,7 +420,7 @@ end
             warning('Each case must have a unique UMlabel.');
         else
             % Set up options structure
-            flds = {'unreg','airway','scatnet','vessel','reg','prm','tprm','quickreg','reg_seg'};
+            flds = {'unreg','airway','scatnet','vessel','reg','prm','tprm','quickreg'};
             for iflds = 1:numel(flds)
                 opts.(flds{iflds}) = h.(flds{iflds}).Value;
             end
