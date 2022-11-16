@@ -504,6 +504,12 @@ end
                 C.Ins(strcmp(C.Tag,'Ins')) = true;
                 C = removevars(C,'Tag');
             end
+            tlabel = {'StudyID','StudyDate','PatientName'};
+            for i = 1:numel(tlabel)
+                if isnumeric(C.(tlabel{i}))
+                    C.(tlabel{i}) = cellfun(@num2str,num2cell(C.(tlabel{i})),'UniformOutput',false);
+                end
+            end
             if ismember('UMlabel',colnames)
                 C = movevars(C,'UMlabel','After','Ins');
             else
@@ -519,12 +525,6 @@ end
 
             % Remove empty data and sort array
             % Find groups of scans with unique PatientName and StudyDate
-            tlabel = {'StudyID','StudyDate','PatientName'};
-            for i = 1:numel(tlabel)
-                if isnumeric(C.(tlabel{i}))
-                    C.(tlabel{i}) = cellfun(@num2str,num2cell(C.(tlabel{i})),'UniformOutput',false);
-                end
-            end
             if ismember('CaseNumber',colnames)
                 C = removevars(C,'CaseNumber');
             end
