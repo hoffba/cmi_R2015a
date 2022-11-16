@@ -419,11 +419,6 @@ end
         elseif any(gp_valid == 4)
             warning('Each case must have a unique UMlabel.');
         else
-            % Set up options structure
-            flds = {'unreg','airway','scatnet','vessel','reg','prm','tprm','quickreg'};
-            for iflds = 1:numel(flds)
-                opts.(flds{iflds}) = h.(flds{iflds}).Value;
-            end
             go = true;
             h.fig.delete;
         end

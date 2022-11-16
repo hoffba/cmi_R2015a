@@ -166,6 +166,9 @@ try
             if isfolder(fn_in{i})
                 writeLog(fn_log,'from DICOM\n');
                 [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],true);
+                if size(img(i).mat,4)>1
+                    img(i).mat(:,:,:,2:end) = [];
+                end
                 img(i).dcmpath = fn_in{i};
                 orientchk = true;
             elseif ~isempty(fn_in{i})
