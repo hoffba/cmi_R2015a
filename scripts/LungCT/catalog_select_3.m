@@ -504,9 +504,9 @@ end
                 C.Ins(strcmp(C.Tag,'Ins')) = true;
                 C = removevars(C,'Tag');
             end
-            tlabel = {'StudyID','StudyDate','PatientName'};
+            tlabel = {'StudyID','StudyDate','PatientName','UMlabel'};
             for i = 1:numel(tlabel)
-                if isnumeric(C.(tlabel{i}))
+                if ismember(tlabel{i},C.Properties.VariableNames) && isnumeric(C.(tlabel{i}))
                     C.(tlabel{i}) = cellfun(@num2str,num2cell(C.(tlabel{i})),'UniformOutput',false);
                 end
             end

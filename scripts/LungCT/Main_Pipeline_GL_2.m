@@ -168,6 +168,7 @@ try
                 [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],true);
                 if size(img(i).mat,4)>1
                     img(i).mat(:,:,:,2:end) = [];
+                    img(i).info(2:end) = [];
                 end
                 img(i).dcmpath = fn_in{i};
                 orientchk = true;
