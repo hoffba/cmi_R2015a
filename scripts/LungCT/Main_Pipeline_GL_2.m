@@ -169,6 +169,7 @@ try
                 if size(img(i).mat,4)>1
                     img(i).mat(:,:,:,2:end) = [];
                     img(i).info(2:end) = [];
+                    label(2:end) = [];
                 end
                 img(i).dcmpath = fn_in{i};
                 orientchk = true;
