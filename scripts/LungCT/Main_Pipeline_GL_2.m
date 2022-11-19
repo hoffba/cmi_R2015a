@@ -166,7 +166,7 @@ try
             if isfolder(fn_in{i})
                 writeLog(fn_log,'from DICOM\n');
                 [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],true);
-                if size(img(i).mat,4)>1
+                if size(img(i).mat,4)>1 || numel(img(i).info)>1
                     img(i).mat(:,:,:,2:end) = [];
                     img(i).info(2:end) = [];
                     label(2:end) = [];
