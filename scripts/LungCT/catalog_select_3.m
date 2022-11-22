@@ -125,15 +125,11 @@ if ~isempty(C) && go
     fname = opts.dcm_path;
     if ~isempty(fname)
         C = removevars(C,{'Ins','Exp'});
-        if isfolder(fname)
-            fname = fullfile(fname,'DICOMcatalog_select.csv');
+        if ~isfolder(fname)
+            fname = fileparts(fname);
         end
-        try
-            writetable(C,fname);
-        catch
-            fname = fullfile(fileparts(fname),sprintf('DICOMcatalog_select_%s.csv',datestr(datetime('now'),'yyyymmddHHMMSS')));
-            writetable(C,fname);
-        end
+        fname = fullfile(fname,sprintf('DICOMcatalog_select_%s.csv',datestr(datetime('now'),'yyyymmddHHMMSS')));
+        writetable(C,fname);
     end
 
 end
