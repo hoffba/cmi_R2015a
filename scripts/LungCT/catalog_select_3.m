@@ -527,10 +527,13 @@ end
             % Remove cases with no identifiers
             C(cellfun(@isempty,C.UMlabel),:) = [];
             % Sort by identifiers
-            C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
+            C = sortrows(C,{'StudyID','PatientName','StudyDate','SeriesNumber'});
             % Find case groupings
-            [~,ugroups_ia,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
+            [~,ugroups_ia,ugroups_ic] = unique(strcat(C.StudyID,C.PatientName,C.StudyDate));
             ngroups = numel(ugroups_ia);
+            % For cases with no identifiers, name by group number
+            ind = cellfun(@isempty,C.UMlabel);
+            C(ind).UMlabel = arrayfun(@(x)sprintf('%05.0f',x),ugroups_ic(ind),'UniformOutput',false);
 
             % Initialize group info
             gp_valid = zeros(ngroups,1); % group validation

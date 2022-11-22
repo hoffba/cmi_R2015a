@@ -31,22 +31,36 @@ end
 if isempty(fname)
     fname = fullfile(opath,'DICOMcatalog.csv');
 end
-
-dcmtags = {'PatientName','StudyID','StudyDate','PatientID','SeriesNumber',...
-    'AccessionNumber','AcquisitionNumber','StudyDescription','SeriesDescription',...
-    'ScanOptions','FilterType','ConvolutionKernel','ManufacturerModelName','Manufacturer','KVP',...
-    'XRayTubeCurrent','ExposureTime','Exposure','SliceThickness',...
-    'Rows','Columns','PixelSpacing'};
-ntags = length(dcmtags);
-tvars = [{'Directory'},dcmtags(1:(end-1)),{'dy','dx','Slices'}];
-vtypes = {'cellstr',...
-    'cellstr','cellstr','cellstr','cellstr','uint32',...
-    'uint32','uint16','cellstr','cellstr',...
-    'cellstr','cellstr','cellstr','cellstr','cellstr','double',...6
-    'double','double','double','double',...
-    'uint16','uint16',...
-    'double','double','uint16'};
-nvars = length(tvars);
+%         VariableName              VariableType    DICOM field flag
+vnames = {'CaseNumber',             'uint16',       false;...
+          'Tag',                    'cellstr',      false;...
+          'UMlabel',                'cellstr',      false;...
+          'PatientName',            'cellstr',      true;...
+          'StudyDate',              'cellstr',      true;...
+          'SeriesNumber',           'uint32',       true;...
+          'ConvolutionKernel',      'cellstr',      true;...
+          'SliceThickness',         'double',       true;...
+          'Slices',                 'uint16',       false;...
+          'Directory',              'cellstr',      false;...
+          'StudyID',                'cellstr',      true;...
+          'PatientID',              'cellstr',      true;...
+          'AccessionNumber',        'uint32',       true;...
+          'AcquisitionNumber',      'uint16',       true;...
+          'StudyDescription',       'cellstr',      true;...
+          'SeriesDescription',      'cellstr',      true;...
+          'ScanOptions',            'cellstr',      true;...
+          'FilterTypes',            'cellstr',      true;...
+          'ManufacturerModelName',  'cellstr',      true;...
+          'Monufacturer',           'cellstr',      true;...
+          'KVP',                    'double',       true;...
+          'XRayTubeCurrent',        'double',       true;...
+          'ExposureTime',           'double',       true;...
+          'Exposure',               'double',       true;...
+          'Rows',                   'uint16',       true;...
+          'Columns',                'uint16',       true;...
+          'dy',                     'double',       true;... % Actually looks for PixelSpacing
+          'dx',                     'double',       false};
+nvars = size(vnames,1);
 
 % Find folders containing DICOMs
 fprintf('Finding DICOM folders ...\n');
@@ -57,7 +71,7 @@ F(ind) = [];
 D(ind) = [];
 ndir = length(D);
 
-T = table('Size',[ndir,nvars],'VariableTypes',vtypes,'VariableNames',tvars);
+T = table('Size',[ndir,nvars],'VariableTypes',vnames(:,2)','VariableNames',vnames(:,1)');
 
 % Loop over all DICOM directories
 fprintf('Processing folder (of %u): ',ndir);
@@ -71,37 +85,61 @@ for idir = 1:ndir
     tname = fullfile(D{idir},F{idir}{1});
     Tflag(idir) = isdicom(tname);
     if Tflag(idir)
+        
+        % Find DICOM fields of interest:
         info = dicominfo(tname,'UseDictionaryVR',true);
-        for ifld = 1:ntags
-            ttag = dcmtags{ifld};
-            if isfield(info,ttag)
-
-                if strcmp(ttag,'PatientName')
-                    T.PatientName{idir} = info.PatientName.FamilyName;
-                elseif strcmp(ttag,'PixelSpacing')
+        for ifld = 1:nvars
+            if vnames{ifld,3}
+                ttag = vnames{ifld,1};
+                if strcmp(ttag,'dy') && isfield(info,'PixelSpacing')
                     T.dx(idir) = info.PixelSpacing(1);
                     T.dy(idir) = info.PixelSpacing(2);
-                else
-                    val = info.(ttag);
-                    if ischar(val)
-                        if iscellstr(T.(ttag))
-                            T.(ttag){idir} = val;
-                        else
-                            T.(ttag)(idir) = str2double(val);
+                elseif isfield(info,ttag)
+                    if strcmp(ttag,'PatientName')
+                        T.PatientName{idir} = info.PatientName.FamilyName;
+                    else
+                        val = info.(ttag);
+                        if ischar(val)
+                            if iscellstr(T.(ttag))
+                                T.(ttag){idir} = val;
+                            else
+                                T.(ttag)(idir) = str2double(val);
+                            end
+                        elseif ~isempty(val)
+                            T.(ttag)(idir) = val;
                         end
-                    elseif ~isempty(val)
-                        T.(ttag)(idir) = val;
                     end
-                end
 
+                end
             end
         end
+        
+        % Set other info based on DICOM info
         T.Directory{idir} = D{idir};
         T.Slices(idir) = length(F{idir});
+        
     end
 end
 T(~Tflag,:) = []; % Remove rows for non-DICOM
 fprintf('\n');
+
+% Determine a label for our use
+T.UMlabel = T.PatientName;
+% Try setting empty/anonymouse names using PatientID instead
+ind = cellfun(@(x)isempty(x)||strcmp(x,'Anonymous'),T.UMlabel);
+T.UMlabel(ind) = T.PatientID(ind);
+
+% Sort and group scans:
+% Sort by identifiers
+T = sortrows(T,{'StudyID','PatientName','StudyDate','SeriesNumber'});
+% Find case groupings
+[~,~,ugroups_ic] = unique(strcat(T.StudyID,T.PatientName,T.StudyDate));
+T.CaseNumber = ugroups_ic;
+% For cases with no identifiers, name by group number
+ind = cellfun(@isempty,T.UMlabel);
+T(ind).UMlabel = cellfun(@(x)sprintf('%05.0f',x),ugroups_ic(ind),'UniformOutput',false);
+
+
 
 % Choose where to save results:
 % [fname,opath] = uiputfile('*.csv','Save DICOM Results','DICOMcatalog.csv');
