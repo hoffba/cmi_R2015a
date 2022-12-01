@@ -137,7 +137,7 @@ T = sortrows(T,{'StudyID','PatientName','StudyDate','SeriesNumber'});
 T.CaseNumber = ugroups_ic;
 % For cases with no identifiers, name by group number
 ind = cellfun(@isempty,T.UMlabel);
-T(ind).UMlabel = arrayfun(@(x)sprintf('%05.0f',x),ugroups_ic(ind),'UniformOutput',false);
+T.UMlabel(ind) = arrayfun(@(x)sprintf('%05.0f',x),ugroups_ic(ind),'UniformOutput',false);
 
 
 
