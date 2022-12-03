@@ -533,8 +533,11 @@ end
             ngroups = numel(ugroups_ia);
             % For cases with no identifiers, name by group number
             ind = cellfun(@isempty,C.UMlabel);
-            C(ind).UMlabel = arrayfun(@(x)sprintf('%05.0f',x),ugroups_ic(ind),'UniformOutput',false);
-
+            %% CJG worked on bug 20221203
+%             C(ind).UMlabel = arrayfun(@(x)sprintf('%05.0f',x),ugroups_ic(ind),'UniformOutput',false);
+            
+            C(ind,'UMlabel') = arrayfun(@(x)sprintf('%05.0f',x),ugroups_ic(ind),'UniformOutput',false);
+            %%
             % Initialize group info
             gp_valid = zeros(ngroups,1); % group validation
             gp_caselabel = strcat(C.UMlabel(ugroups_ia),'_',C.StudyDate(ugroups_ia));
