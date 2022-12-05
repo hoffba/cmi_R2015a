@@ -41,7 +41,7 @@ if strcmp(opts.cluster,'debug')
     
 %~~~~~~~~~ debug ~~~~~~~~~
     results = [];
-    for i = ncases
+    for i = 1:ncases
         res = pipeline_full(cases(i),opts);
         if ~isempty(res) && istable(res) && (isempty(results) || (size(res,2)==size(results,2)))
             results = [results;res];

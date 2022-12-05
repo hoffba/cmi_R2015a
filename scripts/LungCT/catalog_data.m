@@ -39,27 +39,27 @@ for i = 1:numel(filtstr)
     fn = dir(fullfile(path,'**',['*.',filtstr{i}]));
     for j = 1:numel(fn)
         % Extract UMlabel and Date
-        tok = regexp(fn.name,'(.*)_(\d{8})[_.]','tokens');
-        if ~isempty(tok)
-            umlabel = tok{1};
-            datstr = tok{2};
+        umlabel = extractBefore(fn(i).name,'.');
+        ind = regexp(umlabel,'_\d{8}','once');
+        if isempty(ind)
+            datstr = '';
         else
-            umlabel = extractBefore(fn.name,'.');
-            datstr = 'Unknown';
+            datstr = umlabel(ind+(1:8));
+            umlabel = umlabel(1:ind-1);
         end
         tT = Tdef;
-        tT.UMlabel = umlabel;
-        tT.PatientName = umlabel;
-        tT.Studydate = datstr;
-        tT.DataPath = fullfile(fn.folder,fn.name);
-        tT.DataType = filtstr{i};
+        tT.UMlabel = {umlabel};
+        tT.PatientName = {umlabel};
+        tT.StudyDate = {datstr};
+        tT.DataPath = {fullfile(fn(i).folder,fn(i).name)};
+        tT.DataType = filtstr(i);
         T = [T;tT];
     end
 end
 
 % Search for DICOMs
 filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
-[D,F] = dirtree(opath,filtstr);
+[D,F] = dirtree(path,filtstr);
 for i = 1:numel(D)
     fname = fullfile(D{i},F{i}{1});
     if isdicom(fname)

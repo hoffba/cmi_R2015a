@@ -258,10 +258,12 @@ try
         end
 
         % QC registration
-        writeLog(opts.fn_log,'Saving Registration Montage ...\n');
-        ind = 10:10:img(1).info.d(3);
-        QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
-            fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
+        if ~isempty(ins_reg)
+            writeLog(opts.fn_log,'Saving Registration Montage ...\n');
+            ind = 10:10:img(1).info.d(3);
+            QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
+                fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
+        end
         img(2) = [];
 
         % Jacobian analysis
