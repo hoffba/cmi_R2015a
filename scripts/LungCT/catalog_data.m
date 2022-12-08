@@ -39,19 +39,20 @@ for i = 1:numel(filtstr)
     fn = dir(fullfile(path,'**',['*.',filtstr{i}]));
     for j = 1:numel(fn)
         % Extract UMlabel and Date
-        umlabel = extractBefore(fn(i).name,'.');
-        ind = regexp(umlabel,'_\d{8}','once');
-        if isempty(ind)
-            datstr = '';
-        else
-            datstr = umlabel(ind+(1:8));
-            umlabel = umlabel(1:ind-1);
+        %   UMlabel becomes the first string before _
+        %   StudyDate becomes the first 8-digit number after that
+        umlabel = ''; datstr = '';
+        tok = regexp(fn(j).name,'([^_]*).*(\d{8})?.*','tokens');
+        if ~isempty(tok)
+            umlabel = tok{1}{1};
+            datstr = tok{1}{2};
         end
         tT = Tdef;
+        tT.SeriesDescription = {fn(j).name};
         tT.UMlabel = {umlabel};
         tT.PatientName = {umlabel};
         tT.StudyDate = {datstr};
-        tT.DataPath = {fullfile(fn(i).folder,fn(i).name)};
+        tT.DataPath = {fullfile(fn(j).folder,fn(j).name)};
         tT.DataType = filtstr(i);
         T = [T;tT];
     end
