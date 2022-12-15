@@ -126,7 +126,7 @@ if ~isempty(C) && go
     if ~isempty(fname)
         C = removevars(C,{'Ins','Exp'});
         if isfolder(fname)
-            fname = fullfile(fname,'DICOMcatalog_select.csv');
+            fname = fullfile(fname,'Pipeline_catalog.csv');
         end
         try
             writetable(C,fname);
@@ -163,42 +163,40 @@ end
         h.fig = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight]),...
             'Name','Select DICOMcatalog data for processing:');%,'CloseRequestFcn',@cancel_callback);
         h.tabgroup = uitabgroup(h.fig,'Position',[0,0,fwidth,fheight]);
-        h.tab2 = uitab(h.tabgroup,'Title','Options');
-        h.tab1 = uitab(h.tabgroup,'Title','Scans');
+        h.tab_opts = uitab(h.tabgroup,'Title','Options');
+        h.tab_scans = uitab(h.tabgroup,'Title','Scans');
 
         %% Tab 1: tables for selecting images, and execution buttons
-        h.table_select = uitable(h.tab1,'Position',[ 1 , 20 , fwidth , fheight-130 ],'CellEditCallback',@editCell);
-        h.table_filter = uitable(h.tab1,'Position',[ 1 , fheight-115 , fwidth , 90 ],'CellEditCallback',@applyFilter);
-
-        uibutton(  h.tab1,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
-        
-        uilabel(h.tab1,'Position',[fwidth/2-320,1,135,20],'HorizontalAlignment','right','Text','Groups per page: ');
-        h.edit_page_groups = uieditfield(h.tab1,'numeric','Position',[fwidth/2-185,1,50,20],...
+        h.table_select = uitable(h.tab_scans,'Position',[ 1 , 20 , fwidth , fheight-130 ],'CellEditCallback',@editCell);
+        h.table_filter = uitable(h.tab_scans,'Position',[ 1 , fheight-115 , fwidth , 90 ],'CellEditCallback',@applyFilter);
+        uibutton(  h.tab_scans,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
+        uilabel(h.tab_scans,'Position',[fwidth/2-320,1,135,20],'HorizontalAlignment','right','Text','Groups per page: ');
+        h.edit_page_groups = uieditfield(h.tab_scans,'numeric','Position',[fwidth/2-185,1,50,20],...
             'Editable',1,'Value',gp_per_page,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','edit_gp_per');
-        h.text_groupN = uilabel(h.tab1,'Position',[fwidth/2-135,1,60,20],'Text',' of 0');
-        
-        uilabel(h.tab1,'Position',[fwidth/2-105,1,60,20],'HorizontalAlignment','right','Text','Page: ');
-        uibutton(  h.tab1,'Position',[fwidth/2-45,1,20,20],'Text','<','Tag','decr','ButtonPushedFcn',@setPage);
-        h.text_page = uieditfield(h.tab1,'numeric','Position',[fwidth/2-25,1,50,20],...
+        h.text_groupN = uilabel(h.tab_scans,'Position',[fwidth/2-135,1,60,20],'Text',' of 0');
+        uilabel(h.tab_scans,'Position',[fwidth/2-105,1,60,20],'HorizontalAlignment','right','Text','Page: ');
+        uibutton(  h.tab_scans,'Position',[fwidth/2-45,1,20,20],'Text','<','Tag','decr','ButtonPushedFcn',@setPage);
+        h.text_page = uieditfield(h.tab_scans,'numeric','Position',[fwidth/2-25,1,50,20],...
             'Editable',1,'Value',0,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','text_page');
-        uibutton(  h.tab1,'Position',[fwidth/2+25,1,20,20],'Text','>','Tag','incr','ButtonPushedFcn',@setPage);
-        h.text_pageN = uilabel(h.tab1,'Position',[fwidth/2+45,1,60,20],'Text',' of 0');
-        
-        uibutton(  h.tab1,'Position',[fwidth-50,1,50,20],...
+        uibutton(  h.tab_scans,'Position',[fwidth/2+25,1,20,20],'Text','>','Tag','incr','ButtonPushedFcn',@setPage);
+        h.text_pageN = uilabel(h.tab_scans,'Position',[fwidth/2+45,1,60,20],'Text',' of 0');
+        uibutton(  h.tab_scans,'Position',[fwidth-50,1,50,20],...
             'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
-        uibutton(  h.tab1,'Position',[fwidth-100-gap,1,50,20],...
+        uibutton(  h.tab_scans,'Position',[fwidth-100-gap,1,50,20],...
             'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
 
         %% Tab 2: Settings and options
-        uitextarea(h.tab2,'Position',[5,   fheight-50, 100,        20],'Editable',0,'Value','uniquename:');
-        h.edit_username = uieditfield(h.tab2,'Position',[110, fheight-50, 300, 20],'Editable',1,...
+        uilabel(h.tab_opts,   'Position',[5,   fheight-50, 100, 20],'Text','Uniquename:');
+        h.edit_username = uieditfield(h.tab_opts,'Position',[110, fheight-50, 300, 20],'Editable',1,...
             'ValueChangedFcn',@setOpts,'Tag','username','Value',opts.username);
-        uibutton(h.tab2,  'Position',[5,   fheight-75, 100,        20],'Text','Select Catalog:','ButtonPushedFcn',@selectCatalog);
-        h.text_cat = uitextarea(h.tab2,'Position',[110, fheight-75, fwidth-115, 20],'Editable',0);
-        uibutton(h.tab2,  'Position',[5,   fheight-100, 100,        20],'Text','Save To:','ButtonPushedFcn',@setSavePath);
-        h.text_save = uitextarea(h.tab2,'Position',[110, fheight-100, fwidth-115, 20],'Editable',0);
+        uilabel(h.tab_opts,   'Position',[5,   fheight-75, 50, 20],'Text','Catalog: ');
+        uibutton(h.tab_opts,  'Position',[60,  fheight-75, 50, 20],'Text','Select','ButtonPushedFcn',@selectCatalog,'Tag','cat_select');
+        uibutton(h.tab_opts,  'Position',[115, fheight-75, 40, 20],'Text','New','ButtonPushedFcn',@selectCatalog,'Tag','cat_new');
+        h.text_cat = uitextarea(h.tab_opts,'Position',[160, fheight-75, fwidth-160, 20],'Editable',0);
+        uibutton(h.tab_opts,  'Position',[5,   fheight-100, 100,        20],'Text','Save To:','ButtonPushedFcn',@setSavePath);
+        h.text_save = uitextarea(h.tab_opts,'Position',[110, fheight-100, fwidth-115, 20],'Editable',0);
 
-        h.panel_modules = uipanel(h.tab2,'Position',[5, fheight-330, 215, 225],'Title','Modules');
+        h.panel_modules = uipanel(h.tab_opts,'Position',[5, fheight-330, 215, 225],'Title','Modules');
         uibutton(h.panel_modules,  'Position',[5,   185, 100, 20],'Text','Select All','ButtonPushedFcn',@selectAll);
         uibutton(h.panel_modules,  'Position',[110, 185, 100, 20],'Text','Clear All','ButtonPushedFcn',@clearAll);
         h.unreg =   uicheckbox(h.panel_modules,'Position',[5,   160, 200, 20],'Text','Unreg',...
@@ -216,7 +214,7 @@ end
         h.tprm =    uicheckbox(h.panel_modules,'Position',[5,    10, 200, 20],'Text','tPRM',...
             'Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
-        h.panel_reg = uipanel(h.tab2,'Position',[225, fheight-330, 215, 225],'Title','Reg Options');
+        h.panel_reg = uipanel(h.tab_opts,'Position',[225, fheight-330, 215, 225],'Title','Reg Options');
         h.dBlood =  uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Blood density change',...
             'Value',opts.dBlood,'ValueChangedFcn',@setOpts,'Tag','dBlood');
         h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration',...
@@ -232,11 +230,11 @@ end
         h.Tsurf = uicheckbox(h.panel_reg,'Position',[5,35,200,20],'Text','Transform Surface',...
             'Value',opts.Tsurf,'ValueChangedFcn',@setOpts,'Tag','Tsurf');
         
-        h.panel_yacta = uipanel(h.tab2,'Position',[445, fheight-330, 215, 225],'Title','YACTA Options');
+        h.panel_yacta = uipanel(h.tab_opts,'Position',[445, fheight-330, 215, 225],'Title','YACTA Options');
 %         h.y_airways
 %         h.y_parenchyma
 
-        h.panel_cluster = uipanel(h.tab2,'Position',[665, fheight-330, 215, 225],'Title','Cluster Options');
+        h.panel_cluster = uipanel(h.tab_opts,'Position',[665, fheight-330, 215, 225],'Title','Cluster Options');
         bg = uibuttongroup(h.panel_cluster,'Position',[5,110,205,95],'Title','Cluster:',...
             'SelectionChangedFcn',@setOpts,'Tag','cluster');
         h.radio_GL = uiradiobutton(bg,'Position',[5,55,195,20],'Text','Great Lakes','Tag','GL');
@@ -256,7 +254,7 @@ end
         h.nnodes = uidropdown(h.panel_cluster,'Position',[125, 5, 80, 20],...
             'Items',{'1','2','3','4','5'},'ItemsData',1:5,'ValueChangedFcn',@setOpts,'Tag','nnodes');
         
-        h.panel_other = uipanel(h.tab2,'Position',[5, fheight-560, 215, 225],'Title','Other Options');
+        h.panel_other = uipanel(h.tab_opts,'Position',[5, fheight-560, 215, 225],'Title','Other Options');
         h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
             'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
         
@@ -449,41 +447,45 @@ end
                 end
         end
     end
-    function str = selectCatalog(str,~)
-        newC = [];
-        if nargin==0 || isempty(str) || ~ischar(str)
-            str = uigetdir(fileparts(opts.dcm_path),'Select folder for processing.');
-            if isnumeric(str) % Cancel button was selected
-                return;
+    function fn = selectCatalog(fn,~)
+        if isa(fn,'matlab.ui.control.Button')
+            switch fn.Tag
+                case 'cat_select'
+                    [fn,path] = uigetfile('*.csv','Select Catalog File:');
+                    if ischar(fn)
+                        fn = fullfile(path,fn);
+                    else
+                        return;
+                    end
+                case 'cat_new'
+                    fn = uigetdir(fileparts(opts.dcm_path),'Select folder for processing.');
+                otherwise
+                    return;
             end
+        elseif isempty(fn) || ~ischar(fn)
+            return;
         end
-        if istable(str)
-            newC = str;
-            str = '';
-        elseif ischar(str) && isfolder(str)
-            % Find existing catalog files:
-            fnames = dir(fullfile(str,'*Pipeline_catalog*.csv'));
-            answer = listdlg('PromptString','Select a catalog:',...
-                'ListString',{'* Create New *',fnames.name});
-            if isempty(answer)
-                str = '';
-            elseif answer == 1
-                % Generate new catalog:
-                newC = catalog_data(str);
-                str = fullfile(str,'Pipeline_catalog.csv');
-            elseif answer > 1
-                str = fullfile(fnames(answer-1).folder,fnames(answer-1).name);
-            end
-        end
-        if isempty(newC) && ischar(str) && exist(str,'file')==2
-            iopt = detectImportOptions(str);
-            newC = readtable(str,iopt);
+        if istable(fn)
+            newC = fn;
+            fn = '';
+        elseif ischar(fn) && isfolder(fn)
+            % If a folder was input, generate new catalog
+            newC = catalog_data(fn);
+            fn = fullfile(fn,'Pipeline_catalog.csv');
+        elseif ischar(fn) && exist(fn,'file')==2
+            iopt = detectImportOptions(fn);
+            newC = readtable(fn,iopt);
+        else
+            return;
         end
         if ~isempty(newC) % Set up the tables and data:
+            
             %% Validate table input:
-            colnames = newC.Properties.VariableNames;
-            i_member = ismember(req_fields,colnames);
-            if all(ismember(req_fields,colnames))
+            if ismember('Directory',newC.Properties.VariableNames)
+                newC = renamevars(newC,'Directory','DataPath');
+            end
+            i_member = ismember(req_fields,newC.Properties.VariableNames);
+            if all(i_member)
                 C = newC;
             else
                 error(['Missing required fields: ',strjoin(req_fields(~i_member),', ')]);
@@ -496,15 +498,14 @@ end
             % Add Tag columns:
             nscans = size(C,1);
             C = addvars(C,false(nscans,1),false(nscans,1),'Before',1,'NewVariableNames',{'Exp','Ins'});
-            colnames = C.Properties.VariableNames;
             
             % Check for saved selections:
-            if ismember('Tag',colnames)
+            if ismember('Tag',C.Properties.VariableNames)
                 C.Exp(strcmp(C.Tag,'Exp')) = true;
                 C.Ins(strcmp(C.Tag,'Ins')) = true;
                 C = removevars(C,'Tag');
             end
-            if ismember('UMlabel',colnames)
+            if ismember('UMlabel',C.Properties.VariableNames)
                 C = movevars(C,'UMlabel','After','Ins');
             else
                 UMlabel = C.PatientName;
@@ -525,7 +526,7 @@ end
                     C.(tlabel{i}) = cellfun(@num2str,num2cell(C.(tlabel{i})),'UniformOutput',false);
                 end
             end
-            if ismember('CaseNumber',colnames)
+            if ismember('CaseNumber',C.Properties.VariableNames)
                 C = removevars(C,'CaseNumber');
             end
             % Remove cases with no identifiers
@@ -545,8 +546,8 @@ end
             end
             
             % Fix DICOM location
-            if ischar(str)
-                cat_path = fileparts(str);
+            if ischar(fn)
+                cat_path = fileparts(fn);
                 for ifn = 1:size(C,1)
                     [~,cat_folder] = fileparts(cat_path);
                     tpath = extractAfter(C.DataPath{ifn},cat_folder);
@@ -580,8 +581,8 @@ end
             checkValid;
             
         end
-        opts.dcm_path = str;
-        h.text_cat.Value = str;
+        opts.dcm_path = fn;
+        h.text_cat.Value = fn;
         figure(h.fig);
     end
     function setSavePath(tpath,~)

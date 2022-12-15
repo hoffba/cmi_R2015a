@@ -14,7 +14,7 @@ vars = {'CaseNumber',             'uint16',       false;...
         'DataType',               'cellstr',      false;...
         'StudyID',                'cellstr',      true;...
         'PatientID',              'cellstr',      true;...
-        'AccessionNumber',        'uint32',       true;...
+        'AccessionNumber',        'cellstr',      true;...
         'AcquisitionNumber',      'uint16',       true;...
         'StudyDescription',       'cellstr',      true;...
         'SeriesDescription',      'cellstr',      true;...
@@ -33,61 +33,75 @@ vars = {'CaseNumber',             'uint16',       false;...
 nvar = size(vars,1);
 Tdef = table('Size',[1,nvar],'VariableNames',vars(:,1)','VariableTypes',vars(:,2)');
 
-% Search for image files
-filtstr = {'mhd','nii','nii.gz'};
-for i = 1:numel(filtstr)
-    fn = dir(fullfile(path,'**',['*.',filtstr{i}]));
-    for j = 1:numel(fn)
-        % Extract UMlabel and Date
-        %   UMlabel becomes the first string before _
-        %   StudyDate becomes the first 8-digit number after that
-        umlabel = ''; datstr = '';
-        tok = regexp(fn(j).name,'([^_]*).*(\d{8})?.*','tokens');
-        if ~isempty(tok)
-            umlabel = tok{1}{1};
-            datstr = tok{1}{2};
-        end
-        tT = Tdef;
-        tT.SeriesDescription = {fn(j).name};
-        tT.UMlabel = {umlabel};
-        tT.PatientName = {umlabel};
-        tT.StudyDate = {datstr};
-        tT.DataPath = {fullfile(fn(j).folder,fn(j).name)};
-        tT.DataType = filtstr(i);
-        T = [T;tT];
-    end
-end
-
 % Search for DICOMs
 filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
 [D,F] = dirtree(path,filtstr);
-for i = 1:numel(D)
-    fname = fullfile(D{i},F{i}{1});
-    if isdicom(fname)
-        info = dicominfo(fname);
-        tT = Tdef;
-        tT.DataPath = D{i};
-        tT.DataType = 'DICOM';
-        tT.Slices = numel(F{i});
-        if isfield(info,'PixelSpacing')
-            tT.dx = info.PixelSpacing(1);
-            tT.dy = info.PixelSpacing(2);
-        end
-        for j = 1:nvar
-            if isfield(info,vars{i,1})
-                tT.(vars{i,1}) = info.(vars{i,1});
+
+if isempty(D)
+    % Search for image files
+    filtstr = {'mhd','nii','nii.gz'};
+    for i = 1:numel(filtstr)
+        fn = dir(fullfile(path,'**',['*.',filtstr{i}]));
+        for j = 1:numel(fn)
+            % Extract UMlabel and Date
+            %   UMlabel becomes the first string before _
+            %   StudyDate becomes the first 8-digit number after that
+            umlabel = ''; datstr = '';
+            tok = regexp(fn(j).name,'([^_]*).*(\d{8})?.*','tokens');
+            if ~isempty(tok)
+                umlabel = tok{1}{1};
+                datstr = tok{1}{2};
             end
+            tT = Tdef;
+            tT.SeriesDescription = {fn(j).name};
+            tT.UMlabel = {umlabel};
+            tT.PatientName = {umlabel};
+            tT.StudyDate = {datstr};
+            tT.DataPath = {fullfile(fn(j).folder,fn(j).name)};
+            tT.DataType = filtstr(i);
+            T = [T;tT];
         end
-        
-        % Determine UM label:
-        if isempty(info.PatientName) || strcmp(tT.UMlabel,'Anonymous')
-            tT.UMlabel = info.PatientID;
-        else
-            tT.UMlabel = info.PatientName;
+    end
+else
+    for i = 1:numel(D)
+        fname = fullfile(D{i},F{i}{1});
+        if isdicom(fname)
+            info = dicominfo(fname,'UseDictionaryVR',true);
+            tT = Tdef;
+            tT.DataPath = D(i);
+            tT.DataType = {'DICOM'};
+            tT.Slices = numel(F{i});
+            if isfield(info,'PixelSpacing')
+                tT.dx = info.PixelSpacing(1);
+                tT.dy = info.PixelSpacing(2);
+            end
+            for j = 1:nvar
+                vname = vars{j,1};
+                if isfield(info,vname)
+                    if strcmp(vname,'PatientName')
+                        val = info.PatientName.FamilyName;
+                    else
+                        val = info.(vars{j,1});
+                    end
+                    if ischar(val)
+                        val = {val};
+                    end
+                    if ~isempty(val)
+                        tT.(vars{j,1}) = val;
+                    end
+                end
+            end
+
+            % Determine UM label:
+            if isempty(info.PatientName) || strcmp(tT.UMlabel,'Anonymous')
+                tT.UMlabel = {info.PatientID};
+            else
+                tT.UMlabel = {info.PatientName.FamilyName};
+            end
+            tT.UMlabel = regexprep(tT.UMlabel,' ','_');
+
+            T = [T;tT];
         end
-        tT.UMlabel = regexprep(tT.UMlabel,' ','_');
-        
-        T = [T;tT];
     end
 end
 
