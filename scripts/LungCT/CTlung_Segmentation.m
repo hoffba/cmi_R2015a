@@ -41,13 +41,13 @@ switch method
         if ~isempty(resname)
             seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
         end
-        if nnz(seg)<10^3
+        if nnz(seg)<10^3 || ~all(ismember([10,20,30,40,50,60],seg))
             writeLog(logfn,'- - Lobe segmentation failed. Checking for lungs...');
             resname = dir(fullfile(ydir,'*lung_right_left*explabels.mhd'));
             if ~isempty(resname)
                 seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
             end
-            if nnz(seg)<10^3
+            if nnz(seg)>10^3 && all(ismember([10,20],seg))
                 writeLog(logfn,' Using R/L segmentation\n');
             else
                 writeLog(logfn,' FAILED\n');
