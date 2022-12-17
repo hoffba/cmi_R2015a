@@ -214,6 +214,7 @@ addParameter(p,'ProcessMemory',6,@isscalar);
 addParameter(p,'Partition','auto',@(x)ismember(x,{'auto','standard','largemem'}));
 addParameter(p,'mods',{},@iscellstr);
 addParameter(p,'TimeStamp','',@ischar);
+addParameter(p,'save_path','',@ischar);
 parse(p,varargin{:});
 opts = p.Results;
 

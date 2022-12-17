@@ -65,9 +65,10 @@ else
 %~~~~~~~~~ GL ~~~~~~~~~
         fprintf(['Running local processes as batch with pool size of %d\n',...
                  'Please wait at least an hour before starting GL process\n'],np);
+        save_path = checkTurboPath(opts.save_path);
         batch(@pipeline_loop,1,{cases,opts},'Pool',nworkers_orig,'Pool',np);
-        GL_run(opts.username, 'Main_Pipeline_GL_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
-            'ProcessMemory',24,'ProcessTime',720,'TimeStamp',opts.timestamp)
+        GL_run(opts.username, 'CTlung_Pipeline_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
+            'ProcessMemory',24,'ProcessTime',720,'TimeStamp',opts.timestamp,'save_path',save_path{1});
     else
         
 %~~~~~~~~~ batch ~~~~~~~~~
@@ -94,7 +95,7 @@ switch opts.cluster
         % Start queue for local processes:
         for i = 1:ncases
             fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
-            f(i) = parfeval(@(x,y,z,k,l)pipeline_local(x,y,z,k,l),0,...
+            f(i) = parfeval(@(x,y,z,k,l)CTlung_Pipeline_local(x,y,z,k,l),0,...
                 cases(i).basename,cases(i).Scans.DataPath,cases(i).procdir,opts);
         end
         % Flag processes as the complete
