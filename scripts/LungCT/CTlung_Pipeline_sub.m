@@ -434,10 +434,10 @@ try
 
     % Save Results Table:
     fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',res.ID{1},opts.timestamp));
-    save([fn_res,'.mat'],'res');
     if istable(res)
-        fn_res = [fn_res,'.csv'];
         writetable(res,[fn_res,'.csv']);
+    else
+        save([fn_res,'.mat'],'res');
     end
     
 catch err
