@@ -93,7 +93,7 @@ else
             end
 
             % Determine UM label:
-            if isempty(info.PatientName) || strcmp(tT.UMlabel,'Anonymous')
+            if ~isfield(info,'PatientName') || isempty(info.PatientName) || strcmp(tT.UMlabel,'Anonymous')
                 tT.UMlabel = {info.PatientID};
             else
                 tT.UMlabel = {info.PatientName.FamilyName};
