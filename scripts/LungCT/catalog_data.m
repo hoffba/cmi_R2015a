@@ -67,40 +67,46 @@ else
         fname = fullfile(D{i},F{i}{1});
         if isdicom(fname)
             info = dicominfo(fname,'UseDictionaryVR',true);
-            tT = Tdef;
-            tT.DataPath = D(i);
-            tT.DataType = {'DICOM'};
-            tT.Slices = numel(F{i});
-            if isfield(info,'PixelSpacing')
-                tT.dx = info.PixelSpacing(1);
-                tT.dy = info.PixelSpacing(2);
-            end
-            for j = 1:nvar
-                vname = vars{j,1};
-                if isfield(info,vname)
-                    if strcmp(vname,'PatientName')
-                        val = info.PatientName.FamilyName;
-                    else
-                        val = info.(vars{j,1});
-                    end
-                    if ischar(val)
-                        val = {val};
-                    end
-                    if ~isempty(val)
-                        tT.(vars{j,1}) = val;
+            if all(isfield(info,{'StudyDate','SeriesNumber','AccessionNumber','AcquisitionNumber'}))
+                tT = Tdef;
+                tT.DataPath = D(i);
+                tT.DataType = {'DICOM'};
+                tT.Slices = numel(F{i});
+                if isfield(info,'PixelSpacing')
+                    tT.dx = info.PixelSpacing(1);
+                    tT.dy = info.PixelSpacing(2);
+                end
+                for j = 1:nvar
+                    vname = vars{j,1};
+                    if isfield(info,vname)
+                        if strcmp(vname,'PatientName')
+                            val = info.PatientName.FamilyName;
+                        else
+                            val = info.(vars{j,1});
+                        end
+                        if ischar(val)
+                            val = {val};
+                        end
+                        if ~isempty(val)
+                            tT.(vars{j,1}) = val;
+                        end
                     end
                 end
-            end
 
-            % Determine UM label:
-            if ~isfield(info,'PatientName') || isempty(info.PatientName) || strcmp(tT.UMlabel,'Anonymous')
-                tT.UMlabel = {info.PatientID};
-            else
-                tT.UMlabel = {info.PatientName.FamilyName};
-            end
-            tT.UMlabel = regexprep(tT.UMlabel,' ','_');
+                % Determine UM label:
+                if isfield(info,'PatientName') && ~isempty(info.PatientName) && ~strcmp(info.PatientName.FamilyName,'Anonymous')
+                    tT.UMlabel = {info.PatientName.FamilyName};
+                elseif isfield(info,'PatientID')
+                    tT.UMlabel = {info.PatientID};
+                elseif isfield(info,'StudyID')
+                    tT.UMlabel = info.StudyID;
+                else
+                    tT.UMlabel = sprintf('SUBJ%5.0f',i);
+                end
+                tT.UMlabel = regexprep(tT.UMlabel,' ','_');
 
-            T = [T;tT];
+                T = [T;tT];
+            end
         end
     end
 end
