@@ -98,7 +98,7 @@ switch opts.cluster
             f(i) = parfeval(@(x,y,z,k,l)CTlung_Pipeline_local(x,y,z,k,l),0,...
                 cases(i).basename,cases(i).Scans.DataPath,cases(i).procdir,opts);
         end
-        % Flag processes as the complete
+        % Flag processes as they complete
         for i = 1:ncases
             idx = fetchNext(f);
             fprintf('Finished process #%d of %d: %s\n', idx, ncases, cases(idx).basename);

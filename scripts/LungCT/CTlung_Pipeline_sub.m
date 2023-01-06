@@ -15,7 +15,7 @@ try
     [~,ID] = fileparts(procdir);
     regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
     Nr = numel(regionnames);
-    fn_res = fullfile(fullfile(procdir,[ID,'_PipelineResults.csv']));
+    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',ID,opts.timestamp));
     if exist(fn_res,'file')
         res = readtable(fn_res,'Delimiter',',');
         if size(res,1)==1

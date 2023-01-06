@@ -135,7 +135,8 @@ try
     writeLog(fn_log,'Local processing completed after %.1f minutes\n',dt/60);
 
     % Save results to CSV file:
-    writetable(res,fullfile(procdir,[ID,'_PipelineResults.csv']));
+    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',ID,opts.timestamp));
+    writetable(res,fn_res);
 catch err
     writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err));
 end
