@@ -5,6 +5,7 @@ tt = tic;
 
 try
 
+    QC_nslice = 25;
     fn_ext = '.nii.gz';
     opts.fn_log = fullfile(procdir,'pipeline_log.txt');
 

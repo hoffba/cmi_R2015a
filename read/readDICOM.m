@@ -1,19 +1,24 @@
 function [img,label,fov,orient,info] = readDICOM(varargin)
 
-fname = varargin{1};
-din = [];
-if nargin>1
-    din = varargin{2};
-end
 noprompt = false;
-if nargin>2
-    noprompt = varargin{3};
+din = [];
+fname = '';
+gap_str = 'Concatenate';
+
+for i = 1:numel(varargin)
+    if ischar(varargin{i})
+        if strcmp(varargin{i},'noprompt')
+            noprompt = true;
+        elseif strcmp(varargin{i},'Insert Gaps')
+            gap_str = 'Insert Gaps';
+            noprompt = true;
+        elseif isfolder(varargin{i}) || exist(varargin{i},'file')
+            fname = varargin{i};
+        end
+    elseif isnumeric(varargin{i}) && numel(varargin{i})==3
+        din = varargin{i};
+    end
 end
-% if strncmp(version('-release'),'2016',4)
-%     v = {'UseDictionaryVR',true};
-% else
-%     v = {};
-% end
 
 img = []; label = {}; fov = [];
 
@@ -34,7 +39,7 @@ fname(ismember(fname,{'.','..'})) = [];
 ind = find(strcmpi('dicomdir',fname),1);
 if ind
     % DICOM names are stored in "DICOMDIR" file
-%     hp = waitbar(0,'Reading DICOMDIR ...');
+    %     hp = waitbar(0,'Reading DICOMDIR ...');
     fprintf('\nReading DICOMDIR ...\n');
     tinfo = dicominfo(fullfile(fpath,fname{ind}),'UseDictionaryVR',true);
     fname = fieldnames(tinfo.DirectoryRecordSequence);
@@ -48,12 +53,12 @@ if ind
         else
             ind(i) = true;
         end
-%         waitbar(i/nf,hp,'Finding file locations ...');
+        %         waitbar(i/nf,hp,'Finding file locations ...');
         if ~mod(i,round(nf/20))
             fprintf('.');
         end
     end
-%     delete(hp);
+    %     delete(hp);
     fprintf('\n');
     fname(ind) = [];
     nf = nf - nnz(ind);
@@ -64,23 +69,23 @@ else
 end
 
 dcmdata = struct('SeriesInstanceUID',{},... % for sorting multiple images
-                 'img',{},...
-                 'd',{},...
-                 'AcquisitionNumber',{},...
-                 'SeriesNumber',{},...
-                 'TemporalPositionIdentifier',{},...
-                 'DiffusionNumber',{},...
-                 'SlicePos',{},...
-                 'SlcThk',{},...
-                 'PixelSpacing',{},...
-                 'StudyDescription',{},...
-                 'PatientID',{},...
-                 'Label',{});
+    'img',{},...
+    'd',{},...
+    'AcquisitionNumber',{},...
+    'SeriesNumber',{},...
+    'TemporalPositionIdentifier',{},...
+    'DiffusionNumber',{},...
+    'SlicePos',{},...
+    'SlcThk',{},...
+    'PixelSpacing',{},...
+    'StudyDescription',{},...
+    'PatientID',{},...
+    'Label',{});
 % * Images are sorted into 3D via SlcLoc,
 %   and 4D via arrayed values:
 %       MRI - TE, TR, ...
 %       CT  - kV, ...
-             
+
 % Read in all DICOM slices:
 % hp = waitbar(0,'','Name','Loading DICOM image ...','WindowStyle','modal',...
 %     'CreateCancelBtn','setappdata(gcbf,''canceling'',1)'); % Option to cancel load midway
@@ -89,10 +94,10 @@ fprintf('\nLoading DICOM images from %u files\n',nf);
 for ifn = 1:nf
     
     % Check for Cancel button press
-%     if getappdata(hp,'canceling')
-%         img = []; label = {}; fov = []; dcmdata = []; break
-%     end
-%     waitbar((ifn-1)/nf,hp,fname{ifn});
+    %     if getappdata(hp,'canceling')
+    %         img = []; label = {}; fov = []; dcmdata = []; break
+    %     end
+    %     waitbar((ifn-1)/nf,hp,fname{ifn});
     fprintf('.');
     if mod(ifn,100)==0
         fprintf('\n')
@@ -121,15 +126,15 @@ for ifn = 1:nf
     
     if isfield(tinfo,'Modality')
         % Check if Series already exists in structure:
-    %     disp(tinfo.SeriesInstanceUID);
-    %     disp(num2str(tinfo.AcquisitionNumber));
-    %     disp(num2str(tinfo.SeriesNumber));
-    %     disp(num2str(tinfo.InstanceNumber));
-    %     waitforbuttonpress
-%         acqN = 0;
-%         if isfield(tinfo,'AcquisitionNumber') && ~isempty(tinfo.AcquisitionNumber)
-%             acqN = tinfo.AcquisitionNumber;
-%         end
+        %     disp(tinfo.SeriesInstanceUID);
+        %     disp(num2str(tinfo.AcquisitionNumber));
+        %     disp(num2str(tinfo.SeriesNumber));
+        %     disp(num2str(tinfo.InstanceNumber));
+        %     waitforbuttonpress
+        %         acqN = 0;
+        %         if isfield(tinfo,'AcquisitionNumber') && ~isempty(tinfo.AcquisitionNumber)
+        %             acqN = tinfo.AcquisitionNumber;
+        %         end
         serN = 0;
         if isfield(tinfo,'SeriesNumber') && ~isempty(tinfo.SeriesNumber)
             serN = tinfo.SeriesNumber;
@@ -174,8 +179,8 @@ for ifn = 1:nf
                 diffD = tinfo.DiffusionGradientOrientation;
             elseif isa(tinfo.DiffusionGradientOrientation,'uint8') && (nv>=24)
                 diffD = [ typecast(tinfo.DiffusionGradientOrientation(1:8),'double') ;...
-                          typecast(tinfo.DiffusionGradientOrientation(9:16),'double') ;...
-                          typecast(tinfo.DiffusionGradientOrientation(17:24),'double') ];
+                    typecast(tinfo.DiffusionGradientOrientation(9:16),'double') ;...
+                    typecast(tinfo.DiffusionGradientOrientation(17:24),'double') ];
             end
         elseif isfield(tinfo,'DiffusionGradientDirection') && (length(tinfo.DiffusionGradientDirection)==3)
             diffD = tinfo.DiffusionGradientDirection;
@@ -201,12 +206,12 @@ for ifn = 1:nf
         j = [];
         if ~isempty(dcmdata)
             j = find( strcmp(tinfo.SeriesInstanceUID,{dcmdata(:).SeriesInstanceUID}) ...
-                    & (serN==[dcmdata(:).SeriesNumber]) ...
-                    & (tempN == [dcmdata(:).TemporalPositionIdentifier]) ...
-                    & (diffN == [dcmdata(:).DiffusionNumber]) ...
-                    & ismember([dcmdata(:).DiffusionDir]',diffD','rows')' ...
-                    & (TE==[dcmdata(:).TE]) ...
-                    & (TR==[dcmdata(:).TR]) ,1);
+                & (serN==[dcmdata(:).SeriesNumber]) ...
+                & (tempN == [dcmdata(:).TemporalPositionIdentifier]) ...
+                & (diffN == [dcmdata(:).DiffusionNumber]) ...
+                & ismember([dcmdata(:).DiffusionDir]',diffD','rows')' ...
+                & (TE==[dcmdata(:).TE]) ...
+                & (TR==[dcmdata(:).TR]) ,1);
         end
         if isempty(j)
             % Initialize new series in structure:
@@ -230,10 +235,10 @@ for ifn = 1:nf
             dcmdata(j).PixelSpacing = val;
             
             val = [];
-            if isfield(tinfo,'SpacingBetweenSlices')
-                val = tinfo.SpacingBetweenSlices;
-            elseif isfield(tinfo,'SliceThickness')
+            if isfield(tinfo,'SliceThickness')
                 val = tinfo.SliceThickness;
+            elseif isfield(tinfo,'SpacingBetweenSlices')
+                val = abs(tinfo.SpacingBetweenSlices);
             end
             dcmdata(j).SlcThk = val;
             
@@ -242,7 +247,7 @@ for ifn = 1:nf
                 val = tinfo.ImageOrientationPatient;
             end
             dcmdata(j).Orient = val;
-
+            
             
             val = '';
             if isfield(tinfo,'StudyDescription')
@@ -301,7 +306,7 @@ for ifn = 1:nf
             val(3) = ifn;
         end
         dcmdata(j).SlicePos(k,:) = val;
-
+        
         % Read slice data from file:
         ySlope = 1;
         if isfield(tinfo,'RescaleSlope') && ~isempty(tinfo.RescaleSlope)
@@ -355,17 +360,17 @@ fprintf('\n');
 
 if ~isempty(dcmdata)
     
-%     % Some image sets not separable into 4D, so use multiples of slice
-%     % locations to determine splits (e.g. MR Solutions):
-%     if length(dcmdata)==1
-%         u = unique(cellfun(@(x)sum(dcmdata.SlcLoc==x),num2cell(unique(dcmdata.SlcLoc))));
-%         if (length(u)==1) && (u>1)
-%             ns = length(dcmdata.SlcLoc)/u;
-%             dcmdata.img = reshape(dcmdata.img,[dcmdata.d,ns,u]);
-%             dcmdata.SlcLoc = dcmdata.SlcLoc(1:ns);
-%             dcmdata.Label = repmat(dcmdata.Label,1,u);
-%         end
-%     end
+    %     % Some image sets not separable into 4D, so use multiples of slice
+    %     % locations to determine splits (e.g. MR Solutions):
+    %     if length(dcmdata)==1
+    %         u = unique(cellfun(@(x)sum(dcmdata.SlcLoc==x),num2cell(unique(dcmdata.SlcLoc))));
+    %         if (length(u)==1) && (u>1)
+    %             ns = length(dcmdata.SlcLoc)/u;
+    %             dcmdata.img = reshape(dcmdata.img,[dcmdata.d,ns,u]);
+    %             dcmdata.SlcLoc = dcmdata.SlcLoc(1:ns);
+    %             dcmdata.Label = repmat(dcmdata.Label,1,u);
+    %         end
+    %     end
     
     % Sort by slice location
     for i = 1:length(dcmdata)
@@ -374,7 +379,7 @@ if ~isempty(dcmdata)
         dcmdata(i).img = dcmdata(i).img(:,:,ix);
         dcmdata(i).AcquisitionNumber = dcmdata(i).AcquisitionNumber(ix);
     end
-
+    
     n = length(dcmdata);
     % If multiple images per position, try and separate based on AcquisitionNumber
     ct = 0;
@@ -392,8 +397,8 @@ if ~isempty(dcmdata)
                 uA = unique(A);
                 nuA = length(uA);
                 dcmdata = [ dcmdata(1:(ii-1)),...
-                            repmat(dcmdata(ii),1,nuA),...
-                            dcmdata((ii+1):end) ];
+                    repmat(dcmdata(ii),1,nuA),...
+                    dcmdata((ii+1):end) ];
                 for j = 1:nuA
                     ind = ~(A==uA(j));
                     dcmdata(ii-1+j).img(:,:,ind) = [];
@@ -406,8 +411,8 @@ if ~isempty(dcmdata)
                 [~,ind] = sortrows(dcmdata(ii).SlicePos);
                 nsep = ns/nuS;
                 dcmdata = [ dcmdata(1:(ii-1)),...
-                            repmat(dcmdata(ii),1,nsep),...
-                            dcmdata((ii+1):end) ];
+                    repmat(dcmdata(ii),1,nsep),...
+                    dcmdata((ii+1):end) ];
                 for j = 1:nsep
                     jj = ii-1+j;
                     indj = ind(j:nsep:end);
@@ -422,34 +427,44 @@ if ~isempty(dcmdata)
     n = length(dcmdata);
     gflag = 0; % Flag for number of slices per location group
     oimg = [];
-    uN = unique(cellfun(@(x)size(x,1),{dcmdata(:).SlicePos}));
-    uS = unique(round(diff(dcmdata(1).SlicePos(:,3)),3));
+    uN = unique(cellfun(@(x)size(x,1),{dcmdata(:).SlicePos})); % Number of slices per set
+    uS = unique(round(diff(dcmdata(1).SlicePos(:,3)),3));      % Spacing between slices for first set
     % Looking for significant differences in slice spacing:
     if (n==1) && (length(uS)==2) && (mean(abs(uS-mean(uS))/mean(uS))>0.001)
-%     if (n==1) && (length(unique(round(diff(dcmdata.SlicePos(:,3)),3)))==2)
-    % Case for 2-slice gapped CT data
+        % Case for 2-slice gapped CT data
         gflag = 2;
         oimg = dcmdata.img;
         oloc = dcmdata.SlicePos;
-    elseif (length(uN)==1) && ismember(uN,1:2)
-    % 1: Case for single-slice gapped CT data
-    % 2: Case for 2-slice gapped CT data
-        gflag = size(dcmdata(1).SlicePos,1);
+    elseif (length(uN)==1) % (commented 20230109 BAH) && ismember(uN,1:2)
+        % 1: Case for single-slice gapped CT data
+        % 2: Case for 2-slice gapped CT data
+        gflag = numel(uS);
         oimg = cat(3,dcmdata(:).img);
         oloc = cat(1,dcmdata(:).SlicePos);
     end
     if gflag
-        if noprompt
-            answer = 'Concatenate';
-        else
-            answer = questdlg('How would you like to compile these slices?',...
+        if ~noprompt
+            gap_str = questdlg('How would you like to compile these slices?',...
                 'Gapped CT','Concatenate','Insert Gaps','Cancel','Concatenate');
         end
-        if ~strcmp(answer,'Cancel')
-            tdata = dcmdata(1);
-            if strcmp(answer,'Insert Gaps')
-                fval = str2double(inputdlg('Blank Slice Value:','',1,{'-1024'}));
-            % Determine gaps:
+        switch gap_str
+            case 'Cancel'
+                return;
+            case 'Insert Gaps'
+                tdata = dcmdata(1);
+                
+                % Determine fill value
+                if noprompt
+                    fval = 0;
+                    imgmin = min(oimg,[],'all');
+                    if imgmin<-1000
+                        fval = imgmin;
+                    end
+                else
+                    fval = str2double(inputdlg('Blank Slice Value:','',1,{'-1024'}));
+                end
+                
+                % Determine gaps:
                 [~,ix] = sort(oloc(:,3));
                 dxyz = sqrt(sum(diff(oloc(ix,:),1).^2,2));
                 d = size(oimg);
@@ -469,141 +484,145 @@ if ~isempty(dcmdata)
                 end
                 disp(['Image slices are now: ',num2str(ind(:)')])
                 tmat(:,:,ind(:)) = oimg(:,:,ix);
+                tacq = nan(1,d(3));
+                tacq(ind) = tdata.AcquisitionNumber(ix);
                 tdata.SlicePos = (0:d(3)-1)'*dz + oloc(1,:);
                 tdata.SlcThk = dz;
                 tdata.img = tmat;
-            else
+                tdata.AcquisitionNumber = tacq;
+            otherwise
+                tdata = dcmdata(1);
                 tdata.img = oimg;
                 tdata.SlicePos = oloc;
-            end
-            dcmdata = tdata;
         end
+        dcmdata = tdata;
     end
+end
 
-    % User GUI to select single acquisition from set:
-    ndd = length(dcmdata);
-    if (ndd>1)
-        dd = cellfun(@size,{dcmdata(:).img},'UniformOutput',false);
-        ld = cellfun(@length,dd);
-        if all(ld==ld(1)) && all(cellfun(@(x)all(x==dd{1}),dd))
-            % Concatenate in 4D:
-            dcmdata(1).img = cat(4,dcmdata(:).img);
-            dcmdata(1).Label = [dcmdata(:).Label];
-            dcmdata(1).AcquisitionNumber = ...
-                reshape([dcmdata(:).AcquisitionNumber],size(dcmdata(1).img,3),[])';
-            dcmdata(1).SeriesNumber = [dcmdata(:).SeriesNumber];
-            dcmdata(1).TemporalPositionIdentifier = [dcmdata(:).TemporalPositionIdentifier];
-            dcmdata(1).DiffusionNumber = [dcmdata(:).DiffusionNumber];
-            dcmdata(1).DiffusionDir = [dcmdata(:).DiffusionDir];
-            dcmdata(1).TE = [dcmdata(:).TE];
-            dcmdata(1).TR = [dcmdata(:).TR];
-            dcmdata(2:end) = [];
-%         elseif all(cellfun(@(x)all(x(1:2)==dd{1}(1:2)),dd))
-%             % Concatenate in 3D:
-%             dcmdata(1).img = cat(3,dcmdata(:).img);
-%             dcmdata(1).SlicePos = cat(1,dcmdata(:).SlicePos);
-%             dcmdata(1).AcquisitionNumber = cat(2,dcmdata(:).AcquisitionNumber);
-%             dcmdata(2:end) = [];
-        else
-            if noprompt
-                answer = 1;
-            else
-                str = strcat('(',cellfun(@(x)num2str(size(x,1)),{dcmdata(:).SlicePos},...
-                                         'UniformOutput',false),...
-                             ' Slices)',[dcmdata(:).Label]);
-                % Show saggital preview for each:
-                hf = figure('Colormap',gray);
-                nrow = round(sqrt(ndd));
-                ncol = ceil(ndd/nrow);
-                for imont = 1:ndd
-                    subplot(nrow,ncol,imont),
-                    imshow(squeeze(max(dcmdata(imont).img,[],2)),[]);
-                    title(str{imont});
-                end
-                answer = listdlg('ListString',str,'SelectionMode','single',...
-                                 'ListSize',[300,300]);
-                delete(hf);
-            end
-            if isempty(answer)
-                return % User cancelled the load
-            else
-                dcmdata = dcmdata(answer);
-            end
-        end
-    end
-
-    ind = isnan(dcmdata.SlicePos(:,3));
-    dcmdata.img(:,:,ind) = [];
-    dcmdata.SlicePos(ind,:) = [];
-
-    % Sort slices by location:
-    [d(1),d(2),d(3),d(4)] = size(dcmdata.img);
-    n4d = d(4);
-    uind = dcmdata.SlicePos(:,3);
-    [~,ix,~] = unique(uind,'rows');
-    ns = length(ix);
-    if ns~=d(3)
-        % MR Solutions DICOMs have no way to separate out b-values of DWI
-        if mod(d(3),ns)==0
-            n4d =  d(3)/ns;
-            uind = repmat(0:n4d-1,ns,1);
-            uind = uind(:);
-            ix = repmat(ix,n4d,1) + uind;
-        else
-            error('Matrix cannot be separated into 4D.')
-        end
+% User GUI to select single acquisition from set:
+ndd = length(dcmdata);
+if (ndd>1)
+    dd = cellfun(@size,{dcmdata(:).img},'UniformOutput',false);
+    ld = cellfun(@length,dd);
+    if all(ld==ld(1)) && all(cellfun(@(x)all(x==dd{1}),dd))
+        % Concatenate in 4D:
+        dcmdata(1).img = cat(4,dcmdata(:).img);
+        dcmdata(1).Label = [dcmdata(:).Label];
+        dcmdata(1).AcquisitionNumber = ...
+            reshape([dcmdata(:).AcquisitionNumber],size(dcmdata(1).img,3),[])';
+        dcmdata(1).SeriesNumber = [dcmdata(:).SeriesNumber];
+        dcmdata(1).TemporalPositionIdentifier = [dcmdata(:).TemporalPositionIdentifier];
+        dcmdata(1).DiffusionNumber = [dcmdata(:).DiffusionNumber];
+        dcmdata(1).DiffusionDir = [dcmdata(:).DiffusionDir];
+        dcmdata(1).TE = [dcmdata(:).TE];
+        dcmdata(1).TR = [dcmdata(:).TR];
+        dcmdata(2:end) = [];
+        %         elseif all(cellfun(@(x)all(x(1:2)==dd{1}(1:2)),dd))
+        %             % Concatenate in 3D:
+        %             dcmdata(1).img = cat(3,dcmdata(:).img);
+        %             dcmdata(1).SlicePos = cat(1,dcmdata(:).SlicePos);
+        %             dcmdata(1).AcquisitionNumber = cat(2,dcmdata(:).AcquisitionNumber);
+        %             dcmdata(2:end) = [];
     else
-        dcmdata.img = dcmdata.img(:,:,ix);
-        dcmdata.SlicePos = dcmdata.SlicePos(ix,:);
-        dcmdata.AcquisitionNumber = dcmdata.AcquisitionNumber(ix);
+        if noprompt
+            answer = 1;
+        else
+            str = strcat('(',cellfun(@(x)num2str(size(x,1)),{dcmdata(:).SlicePos},...
+                'UniformOutput',false),...
+                ' Slices)',[dcmdata(:).Label]);
+            % Show saggital preview for each:
+            hf = figure('Colormap',gray);
+            nrow = round(sqrt(ndd));
+            ncol = ceil(ndd/nrow);
+            for imont = 1:ndd
+                subplot(nrow,ncol,imont),
+                imshow(squeeze(max(dcmdata(imont).img,[],2)),[]);
+                title(str{imont});
+            end
+            answer = listdlg('ListString',str,'SelectionMode','single',...
+                'ListSize',[300,300]);
+            delete(hf);
+        end
+        if isempty(answer)
+            return % User cancelled the load
+        else
+            dcmdata = dcmdata(answer);
+        end
     end
-    if (n4d>1) && (d(3)==(n4d*nnz(uind==1)))
-        ns = d(3)/n4d;
-        dcmdata.img = reshape(dcmdata.img(:,:,ix),[d(1:2),ns,n4d]);
-        dcmdata.SlicePos = dcmdata.SlicePos(ix(1:ns),:);
-        % Determine labeling:
-        dcmdata.Label = cell(1,n4d);
-        ind = ix(1:ns:d(3));
-        if isfield(dcmdata,'TR') && length(unique(dcmdata.TR))>1
-            dcmdata.Label = strcat(dcmdata.Label,'TR=',...
-                cellfun(@num2str,num2cell(dcmdata.TR(ind)),...
-                        'UniformOutput',false),'; ');
-        end
-        if isfield(dcmdata,'TE') && length(unique(dcmdata.TE))>1
-            dcmdata.Label = strcat(dcmdata.Label,'TE=',...
-                cellfun(@num2str,num2cell(dcmdata.TE(ind)),...
-                        'UniformOutput',false),'; ');
-        end
-        ind = cellfun(@isempty,dcmdata.Label);
-        if any(ind)
-            dcmdata.Label(ind) = cellfun(@num2str,num2cell(find(ind)),'UniformOutput',false);
-        end
-    end
+end
 
-    % Check for dimension match
-    [d(1),d(2),d(3),d(4)] = size(dcmdata.img);
-    if ~isempty(din) && ~all(d(1:3)==din)
-        error(['Dimensions must match!',sprintf(' %f',d)])
-    end
+ind = isnan(dcmdata.SlicePos(:,3));
+dcmdata.img(:,:,ind) = [];
+dcmdata.SlicePos(ind,:) = [];
 
-    % Calculate 3D orientation matrix (compatible with NIfTI orientation)
-    orient = [ [ dcmdata.Orient(1:3)*dcmdata.PixelSpacing(1) ,...
-                 dcmdata.Orient(4:6)*dcmdata.PixelSpacing(2) ,...
-                 (dcmdata.SlicePos(end,:)-dcmdata.SlicePos(1,:))'/(d(3)-1) ,...
-                 dcmdata.SlicePos(1,:)' ] ;...
-               0 0 0 1];
-    
-    % Prepare data to return:
-    img = dcmdata.img;
-    dcmdata = rmfield(dcmdata,'img');
-    info = struct('format','DICOM','meta',dcmdata);
-    
-    [d(1),d(2),d(3),d(4)] = size(img);
-    fov = [dcmdata.PixelSpacing([2,1])',1] .* d([2,1,3]);
-    if size(dcmdata.SlicePos,1)>1
-        fov(3) = abs(sqrt(sum(diff(dcmdata.SlicePos([1,end],:),1).^2,2))) * d(3)/(d(3)-1);
-    elseif ~isempty(dcmdata.SlcThk)
-        fov(3) = d(3) * dcmdata.SlcThk;
+% Sort slices by location:
+[d(1),d(2),d(3),d(4)] = size(dcmdata.img);
+n4d = d(4);
+uind = dcmdata.SlicePos(:,3);
+[~,ix,~] = unique(uind,'rows');
+ns = length(ix);
+if ns~=d(3)
+    % MR Solutions DICOMs have no way to separate out b-values of DWI
+    if mod(d(3),ns)==0
+        n4d =  d(3)/ns;
+        uind = repmat(0:n4d-1,ns,1);
+        uind = uind(:);
+        ix = repmat(ix,n4d,1) + uind;
+    else
+        error('Matrix cannot be separated into 4D.')
     end
-    label = dcmdata.Label;
+else
+    dcmdata.img = dcmdata.img(:,:,ix);
+    dcmdata.SlicePos = dcmdata.SlicePos(ix,:);
+    dcmdata.AcquisitionNumber = dcmdata.AcquisitionNumber(ix);
+end
+if (n4d>1) && (d(3)==(n4d*nnz(uind==1)))
+    ns = d(3)/n4d;
+    dcmdata.img = reshape(dcmdata.img(:,:,ix),[d(1:2),ns,n4d]);
+    dcmdata.SlicePos = dcmdata.SlicePos(ix(1:ns),:);
+    % Determine labeling:
+    dcmdata.Label = cell(1,n4d);
+    ind = ix(1:ns:d(3));
+    if isfield(dcmdata,'TR') && length(unique(dcmdata.TR))>1
+        dcmdata.Label = strcat(dcmdata.Label,'TR=',...
+            cellfun(@num2str,num2cell(dcmdata.TR(ind)),...
+            'UniformOutput',false),'; ');
+    end
+    if isfield(dcmdata,'TE') && length(unique(dcmdata.TE))>1
+        dcmdata.Label = strcat(dcmdata.Label,'TE=',...
+            cellfun(@num2str,num2cell(dcmdata.TE(ind)),...
+            'UniformOutput',false),'; ');
+    end
+    ind = cellfun(@isempty,dcmdata.Label);
+    if any(ind)
+        dcmdata.Label(ind) = cellfun(@num2str,num2cell(find(ind)),'UniformOutput',false);
+    end
+end
+
+% Check for dimension match
+[d(1),d(2),d(3),d(4)] = size(dcmdata.img);
+if ~isempty(din) && ~all(d(1:3)==din)
+    error(['Dimensions must match!',sprintf(' %f',d)])
+end
+
+% Calculate 3D orientation matrix (compatible with NIfTI orientation)
+orient = [ [ dcmdata.Orient(1:3)*dcmdata.PixelSpacing(1) ,...
+    dcmdata.Orient(4:6)*dcmdata.PixelSpacing(2) ,...
+    (dcmdata.SlicePos(end,:)-dcmdata.SlicePos(1,:))'/(d(3)-1) ,...
+    dcmdata.SlicePos(1,:)' ] ;...
+    0 0 0 1];
+
+% Prepare data to return:
+img = dcmdata.img;
+dcmdata = rmfield(dcmdata,'img');
+info = struct('format','DICOM','meta',dcmdata);
+
+[d(1),d(2),d(3),d(4)] = size(img);
+fov = [dcmdata.PixelSpacing([2,1])',1] .* d([2,1,3]);
+if size(dcmdata.SlicePos,1)>1
+    fov(3) = abs(sqrt(sum(diff(dcmdata.SlicePos([1,end],:),1).^2,2))) * d(3)/(d(3)-1);
+elseif ~isempty(dcmdata.SlcThk)
+    fov(3) = d(3) * dcmdata.SlcThk;
+end
+label = dcmdata.Label;
 end

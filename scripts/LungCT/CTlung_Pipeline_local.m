@@ -50,7 +50,7 @@ try
             writeLog(fn_log,'   loading data ... ',fn{i,1});
             if isfolder(fn_in{i})
                 writeLog(fn_log,'from DICOM\n');
-                [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],true);
+                [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],'noprompt');
                 img(i).dcmpath = fn_in{i};
             elseif ~isempty(fn_in{i})
                 writeLog(fn_log,'from file\n')
@@ -120,6 +120,46 @@ try
                 seg = CTlung_Segmentation(4,img(i).mat,img(i).info,img(i).info.label,procdir,fn_log);
             end
 
+            % Check for gapped data
+            if strcmp(img(i).info.natinfo.format,'DICOM') && all(isfield(img(i).info.natinfo.meta,{'SlcThk','SlicePos'})) ...
+                    && abs(img(i).info.natinfo.meta.SlcThk - diff(img(i).info.natinfo.meta.SlicePos(1:2,3))) > 0.0001
+                oimg = img(i).mat;
+                fillval = min(img(i).mat,[],'all');
+                slcloc = img(i).info.natinfo.meta.SlicePos;
+                % Determine gaps:
+                dxyz = sqrt(sum(diff(slcloc,1).^2,2));
+                d = img(i).info.d;
+                if numel(unique(diff(slcloc(:,3)))) == 2
+                    dnew = floor((dxyz(1)+dxyz(2))/dxyz(1));
+                    dz = abs(dxyz(1)+dxyz(2))/dnew;
+                    d(3) = d(3)*dnew/2;
+                    ind = round(dnew/2):dnew:d(3);
+                    ind = [ind;ind+1];
+                else % Single-slice
+                    dnew = floor(dxyz(1)/img(i).info.natinfo.meta.SlcThk);
+                    dz = abs(dxyz(1))/dnew;
+                    d(3) = d(3)*dnew;
+                    ind = round(dnew/2):dnew:d(3);
+                end
+                
+                disp(['Inserting image gaps. Image slices are now: ',num2str(ind(:)')])
+                img(i).mat = ones(d)*fillval;
+                img(i).mat(:,:,ind(:)) = oimg;
+                tacq = nan(1,d(3));
+                tacq(ind) = img(i).info.natinfo.meta.AcquisitionNumber;
+                img(i).info.natinfo.meta.SlicePos = (0:d(3)-0.5)' * dz + slcloc(1,:);
+                img(i).info.fov(3) = dz*d(3);
+                img(i).info.d = d;
+                img(i).info.voxsz(3) = dz;
+                img(i).info.natinfo.meta.SlcThk = dz;
+                img(i).info.natinfo.meta.AcquisitionNumber = tacq;
+                
+                % Insert gaps for the segmentation to match
+                tseg = zeros(d);
+                tseg(:,:,ind(:)) = seg;
+                seg = tseg;
+            end
+            
             % Save image:
             if ~fnflag(i,1)
                 saveNIFTI(fn{i,1},img(i).mat,img(i).info.label,img(i).info.fov,img(i).info.orient);
