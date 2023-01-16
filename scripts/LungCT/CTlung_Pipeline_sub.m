@@ -38,7 +38,7 @@ try
     end
 
     % Load images
-    img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]});
+    img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
     fn_exp = fullfile(procdir,[ID,'.exp',fn_ext]);
     if exist(fn_exp,'file')
         writeLog(opts.fn_log,'Reading EXP image ...\n');
@@ -81,15 +81,19 @@ try
     % QC segmentation
     if img(1).flag
         writeLog(opts.fn_log,'Generating EXP montage...\n');
-        ind = 10:10:img(1).info.d(3);
-        cdata = QCmontage('seg',cat(4,img(1).mat(:,:,ind),logical(img(1).label(:,:,ind))),img(1).info.voxsz,...
-            fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
+        QCpad = round(img(1).info.d(3)/QC_nslice);
+        QCns = min(QC_nslice,img(1).info.d(3));
+        img(1).QCind = linspace(0,img(1).info.d(3)-QCpad,QCns)+ceil(QCpad/2);
+        cdata = QCmontage('seg',cat(4,img(1).mat(:,:,img(1).QCind),logical(img(1).label(:,:,img(1).QCind))),...
+            img(1).info.voxsz,fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
     end
     if img(2).flag
         writeLog(opts.fn_log,'Generating INSP montage...\n');
-        ind = 10:10:img(2).info.d(3);
-        cdata = QCmontage('seg',cat(4,img(2).mat(:,:,ind),logical(img(2).label(:,:,ind))),img(2).info.voxsz,...
-            fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
+        QCpad = round(img(2).info.d(3)/QC_nslice);
+        QCns = min(QC_nslice,img(2).info.d(3));
+        img(2).QCind = linspace(0,img(2).info.d(3)-QCpad,QCns)+ceil(QCpad/2);
+        cdata = QCmontage('seg',cat(4,img(2).mat(:,:,img(2).QCind),logical(img(2).label(:,:,img(2).QCind))),...
+            img(2).info.voxsz,fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
     end
 
     % Airways
@@ -260,8 +264,7 @@ try
 
         % QC registration
         writeLog(opts.fn_log,'Saving Registration Montage ...\n');
-        ind = 10:10:img(1).info.d(3);
-        QCmontage('reg',cat(4,ins_reg(:,:,ind),img(1).label(:,:,ind)),img(1).info.voxsz,...
+        QCmontage('reg',cat(4,ins_reg(:,:,img(1).QCind),img(1).label(:,:,img(1).QCind)),img(1).info.voxsz,...
             fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
         img(2) = [];
 
@@ -365,7 +368,7 @@ try
 
             % QC PRM
             writeLog(opts.fn_log,'Generating PRM Montage ...\n');
-            QCmontage('prm',cat(4,img.mat(:,:,ind),double(prm5(:,:,ind))),...
+            QCmontage('prm',cat(4,img.mat(:,:,img(1).QCind),double(prm5(:,:,img(1).QCind))),...
                 img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID{1})));
 
             % Tabulate 5-color PRM results
