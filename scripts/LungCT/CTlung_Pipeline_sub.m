@@ -83,7 +83,7 @@ try
         writeLog(opts.fn_log,'Generating EXP montage...\n');
         QCpad = round(img(1).info.d(3)/QC_nslice);
         QCns = min(QC_nslice,img(1).info.d(3));
-        img(1).QCind = linspace(0,img(1).info.d(3)-QCpad,QCns)+ceil(QCpad/2);
+        img(1).QCind = round(linspace(0,img(1).info.d(3)-QCpad,QCns)+ceil(QCpad/2));
         cdata = QCmontage('seg',cat(4,img(1).mat(:,:,img(1).QCind),logical(img(1).label(:,:,img(1).QCind))),...
             img(1).info.voxsz,fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
     end
@@ -91,7 +91,7 @@ try
         writeLog(opts.fn_log,'Generating INSP montage...\n');
         QCpad = round(img(2).info.d(3)/QC_nslice);
         QCns = min(QC_nslice,img(2).info.d(3));
-        img(2).QCind = linspace(0,img(2).info.d(3)-QCpad,QCns)+ceil(QCpad/2);
+        img(2).QCind = round(linspace(0,img(2).info.d(3)-QCpad,QCns)+ceil(QCpad/2));
         cdata = QCmontage('seg',cat(4,img(2).mat(:,:,img(2).QCind),logical(img(2).label(:,:,img(2).QCind))),...
             img(2).info.voxsz,fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
     end
