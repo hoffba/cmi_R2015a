@@ -5,13 +5,8 @@ function CTlung_Pipeline_local(ID,expfname,insfname,procdir,opts)
 t = tic;
 try
     
-    % Initialize results table
-    regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
-    Nr = numel(regionnames);
-    varnames = {'ID','Exp_DICOM','Ins_DICOM'};
-    Nv = numel(varnames);
-    res = table('Size',[Nr,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames);
-    res.ID(:) = {ID};
+    % Save data sources to table in processing directory for future reference
+    T = table('Size',[2,2],'VariableTypes',{'cellstr','cellstr'},'VariableNames',{'Phase','Location'});
 
     % Initialize folders and log file
     if ~isfolder(procdir)
@@ -22,7 +17,7 @@ try
 
     % Initialize parameters and results struct
     fn_ext = '.nii.gz';
-    img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{'',''},'dcmpath',{'Unknown','Unknown'});
+    img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{'',''},'sourcepath',{'Unknown','Unknown'});
 
     fn = fullfile(procdir,string(ID)+[".exp",".exp.label";".ins",".ins.label"]+fn_ext);
     fnflag = cellfun(@(x)exist(x,'file'),fn);
@@ -48,10 +43,10 @@ try
         else
             orientchk = true;
             writeLog(fn_log,'   loading data ... ',fn{i,1});
+            img(i).sourcepath = fn_in{i};
             if isfolder(fn_in{i})
                 writeLog(fn_log,'from DICOM\n');
                 [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],'noprompt');
-                img(i).dcmpath = fn_in{i};
             elseif ~isempty(fn_in{i})
                 writeLog(fn_log,'from file\n')
                 [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
@@ -102,8 +97,10 @@ try
         end
         clear seg1 seg2
     end
-    res.Exp_DICOM(:) = {img(1).dcmpath};
-    res.Ins_DICOM(:) = {img(2).dcmpath};
+    T.Phase(1) = {'Exp'};
+    T.Location(1) = {img(1).sourcepath};
+    T.Phase(2) = {'Ins'};
+    T.Location(2) = {img(2).sourcepath};
     img(1).info.label = [ID,'_Exp'];
     img(2).info.label = [ID,'_Ins'];
     img(1).info.name =  [ID,'_Exp'];
@@ -175,8 +172,8 @@ try
     writeLog(fn_log,'Local processing completed after %.1f minutes\n',dt/60);
 
     % Save results to CSV file:
-    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',ID,opts.timestamp));
-    writetable(res,fn_res);
+    fn_res = fullfile(procdir,sprintf('%s_SourceData_%s.csv',ID,opts.timestamp));
+    writetable(T,fn_res);
 catch err
     writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err));
 end

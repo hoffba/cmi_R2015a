@@ -1,10 +1,14 @@
 function res = CTlung_Pipeline_sub(procdir,opts)
 % Pipeline processing on Great Lakes
 
+import mlreportgen.report.*
+
 tt = tic;
 
 try
 
+%     R = Report('output','pdf');
+    
     QC_nslice = 25;
     fn_ext = '.nii.gz';
     opts.fn_log = fullfile(procdir,'pipeline_log.txt');
@@ -12,25 +16,27 @@ try
     nowstr = datestr(datetime('now'),0);
     writeLog(opts.fn_log,'\n\nStarting Pipeline Process : %s\n',nowstr);
     
-    % Load results file
+    % Initialize results table
     [~,ID] = fileparts(procdir);
     regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
     Nr = numel(regionnames);
-    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',ID,opts.timestamp));
+    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s.csv',ID,opts.timestamp));
     if exist(fn_res,'file')
         res = readtable(fn_res,'Delimiter',',');
-        if size(res,1)==1
-            res = repmat(res,Nr,1);
-        end
     else
-        varnames = {'ID','Exp_DICOM','Ins_DICOM'};
+        varnames = {'ID','Exp_Source','Ins_Source'};
         Nv = numel(varnames);
         res = table('Size',[Nr,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames);
         res.ID(:) = {ID};
+        
+        % Read source paths from file
+        T = readtable(fullfile(procdir,sprintf('%s_SourceData_%s.csv',ID,opts.timestamp)));
+        res.Exp_Source(:) = T.Location(find(strcmp(T.Phase,'Exp'),1));
+        res.Ins_Source(:) = T.Location(find(strcmp(T.Phase,'Ins'),1));
     end
     res.Properties.RowNames = regionnames;
     res.ROI = regionnames';
-    fld = {'ID','Exp_DICOM','Ins_DICOM'};
+    fld = {'ID','Exp_Source','Ins_Source'};
     for i = 1:numel(fld)
         if isnumeric(res.(fld{i}))
             res.(fld{i}) = arrayfun(@num2str,res.(fld{i}),'UniformOutput',false);
@@ -437,11 +443,11 @@ try
     end
 
     % Save Results Table:
-    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s',res.ID{1},opts.timestamp));
     if istable(res)
-        writetable(res,[fn_res,'.csv']);
+        writetable(res,fn_res);
     else
-        save([fn_res,'.mat'],'res');
+        fn_res = regexprep(fn_res,'.csv','.mat');
+        save(fn_res,'res');
     end
     
 catch err
