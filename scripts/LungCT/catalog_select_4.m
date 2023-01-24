@@ -525,7 +525,7 @@ end
             tlabel = {'UMlabel','StudyID','StudyDate','PatientName'};
             for i = 1:numel(tlabel)
                 if ismember(tlabel{i},C.Properties.VariableNames) && numeric(C.(tlabel{i}))
-                    C.(tlabel{i}) = cellfun(@num2str,num2cell(C.(tlabel{i})),'UniformOutput',false);
+                    C.(tlabel{i}) = arrayfun(@num2str,C.(tlabel{i}),'UniformOutput',false);
                 end
             end
             
