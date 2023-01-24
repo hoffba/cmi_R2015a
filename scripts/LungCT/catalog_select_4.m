@@ -524,7 +524,7 @@ end
             % Find groups of scans with unique PatientName and StudyDate
             tlabel = {'UMlabel','StudyID','StudyDate','PatientName'};
             for i = 1:numel(tlabel)
-                if ismember(tlabel{i},C.Properties.VariableNames) && numeric(C.(tlabel{i}))
+                if ismember(tlabel{i},C.Properties.VariableNames) && isnumeric(C.(tlabel{i}))
                     C.(tlabel{i}) = arrayfun(@num2str,C.(tlabel{i}),'UniformOutput',false);
                 end
             end
