@@ -516,6 +516,9 @@ end
                 
                 C = addvars(C,UMlabel,'After','Ins');
             end
+            if isnumeric(C.UMlabel)
+                C.UMlabel = arrayfun(@num2str,C.UMlabel,'UniformOutput',false);
+            end
             C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
 
             % Remove empty data and sort array
