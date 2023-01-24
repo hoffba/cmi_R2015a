@@ -519,16 +519,19 @@ end
             if isnumeric(C.UMlabel)
                 C.UMlabel = arrayfun(@num2str,C.UMlabel,'UniformOutput',false);
             end
-            C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
 
             % Remove empty data and sort array
             % Find groups of scans with unique PatientName and StudyDate
-            tlabel = {'StudyID','StudyDate','PatientName'};
+            tlabel = {'UMlabel','StudyID','StudyDate','PatientName'};
             for i = 1:numel(tlabel)
-                if isnumeric(C.(tlabel{i}))
+                if ismember(tlabel{i},C.Properties.VariableNames) && numeric(C.(tlabel{i}))
                     C.(tlabel{i}) = cellfun(@num2str,num2cell(C.(tlabel{i})),'UniformOutput',false);
                 end
             end
+            
+            % Remove spaces from UMlabel
+            C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
+            
             if ismember('CaseNumber',C.Properties.VariableNames)
                 C = removevars(C,'CaseNumber');
             end
