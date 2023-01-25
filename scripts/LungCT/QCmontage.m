@@ -1,4 +1,4 @@
-function cdata = QCmontage(tag,mat,voxsz,fname)
+function cdata = QCmontage(tag,mat,voxsz,fname,gifname)
 % Generate figures for displaying montage overlays with segmentations or PRM
 
 
@@ -6,10 +6,10 @@ nf = size(mat,3);
 
 % Find system screen size
 set(0,'units','pixels');
-scnsz = get(0,'screensize');
+% scnsz = get(0,'screensize');
 
 % Initialize figure:
-hf = figure('visible','off','Position',scnsz);
+hf = figure('visible','off','Position',[0,0,3000,3000]);
 ha = axes(hf,'DataAspectRatio',voxsz);
 im = imagesc(mat(:,:,1,1),[-1000 0]);
 axis image
@@ -60,9 +60,18 @@ for i = 1:nf
     end
     mat(:,:,:,i) = double(im);
 end
-figure(hf),montage(mat/255,'Size',montsz);
+figure(hf)
+montage(mat/255,'Size',montsz,'Parent',ha);
+[~,tname] = fileparts(fname);
+title(tname,'Interpreter','none');
 
 %% Print the figure:
 print(hf,[fname,'.tif'],'-dtiff');
 cdata = print('-RGBImage','-noui');
+
+%% Add to GIF series
+if nargin==5 && ischar(gifname)
+    collate_fig(hf,gifname);
+end
+
 delete(hf);

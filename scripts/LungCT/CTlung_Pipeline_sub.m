@@ -30,7 +30,9 @@ try
         res.ID(:) = {ID};
         
         % Read source paths from file
-        T = readtable(fullfile(procdir,sprintf('%s_SourceData_%s.csv',ID,opts.timestamp)));
+        tname = fullfile(procdir,sprintf('%s_SourceData_%s.csv',ID,opts.timestamp));
+        opts = detectImportOptions(tname,'Delimiter',',');
+        T = readtable(tname,opts);
         res.Exp_Source(:) = T.Location(find(strcmp(T.Phase,'Exp'),1));
         res.Ins_Source(:) = T.Location(find(strcmp(T.Phase,'Ins'),1));
     end
@@ -90,16 +92,20 @@ try
         QCpad = round(img(1).info.d(3)/QC_nslice);
         QCns = min(QC_nslice,img(1).info.d(3));
         img(1).QCind = round(linspace(0,img(1).info.d(3)-QCpad,QCns)+ceil(QCpad/2));
-        cdata = QCmontage('seg',cat(4,img(1).mat(:,:,img(1).QCind),logical(img(1).label(:,:,img(1).QCind))),...
-            img(1).info.voxsz,fullfile(procdir,sprintf('%s_Montage',img(1).info.label)));
+        cdata = QCmontage('seg',cat(4,img(1).mat(:,:,img(1).QCind),...
+            logical(img(1).label(:,:,img(1).QCind))),img(1).info.voxsz,...
+            fullfile(procdir,sprintf('%s_Montage',img(1).info.label)),...
+            fullfile(opts.save_path,'Montage_exp.gif'));
     end
     if img(2).flag
         writeLog(opts.fn_log,'Generating INSP montage...\n');
         QCpad = round(img(2).info.d(3)/QC_nslice);
         QCns = min(QC_nslice,img(2).info.d(3));
         img(2).QCind = round(linspace(0,img(2).info.d(3)-QCpad,QCns)+ceil(QCpad/2));
-        cdata = QCmontage('seg',cat(4,img(2).mat(:,:,img(2).QCind),logical(img(2).label(:,:,img(2).QCind))),...
-            img(2).info.voxsz,fullfile(procdir,sprintf('%s_Montage',img(2).info.label)));
+        cdata = QCmontage('seg',cat(4,img(2).mat(:,:,img(2).QCind),...
+            logical(img(2).label(:,:,img(2).QCind))),img(2).info.voxsz,...
+            fullfile(procdir,sprintf('%s_Montage',img(2).info.label)),...
+            fullfile(opts.save_path,'Montage_ins.gif'));
     end
 
     % Airways
@@ -271,7 +277,8 @@ try
         % QC registration
         writeLog(opts.fn_log,'Saving Registration Montage ...\n');
         QCmontage('reg',cat(4,ins_reg(:,:,img(1).QCind),img(1).label(:,:,img(1).QCind)),img(1).info.voxsz,...
-            fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})));
+            fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})),...
+            fullfile(opts.save_path,'Montage_reg.gif'));
         img(2) = [];
 
         % Jacobian analysis
@@ -343,7 +350,8 @@ try
             else
                 writeLog(opts.fn_log,'Calculating PRM...\n');
                 [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
-                    fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1})));
+                    fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1})),...
+                    fullfile(opts.save_path,'Montage_PRM_Scatter.gif'));
 
                 % Save PRM
                 writeLog(opts.fn_log,'Saving PRM as NIFTI ... ');
@@ -374,8 +382,9 @@ try
 
             % QC PRM
             writeLog(opts.fn_log,'Generating PRM Montage ...\n');
-            QCmontage('prm',cat(4,img.mat(:,:,img(1).QCind),double(prm5(:,:,img(1).QCind))),...
-                img.info.voxsz,fullfile(procdir,sprintf('%s_PRM_Montage',res.ID{1})));
+            QCmontage('prm',cat(4,img.mat(:,:,img(1).QCind),double(prm5(:,:,img(1).QCind))),img.info.voxsz,...
+                fullfile(procdir,sprintf('%s_PRM_Montage',res.ID{1})),...
+                fullfile(opts.save_path,'Montage_PRM.gif'));
 
             % Tabulate 5-color PRM results
             writeLog(opts.fn_log,'Tabulating 5-color PRM results...\n');
