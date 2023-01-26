@@ -31,8 +31,8 @@ try
         
         % Read source paths from file
         tname = fullfile(procdir,sprintf('%s_SourceData_%s.csv',ID,opts.timestamp));
-        opts = detectImportOptions(tname,'Delimiter',',');
-        T = readtable(tname,opts);
+        T_opts = detectImportOptions(tname,'Delimiter',',');
+        T = readtable(tname,T_opts);
         res.Exp_Source(:) = T.Location(find(strcmp(T.Phase,'Exp'),1));
         res.Ins_Source(:) = T.Location(find(strcmp(T.Phase,'Ins'),1));
     end
@@ -276,7 +276,7 @@ try
 
         % QC registration
         writeLog(opts.fn_log,'Saving Registration Montage ...\n');
-        QCmontage('reg',cat(4,ins_reg(:,:,img(1).QCind),img(1).label(:,:,img(1).QCind)),img(1).info.voxsz,...
+        QCmontage('reg' ,cat(4,ins_reg(:,:,img(1).QCind),logical(img(1).label(:,:,img(1).QCind))),img(1).info.voxsz,...
             fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})),...
             fullfile(opts.save_path,'Montage_reg.gif'));
         img(2) = [];
