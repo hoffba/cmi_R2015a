@@ -17,7 +17,7 @@ if nargin==0
 end
 
 if ischar(fnames)
-    if isdir(fnames)
+    if isfolder(fnames)
         % Search for MHDs in given directory:
         [D,F] = dirtree(fnames,'*.mhd');
         fnames = cellfun(@(x,y)cellfun(@(z)fullfile(x,z),y,...

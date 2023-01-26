@@ -6,10 +6,10 @@ nf = size(mat,3);
 
 % Find system screen size
 set(0,'units','pixels');
-% scnsz = get(0,'screensize');
+scnsz = get(0,'screensize');
 
 % Initialize figure:
-hf = figure('visible','off','Position',[0,0,3000,3000]);
+hf = figure('visible','off','Position',scnsz);
 ha = axes(hf,'DataAspectRatio',voxsz);
 im = imagesc(mat(:,:,1,1),[-1000 0]);
 axis image
