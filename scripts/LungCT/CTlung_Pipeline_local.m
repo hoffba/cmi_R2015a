@@ -119,7 +119,7 @@ try
 
             % Check for gapped data
             if strcmp(img(i).info.natinfo.format,'DICOM') && all(isfield(img(i).info.natinfo.meta,{'SlcThk','SlicePos'})) ...
-                    && abs(img(i).info.natinfo.meta.SlcThk - diff(img(i).info.natinfo.meta.SlicePos(1:2,3))) > 0.0001
+                    && (diff(img(i).info.natinfo.meta.SlicePos(1:2,3)) - img(i).info.natinfo.meta.SlcThk) > 0.0001
                 oimg = img(i).mat;
                 fillval = min(img(i).mat,[],'all');
                 slcloc = img(i).info.natinfo.meta.SlicePos;
@@ -172,7 +172,7 @@ try
     writeLog(fn_log,'Local processing completed after %.1f minutes\n',dt/60);
 
     % Save results to CSV file:
-    fn_res = fullfile(procdir,sprintf('%s_SourceData_%s.csv',ID,opts.timestamp));
+    fn_res = fullfile(procdir,sprintf('%s_SourceData.csv',ID));
     writetable(T,fn_res);
 catch err
     writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err));

@@ -1,4 +1,4 @@
-function results = CTlung_Pipeline(varargin)
+function [opts,cases,results] = CTlung_Pipeline(opts,cases)
 
 results = [];
 
@@ -16,9 +16,11 @@ if ~nargin
 end
 
 % Find files
-[cases,opts] = catalog_select_4('opts',opts);
-if isempty(cases)
-    return;
+if nargin<2
+    [cases,opts] = catalog_select_4('opts',opts);
+    if isempty(cases)
+        return;
+    end
 end
 ncases = numel(cases);
 
@@ -35,6 +37,14 @@ for i = 1:ncases
     cases(i).fname_ins = cases(i).Scans(2).DataPath;
     cases(i).basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
     cases(i).procdir = fullfile(opts.save_path,cases(i).basename);
+end
+
+% Delete existing GIF montages to start from scratch
+fn = fullfile(opts.save_path,["Montage_exp","Montage_ins","Montage_reg","Montage_PRM","Montage_PRM_Scatter"]+".gif");
+for i = 1:numel(fn)
+    if exist(fn(i),'file')
+        delete(fn(i));
+    end
 end
 
 % Determine how to run the pipeline, based on opts.cluster:

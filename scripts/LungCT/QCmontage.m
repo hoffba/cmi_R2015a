@@ -1,7 +1,6 @@
 function cdata = QCmontage(tag,mat,voxsz,fname,gifname)
 % Generate figures for displaying montage overlays with segmentations or PRM
 
-
 nf = size(mat,3);
 
 % Find system screen size

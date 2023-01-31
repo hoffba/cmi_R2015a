@@ -27,7 +27,7 @@ for i = 1:nf
     if startsWith(fnames{i},GL_turbo_dir)
         fn{i} = fnames{i};
     else
-        str = strsplit(fnames{i},filesep);
+        str = strsplit(fnames{i},{'\','/'});
         if isempty(LOC_turbo_dir) || strcmp(str{1},LOC_turbo_dir)
             fn{i} = strjoin([GL_turbo_dir,str(2:end)],'/');
         else
