@@ -108,7 +108,7 @@ if ~isempty(C) && go
             selected_data(ig).StudyDate = tC.StudyDate{1};
             selected_data(ig).Scans = tS;
             if any(tC.Exp)
-                selected_data(ig).Scans =        table2struct(tC(tC.Exp,3:end));
+                selected_data(ig).Scans = table2struct(tC(tC.Exp,3:end));
             else
                 selected_data(ig).Scans(1).DataPath = '';
             end
@@ -533,14 +533,19 @@ end
             C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
             
             if ismember('CaseNumber',C.Properties.VariableNames)
-                C = removevars(C,'CaseNumber');
+                C = sortrows(C,{'StudyDate','StudyID','PatientName','CaseNumber','SeriesNumber'});
+                [~,~,ugroups_ic] = unique(C.CaseNumber);        % Find unique CaseNumbers
+                ugroups_ic = [0;cumsum(diff(ugroups_ic)~=0)]+1; % Re-number case groups
+                C.CaseNumber = ugroups_ic;
+                [~,ugroups_ia] = unique(ugroups_ic);            % Find new case group locations
+            else
+                % Remove cases with no identifiers
+                C(cellfun(@isempty,C.UMlabel),:) = [];
+                % Sort by identifiers
+                C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
+                % Find case groupings
+                [~,ugroups_ia,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
             end
-            % Remove cases with no identifiers
-            C(cellfun(@isempty,C.UMlabel),:) = [];
-            % Sort by identifiers
-            C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
-            % Find case groupings
-            [~,ugroups_ia,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
             ngroups = numel(ugroups_ia);
 
             % Initialize group info
