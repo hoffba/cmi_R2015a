@@ -323,7 +323,9 @@ for ifn = 1:nf
         timg = ySlope * double(dicomread(tinfo)) + yInt;
         if strcmp(tinfo.Modality,'PT') && all(isfield(tinfo,{'AcquisitionTime',...
                 'RadiopharmaceuticalInformationSequence','PatientWeight'}))
-            warning('Converting raw PET image to SUV ...');
+            if ifn==1
+                warning('Converting raw PET image to SUV ...');
+            end
             
             % Convert raw PET images to SUV
             t_acq = str2double(tinfo.AcquisitionTime);
