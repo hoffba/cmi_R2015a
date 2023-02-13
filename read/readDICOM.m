@@ -321,6 +321,21 @@ for ifn = 1:nf
             yInt = -tinfo.MRScaleIntercept/ySlope;
         end
         timg = ySlope * double(dicomread(tinfo)) + yInt;
+        if strcmp(tinfo.Modality,'PT') && all(isfield(tinfo,{'AcquisitionTime',...
+                'RadiopharmaceuticalInformationSequence','PatientWeight'}))
+            warning('Converting raw PET image to SUV ...');
+            
+            % Convert raw PET images to SUV
+            t_acq = str2double(tinfo.AcquisitionTime);
+            t_rad = str2double(tinfo.RadiopharmaceuticalInformationSequence.Item_1.RadiopharmaceuticalStartTime);
+            half_life = tinfo.RadiopharmaceuticalInformationSequence.Item_1.RadionuclideHalfLife/ 60; % [min]
+            total_dose = tinfo.RadiopharmaceuticalInformationSequence.Item_1.RadionuclideTotalDose;
+
+            % Calculate SUV factor
+            delta_time = (t_acq - t_rad) / 100; % [min]
+            corrected_dose = total_dose * exp(- delta_time * log(2) / half_life); % [Bq] 
+            timg = timg * tinfo.PatientWeight * 1000 / corrected_dose; % [g/Bq] = [] * [Kg]* 1000[g/kg] / [Bq]
+        end
         if isfield(tinfo,'SamplesPerPixel') && tinfo.SamplesPerPixel>1
             % RGB data from ImBio
             timg = permute(timg,[1,2,4,3]);
@@ -435,7 +450,7 @@ if ~isempty(dcmdata)
         gflag = 2;
         oimg = dcmdata.img;
         oloc = dcmdata.SlicePos;
-    elseif (length(uN)==1) % (commented 20230109 BAH) && ismember(uN,1:2)
+    elseif (length(uN)==1) && ismember(uN,1:2)
         % 1: Case for single-slice gapped CT data
         % 2: Case for 2-slice gapped CT data
         gflag = numel(uS);
