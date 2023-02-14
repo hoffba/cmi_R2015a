@@ -88,7 +88,12 @@ if ~isempty(C) && go
     tagstr = repmat({''},size(C,1),1);
     tagstr(C.Exp) = {'Exp'};
     tagstr(C.Ins) = {'Ins'};
-    C = addvars(C,ugroups_ic,tagstr,'Before',1,'NewVariableNames',{'CaseNumber','Tag'});
+    if ~ismember('Tag',C.Properties.VariableNames)
+        C = addvars(C,tagstr,'Before',1,'NewVariableNames',{'Tag'});
+    end
+    if ~ismember('CaseNumber',C.Properties.VariableNames)
+        C = addvars(C,ugroups_ic,'Before',1,'NewVariableNames',{'CaseNumber'});
+    end
     
     if isa(C.UMlabel,'double') % CJG changed b/c error for double in lin 78
         C.UMlabel = cellstr(strcat('ID',int2str(C.UMlabel)));

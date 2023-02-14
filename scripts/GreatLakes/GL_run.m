@@ -47,10 +47,10 @@ if nargin~=2
     end
 
     % Recalculate taking into account #nodes
-    opts.Niter = ceil(opts.Niter/opts.Nodes);
-    cores = min(min(opts.Niter,floor(opts.MaxMem/opts.ProcessMemory))+1,core_max);
+    Niter_sub = ceil(opts.Niter/opts.Nodes);
+    cores = min(min(Niter_sub,floor(opts.MaxMem/opts.ProcessMemory))+1,core_max);
     mem = opts.ProcessMemory * (cores-1);
-    walltime = opts.ProcessTime*ceil(opts.Niter/(cores-1));
+    walltime = opts.ProcessTime*ceil(Niter_sub/(cores-1));
     if walltime > (14*24*60) % 14 day max walltime
         warning('Processes may not complete.\nEstimated time = %s\n',...
             datestr(duration(0,walltime,0),'dd-HH:MM:SS'));
@@ -108,8 +108,8 @@ else
         else
             fprintf('Running job number %u of %u\n',jobnum,p.Nodes);
             
-            ind = round(p.Niter*[jobnum-1 jobnum]) + [1,0];
-            fprintf('ind: %u-%u\n',ind+[1,0]);
+            ind = round(p.Niter/p.Nodes * [jobnum-1 jobnum]) + [1,0];
+            fprintf('ind: %u-%u\n',ind);
             
             ind = ind(1):ind(2);
         end
