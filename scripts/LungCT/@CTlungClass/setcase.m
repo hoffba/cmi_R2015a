@@ -1,5 +1,9 @@
 function setcase(self,id,procdir,fn)
 % Set case information before running any processes
+% Inputs:
+%   id = <char> case ID for file name base
+%   procdir = <char> location to save results
+%   fn = <char> OR <cellstr> location of original CT image inputs
 
 if ischar(id) && ischar(fn_base) && ischar(procdir)
     % Set case parameters
@@ -30,7 +34,7 @@ if ischar(id) && ischar(fn_base) && ischar(procdir)
         end
         ct_str = {'ct_ref','ct_hom'};
         for i = 1:min(numel(fn),2)
-            self.(ct_str).srcpath = fn{i};
+            self.dat.(ct_str).srcpath = fn{i};
         end
     end
 end

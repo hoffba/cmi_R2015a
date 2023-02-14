@@ -2,8 +2,8 @@ function [stat,swap_flag] = proc_read_CT(self,dat_str)
 
 swap_flag = false;
 if nargin==1 || isempty(dat_str)
-    dat_str = {'ct_ref','ct_hom'};
-elseif ~all(ismember(dat_str,{'ct_ref','ct_hom'}))
+    dat_str = {'ct_exp','ct_ins'};
+elseif ~all(ismember(dat_str,{'ct_exp','ct_ins'}))
     return;
 end
 
@@ -30,13 +30,15 @@ for i = 1:N
             voxsz = fov./d;
 
             % Correct image orientation by bone threshold
-            prop = regionprops(max(self.dat.(dat_str{i}).mat(:,:,round(d(3)/2):end)>800,[],3),'Orientation','Area');
-            if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
-                writeLog(self.fn_log,'   Permuting image\n');
-                ind = [2,1,3];
-                self.dat.(dat_str{i}).mat = permute(self.dat.(dat_str{i}).mat,ind);
-                voxsz = voxsz(ind);
-                orient = orient([ind,4],[ind,4]);
+            if self.orient_flag
+                prop = regionprops(max(self.dat.(dat_str{i}).mat(:,:,round(d(3)/2):end)>800,[],3),'Orientation','Area');
+                if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
+                    writeLog(self.fn_log,'   Permuting image\n');
+                    ind = [2,1,3];
+                    self.dat.(dat_str{i}).mat = permute(self.dat.(dat_str{i}).mat,ind);
+                    voxsz = voxsz(ind);
+                    orient = orient([ind,4],[ind,4]);
+                end
             end
 
             % Setup NIFTI info
@@ -49,7 +51,7 @@ for i = 1:N
 end
 
 % Check EXP/INSP:
-if self.opts.swap_check && N==2 && all(img_chk)
+if self.swap_flag && N==2 && all(img_chk)
     
     % Quick segmentation for Exp/Ins Identification:
     ref_seg = getRespiratoryOrgans(medfilt2_3D(self.dat.ct_ref.mat));
