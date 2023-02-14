@@ -13,7 +13,7 @@ switch dtype
         img = int8(img);
 end
 info = init_niftiinfo(label,fov./d(1:3),dtype,d);
-gz_flag = strcmp(fname(end-2:end),'.gz');
+gz_flag = endsWith(fname,'.gz');
 if gz_flag
     svname = fname(1:end-3);
 else

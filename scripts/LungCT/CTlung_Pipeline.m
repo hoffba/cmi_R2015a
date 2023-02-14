@@ -33,8 +33,18 @@ if strcmp(opts.cluster,'GL')
 end
 
 for i = 1:ncases
-    cases(i).fname_exp = cases(i).Scans(1).DataPath;
-    cases(i).fname_ins = cases(i).Scans(2).DataPath;
+    ind = find(strcmp({cases(i).Scans.Tag},'Exp'),1);
+    if isempty(ind)
+        cases(i).fname_exp = '';
+    else
+        cases(i).fname_exp = cases(i).Scans(ind).DataPath;
+    end
+    ind = find(strcmp({cases(i).Scans.Tag},'Ins'),1);
+    if isempty(ind)
+        cases(i).fname_ins = '';
+    else
+        cases(i).fname_ins = cases(i).Scans(ind).DataPath;
+    end
     cases(i).basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
     cases(i).procdir = fullfile(opts.save_path,cases(i).basename);
 end
@@ -78,7 +88,8 @@ else
         save_path = checkTurboPath(opts.save_path);
         batch(@pipeline_loop,1,{cases,opts},'Pool',nworkers_orig,'Pool',np);
         GL_run(opts.username, 'CTlung_Pipeline_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
-            'ProcessMemory',24,'ProcessTime',720,'TimeStamp',opts.timestamp,'save_path',save_path{1});
+            'ProcessMemory',24,'ProcessTime',720,'TimeStamp',opts.timestamp,'save_path',save_path{1},...
+            'Partition',opts.cluster_type,'Nodes',opts.nnodes);
     else
         
 %~~~~~~~~~ batch ~~~~~~~~~
@@ -89,7 +100,7 @@ end
 
     
 catch err
-    disp('check');
+    error(getReport(err,'extended'))
 end
 
 
@@ -105,12 +116,11 @@ switch opts.cluster
         % Start queue for local processes:
         for i = 1:ncases
             fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
-            f(i) = parfeval(@(x,y,z,k,l)CTlung_Pipeline_local(x,y,z,k,l),0,...
-                cases(i).basename,cases(i).Scans.DataPath,cases(i).procdir,opts);
+            f(i) = parfeval(@(x,y)CTlung_Pipeline_local(x,y),0,cases(i),opts);
         end
         % Flag processes as they complete
         for i = 1:ncases
-            idx = fetchNext(f);
+            try idx = fetchNext(f); catch err, fprintf('ERROR: case %d \n%s\n',getReport(err,'extended','hyperlinks','off')); end
             fprintf('Finished process #%d of %d: %s\n', idx, ncases, cases(idx).basename);
         end
     otherwise % 'batch' or 'debug' - Run full process locally
@@ -135,5 +145,5 @@ switch opts.cluster
 end
 
 function res = pipeline_full(case_i,opts)
-CTlung_Pipeline_local(case_i.basename,case_i.Scans.DataPath,case_i.procdir,opts);
+CTlung_Pipeline_local(case_i,opts);
 res = CTlung_Pipeline_sub(case_i.procdir,opts);

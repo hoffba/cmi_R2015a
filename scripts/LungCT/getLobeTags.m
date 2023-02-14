@@ -19,6 +19,10 @@ function lobe = getLobeTags(seg)
         % ImBio
         lobeTag = {11,12,13,21,22};
         lobeName = {'RUL','RLL','RML','LUL','LLL'};
+    elseif all(ismember(utags,1:6))
+        % ATLANTIS
+        lobeTag = {1,2,3,4,5,6};
+        lobeName = {'RUL','RML','RLL','LUL','LLi','LLL'};
     else
         error('Could not match valid segmentation labeling schema: %s',num2str(utags'));
     end

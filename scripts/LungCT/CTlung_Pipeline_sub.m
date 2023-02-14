@@ -31,28 +31,16 @@ try
     if exist(fn_res,'file')
         res = readtable(fn_res,'Delimiter',',');
     else
-        varnames = {'ID','Exp_Source','Ins_Source'};
+        varnames = {'ID'};
         Nv = numel(varnames);
         res = table('Size',[Nr,Nv],'VariableTypes',repmat({'cellstr'},1,Nv),'VariableNames',varnames);
         res.ID(:) = {ID};
-        
-        % Read source paths from file
-        tname = fullfile(procdir,sprintf('%s_SourceData.csv',ID));
-        if exist(tname,'file')
-            writeLog(fn_log,'Reading source location(s) from file: %s\n',tname);
-            T_opts = detectImportOptions(tname,'Delimiter',',');
-            T = readtable(tname,T_opts);
-            res.Exp_Source(:) = T.Location(find(strcmp(T.Phase,'Exp'),1));
-            res.Ins_Source(:) = T.Location(find(strcmp(T.Phase,'Ins'),1));
-        else
-            writeLog(fn_log,'Source files not found: %s\n',tname);
-        end
     end
     res.Properties.RowNames = regionnames;
     res.ROI = regionnames';
-    fld = {'ID','Exp_Source','Ins_Source'};
+    fld = {'ID','DataPath'};
     for i = 1:numel(fld)
-        if isnumeric(res.(fld{i}))
+        if ismember(fld{i},res.Properties.VariableNames) && isnumeric(res.(fld{i}))
             res.(fld{i}) = arrayfun(@num2str,res.(fld{i}),'UniformOutput',false);
         end
     end
@@ -472,7 +460,7 @@ try
     end
     
 catch err
-    writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err));
+    writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err,'extended','hyperlinks','off'));
 end
 
 % Need to remove rownames for future concatenation

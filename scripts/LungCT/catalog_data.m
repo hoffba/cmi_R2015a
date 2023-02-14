@@ -37,8 +37,18 @@ Tdef = table('Size',[1,nvar],'VariableNames',vars(:,1)','VariableTypes',vars(:,2
 filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
 [D,F] = dirtree(path,filtstr);
 
+% Validate that files are DICOM
+nD = numel(D);
+TF = false(nD,1);
+for i = 1:nD
+    TF = ~any(cellfun(@isdicom,fullfile(D{i},F{i}))); 
+end
+D(TF) = [];
+F(TF) = [];
+
 if isempty(D)
     % Search for image files
+    fprintf('Cataloging non-DICOM images ...\n');
     filtstr = {'mhd','nii','nii.gz'};
     for i = 1:numel(filtstr)
         fn = dir(fullfile(path,'**',['*.',filtstr{i}]));
@@ -63,6 +73,7 @@ if isempty(D)
         end
     end
 else
+    fprintf('Cataloging DICOM images ...\n');
     for i = 1:numel(D)
         fname = fullfile(D{i},F{i}{1});
         if isdicom(fname)

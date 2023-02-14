@@ -1,12 +1,21 @@
-function CTlung_Pipeline_local(ID,expfname,insfname,procdir,opts)
+function CTlung_Pipeline_local(case_i,opts)
 % Local execution for YACTA segmentation and airways analysis
 % * procdir must be on Turbo for Great Lakes to have access to it
 
+    
 t = tic;
 try
+    procdir = case_i.procdir;
+    fn_log = fullfile(procdir,sprintf('pipeline_log.txt'));
+   
+    ID = case_i.basename;
+    expfname = case_i.Scans(find(strcmp({case_i.Scans.Tag},'Exp'),1)).DataPath;
+    insfname = case_i.Scans(find(strcmp({case_i.Scans.Tag},'Ins'),1)).DataPath;
     
     % Save data sources to table in processing directory for future reference
-    T = table('Size',[2,2],'VariableTypes',{'cellstr','cellstr'},'VariableNames',{'Phase','Location'});
+    T = struct2table(case_i.Scans);
+    fn_res = fullfile(procdir,sprintf('%s_SourceData.csv',ID));
+    writetable(T,fn_res);
 
     % Initialize folders and log file
     if ~isfolder(procdir)
@@ -97,10 +106,6 @@ try
         end
         clear seg1 seg2
     end
-    T.Phase(1) = {'Exp'};
-    T.Location(1) = {img(1).sourcepath};
-    T.Phase(2) = {'Ins'};
-    T.Location(2) = {img(2).sourcepath};
     img(1).info.label = [ID,'_Exp'];
     img(2).info.label = [ID,'_Ins'];
     img(1).info.name =  [ID,'_Exp'];
@@ -171,11 +176,8 @@ try
     dt = toc(t);
     writeLog(fn_log,'Local processing completed after %.1f minutes\n',dt/60);
 
-    % Save results to CSV file:
-    fn_res = fullfile(procdir,sprintf('%s_SourceData.csv',ID));
-    writetable(T,fn_res);
 catch err
-    writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err));
+    writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err,'extended','hyperlinks','off'));
 end
 
 function img = medfilt2_3(img)
