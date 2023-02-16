@@ -122,8 +122,8 @@ try
 
     % Airways
     if opts.airway
-        ei_str = {'Exp','Ins'};
-        for itag = 1:2
+        ei_str = {'Ins'};
+        for itag = 1:numel(ei_str)
             if img(itag).flag
                 ydir = fullfile(procdir,['yacta_',ID,'_',ei_str{itag}]);
                 writeLog(fn_log,'YACTA directory: %s\n',ydir);

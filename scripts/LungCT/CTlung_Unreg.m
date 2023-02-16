@@ -10,7 +10,9 @@ if ismember(tag,{'exp','ins'})
     if length(find(std(single(img),1,[1 2])~=0)') == size(img,3)
         img = medfilt3(img);
     else
-        img = medfilt2(img,[3,3]);
+        for i = 1:size(img,3)
+            img(:,:,i) = medfilt2(img(:,:,i));
+        end
     end
 else
     warning('Invalid input data type: %s',tag);
