@@ -7,10 +7,12 @@ end
 
 % Filter the data
 if ismember(tag,{'exp','ins'})
-    if length(find(std(single(img),1,[1 2])~=0)') == size(img,3)
+    % Find image slices
+    ind = find(std(single(img),1,[1 2])~=0)';
+    if length(ind) == size(img,3)
         img = medfilt3(img);
     else
-        for i = 1:size(img,3)
+        for i = ind
             img(:,:,i) = medfilt2(img(:,:,i));
         end
     end
