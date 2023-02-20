@@ -66,8 +66,9 @@ try
             % Check orientation using a bone threshold
             if orientchk && opts.orient_check
                 % Find orientation of shoulder bones to see if permute is needed
-%                 BW = img(i).mat(:,:,end) > -150;
-                BW = max(img(i).mat(:,:,round(img(i).info.d(3)/2):end)>500,[],3);
+% BAH 2023-02-20                BW = max(img(i).mat(:,:,round(img(i).info.d(3)*4/5):end)>250,[],3);
+                se = strel('sphere',3);
+                BW = max(imclose(img(i).mat(:,:,round(img(i).info.d(3)*3/4):end)>250,se),[],3);
                 prop = regionprops(BW,'Orientation','Area');
                 if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
                     writeLog(fn_log,'Permuting %s\n',tagstr{i});
