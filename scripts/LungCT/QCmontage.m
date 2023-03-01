@@ -28,7 +28,7 @@ switch tag
         hold(ha,'off');
         for i = 1:nf
             im.CData = im_bg(:,:,i);
-            [voir,voic] = find(edge(im_over(:,:,i)),'Canny');
+            [voir,voic] = find(edge(im_over(:,:,i),'Canny'));
             set(hroi,'XData',voic,'YData',voir);
             F(i) = getframe(hf,npos);
         end
