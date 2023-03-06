@@ -60,5 +60,5 @@ else % 'ins'
     T.Ins_810low = 100 * nnz((maskvals >= -810) & (maskvals < -500)) / nvox;
     T.Ins_500 = 100 * nnz((maskvals >= -500) & (maskvals < -0)) / nvox;
     T.Ins_GGOI = 100 * nnz((maskvals >= -810) & (maskvals < -700)) / nvox;
-    T.Ins_FIBI = 100 * nnz((maskvals >= -700) & (maskvals < -0)) / nvox;
+    T.Ins_FIBI = 100 * nnz((maskvals >= -700) & (maskvals < -250)) / nvox;
 end
