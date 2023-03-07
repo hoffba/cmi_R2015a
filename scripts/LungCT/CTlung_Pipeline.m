@@ -33,8 +33,18 @@ if strcmp(opts.cluster,'GL')
 end
 
 for i = 1:ncases
-    cases(i).fname_exp = cases(i).Scans(1).DataPath;
-    cases(i).fname_ins = cases(i).Scans(2).DataPath;
+    ind = find(strcmp({cases(i).Scans.Tag},'Exp'));
+    if isempty(ind)
+        cases(i).fname_exp = '';
+    else
+        cases(i).fname_exp = cases(i).Scans(ind).DataPath;
+    end
+    ind = find(strcmp({cases(i).Scans.Tag},'Ins'));
+    if isempty(ind)
+        cases(i).fname_ins = '';
+    else
+        cases(i).fname_ins = cases(i).Scans(ind).DataPath;
+    end
     cases(i).basename = sprintf('%s_%s',cases(i).UMlabel,cases(i).StudyDate);
     cases(i).procdir = fullfile(opts.save_path,cases(i).basename);
 end
@@ -106,7 +116,7 @@ switch opts.cluster
         for i = 1:ncases
             fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
             f(i) = parfeval(@(x,y,z,k,l)CTlung_Pipeline_local(x,y,z,k,l),0,...
-                cases(i).basename,cases(i).Scans.DataPath,cases(i).procdir,opts);
+                cases(i).basename,cases(i).fname_exp,cases(i).fname_ins,cases(i).procdir,opts);
         end
         % Flag processes as they complete
         for i = 1:ncases
@@ -135,5 +145,5 @@ switch opts.cluster
 end
 
 function res = pipeline_full(case_i,opts)
-CTlung_Pipeline_local(case_i.basename,case_i.Scans.DataPath,case_i.procdir,opts);
+CTlung_Pipeline_local(case_i.basename,case_i.fname_exp,case_i.fname_ins,case_i.procdir,opts);
 res = CTlung_Pipeline_sub(case_i.procdir,opts);

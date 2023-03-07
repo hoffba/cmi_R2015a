@@ -6,7 +6,7 @@ t = tic;
 try
     
     % Save data sources to table in processing directory for future reference
-    T = table('Size',[2,2],'VariableTypes',{'cellstr','cellstr'},'VariableNames',{'Phase','Location'});
+    T = table('Size',[2,2],'VariableTypes',{'cellstr','cellstr'},'VariableNames',{'Tag','DataPath'});
 
     % Initialize folders and log file
     if ~isfolder(procdir)
@@ -64,44 +64,28 @@ try
             img(i).info.name = img(i).info.label;
 
             % Check orientation using a bone threshold
-            if orientchk && opts.orient_check
-                % Find orientation of shoulder bones to see if permute is needed
-% BAH 2023-02-20                BW = max(img(i).mat(:,:,round(img(i).info.d(3)*4/5):end)>250,[],3);
-                se = strel('sphere',3);
-                BW = max(imclose(img(i).mat(:,:,round(img(i).info.d(3)*3/4):end)>250,se),[],3);
-                prop = regionprops(BW,'Orientation','Area');
-                if mod(round(prop([prop.Area]==max([prop.Area])).Orientation/90),2)
-                    writeLog(fn_log,'Permuting %s\n',tagstr{i});
-                    img(i).mat = permute(img(i).mat,[2,1,3]);
-                    img(i).info.voxsz = img(i).info.voxsz([2,1,3]);
-                    img(i).info.fov = img(i).info.fov([2,1,3]);
-                    img(i).info.d = img(i).info.d([2,1,3]);
-                    img(i).info.orient = img(i).info.orient([2,1,3,4],[2,1,3,4]);
-                end
+            if orientchk && opts.orient_check && check_CTlung_orientation(img(i).mat)
+                writeLog(fn_log,'Permuting %s\n',tagstr{i});
+                img(i).mat = permute(img(i).mat,[2,1,3]);
+                img(i).info.voxsz = img(i).info.voxsz([2,1,3]);
+                img(i).info.fov = img(i).info.fov([2,1,3]);
+                img(i).info.d = img(i).info.d([2,1,3]);
+                img(i).info.orient = img(i).info.orient([2,1,3,4],[2,1,3,4]);
             end
         end
     end
 
     % Check for Exp/Ins
-    if any(~fnflag(:,1)) && img(1).flag && img(2).flag
+    if any(~fnflag(:,1)) && img(1).flag && img(2).flag ...
+            && check_CTlung_EIswap(img(1).mat,img(1).info.voxvol,img(2).mat,img(2).info.voxvol)
         %   ** Need to double-check in case of mislabel
-
-        % Quick segmentation for Exp/Ins Identification:
-        seg1 = getRespiratoryOrgans(medfilt2_3(img(1).mat));
-        seg2 = getRespiratoryOrgans(medfilt2_3(img(2).mat));
-
-        flag = (nnz(seg1)*img(1).info.voxvol) > (nnz(seg2)*img(2).info.voxvol) ...
-            && (mean(img(1).mat(logical(seg1))) < mean(img(2).mat(logical(seg2))));
-        if flag
-            writeLog(fn_log,'Swapping INS/EXP due to lung volume\n');
-            img = img([2,1]);
-        end
-        clear seg1 seg2
+        writeLog(fn_log,'Swapping INS/EXP due to lung volume\n');
+        img = img([2,1]);
     end
-    T.Phase(1) = {'Exp'};
-    T.Location(1) = {img(1).sourcepath};
-    T.Phase(2) = {'Ins'};
-    T.Location(2) = {img(2).sourcepath};
+    T.Tag(1) = {'Exp'};
+    T.DataPath(1) = {img(1).sourcepath};
+    T.Tag(2) = {'Ins'};
+    T.DataPath(2) = {img(2).sourcepath};
     img(1).info.label = [ID,'_Exp'];
     img(2).info.label = [ID,'_Ins'];
     img(1).info.name =  [ID,'_Exp'];
@@ -176,10 +160,6 @@ try
     fn_res = fullfile(procdir,sprintf('%s_SourceData.csv',ID));
     writetable(T,fn_res);
 catch err
-    writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err));
+    writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err,'extended','hyperlinks','off'));
 end
 
-function img = medfilt2_3(img)
-for i = 1:size(img,3)
-    img(:,:,i) = medfilt2(img(:,:,i));
-end

@@ -68,7 +68,7 @@ print(hf,[fname,'.tif'],'-dtiff');
 cdata = print('-RGBImage','-noui');
 
 %% Add to GIF series
-if nargin==5 && ischar(gifname)
+if nargin==6 && ischar(gifname)
     collate_fig(hf,gifname);
 end
 

@@ -56,6 +56,9 @@ bgs_blue =  '#bbdffb';
 bgs_green = '#99edc3';
 bgs_red =   '#ffc4c4';
 
+% Preview selection
+preview_ind = [];
+
 %% Parse inputs:
 validateInputs(varargin);
 
@@ -71,6 +74,8 @@ req_fields = {'SeriesDescription',...
 %% Initialize the GUI:
 h = initFig;
 drawnow;
+
+cmiObj = [];
 
 if ~isempty(opts.dcm_path)
     selectCatalog(opts.dcm_path);
@@ -172,23 +177,30 @@ end
         h.tab_scans = uitab(h.tabgroup,'Title','Scans');
 
         %% Tab 1: tables for selecting images, and execution buttons
-        h.table_select = uitable(h.tab_scans,'Position',[ 1 , 20 , fwidth , fheight-130 ],'CellEditCallback',@editCell);
+        h.table_select = uitable(h.tab_scans,'Position',[ 1 , 20 , fwidth , fheight-130 ],'CellEditCallback',@editCell,'CellSelectionCallback',@selectCell);
         h.table_filter = uitable(h.tab_scans,'Position',[ 1 , fheight-115 , fwidth , 90 ],'CellEditCallback',@applyFilter);
-        uibutton(  h.tab_scans,'Position',[1,1,50,20],'Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
-        uilabel(h.tab_scans,'Position',[fwidth/2-320,1,135,20],'HorizontalAlignment','right','Text','Groups per page: ');
+        
+        uibutton(  h.tab_scans,'Position',[1,1,50,20],...
+            'FontColor','black','FontWeight','bold','Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
+        
+        uilabel(   h.tab_scans,'Position',[fwidth/2-320,1,135,20],'HorizontalAlignment','right','Text','Groups per page: ');
         h.edit_page_groups = uieditfield(h.tab_scans,'numeric','Position',[fwidth/2-185,1,50,20],...
             'Editable',1,'Value',gp_per_page,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','edit_gp_per');
         h.text_groupN = uilabel(h.tab_scans,'Position',[fwidth/2-135,1,60,20],'Text',' of 0');
-        uilabel(h.tab_scans,'Position',[fwidth/2-105,1,60,20],'HorizontalAlignment','right','Text','Page: ');
+        uilabel(   h.tab_scans,'Position',[fwidth/2-105,1,60,20],'HorizontalAlignment','right','Text','Page: ');
         uibutton(  h.tab_scans,'Position',[fwidth/2-45,1,20,20],'Text','<','Tag','decr','ButtonPushedFcn',@setPage);
         h.text_page = uieditfield(h.tab_scans,'numeric','Position',[fwidth/2-25,1,50,20],...
             'Editable',1,'Value',0,'HorizontalAlignment','center','ValueChangedFcn',@setPage,'Tag','text_page');
         uibutton(  h.tab_scans,'Position',[fwidth/2+25,1,20,20],'Text','>','Tag','incr','ButtonPushedFcn',@setPage);
         h.text_pageN = uilabel(h.tab_scans,'Position',[fwidth/2+45,1,60,20],'Text',' of 0');
-        uibutton(  h.tab_scans,'Position',[fwidth-50,1,50,20],...
-            'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
+        
+        uibutton(  h.tab_scans,'Position',[fwidth/2+130,1,75,20],...
+            'Text','Preview','BackgroundColor','yellow','ButtonPushedFcn',@preview);
+        
         uibutton(  h.tab_scans,'Position',[fwidth-100-gap,1,50,20],...
             'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
+        uibutton(  h.tab_scans,'Position',[fwidth-50,1,50,20],...
+            'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
 
         %% Tab 2: Settings and options
         uilabel(h.tab_opts,   'Position',[5,   fheight-50, 100, 20],'Text','Uniquename:');
@@ -616,5 +628,14 @@ end
     end
     function clearAll(~,~)
         set([h.unreg,h.airway,h.scatnet,h.vessel,h.reg,h.prm,h.tprm],'Value',0);
+    end
+    function preview(~,~)
+        if isempty(cmiObj) || ~isvalid(cmiObj)
+            cmiObj = CMIclass;
+        end
+        cmiObj.loadImg(0,preview_path);
+    end
+    function selectCell(~,edata)
+        preview_ind = edata.Indices(1);
     end
 end

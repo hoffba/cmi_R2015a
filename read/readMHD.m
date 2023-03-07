@@ -73,6 +73,8 @@ if fid>2
         end
     end
 
+    info.format = 'mhd';
+    
     if isfield(info,'CompressedData')
         zp = info.CompressedData;
     else

@@ -20,4 +20,6 @@ if d4>1
 end
 
 orient = diag([-1 -1 1 1]) * info.Transform.T';
+
+info.format = 'nii';
     
