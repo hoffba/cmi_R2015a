@@ -94,7 +94,7 @@ if ~isempty(C) && go
     tagstr(C.Exp) = {'Exp'};
     tagstr(C.Ins) = {'Ins'};
     if ~ismember('Tag',C.Properties.VariableNames)
-        C = addvars(C,tagstr,'Before',1,'NewVariableNames',{'Tag'});
+        C = addvars(C,tagstr,'Before',3,'NewVariableNames',{'Tag'});
     end
     if ~ismember('CaseNumber',C.Properties.VariableNames)
         C = addvars(C,ugroups_ic,'Before',1,'NewVariableNames',{'CaseNumber'});
