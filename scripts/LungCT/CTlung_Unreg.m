@@ -1,9 +1,6 @@
-function T = CTlung_Unreg(tag,img,voxvol,label,atMap)
+function T = CTlung_Unreg(tag,img,voxvol,label)
 
 T = [];
-if nargin<5
-    atMap = [];
-end
 
 % Filter the data
 if ismember(tag,{'exp','ins'})
@@ -21,17 +18,15 @@ else
     return;
 end
 
-T = lobeLoop(label,@(mask,tag,img,voxvol,atMap)unreg_sub(mask,tag,img,voxvol,atMap),...
-    tag,img,voxvol,atMap);
+T = lobeLoop(label,@(mask,tag,img,voxvol)unreg_sub(mask,tag,img,voxvol),...
+    tag,img,voxvol);
 
-function T = unreg_sub(mask,tag,img,voxvol,atMap)
+function T = unreg_sub(mask,tag,img,voxvol)
 
 if strcmp(tag,'exp')
     vars = {'Exp_Vol',      'double';...
             'Exp_HU',       'double';...
-            'Exp_856',      'double';...
-            'Exp_SNpct',    'double';...
-            'Exp_SNmean',   'double'};
+            'Exp_856',      'double'};
 else
     vars = {'Ins_Vol',      'double';...
             'Ins_HU',       'double';...
@@ -50,10 +45,6 @@ T{1,1} = nvox * voxvol / 1e6;
 T{1,2} = mean(maskvals);
 if strcmp(tag,'exp')
     T.Exp_856 = 100 * nnz(maskvals < -856) / nvox;
-    if ~isempty(atMap)
-        T.Exp_SNpct = 100 * nnz(atMap(mask)) / nvox;
-        T.Exp_SNmean = mean(img(logical(atMap(mask))));
-    end
 else % 'ins'
     T.Ins_950 = 100 * nnz(maskvals < -950) / nvox;
     T.Ins_810 = 100 * nnz((maskvals >= -810) & (maskvals < -250)) / nvox;

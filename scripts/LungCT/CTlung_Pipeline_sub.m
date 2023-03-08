@@ -216,7 +216,6 @@ try
     end
 
     % ScatterNet for AT on Exp CT scan
-    atMap = [];
     try
         if opts.scatnetAT && img(1).flag
             fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet_AT',fn_ext));
@@ -231,6 +230,7 @@ try
             end
             T = lobeLoop(img(1).mat,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
             res = addTableVarVal(res,T);
+            clear atMap
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -261,7 +261,7 @@ try
     % Quantify unregistered CT scans
     writeLog(fn_log,'Quantifying unregistered statistics\n');
     if opts.unreg && img(1).flag
-        T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label,atMap);
+        T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
         clear atMap;
         res = addTableVarVal(res,T);
     end
@@ -374,6 +374,7 @@ try
                 end
                 T = lobeLoop(ins_reg,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
                 res = addTableVarVal(res,T);
+                clear SNemph
             end
         catch err
             writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
