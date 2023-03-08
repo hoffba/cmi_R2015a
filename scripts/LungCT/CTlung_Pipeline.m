@@ -99,7 +99,7 @@ end
 
     
 catch err
-    disp('check');
+    getReport(err);
 end
 
 

@@ -27,7 +27,7 @@ try
     [~,ID] = fileparts(procdir);
     regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
     Nr = numel(regionnames);
-    fn_res = fullfile(procdir,sprintf('%s_PipelineResults_%s.csv',ID,opts.timestamp));
+    fn_res = fullfile(procdir,sprintf('%s_PipelineResults.csv',ID));
     if exist(fn_res,'file')
         res = readtable(fn_res,'Delimiter',',');
     else
@@ -221,8 +221,8 @@ try
     % ScatterNet for AT on Exp CT scan
     atMap = [];
     try
-        if opts.scatnet && img(1).flag
-            fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet',fn_ext));
+        if opts.scatnetAT && img(1).flag
+            fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet_AT',fn_ext));
             writeLog(fn_log,'Air trapping map ... ');
             if exist(fn_scatnet,'file')
                 writeLog(fn_log,'from file\n');
@@ -236,7 +236,7 @@ try
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
     end
-
+    
     % Vessel analysis
     try
         if opts.vessel && img(2).flag
@@ -358,6 +358,25 @@ try
                 T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
             end
+        end
+        
+        % ScatNet for Emph
+        SNemph = [];
+        try
+            if opts.scatnetEmph && img(1).flag
+                fn_SNemph = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet_Emph',fn_ext));
+                writeLog(fn_log,'Air trapping map ... ');
+                if exist(fn_SNemph,'file')
+                    writeLog(fn_log,'from file\n');
+                    SNemph = cmi_load(1,img(1).info.d(1:3),fn_SNemph);
+                else
+                    writeLog(fn_log,'generating with ScatNet\n');
+                    SNemph = ScatterNetEMPH(img(1).mat,logical(img(1).label),0);
+                    cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,fn_SNemph);
+                end
+            end
+        catch err
+            writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
         end
         
         % Blood density change map:
@@ -501,7 +520,8 @@ try
     end
     
 catch err
-    writeLog(fn_log,'Pipeline ERROR:\n%s',getReport(err));
+    writeLog(fn_log,'ERROR in CTlung_Pipeline_sub:\n%s',getReport(err,'extended','hyperlinks','off'));
+    assignin('base',err);
 end
 
 % Need to remove rownames for future concatenation
