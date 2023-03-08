@@ -226,9 +226,11 @@ try
                 atMap = cmi_load(1,img(1).info.d(1:3),fn_scatnet);
             else
                 writeLog(fn_log,'generating with ScatNet\n');
-                atMap = ScatNet(img(1).mat,logical(img(1).label),0);
+                atMap = ScatterNetAT(img(1).mat,logical(img(1).label),0);
                 cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
             end
+            T = lobeLoop(img(1).mat,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
+            res = addTableVarVal(res,T);
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -358,19 +360,20 @@ try
         end
         
         % ScatNet for Emph
-        SNemph = [];
         try
             if opts.scatnetEmph && img(1).flag
                 fn_SNemph = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet_Emph',fn_ext));
-                writeLog(fn_log,'Air trapping map ... ');
+                writeLog(fn_log,'scatnetEmph map ... ');
                 if exist(fn_SNemph,'file')
                     writeLog(fn_log,'from file\n');
                     SNemph = cmi_load(1,img(1).info.d(1:3),fn_SNemph);
                 else
                     writeLog(fn_log,'generating with ScatNet\n');
-                    SNemph = ScatterNetEMPH(img(1).mat,logical(img(1).label),0);
+                    SNemph = ScatterNetEMPH(ins_reg,logical(img(1).label),0);
                     cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,fn_SNemph);
                 end
+                T = lobeLoop(ins_reg,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
+                res = addTableVarVal(res,T);
             end
         catch err
             writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -532,6 +535,13 @@ function T = tabulateStats(mask,A,str)
     T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),'VariableNames',vname);
     T.(vname{1}) = mean(A(mask));
     T.(vname{2}) = var(A(mask));
+    
+function T = tabulateScatNet(mask,scatnet,img,str)
+    vname = strcat(str,{'_pct','_mean'});
+    nv = numel(vname);
+    T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),'VariableNames',vname);
+    T.(vname{1}) = nnz(scatnet(mask))/nnz(mask)*100;
+    T.(vname{2}) = mean(img(mask & scatnet));
 
 function T = tabulatePRM(mask,prm,flag)
     if flag % 10-color
