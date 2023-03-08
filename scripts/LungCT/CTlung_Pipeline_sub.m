@@ -521,7 +521,7 @@ try
     
 catch err
     writeLog(fn_log,'ERROR in CTlung_Pipeline_sub:\n%s',getReport(err,'extended','hyperlinks','off'));
-    assignin('base',err);
+    assignin('base','PipelineError',err);
 end
 
 % Need to remove rownames for future concatenation

@@ -161,6 +161,6 @@ try
     writetable(T,fn_res);
 catch err
     writeLog(fn_log,'ERROR in CTlung_Pipeline_local:\n%s',getReport(err,'extended','hyperlinks','off'));
-    assignin('base',err);
+    assignin('base','PipelineError',err);
 end
 
