@@ -86,7 +86,7 @@ try
         if exist(fn_exp_seg,'file')
             img(1).label = cmi_load(1,[],fn_exp_seg);
         else
-            img(1).label = getRespiratoryOrgans(medfilt2_3(img(1).mat));
+            img(1).flag = false;
         end
     end
     fn_ins_seg = fullfile(procdir,[ID,'.ins.label',fn_ext]);
@@ -94,7 +94,7 @@ try
         if exist(fn_ins_seg,'file')
             img(2).label = cmi_load(1,[],fn_ins_seg);
         else
-            img(2).label = getRespiratoryOrgans(medfilt2_3(img(2).mat));
+            img(2).flag = false;
         end
     end
 
