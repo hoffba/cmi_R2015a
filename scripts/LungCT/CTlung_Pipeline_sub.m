@@ -136,10 +136,8 @@ try
 
     % Airways
     if opts.airway
-        ei_str = {'Ins'};
-        for itag = 1:numel(ei_str)
-            if img(itag).flag
-                ydir = fullfile(procdir,['yacta_',ID,'_',ei_str{itag}]);
+            if img(2).flag
+                ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
                 writeLog(fn_log,'YACTA directory: %s\n',ydir);
                 airway_res = readYACTAairways(ydir);
                 if ~isempty(airway_res)
@@ -215,7 +213,6 @@ try
 
                 end
             end
-        end
     end
 
     % ScatterNet for AT on Exp CT scan
