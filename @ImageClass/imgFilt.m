@@ -100,7 +100,7 @@ if self.check && (nargin>=2) && all(vec>0) && all(vec<=self.dims(4))
 %                 tmat(:,:,:,v) = medfilt3(self.mat(:,:,:,vec(v)),opts{1});
             else
                 for i = 1:self.dims(3)
-                    tmat(:,:,i,v) = feval(func,self.mat(:,:,i,vec(v)),opts);
+                    tmat(:,:,i,v) = feval(func{1},self.mat(:,:,i,vec(v)),opts);
                     ct = ct+1;
                     waitbar(ct/ntot,hw,['Applying 2D image filter: ',num2str(ct)]);
                 end          
