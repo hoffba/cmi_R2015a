@@ -4,6 +4,9 @@ function lobe = getLobeTags(seg)
     
     if isempty(utags)
         lobeName = {}; lobeTag = {};
+    elseif islogical(seg) || all(utags == 1)
+        lobeTag = {1};
+        lobeName = {'WholeLung'};
     elseif all(ismember(utags,[10,20]))
         lobeTag = {10,20};
         lobeName = {'RL', 'LL'};

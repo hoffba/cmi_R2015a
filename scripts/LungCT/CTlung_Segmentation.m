@@ -51,7 +51,7 @@ switch method
                 writeLog(logfn,' Using R/L segmentation\n');
             else
                 writeLog(logfn,' FAILED\n');
-                seg = false;
+                seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
             end
         end
     otherwise
