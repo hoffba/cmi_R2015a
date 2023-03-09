@@ -182,11 +182,14 @@ for i = 1:size(roi,3)
     end
 end
 % Postprocessing
-emphMap = activecontour(imgaussfilt3(roi,var),emphMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1);
-% avgemphMap = mean(I(emphMap));
-% emphMap = gaussianBlur(roi,var)<= avgemphMap;
+if nnz(emphMap)
+    emphMap = activecontour(imgaussfilt3(roi,var),emphMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1);
+    % avgemphMap = mean(I(emphMap));
+    % emphMap = gaussianBlur(roi,var)<= avgemphMap;
+end
 percentemphMap = nnz(emphMap)/nnz(mask2);
 meanvalemphMap = mean(I(emphMap));
+    
 
 % % Calculate the mean Intensity values for each lobe
 % val1 = mean(I(logical(emphMap)));
