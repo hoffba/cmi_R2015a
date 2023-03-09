@@ -218,7 +218,7 @@ try
     % ScatterNet for AT on Exp CT scan
     try
         if opts.scatnetAT && img(1).flag
-            fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet_AT',fn_ext));
+            fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnetAT',fn_ext));
             writeLog(fn_log,'Air trapping map ... ');
             if exist(fn_scatnet,'file')
                 writeLog(fn_log,'from file\n');
@@ -228,9 +228,30 @@ try
                 atMap = ScatterNetAT(img(1).mat,logical(img(1).label),0);
                 cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
             end
-            T = lobeLoop(img(1).mat,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
+            T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
             res = addTableVarVal(res,T);
             clear atMap
+        end
+    catch err
+        writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
+    end
+    
+    % ScatNet for Emph on Ins CT scan
+    try
+        if opts.scatnetEmph && img(2).flag
+            fn_SNemph = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnetEmphIns',fn_ext));
+            writeLog(fn_log,'scatnetEmph map ... ');
+            if exist(fn_SNemph,'file')
+                writeLog(fn_log,'from file\n');
+                SNemph = cmi_load(1,img(2).info.d(1:3),fn_SNemph);
+            else
+                writeLog(fn_log,'generating with ScatNet\n');
+                SNemph = ScatterNetEMPH(img(2).mat,logical(img(2).label),0);
+                cmi_save(0,SNemph,'ScatNet',img(2).info.fov,img(2).info.orient,fn_SNemph);
+            end
+            T = lobeLoop(img(2).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,img(2).mat,'scatnetEmph');
+            res = addTableVarVal(res,T);
+            clear SNemph
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -362,7 +383,7 @@ try
         % ScatNet for Emph
         try
             if opts.scatnetEmph && img(1).flag
-                fn_SNemph = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnet_Emph',fn_ext));
+                fn_SNemph = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnetEmphInsR',fn_ext));
                 writeLog(fn_log,'scatnetEmph map ... ');
                 if exist(fn_SNemph,'file')
                     writeLog(fn_log,'from file\n');
@@ -372,7 +393,7 @@ try
                     SNemph = ScatterNetEMPH(ins_reg,logical(img(1).label),0);
                     cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,fn_SNemph);
                 end
-                T = lobeLoop(ins_reg,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
+                T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
                 res = addTableVarVal(res,T);
                 clear SNemph
             end

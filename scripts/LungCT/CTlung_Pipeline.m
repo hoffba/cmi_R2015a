@@ -68,8 +68,8 @@ if strcmp(opts.cluster,'debug')
     results = [];
     for i = 1:ncases
         res = pipeline_full(cases(i),opts);
-        if ~isempty(res) && istable(res) && (isempty(results) || (size(res,2)==size(results,2)))
-            results = [results;res];
+        if ~isempty(res) && istable(res)
+            results = addResultsToTable(results,res);%[results;res];
         end
     end
 else
@@ -134,8 +134,8 @@ switch opts.cluster
             [idx,res] = fetchNext(f);
             fprintf('Finished process #%d of %d: %s\n', idx, ncases, cases(idx).basename);
             % Gather results
-            if ~isempty(res) && istable(res) &&(isempty(results) || (size(res,2)==size(results,2)))
-                results = [results;res];
+            if ~isempty(res) && istable(res)
+                results = addResultsToTable(results,res);%[results;res];
             end
         end
         % Write compiled results to CSV
