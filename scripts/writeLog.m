@@ -6,7 +6,7 @@ fprintf(str,varargin{:});
 % write to log file
 if ischar(fn) && endsWith(fn,'.txt')
     fid = fopen(fn,'a');
-    if fid
+    if fid>0
         fprintf(fid,str,varargin{:});
         fclose(fid);
     else
