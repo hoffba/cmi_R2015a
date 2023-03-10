@@ -184,7 +184,9 @@ for i = 1:size(roi,3)
     end
 end
 % Postprocessing
-atMap = activecontour(imgaussfilt3(roi,var),atMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1);
+if nnz(atMap)
+    atMap = activecontour(imgaussfilt3(roi,var),atMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1);
+end
 % avgatMap = mean(I(atMap));
 % atMap = gaussianBlur(roi,var)<= avgatMap;
 percentatMap = nnz(atMap)/nnz(mask2);
