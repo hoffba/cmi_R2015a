@@ -639,6 +639,6 @@ end
         cmiObj.loadImg(0,preview_path);
     end
     function selectCell(~,edata)
-        preview_ind = edata.Indices(1);
+        preview_ind = edata.Indices(1) + find(page_ic,1) - 1;
     end
 end

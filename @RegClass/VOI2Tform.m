@@ -21,10 +21,6 @@ if self.cmiObj(1).img.mask.check && self.cmiObj(2).img.mask.check
     T = cent(2,:) - S.*cent(1,:);
     x = [ reshape(diag(S),1,[]) , T ];
 %     x = [ reshape(diag(sz(2,:)./sz(1,:)),1,[]) , diff(cent) ];
-
-    if strcmp(self.elxObj.outfmt,'.mhd')
-        x = x([2,1,3,4],[2,1,3,4]);
-    end
     
 % OLD VERSION - from MHD use of image-centric coordinates assumed
 %     % Scale / Translate based on VOI limits

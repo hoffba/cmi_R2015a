@@ -18,11 +18,25 @@ if ~isempty(self.Tx0)
         fname = x;
     end
     if ~isempty(fname)
+        permchk = strcmp(self.outfmt,'.mhd');
+        switch self.Tx0.Transform
+            case 'TranslationTransform'
+                pari = [2  1  3];
+            case 'EulerTransform'
+                pari = [2  1  3  5  4  6];
+            case 'SimilarityTransform'
+                pari = [2  1  3  5  4  6  7];
+            case 'AffineTransform'
+                pari = [5  4  6  2  1  3  8  7  9  11  10  12];
+        end
         fid = fopen(fname,'w');
         if fid>2
             fstr = fieldnames(self.Tx0);
             for i = 1:length(fstr)
                 val = self.Tx0.(fstr{i});
+                if permchk && strcmp(fstr{i},'TransformParameters')
+                    val = val(pari);
+                end
                 vstr = '';
                 if ischar(val)
                     vstr = [' "',val,'"'];

@@ -1,6 +1,6 @@
 function [img,label,fov,orient,info] = readMHD(varargin)
 % Reads .mhd and associated .raw files into the cmi program
-img = []; label = {}; fov = [];
+img = []; label = {}; fov = []; orient = []; info = [];
 
 % Read info from .mhd file
 fname = varargin{1};

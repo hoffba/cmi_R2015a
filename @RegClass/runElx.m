@@ -68,23 +68,22 @@ if stat
     morient = self.cmiObj(2).img.orient;
        
     % Determine what file type to use:
-    temp_ext = '.mhd';
     if self.elxObj.sys == 4 % GL doesn't seem to like nifti files
-        temp_ext = '.mhd';
+        self.elxObj.setFormat('.mhd')
     end
     for i = 1:numel(self.elxObj.Schedule)
-        self.elxObj.setPar(i,'ResultImageFormat',temp_ext(2:end));
+        self.elxObj.setPar(i,'ResultImageFormat',self.elxObj.outfmt(2:end));
     end
-    
+
     % Set filenames:
     [~,outfn] = fileparts(self.cmiObj(2).img.name);
-    outfn = fullfile(self.odir,[outfn,'_R',temp_ext]);
-    origfn = fullfile(self.odir,['elxtemp-origm',temp_ext]);
-    fname = fullfile(self.odir,['elxtemp-f',temp_ext]);
-    mname = fullfile(self.odir,['elxtemp-m',temp_ext]);
-    fmskname = fullfile(self.odir,['elxtemp-fMask',temp_ext]);
-    mmskname = fullfile(self.odir,['elxtemp-mMask',temp_ext]);
-    tmskname = fullfile(self.odir,['elxtemp-tMask',temp_ext]);
+    outfn = fullfile(self.odir,[outfn,'_R',self.elxObj.outfmt]);
+    origfn = fullfile(self.odir,['elxtemp-origm',self.elxObj.outfmt]);
+    fname = fullfile(self.odir,['elxtemp-f',self.elxObj.outfmt]);
+    mname = fullfile(self.odir,['elxtemp-m',self.elxObj.outfmt]);
+    fmskname = fullfile(self.odir,['elxtemp-fMask',self.elxObj.outfmt]);
+    mmskname = fullfile(self.odir,['elxtemp-mMask',self.elxObj.outfmt]);
+    tmskname = fullfile(self.odir,['elxtemp-tMask',self.elxObj.outfmt]);
     
     % Filter settings:
     if any(self.filtN(:)>0)
