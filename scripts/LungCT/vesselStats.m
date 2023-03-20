@@ -18,7 +18,7 @@ V = logical(vessels) .* mask; % vessels in this lobe
 C = csa .* mask; % CSA of vessels in this lobe
 
 np = nnz(mask);
-voxvol = .00625^3; % cm^3
+voxvol = .00625^3; % liters
 T.VOLUME_L = np * voxvol; % Volume in microliters, assume voxel size of (0.625mm)^3
 T.VESSEL_VOLUME_L = nnz(V) * voxvol;
 T.PER_EMPH = nnz((ct < -950) & mask) / np * 100;
