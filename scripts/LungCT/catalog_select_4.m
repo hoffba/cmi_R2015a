@@ -37,6 +37,9 @@ bgs_red =   '#ffc4c4';
 % Preview selection
 preview_ind = [];
 
+% Help figure
+h_help = [];
+
 %% Parse inputs:
 validateInputs(varargin);
 
@@ -184,6 +187,7 @@ end
         uilabel(h.tab_opts,   'Position',[5,   fheight-50, 100, 20],'Text','Uniquename:');
         h.edit_username = uieditfield(h.tab_opts,'Position',[110, fheight-50, 300, 20],'Editable',1,...
             'ValueChangedFcn',@setOpts,'Tag','username','Value',opts.username);
+        uibutton(h.tab_opts,  'Position',[fwidth-45,  fheight-50, 40, 20],'Text','Help','ButtonPushedFcn',@pipelineHELP,'BackgroundColor',[.73,.92,1]);
         uilabel(h.tab_opts,   'Position',[5,   fheight-75, 50, 20],'Text','Catalog: ');
         uibutton(h.tab_opts,  'Position',[60,  fheight-75, 50, 20],'Text','Select','ButtonPushedFcn',@selectCatalog,'Tag','cat_select');
         uibutton(h.tab_opts,  'Position',[115, fheight-75, 40, 20],'Text','New','ButtonPushedFcn',@selectCatalog,'Tag','cat_new');
@@ -616,5 +620,13 @@ end
     end
     function selectCell(~,edata)
         preview_ind = edata.Indices(1) + find(page_ic,1) - 1;
+    end
+    function pipelineHELP(~,~)
+        if isempty(h_help) || ~isvalid(h_help)
+            ss = get(0,"ScreenSize");
+            fn_help = fullfile(fileparts(which('cmi')),'scripts','LungCT','CTlung_Pipeline_Help.pdf');
+            h_help = uifigure("Name","CTlung Pipeline Help","Position",[1,1,ss(3)/2,ss(4)]);
+            uihtml(h_help,"Position",[0,0,h_help.Position(3:4)],"HTMLSource",fn_help);
+        end
     end
 end
