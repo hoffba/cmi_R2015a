@@ -19,8 +19,7 @@ try
     QC_nslice = 25;
     fn_ext = '.nii.gz';
 
-    nowstr = datestr(datetime('now'),0);
-    writeLog(fn_log,'\n\nStarting Pipeline Process : %s\n',nowstr);
+    writeLog(fn_log,'\n\nStarting Pipeline Process : %s\n',datetime('now'));
     writeLog(fn_log,'GIF location: %s\n',opts.save_path);
     
     % Initialize results table
@@ -526,7 +525,7 @@ try
                             res = addTableVarVal(res,T);
                         end
                     end
-                    writeLog(fn_log,'... tPRM complete (%s)\n',datestr(duration(0,0,toc(t)),'HH:MM:SS'));
+                    writeLog(fn_log,'... tPRM complete (%s)\n',datetime([0,0,0,0,0,toc(t)],'Format','HH:mm:ss'));
 
                 end
             end
@@ -549,7 +548,7 @@ end
 % Need to remove rownames for future concatenation
 res.Properties.RowNames = {};
     
-writeLog(fn_log,'Pipeline total time = %s\n',datestr(duration(0,0,toc(tt)),'HH:MM:SS'))
+writeLog(fn_log,'Pipeline total time = %s\n',datetime([0,0,0,0,0,toc(tt)],'Format','HH:mm:ss'))
 
 function T = tabulateStats(mask,A,str)
     vname = strcat(str,{'_mean','_var'});
@@ -587,8 +586,3 @@ function T = tabulateTPRM(mask,tprm,str)
     T = table('Size',[1,1],'VariableTypes',{'double'},'VariableNames',{vname});
     T.(vname) = mean(tprm(mask));
     
-function img = medfilt2_3(img)
-    for i = 1:size(img,3)
-        img(:,:,i) = medfilt2(img(:,:,i));
-    end
-   
