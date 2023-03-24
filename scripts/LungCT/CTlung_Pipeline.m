@@ -187,7 +187,6 @@ end
 
         % Scans table
         h.table_select = uitable(h.tab_scans,'Position',[ 1 , 20 , fwidth , fheight-100 ],'CellEditCallback',@editCell,'CellSelectionCallback',@selectCell);
-%         h.table_filter = uitable(h.tab_scans,'Position',[ 1 , fheight-115 , fwidth , 90 ],'CellEditCallback',@applyFilter);
         uibutton(  h.tab_scans,'Position',[1,1,50,20],...
             'FontWeight','bold','Text','Clear','BackgroundColor',[.73,.92,1],'ButtonPushedFcn',@clearTags);
         
