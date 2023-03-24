@@ -36,9 +36,11 @@ bgs_red =   '#ffc4c4';
 
 % Preview selection
 preview_ind = [];
+cmiObj = [];
 
 % Help figure
 h_help = [];
+
 
 %% Parse inputs:
 validateInputs(varargin);
@@ -56,8 +58,6 @@ req_fields = {'SeriesDescription',...
 h = initFig;
 drawnow;
 
-cmiObj = [];
-
 if ~isempty(opts.dcm_path)
     selectCatalog(opts.dcm_path);
 end
@@ -68,66 +68,6 @@ end
 %% End script when window closes
 waitfor(h.fig);
 
-%% Gather outputs
-if ~isempty(C) && go
-    %% Determine tags:
-    tagstr = repmat({''},size(C,1),1);
-    tagstr(C.Exp) = {'Exp'};
-    tagstr(C.Ins) = {'Ins'};
-    if ~ismember('Tag',C.Properties.VariableNames)
-        C = addvars(C,tagstr,'Before',3,'NewVariableNames',{'Tag'});
-    end
-    if ~ismember('CaseNumber',C.Properties.VariableNames)
-        C = addvars(C,ugroups_ic,'Before',1,'NewVariableNames',{'CaseNumber'});
-    end
-    
-    if isa(C.UMlabel,'double') % CJG changed b/c error for double in lin 78
-        C.UMlabel = cellstr(strcat('ID',int2str(C.UMlabel)));
-    end
-
-    %% Set up output structure:
-    empty_flag = false(ngroups,1);
-    tS = table2struct(C(1,3:end)); tS = tS([]);
-    selected_data = struct('UMlabel',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
-    for ig = 1:ngroups
-        g_ind = ugroups_ic==ig;
-        tC = C( g_ind & (C.Exp | C.Ins),:);
-        if isempty(tC)
-            empty_flag(ig) = true;
-        else
-            selected_data(ig).UMlabel = tC.UMlabel{1};
-            selected_data(ig).StudyDate = tC.StudyDate{1};
-            selected_data(ig).Scans = tS;
-            if any(tC.Exp)
-                selected_data(ig).Scans = table2struct(tC(tC.Exp,3:end));
-            else
-                selected_data(ig).Scans(1).DataPath = '';
-            end
-            if any(tC.Ins)
-                selected_data(ig).Scans(2) = table2struct(tC(tC.Ins,3:end));
-            else
-                selected_data(ig).Scans(2).DataPath = '';
-            end
-        end
-    end
-    selected_data(empty_flag) = [];
-    
-    %% Save selections to catalog file:
-    fname = opts.dcm_path;
-    if ~isempty(fname)
-        C = removevars(C,{'Ins','Exp'});
-        if isfolder(fname)
-            fname = fullfile(fname,'Pipeline_catalog.csv');
-        end
-        try
-            writetable(C,fname);
-        catch
-            fname = fullfile(fileparts(fname),sprintf('DICOMcatalog_select_%s.csv',datestr(datetime('now'),'yyyymmddHHMMSS')));
-            writetable(C,fname);
-        end
-    end
-
-end
 
 %% Set up callbacks:
     function validateInputs(inputs)
@@ -162,7 +102,7 @@ end
         h.table_filter = uitable(h.tab_scans,'Position',[ 1 , fheight-115 , fwidth , 90 ],'CellEditCallback',@applyFilter);
         
         uibutton(  h.tab_scans,'Position',[1,1,50,20],...
-            'FontColor','black','FontWeight','bold','Text','Clear','BackgroundColor','blue','ButtonPushedFcn',@clearTags);
+            'FontColor','black','FontWeight','bold','Text','Clear','BackgroundColor',[.73,.92,1],'ButtonPushedFcn',@clearTags);
         
         uilabel(   h.tab_scans,'Position',[fwidth/2-320,1,135,20],'HorizontalAlignment','right','Text','Groups per page: ');
         h.edit_page_groups = uieditfield(h.tab_scans,'numeric','Position',[fwidth/2-185,1,50,20],...
@@ -181,7 +121,7 @@ end
         uibutton(  h.tab_scans,'Position',[fwidth-100-gap,1,50,20],...
             'Text','Cancel','BackgroundColor','red','ButtonPushedFcn',@cancel_callback);
         uibutton(  h.tab_scans,'Position',[fwidth-50,1,50,20],...
-            'Text','Done','BackgroundColor','green','ButtonPushedFcn',@done_callback);
+            'Text','Done','BackgroundColor','green','ButtonPushedFcn',@run);
 
         %% Tab 2: Settings and options
         uilabel(h.tab_opts,   'Position',[5,   fheight-50, 100, 20],'Text','Uniquename:');
@@ -409,17 +349,6 @@ end
         C(page_ic,1:2) = {false};
         checkValid;
     end
-    function done_callback(~,~)
-        % Check that each timepoint has Ins/Exp selected (and only one of each)
-        if any(gp_valid == 3)
-            warning('No case can have more than one Exp/Ins selected.');
-        elseif any(gp_valid == 4)
-            warning('Each case must have a unique UMlabel.');
-        else
-            go = true;
-            h.fig.delete;
-        end
-    end
     function cancel_callback(~,~)
         C = [];
         opts = [];
@@ -628,5 +557,74 @@ end
             h_help = uifigure("Name","CTlung Pipeline Help","Position",[1,1,ss(3)/2,ss(4)]);
             uihtml(h_help,"Position",[0,0,h_help.Position(3:4)],"HTMLSource",fn_help);
         end
+    end
+    function run(~,~)%% Gather outputs        
+        % Check that each timepoint has Ins/Exp selected (and only one of each)
+        if any(gp_valid == 3)
+            warning('No case can have more than one Exp/Ins selected.');
+        elseif any(gp_valid == 4)
+            warning('Each case must have a unique UMlabel.');
+        elseif ~isempty(C)
+            %% Determine tags:
+            tagstr = repmat({''},size(C,1),1);
+            tagstr(C.Exp) = {'Exp'};
+            tagstr(C.Ins) = {'Ins'};
+            if ~ismember('Tag',C.Properties.VariableNames)
+                C = addvars(C,tagstr,'Before',3,'NewVariableNames',{'Tag'});
+            end
+            if ~ismember('CaseNumber',C.Properties.VariableNames)
+                C = addvars(C,ugroups_ic,'Before',1,'NewVariableNames',{'CaseNumber'});
+            end
+            
+            if isa(C.UMlabel,'double') % CJG changed b/c error for double in lin 78
+                C.UMlabel = cellstr(strcat('ID',int2str(C.UMlabel)));
+            end
+        
+            %% Set up output structure:
+            empty_flag = false(ngroups,1);
+            tS = table2struct(C(1,3:end)); tS = tS([]);
+            selected_data = struct('UMlabel',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
+            for ig = 1:ngroups
+                g_ind = ugroups_ic==ig;
+                tC = C( g_ind & (C.Exp | C.Ins),:);
+                if isempty(tC)
+                    empty_flag(ig) = true;
+                else
+                    selected_data(ig).UMlabel = tC.UMlabel{1};
+                    selected_data(ig).StudyDate = tC.StudyDate{1};
+                    selected_data(ig).Scans = tS;
+                    if any(tC.Exp)
+                        selected_data(ig).Scans = table2struct(tC(tC.Exp,3:end));
+                    else
+                        selected_data(ig).Scans(1).DataPath = '';
+                    end
+                    if any(tC.Ins)
+                        selected_data(ig).Scans(2) = table2struct(tC(tC.Ins,3:end));
+                    else
+                        selected_data(ig).Scans(2).DataPath = '';
+                    end
+                end
+            end
+            selected_data(empty_flag) = [];
+
+            CTlung_Pipeline(opts,selected_data)
+            
+            %% Save selections to catalog file:
+            fname = opts.dcm_path;
+            if ~isempty(fname)
+                C = removevars(C,{'Ins','Exp'});
+                if isfolder(fname)
+                    fname = fullfile(fname,'Pipeline_catalog.csv');
+                end
+                try
+                    writetable(C,fname);
+                catch
+                    fname = fullfile(fileparts(fname),sprintf('DICOMcatalog_select_%s.csv',datestr(datetime('now'),'yyyymmddHHMMSS')));
+                    writetable(C,fname);
+                end
+            end
+        end
+
+
     end
 end
