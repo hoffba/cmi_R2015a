@@ -1,4 +1,4 @@
-function grid_label = maskgrid(mask,voxsz)
+function grid_label = lung_grid(mask,voxsz)
 
 numpatch = 10000;
 min_patch_sz = [3,3,3];
