@@ -53,7 +53,7 @@ req_fields = {'SeriesDescription',...
               'SliceThickness',...
               'Slices'};
 
-tagstr = {'Exp','Ins','ExpLabel','InsLabel'};
+tagstr = {'','Exp','Ins','ExpLabel','InsLabel'};
 
 %% Initialize the GUI:
 h = initFig;
@@ -169,11 +169,7 @@ end
         uilabel(h.panel_cluster,'Position',[5, 5, 120, 20],'Text','Number of Nodes: ');
         h.nnodes = uidropdown(h.panel_cluster,'Position',[125, 5, 80, 20],...
             'Items',{'1','2','3','4','5'},'ItemsData',1:5,'ValueChangedFcn',@setOpts,'Tag','nnodes');
-        
-%         h.panel_yacta = uipanel(h.tab_opts,'Position',[445, fheight-330, 215, 225],'Title','YACTA Options');
-%         h.y_airways
-%         h.y_parenchyma
-        
+                
     %% Tab 2: tables for selecting images, and execution buttons
         % Filter selection:
         uilabel(h.tab_scans,'Position',[5,fheight-50,50,20],'Text','Filter:');
