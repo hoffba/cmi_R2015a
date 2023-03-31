@@ -1,4 +1,4 @@
-function [selected_data,opts] = CTlung_Pipeline(varargin)
+function CTlung_Pipeline(varargin)
 % GUI for selection of DICOM data from DICOMcatalog information
 %   For use in Ins/Exp CT analysis, looking for two matching scans per time
 % Input: C = table of DICOM information
@@ -53,7 +53,7 @@ req_fields = {'SeriesDescription',...
               'SliceThickness',...
               'Slices'};
 
-tagstr = {'','Exp','Ins','ExpLabel','InsLabel'};
+tagstr = {' ','Exp','Ins','ExpLabel','InsLabel'};
 
 %% Initialize the GUI:
 h = initFig;
@@ -252,7 +252,7 @@ end
             h.table_select.ColumnName = C.Properties.VariableNames;
             nv = size(C,2);
             set(h.table_select,'ColumnEditable',[true(1,2),false(1,nv-2)],...
-                               'ColumnFormat',{{'Exp','Ins','ExpLabel','InsLabel'}}); % Tag options
+                               'ColumnFormat',{tagstr}); % Tag options
             checkValid();
         end
     end
@@ -307,7 +307,11 @@ end
         gp = ugroups_ic(C_ind);
         if eventdata.Indices(2)==1
             % Edited Tag
-            C.Tag{C_ind,eventdata.Indices(2)} = eventdata.NewData;
+            newval = eventdata.NewData;
+            if strcmp(newval,' ')
+                newval = '';
+            end
+            C.Tag{C_ind,eventdata.Indices(2)} = newval;
             
             % Update case selection status
             gp_sel(gp) = any(ismember(C.Tag(ugroups_ic==gp),{'Exp','Ins'}));
@@ -574,7 +578,7 @@ end
             writetable(C,fname);
         end
     end
-    function run(~,~)%% Gather outputs        
+    function run(~,~)    
         % Check that each timepoint has Ins/Exp selected (and only one of each)
         if any(gp_valid == 3)
             warning('No case can have more than one Exp/Ins selected.');
@@ -587,7 +591,7 @@ end
                 C = addvars(C,ugroups_ic,'Before',1,'NewVariableNames',{'CaseNumber'});
             end
         
-            %% Set up output structure:
+            % Set up output structure:
             empty_flag = false(ngroups,1);
             selected_data = struct('UMlabel',cell(1,ngroups),'StudyDate',cell(1,ngroups),'Scans',cell(1,ngroups));
             for ig = 1:ngroups

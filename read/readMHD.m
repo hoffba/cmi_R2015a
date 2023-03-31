@@ -42,7 +42,10 @@ if fid>2
     end
 
     d = info.DimSize;
-    voxsz = info.ElementSpacing;
+    voxsz = ones(1,3);
+    if isfield(info,'ElementSpacing')
+        voxsz = info.ElementSpacing;
+    end
     if isfield(info,'ElementNumberOfChannels')
         nv = info.ElementNumberOfChannels;
     else
@@ -54,7 +57,11 @@ if fid>2
     elseif isfield(info,'Offset')
         pos = info.Offset;
     end
-    orient = [reshape(info.TransformMatrix,3,3)'*diag(voxsz),pos';0 0 0 1];
+    T = eye(3);
+    if isfield(info,'TransformMatrix')
+        T = reshape(info.TransformMatrix,3,3)';
+    end
+    orient = [T*diag(voxsz),pos';0 0 0 1];
     Etype = info.ElementType;
 
     if ~exist(rawfname,'file')
