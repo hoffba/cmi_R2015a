@@ -27,8 +27,8 @@ if any(C,'all')
     [T.NUM_VESSELS, T.NUM_COMPONENTS, T.NUM_ENDPOINTS] = CSA_size_metrics(C);
     [T.CSA_EXP_A, T.CSA_EXP_B] = CSA_metrics(C);
     N = nnz(getCSAvessVol(V,C,0,5));
-    T.VESSEL_VOXELS_5DOWN_L = N * voxvol;
-    T.VESSEL_VOXELS_5UP_L = (nnz(V) - N) * voxvol;
+    T.VESSEL_VOLUME_5DOWN_L = N * voxvol;
+    T.VESSEL_VOLUME_5UP_L = (nnz(V) - N) * voxvol;
 %         [T.VESSEL_VOLUME_5DOWN(ii), T.NUM_VESSELS_5DOWN(ii)] = CSA_range_metrics(C < 5 & C > 0, C);
 %         [T.VESSEL_VOLUME_5UP(ii), T.NUM_VESSELS_5UP(ii)] = CSA_range_metrics(C > 5, C);
 end

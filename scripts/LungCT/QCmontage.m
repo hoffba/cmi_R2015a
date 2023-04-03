@@ -64,7 +64,7 @@ montage(mat/255,'Size',montsz,'Parent',ha);
 title(tname,'Interpreter','none');
 
 %% Print the figure:
-print(hf,[fname,'.tif'],'-dtiff');
+print(hf,fname,'-dtiff');
 cdata = print('-RGBImage','-noui');
 
 %% Add to GIF series

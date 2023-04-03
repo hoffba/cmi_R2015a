@@ -23,7 +23,7 @@ prm = int8(img.prm.mat);
 
 %% Add title to axes
 [~,tname] = fileparts(svname);
-title(img.prm.hascatter,tname);
+title(img.prm.hascatter,tname,'Interpreter','none');
 
 %% Save scatterplot figure
 print(img.prm.hfscatter,svname,'-dtiff');

@@ -1,7 +1,8 @@
 function res = CTlung_Pipeline_sub(procdir,opts)
 % Pipeline processing on Great Lakes
 
-import mlreportgen.report.*
+import mlreportgen.report.*;
+import mlreportgen.dom.*;
 
 tt = tic;
 
@@ -14,7 +15,8 @@ try
         opts.save_path = opts.save_path{1};
     end
     
-%     R = Report('output','pdf');
+    R = Report('output','pdf');
+    RR = [];
     
     QC_nslice = 25;
     fn_ext = '.nii.gz';
@@ -55,6 +57,13 @@ try
             res.(fld{i}) = arrayfun(@num2str,res.(fld{i}),'UniformOutput',false);
         end
     end
+
+    % Initialize report with title page and table of contents
+    tR = TitlePage;
+    tR.Title = 'Pipeline Results';
+    tR.Author = ID;
+    append(R,tR);
+    append(R,TableOfContents);
 
     % Load images
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
@@ -97,6 +106,9 @@ try
         end
     end
 
+    % Segmentation Chapter
+    chap = Chapter('Segmentations');
+
     % QC segmentation
     if img(1).flag
         writeLog(fn_log,'Generating EXP montage...\n');
@@ -109,11 +121,14 @@ try
         else
             img(1).QCind = ind(round(linspace(1,Ni,QCns)));
         end
-        cdata = QCmontage('seg',img(1).mat(:,:,img(1).QCind),...
-                                logical(img(1).label(:,:,img(1).QCind)),...
-                                img(1).info.voxsz,...
-                                fullfile(procdir,sprintf('%s_Montage',img(1).info.label)),...
-                                fullfile(opts.save_path,'Montage_exp.gif'));
+        fn_save = fullfile(procdir,sprintf('%s_Montage.tif',img(1).info.label));
+        QCmontage('seg',img(1).mat(:,:,img(1).QCind),...
+                  logical(img(1).label(:,:,img(1).QCind)),...
+                  img(1).info.voxsz,...
+                  fn_save,...
+                  fullfile(opts.save_path,'Montage_exp.gif'));
+        % Add to report
+        append(chap,Section(Title='EXP Segmentation:',Content=FormalImage(fn_save)));
     end
     if img(2).flag
         writeLog(fn_log,'Generating INSP montage...\n');
@@ -126,92 +141,126 @@ try
         else
             img(2).QCind = ind(round(linspace(1,Ni,QCns)));
         end
-        cdata = QCmontage('seg',img(2).mat(:,:,img(2).QCind),...
-                                logical(img(2).label(:,:,img(2).QCind)),...
-                                img(2).info.voxsz,...
-                                fullfile(procdir,sprintf('%s_Montage',img(2).info.label)),...
-                                fullfile(opts.save_path,'Montage_ins.gif'));
+        fn_save = fullfile(procdir,sprintf('%s_Montage.tif',img(2).info.label));
+        QCmontage('seg',img(2).mat(:,:,img(2).QCind),...
+                  logical(img(2).label(:,:,img(2).QCind)),...
+                  img(2).info.voxsz,...
+                  fn_save,...
+                  fullfile(opts.save_path,'Montage_ins.gif'));
+        % Add to report
+        append(chap,Section(Title='INS Segmentation:',Content=FormalImage(fn_save)));
+    end
+
+    if ~isempty(chap.Content)
+        append(R,chap);
     end
 
     % Airways
     if opts.airway
-            if img(2).flag
-                ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
-                writeLog(fn_log,'YACTA directory: %s\n',ydir);
-                airway_res = readYACTAairways(ydir);
-                if ~isempty(airway_res)
-                    
-                    if isfield(airway_res,'Wall_pct__3_8_')
-                        res = addTableVarVal(res,'WallPct_3_8','WholeLung',airway_res.Wall_pct__3_8_);
-                    end
+        if img(2).flag
+            ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
+            writeLog(fn_log,'YACTA directory: %s\n',ydir);
+            airway_res = readYACTAairways(ydir);
+            if ~isempty(airway_res)
+                % Initialize table
+                T = table('Size',[Nr,1],'VariableTypes',{'cellstr'},'VariableNames',{'ROI'});
+                T.ROI = regionnames';
+                T.Properties.RowNames = regionnames;
 
-                    fld = {'Wall_pct',  'Wall_pct',                     'WholeLung';...
-                           'Wall_pct',  'Wall_pct_RightUpperLobe',      'RUL';...
-                           'Wall_pct',  'Wall_pct_RightMidLobe',        'RML';...
-                           'Wall_pct',  'Wall_pct_RightUpperLobePlus',  'RULplus';...
-                           'Wall_pct',  'Wall_pct_RightLowerLobe',      'RLL';...
-                           'Wall_pct',  'Wall_pct_LeftUpperLobe',       'LUL';...
-                           'Wall_pct',  'Wall_pct_LeftUpperLobePlus',   'LULplus';...
-                           'Wall_pct',  'Wall_pct_LeftLingula',         'LLi';...
-                           'Wall_pct',  'Wall_pct_LeftLowerLobe',       'LLL';
-                           'Pi10',      'Pi10',         'WholeLung';...
-                           'Pi10',      'Pi10_RUL',     'RUL';...
-                           'Pi10',      'Pi10_RML',     'RML';...
-                           'Pi10',      'Pi10_RULplus', 'RULplus';...
-                           'Pi10',      'Pi10_RLL',     'RLL';...
-                           'Pi10',      'Pi10_LUL'      'LUL';...
-                           'Pi10',      'Pi10_LULplus'  'RULplus';...
-                           'Pi10',      'Pi10_LLi',     'LLi';...
-                           'Pi10',      'Pi10_LLL',     'LLL';...
-                           'Pi15',      'Pi15',         'WholeLung';...
-                           'BEI',       'BEI_Lung',     'WholeLung';...
-                           'BEI',       'BEI_Right',    'RL';...
-                           'BEI',       'BEI_Left',     'LL';...
-                           'BEI',       'BEI_RUL',      'RUL';...
-                           'BEI',       'BEI_RML',      'RML';...
-                           'BEI',       'BEI_RULplus',  'RULplus';...
-                           'BEI',       'BEI_RLL',      'RLL';...
-                           'BEI',       'BEI_LUL',      'LUL';...
-                           'BEI',       'BEI_LULplus',  'LULplus';...
-                           'BEI',       'BEI_LLi',      'LLi';...
-                           'BEI',       'BEI_LLL',      'LLL';...
-                           'BEI_gen',   'x1_Level_Lung',    'WholeLung';...
-                           'BEI_gen',   'x1_Level_Right',   'RL';...
-                           'BEI_gen',   'x1_Level_Left',    'LL';...
-                           'BEI_gen',   'x1_Level_RUL',     'RUL';...
-                           'BEI_gen',   'x1_Level_RML',     'RML';...
-                           'BEI_gen',   'x1_Level_RULplus', 'RULplus';...
-                           'BEI_gen',   'x1_Level_RLL',     'RLL';...
-                           'BEI_gen',   'x1_Level_LUL',     'LUL';...
-                           'BEI_gen',   'x1_Level_LLi',     'LLi';...
-                           'BEI_gen',   'x1_Level_LULplus', 'LULplus';...
-                           'BEI_gen',   'x1_Level_LLL',     'LLL'};
-                    for ifld = 1:size(fld,1)
-                        if isfield(airway_res,fld{ifld,2})
-                            res = addTableVarVal(res,fld{ifld,1},fld{ifld,3},airway_res.(fld{ifld,2}));
+                if isfield(airway_res,'Wall_pct__3_8_')
+                    T = addTableVarVal(T,'WallPct_3_8','WholeLung',airway_res.Wall_pct__3_8_);
+                end
+
+                fld = {'Wall_pct', '%0.2f' , {'Wall_pct',                     'WholeLung';...
+                                              'Wall_pct_RightUpperLobe',      'RUL';...
+                                              'Wall_pct_RightMidLobe',        'RML';...
+                                              'Wall_pct_RightUpperLobePlus',  'RULplus';...
+                                              'Wall_pct_RightLowerLobe',      'RLL';...
+                                              'Wall_pct_LeftUpperLobe',       'LUL';...
+                                              'Wall_pct_LeftUpperLobePlus',   'LULplus';...
+                                              'Wall_pct_LeftLingula',         'LLi';...
+                                              'Wall_pct_LeftLowerLobe',       'LLL'};...
+                       'Pi10', '%0.2f' ,     {'Pi10',         'WholeLung';...
+                                              'Pi10_RUL',     'RUL';...
+                                              'Pi10_RML',     'RML';...
+                                              'Pi10_RULplus', 'RULplus';...
+                                              'Pi10_RLL',     'RLL';...
+                                              'Pi10_LUL'      'LUL';...
+                                              'Pi10_LULplus'  'RULplus';...
+                                              'Pi10_LLi',     'LLi';...
+                                              'Pi10_LLL',     'LLL'};...
+                       'Pi15', '%0.2f' ,     {'Pi15',         'WholeLung'};...
+                       'BEI',  '%0.2f' ,     {'BEI_Lung',     'WholeLung';...
+                                              'BEI_Right',    'RL';...
+                                              'BEI_Left',     'LL';...
+                                              'BEI_RUL',      'RUL';...
+                                              'BEI_RML',      'RML';...
+                                              'BEI_RULplus',  'RULplus';...
+                                              'BEI_RLL',      'RLL';...
+                                              'BEI_LUL',      'LUL';...
+                                              'BEI_LULplus',  'LULplus';...
+                                              'BEI_LLi',      'LLi';...
+                                              'BEI_LLL',      'LLL'};...
+                       'BEI_gen', '%0.0f' ,  {'x1_Level_Lung',    'WholeLung';...
+                                              'x1_Level_Right',   'RL';...
+                                              'x1_Level_Left',    'LL';...
+                                              'x1_Level_RUL',     'RUL';...
+                                              'x1_Level_RML',     'RML';...
+                                              'x1_Level_RULplus', 'RULplus';...
+                                              'x1_Level_RLL',     'RLL';...
+                                              'x1_Level_LUL',     'LUL';...
+                                              'x1_Level_LLi',     'LLi';...
+                                              'x1_Level_LULplus', 'LULplus';...
+                                              'x1_Level_LLL',     'LLL'}};
+                for icol = 1:size(fld,1)
+                    for ifld = 1:size(fld{icol,3},1)
+                        if isfield(airway_res,fld{icol,3}{ifld,1})
+                            T = addTableVarVal(T,fld{icol,1},fld{icol,3}{ifld,2},airway_res.(fld{icol,3}{ifld,1}));
                         end
                     end
+                end
 
-                    genstr = {'WT'};
-                    segstr = { 'seg',   4   ;...
-                               'subseg',5:7 };
-                    lobestr =  {'Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLi','LLL'};
-                    lobestr2 = {'RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
-                    for i = 1:numel(genstr)
-                        for j = 1:2
+                genstr = {'WT'};
+                segstr = { 'seg',   4   ;...
+                           'subseg',5:7 };
+                lobestr =  {'Lung','Right','Left','RUL','RML','RUL+','RLL','LUL','LUL+','LLi','LLL'};
+                lobestr2 = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
+                for i = 1:numel(genstr)
+                    if isfield(airway_res,genstr{i})
+                        for j = 1:size(segstr,1)
                             for k = 1:numel(lobestr)
-                                if isfield(airway_res,genstr{i}) && isfield(airway_res.(genstr{i}),lobestr{k})
+                                if any(ismember(airway_res.(genstr{i}).Properties.VariableNames,lobestr{k}))
                                     segind = segstr{j,2};
                                     vals = airway_res.(genstr{i}).(lobestr{k});
                                     vals = vals(segind(segind<=numel(vals)));
-                                    res = addTableVarVal(res,[genstr{i},'_',segstr{j,1}],lobestr2{k},mean(vals(vals>0)));
+                                    T = addTableVarVal(T,[genstr{i},'_',segstr{j,1}],lobestr2{k},mean(vals(vals>0)));
                                 end
                             end
                         end
                     end
-
                 end
+
             end
+        end
+
+        % Add table to results
+        res = addTableVarVal(res,T);
+
+        % Add table to report
+        colstyle = repmat({NumberFormat('%.2f')},1,size(T,2));
+        colstyle(ismember(T.Properties.VariableNames,{'BEI','BEI_gen'})) = {NumberFormat('%.0f')};
+        colstyle{1} = Bold;
+        T = removevars(T,'ROI');
+        t = Table(T);
+        t.Style = {FontSize('10pt')};
+        for i = 1:numel(colstyle)
+            t.ColSpecGroups(i).Style = colstyle(i);
+        end
+        t.Children(1).Style = {Bold};
+        chap = Chapter('YACTA Airways Results');
+        chap.Layout.Landscape = true;
+        append(chap,t);
+        append(R,chap);
     end
 
     % ScatterNet for AT on Exp CT scan
@@ -230,6 +279,17 @@ try
             T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
             res = addTableVarVal(res,T);
             clear atMap
+
+            % Append to report
+            chap = Chapter('Scatternet for Air Trapping');
+            T.Properties.RowNames = T.ROI';
+            T = removevars(T,'ROI');
+            t = Table(T);
+            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+            t.ColSpecGroups(1).Style = {Bold};
+            t.Children(1).Style = {Bold};
+            append(chap,t);
+            append(R,chap);
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -251,6 +311,17 @@ try
             T = lobeLoop(img(2).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,img(2).mat,'scatnetEmph');
             res = addTableVarVal(res,T);
             clear SNemph
+            
+            % Append to report
+            chap = Chapter('Scatternet for Emph on INS');
+            T.Properties.RowNames = T.ROI';
+            T = removevars(T,'ROI');
+            t = Table(T);
+            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+            t.ColSpecGroups(1).Style = {Bold};
+            t.Children(1).Style = {Bold};
+            append(chap,t);
+            append(R,chap);
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -273,6 +344,22 @@ try
             end
             T = pipeline_vesselseg( tins, tseg, tinfo, procdir, opts, fn_log);
             res = addTableVarVal(res,T);
+            
+            % Append to report
+            chap = Chapter('Blood Vessel Analysis');
+            colstyle = repmat({NumberFormat('%.2f')},1,size(T,2));
+            colstyle(cellfun(@(x)startsWith(x,'NUM_'),T.Properties.VariableNames)) = {NumberFormat('%.0f')};
+            colstyle{1} = Bold;
+            T.Properties.RowNames = T.ROI';
+            T = removevars(T,'ROI');
+            t = Table(T);
+            for i = 1:numel(colstyle)
+                t.ColSpecGroups(i).Style = colstyle(i);
+            end
+            t.Style = {FontSize('10pt')};
+            t.Children(1).Style = {Bold};
+            append(chap,t);
+            append(R,chap);
         end
     catch err
         writeLog(fn_log,'Vessel Analysis FAILED:\n%s\n',getReport(err));
@@ -280,15 +367,32 @@ try
 
     % Quantify unregistered CT scans
     writeLog(fn_log,'Quantifying unregistered statistics\n');
+    chap = Chapter('Unregistered Statistics');
     if opts.unreg && img(1).flag
         T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
-        clear atMap;
         res = addTableVarVal(res,T);
+
+        T.Properties.RowNames = T.ROI;
+        T = removevars(T,'ROI');
+        t = Table(T);
+        t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+        t.ColSpecGroups(1).Style = {Bold};
+        t.Children(1).Style = {Bold};
+        append(chap,t);
     end
     if opts.unreg && img(2).flag
         T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
         res = addTableVarVal(res,T);
+
+        T.Properties.RowNames = T.ROI;
+        T = removevars(T,'ROI');
+        t = Table(T);
+        t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+        t.ColSpecGroups(1).Style = {Bold};
+        t.Children(1).Style = {Bold};
+        append(chap,t);
     end
+    append(R,chap);
 
     % Register I2E
     if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
@@ -332,12 +436,17 @@ try
 
         % QC registration
         writeLog(fn_log,'Saving Registration Montage ...\n');
+        fn_save = fullfile(procdir,sprintf('%s_Reg_Montage.tif',res.ID{1}));
         QCmontage('reg',ins_reg(:,:,img(1).QCind),...
                         logical(img(1).label(:,:,img(1).QCind)),...
                         img(1).info.voxsz,...
-                        fullfile(procdir,sprintf('%s_Reg_Montage',res.ID{1})),...
+                        fn_save,...
                         fullfile(opts.save_path,'Montage_reg.gif'));
         img(2) = [];
+
+        % Append to report
+        chap = Chapter('Elastix Registration');
+        append(chap,Section(Title='Coregistered Image:',Content=FormalImage(fn_save)));
 
         % Jacobian analysis
         fn_jac = fullfile(procdir,sprintf('%s.jac%s',res.ID{1},fn_ext));
@@ -376,8 +485,17 @@ try
             if ~isempty(jac)
                 T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
+
+                % Add to report
+                T = removevars(T,'ROI');
+                t = Table(T);
+                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+                t.ColSpecGroups(1).Style = {Bold};
+                t.Children(1).Style = {Bold};
+                append(chap,Section(Title='Jacobian Statistics:',Content=t));
             end
         end
+        append(R,chap);
         
         % ScatNet for Emph
         try
@@ -395,6 +513,17 @@ try
                 T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
                 res = addTableVarVal(res,T);
                 clear SNemph
+
+                % Add to report
+                chap = Chapter('ScatterNet for Coregistered Emph');
+                T.Properties.RowNames = T.ROI;
+                T = removevars(T,'ROI');
+                t = Table(T);
+                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+                t.ColSpecGroups(1).Style = {Bold};
+                t.Children(1).Style = {Bold};
+                append(chap,t);
+                append(R,chap);
             end
         catch err
             writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -415,6 +544,17 @@ try
             if ~isempty(dBlood)
                 T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),dBlood,'dBlood');
                 res = addTableVarVal(res,T);
+
+                % Add to report
+                chap = Chapter('Blood Density Change Map');
+                T.Properties.RowNames = T.ROI;
+                T = removevars(T,'ROI');
+                t = Table(T);
+                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+                t.ColSpecGroups(1).Style = {Bold};
+                t.Children(1).Style = {Bold};
+                append(chap,t);
+                append(R,chap);
             end
         end
         clear jac
@@ -423,13 +563,14 @@ try
         prm10 = [];
         if opts.prm
             fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));
+            fn_save_scatter = fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1}));
             if exist(fn_PRM,'file')
                 writeLog(fn_log,'Loading PRM from file...\n');
                 prm10 = int8(readNIFTI(fn_PRM));
             else
                 writeLog(fn_log,'Calculating PRM...\n');
                 [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
-                    fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1})),...
+                    fn_save_scatter,...
                     fullfile(opts.save_path,'Montage_PRM_Scatter.gif'));
 
                 % Save PRM
@@ -450,6 +591,17 @@ try
             T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
             res = addTableVarVal(res,T);
 
+            % Add to report
+            chap = Chapter('10-Color PRM');
+            T.Properties.RowNames = T.ROI;
+            T = removevars(T,'ROI');
+            t = Table(T);
+            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+            t.ColSpecGroups(1).Style = {Bold};
+            t.Children(1).Style = {Bold};
+            append(chap,t);
+            append(R,chap);
+
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
             prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
                         [1,2],  3,      [4,5],  [8,9,10],   6    };
@@ -461,16 +613,32 @@ try
 
             % QC PRM
             writeLog(fn_log,'Generating PRM Montage ...\n');
+            fn_save = fullfile(procdir,sprintf('%s_PRM_Montage.tif',res.ID{1}));
             QCmontage('prm',img.mat(:,:,img(1).QCind),...
                             double(prm5(:,:,img(1).QCind)),...
                             img.info.voxsz,...
-                            fullfile(procdir,sprintf('%s_PRM_Montage',res.ID{1})),...
+                            fn_save,...
                             fullfile(opts.save_path,'Montage_PRM.gif'));
 
             % Tabulate 5-color PRM results
             writeLog(fn_log,'Tabulating 5-color PRM results...\n');
             T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
             res = addTableVarVal(res,T);
+
+            % Add to report
+            chap = Chapter('Standard PRM');
+            T.Properties.RowNames = T.ROI;
+            T = removevars(T,'ROI');
+            t = Table(T);
+            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+            t.ColSpecGroups(1).Style = {Bold};
+            t.Children(1).Style = {Bold};
+            append(chap,Section(Title='PRM Overlay:',Content=FormalImage(fn_save)));
+            if isfile(fn_save_scatter)
+                append(chap,Section(Title='PRM Scatterplot:',Content=FormalImage(fn_save_scatter)));
+            end
+            append(chap,Section(Title='PRM Statistics:',Content=t));
+            append(R,chap);
 
             % Calculate tPRM
             if opts.tprm
@@ -528,11 +696,23 @@ try
                     writeLog(fn_log,'... tPRM complete (%s)\n',datetime([0,0,0,0,0,toc(t)],'Format','HH:mm:ss'));
 
                 end
+
+                % Add tPRM results to report
+                chap = Chapter('Topological PRM (tPRM) Results');
+                T = res(:,cellfun(@(x)startsWith(x,'tPRM_'),res.Properties.VariableNames));
+                T.Properties.RowNames = res.ROI';
+                t = Table(T);
+                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
+                t.ColSpecGroups(1).Style = {Bold};
+                t.Children(1).Style = {Bold};
+                append(chap,t);
+                append(R,chap);
             end
         end
     end
 
     % Save Results Table:
+    close(R);
     if istable(res)
         writetable(res,fn_res);
     else
