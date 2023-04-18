@@ -15,9 +15,6 @@ try
         opts.save_path = opts.save_path{1};
     end
     
-    R = Report('output','pdf');
-    RR = [];
-    
     QC_nslice = 25;
     fn_ext = '.nii.gz';
 
@@ -58,12 +55,8 @@ try
         end
     end
 
-    % Initialize report with title page and table of contents
-    tR = TitlePage;
-    tR.Title = 'Pipeline Results';
-    tR.Author = ID;
-    append(R,tR);
-    append(R,TableOfContents);
+    % Initialize report:
+    R = pipeline_report(fullfile(procdir,ID));
 
     % Load images
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
@@ -106,10 +99,8 @@ try
         end
     end
 
-    % Segmentation Chapter
-    chap = Chapter('Segmentations');
-
     % QC segmentation
+    rpt_add = {};
     if img(1).flag
         writeLog(fn_log,'Generating EXP montage...\n');
         ind = find(std(single(img(1).mat),1,[1 2])~=0)';
@@ -127,8 +118,7 @@ try
                   img(1).info.voxsz,...
                   fn_save,...
                   fullfile(opts.save_path,'Montage_exp.gif'));
-        % Add to report
-        append(chap,Section(Title='EXP Segmentation:',Content=FormalImage(fn_save)));
+        rpt_add = {'Expiration:',fn_save};
     end
     if img(2).flag
         writeLog(fn_log,'Generating INSP montage...\n');
@@ -147,13 +137,9 @@ try
                   img(2).info.voxsz,...
                   fn_save,...
                   fullfile(opts.save_path,'Montage_ins.gif'));
-        % Add to report
-        append(chap,Section(Title='INS Segmentation:',Content=FormalImage(fn_save)));
+        rpt_add = [rpt_add,{'Inspiration:',fn_save}];
     end
-
-    if ~isempty(chap.Content)
-        append(R,chap);
-    end
+    pipeline_report(R,'seg',rpt_add{:});
 
     % Airways
     if opts.airway
@@ -247,20 +233,7 @@ try
         res = addTableVarVal(res,T);
 
         % Add table to report
-        colstyle = repmat({NumberFormat('%.2f')},1,size(T,2));
-        colstyle(ismember(T.Properties.VariableNames,{'BEI','BEI_gen'})) = {NumberFormat('%.0f')};
-        colstyle{1} = Bold;
-        T = removevars(T,'ROI');
-        t = Table(T);
-        t.Style = {FontSize('10pt')};
-        for i = 1:numel(colstyle)
-            t.ColSpecGroups(i).Style = colstyle(i);
-        end
-        t.Children(1).Style = {Bold};
-        chap = Chapter('YACTA Airways Results');
-        chap.Layout.Landscape = true;
-        append(chap,t);
-        append(R,chap);
+        pipeline_report(R,'airway',T);
     end
 
     % ScatterNet for AT on Exp CT scan
@@ -281,15 +254,7 @@ try
             clear atMap
 
             % Append to report
-            chap = Chapter('Scatternet for Air Trapping');
-            T.Properties.RowNames = T.ROI';
-            T = removevars(T,'ROI');
-            t = Table(T);
-            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-            t.ColSpecGroups(1).Style = {Bold};
-            t.Children(1).Style = {Bold};
-            append(chap,t);
-            append(R,chap);
+            pipeline_report(R,'scatnetAT',T);
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -313,15 +278,7 @@ try
             clear SNemph
             
             % Append to report
-            chap = Chapter('Scatternet for Emph on INS');
-            T.Properties.RowNames = T.ROI';
-            T = removevars(T,'ROI');
-            t = Table(T);
-            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-            t.ColSpecGroups(1).Style = {Bold};
-            t.Children(1).Style = {Bold};
-            append(chap,t);
-            append(R,chap);
+            pipeline_report(R,'scatnetEmph',T)
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -346,53 +303,26 @@ try
             res = addTableVarVal(res,T);
             
             % Append to report
-            chap = Chapter('Blood Vessel Analysis');
-            colstyle = repmat({NumberFormat('%.2f')},1,size(T,2));
-            colstyle(cellfun(@(x)startsWith(x,'NUM_'),T.Properties.VariableNames)) = {NumberFormat('%.0f')};
-            colstyle{1} = Bold;
-            T.Properties.RowNames = T.ROI';
-            T = removevars(T,'ROI');
-            t = Table(T);
-            for i = 1:numel(colstyle)
-                t.ColSpecGroups(i).Style = colstyle(i);
-            end
-            t.Style = {FontSize('10pt')};
-            t.Children(1).Style = {Bold};
-            append(chap,t);
-            append(R,chap);
+            pipeline_report(R,'vessel',T);
         end
     catch err
         writeLog(fn_log,'Vessel Analysis FAILED:\n%s\n',getReport(err));
     end
 
     % Quantify unregistered CT scans
+    rpt_add = {};
     writeLog(fn_log,'Quantifying unregistered statistics\n');
-    chap = Chapter('Unregistered Statistics');
     if opts.unreg && img(1).flag
         T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
         res = addTableVarVal(res,T);
-
-        T.Properties.RowNames = T.ROI;
-        T = removevars(T,'ROI');
-        t = Table(T);
-        t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-        t.ColSpecGroups(1).Style = {Bold};
-        t.Children(1).Style = {Bold};
-        append(chap,t);
+        rpt_add = {'Expiration Image Statistics:',T};
     end
     if opts.unreg && img(2).flag
         T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
         res = addTableVarVal(res,T);
-
-        T.Properties.RowNames = T.ROI;
-        T = removevars(T,'ROI');
-        t = Table(T);
-        t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-        t.ColSpecGroups(1).Style = {Bold};
-        t.Children(1).Style = {Bold};
-        append(chap,t);
+        rpt_add = [rpt_add,{'Inspiration Image Statistics:',T}];
     end
-    append(R,chap);
+    pipeline_report(R,'unreg',rpt_add{:});
 
     % Register I2E
     if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
@@ -485,17 +415,9 @@ try
             if ~isempty(jac)
                 T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
-
-                % Add to report
-                T = removevars(T,'ROI');
-                t = Table(T);
-                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-                t.ColSpecGroups(1).Style = {Bold};
-                t.Children(1).Style = {Bold};
-                append(chap,Section(Title='Jacobian Statistics:',Content=t));
+                pipeline_report(R,'jac',T);
             end
         end
-        append(R,chap);
         
         % ScatNet for Emph
         try
@@ -515,15 +437,7 @@ try
                 clear SNemph
 
                 % Add to report
-                chap = Chapter('ScatterNet for Coregistered Emph');
-                T.Properties.RowNames = T.ROI;
-                T = removevars(T,'ROI');
-                t = Table(T);
-                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-                t.ColSpecGroups(1).Style = {Bold};
-                t.Children(1).Style = {Bold};
-                append(chap,t);
-                append(R,chap);
+                pipeline_report(R,'scatnetEmphReg',T);
             end
         catch err
             writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -546,15 +460,7 @@ try
                 res = addTableVarVal(res,T);
 
                 % Add to report
-                chap = Chapter('Blood Density Change Map');
-                T.Properties.RowNames = T.ROI;
-                T = removevars(T,'ROI');
-                t = Table(T);
-                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-                t.ColSpecGroups(1).Style = {Bold};
-                t.Children(1).Style = {Bold};
-                append(chap,t);
-                append(R,chap);
+                pipeline_report(R,'dblood',T);
             end
         end
         clear jac
@@ -592,15 +498,7 @@ try
             res = addTableVarVal(res,T);
 
             % Add to report
-            chap = Chapter('10-Color PRM');
-            T.Properties.RowNames = T.ROI;
-            T = removevars(T,'ROI');
-            t = Table(T);
-            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-            t.ColSpecGroups(1).Style = {Bold};
-            t.Children(1).Style = {Bold};
-            append(chap,t);
-            append(R,chap);
+            pipeline_report(R,'prm10');
 
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
             prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
@@ -626,6 +524,8 @@ try
             res = addTableVarVal(res,T);
 
             % Add to report
+            pipeline_report(R,'prm',T,fn_save,fullfile(procdir,[res.ID{1},'_PRM_Scatter.tif']));
+
             chap = Chapter('Standard PRM');
             T.Properties.RowNames = T.ROI;
             T = removevars(T,'ROI');

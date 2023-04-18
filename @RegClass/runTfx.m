@@ -6,7 +6,7 @@ nf = length(self.Tfx.fnames);
 
 if ~exist(self.Tfx.par,'file')
     errordlg('TransformParameter file does not exist.');
-elseif ~isdir(self.Tfx.out)
+elseif ~isfolder(self.Tfx.out)
     errordlg('Output directory does not exist.');
 elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
     

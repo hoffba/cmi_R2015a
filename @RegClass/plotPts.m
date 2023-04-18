@@ -15,7 +15,7 @@ elseif (nargin==3)
 end
 
 if ~isempty(h)
-    % POINTS ARE IN XYZ
+    % Points are stored in rectilinear xyz
     p = self.points{i};
     if ~isempty(p)
         
@@ -25,9 +25,10 @@ if ~isempty(h)
         voxsz = self.cmiObj(i).img.voxsz;
         
         % Find points on this slice
-        p(p(:,ornt)~=slc,:) = [];
-        xyi = (1:3)~=ornt;
-        p = bsxfun(@times,p(:,xyi),voxsz(xyi));
+        xyi = [2 1 3];
+        p(round(p(:,xyi(ornt))/voxsz(xyi(ornt)))~=slc,:) = [];
+        xyi(ornt) = []; xyi = flip(xyi);
+        p = p(:,xyi);
         
     end
     if isempty(p)

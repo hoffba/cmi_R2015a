@@ -23,3 +23,4 @@ orient = diag([-1 -1 1 1]) * info.Transform.T';
 
 info.format = 'nii';
     
+img = permute(img,[2,1,3]);

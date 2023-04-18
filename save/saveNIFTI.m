@@ -19,15 +19,12 @@ if gz_flag
 else
     svname = fname;
 end
-if ~isempty(orient) && ~all(all(orient==eye(4)))
-    info.TransformName = 'Sform';
-    info.Transform = affine3d((diag([-1 -1 1 1])*orient)');
-%     tform = affine3d(orient);
-%     if tform.isRigid
-%         % Use qform (quaternions)
-%     else
-%         % Use sform (affine)
-%     end
-end
+
+% Adjust for saving to Nifti
+orient = diag([-1 -1 1 1]) * orient;
+img = permute(img,[2,1,3]);
+
+info.TransformName = 'Sform';
+info.Transform = affine3d(orient');
 niftiwrite(img,svname,info,'Compressed',gz_flag);
 status = exist(fname,'file');

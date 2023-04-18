@@ -26,7 +26,7 @@ switch method
         seg = getRespiratoryOrgans(ct);
     case 3
         fprintf(logfn,'- Generating VOI from DL_lung_segmetation ...\n');
-        seg = DL_lung_segmetation(ct);
+        seg = DL_lung_segmentation(ct);
     case 4
         writeLog(logfn,'- Generating VOI from YACTA ...\n');
         ydir = fullfile(savepath,['yacta_',id]);

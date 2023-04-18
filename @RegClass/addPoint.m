@@ -4,7 +4,6 @@ function addPoint(self,hObject,edata)
 % addPoint(image#,pts)
 %       image# = 1 or 2 (Ref or Hom)
 %       pts = [N x 3] List of 3D coordinates to add (X,Y,Z)
-% ** Remember that Elasix geometry puts (0,0,0) at center of 3D FOV!
 
 i = [];
 if nargin==3
@@ -17,25 +16,20 @@ if nargin==3
                                 {self.cmiObj(:).hiover}),1);
             tObj = self.cmiObj(i);
             ornt = tObj.orient;
-            voxsz = tObj.img.voxsz; voxsz(ornt) = [];
+            voxsz = tObj.img.voxsz(ornt);
             
             % Grab selected 2D point from axes (x,y)
-            %   Points saved as [x,y,z] indices (use ImageClass.orient to
-            %   convert to spatial coordinates)
+            %       (use ImageClass.orient to convert to referenced spatial coordinates)
             p = get(get(hObject,'Parent'),'CurrentPoint');
-            p = [ p(1,1:2)./voxsz tObj.slc(ornt) ];
             
-            % Permute to original matrix coordinates
-            switch ornt
-                case 1
-                    torder = [3,1,2];
-                case 2
-                    torder = [1,3,2];
-                case 3
-                    torder = [1,2,3];
-            end
+            % Determine coordinate order
+            torder = [2 1 3]; t = torder(ornt); torder(ornt) = [];
+            torder = flip(torder); torder(end+1) = t;
+            [~,torder] = sort(torder);
+
+            % Permute point to xyz
+            p = [ p(1,1:2) (tObj.slc(ornt)-0.5)*voxsz ];
             p = p(torder);
-            
         end
     elseif ismember(hObject,[1,2]) && (size(edata,2)==3)
         % Manual input points [x,y,z]

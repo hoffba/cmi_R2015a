@@ -125,11 +125,10 @@ classdef RegClass < handle
         function listenPoints(self,~,~)
             hlist = [self.h.list_ref,self.h.list_hom];
             for i = 1:2
-                np = size(self.points{i},1);
+                p = self.points{i};
+                np = size(p,1);
                 if np
-                    % Convert points from index to spatial coordinates
-                    p = [self.points{i},ones(np,1)]*self.cmiObj(i).img.orient';
-                    set(hlist(i),'String',num2str(p(:,1:3),'% .2f '),...
+                    set(hlist(i),'String',num2str(p,'% .2f '),...
                                  'Enable','on','Value',np);
                 else
                     set(hlist(i),'String','','Enable','off','Value',1);
