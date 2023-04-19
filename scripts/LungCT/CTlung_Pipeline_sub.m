@@ -56,7 +56,7 @@ try
     end
 
     % Initialize report:
-    R = pipeline_report(fullfile(procdir,ID));
+    % R = pipeline_report(fullfile(procdir,ID));
 
     % Load images
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
@@ -139,7 +139,7 @@ try
                   fullfile(opts.save_path,'Montage_ins.gif'));
         rpt_add = [rpt_add,{'Inspiration:',fn_save}];
     end
-    pipeline_report(R,'seg',rpt_add{:});
+    % pipeline_report(R,'seg',rpt_add{:});
 
     % Airways
     if opts.airway
@@ -233,7 +233,7 @@ try
         res = addTableVarVal(res,T);
 
         % Add table to report
-        pipeline_report(R,'airway',T);
+        % pipeline_report(R,'airway',T);
     end
 
     % ScatterNet for AT on Exp CT scan
@@ -254,7 +254,7 @@ try
             clear atMap
 
             % Append to report
-            pipeline_report(R,'scatnetAT',T);
+            % pipeline_report(R,'scatnetAT',T);
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -278,7 +278,7 @@ try
             clear SNemph
             
             % Append to report
-            pipeline_report(R,'scatnetEmph',T)
+            % pipeline_report(R,'scatnetEmph',T)
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -303,7 +303,7 @@ try
             res = addTableVarVal(res,T);
             
             % Append to report
-            pipeline_report(R,'vessel',T);
+            % pipeline_report(R,'vessel',T);
         end
     catch err
         writeLog(fn_log,'Vessel Analysis FAILED:\n%s\n',getReport(err));
@@ -322,7 +322,7 @@ try
         res = addTableVarVal(res,T);
         rpt_add = [rpt_add,{'Inspiration Image Statistics:',T}];
     end
-    pipeline_report(R,'unreg',rpt_add{:});
+    % pipeline_report(R,'unreg',rpt_add{:});
 
     % Register I2E
     if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
@@ -415,7 +415,7 @@ try
             if ~isempty(jac)
                 T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
-                pipeline_report(R,'jac',T);
+                % pipeline_report(R,'jac',T);
             end
         end
         
@@ -437,7 +437,7 @@ try
                 clear SNemph
 
                 % Add to report
-                pipeline_report(R,'scatnetEmphReg',T);
+                % pipeline_report(R,'scatnetEmphReg',T);
             end
         catch err
             writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -460,7 +460,7 @@ try
                 res = addTableVarVal(res,T);
 
                 % Add to report
-                pipeline_report(R,'dblood',T);
+                % pipeline_report(R,'dblood',T);
             end
         end
         clear jac
@@ -498,7 +498,7 @@ try
             res = addTableVarVal(res,T);
 
             % Add to report
-            pipeline_report(R,'prm10');
+            % pipeline_report(R,'prm10');
 
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
             prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
@@ -524,7 +524,7 @@ try
             res = addTableVarVal(res,T);
 
             % Add to report
-            pipeline_report(R,'prm',T,fn_save,fullfile(procdir,[res.ID{1},'_PRM_Scatter.tif']));
+            % pipeline_report(R,'prm',T,fn_save,fullfile(procdir,[res.ID{1},'_PRM_Scatter.tif']));
 
             chap = Chapter('Standard PRM');
             T.Properties.RowNames = T.ROI;
