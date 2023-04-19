@@ -11,7 +11,7 @@ if nargin==1 && (ischar(R) || isstring(R))
     R = Report(fullfile(R_path,['PipelineOutput_',ID]),'pdf');
     tR = TitlePage;
     tR.Title = 'Pipeline Results';
-    tR.Author = ch_str;
+    tR.Author = ID;
     append(R,tR);
     append(R,TableOfContents);
 elseif isa(R,'mlreportgen.report.Report') && isvalid(R)

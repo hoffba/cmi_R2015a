@@ -65,7 +65,7 @@ title(tname,'Interpreter','none');
 
 %% Print the figure:
 print(hf,fname,'-dtiff');
-cdata = print('-RGBImage','-noui');
+cdata = print(hf,'-RGBImage','-noui');
 
 %% Add to GIF series
 if nargin==6 && ischar(gifname)
