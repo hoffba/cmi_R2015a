@@ -21,7 +21,7 @@ try
 
     fn = fullfile(procdir,string(ID)+[".exp",".exp.label";".ins",".ins.label"]+fn_ext);
     fnflag = cellfun(@(x)exist(x,'file'),fn);
-    if any(~fnflag(:,1))
+    if ~isempty(expfname) && ~isempty(insfname) && any(~fnflag(:,1))
         % If either image is missing, must redo all from DICOM
         fnflag(:) = false;
     end

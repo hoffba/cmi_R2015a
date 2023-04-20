@@ -612,7 +612,7 @@ try
     end
 
     % Save Results Table:
-    close(R);
+    % close(R);
     if istable(res)
         writetable(res,fn_res);
     else
