@@ -29,8 +29,8 @@ end
 D = {};
 F = {};
 if ~isempty(filt)
-    [~,dname] = fileparts(tpath);
-    disp(dname);
+    % [~,dname] = fileparts(tpath);
+    % disp(dname);
 %     waitbar(0,h,dname);
     tD = dir(tpath);
     % Match file filters in this path:

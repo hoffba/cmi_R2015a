@@ -177,12 +177,17 @@ function [I,info] = resample_subj(I,info,fname,tag_type)
     pixDim = info.PixelDimensions;
     pixSize = 0.625;
     
-    [sx,sy,sz] = size(I);
-    xq = length(0:pixSize/pixDim(1):sx);
-    yq = length(0:pixSize/pixDim(2):sy);
-    zq = sz; %was length(0:sz) so original batch has one extra z layer
-    
-    I = imresize3(I, [xq yq zq], 'method', interpmethod);
+    d = size(I);
+    fov = pixDim .* d;
+    ext = (fov - pixDim)/2;
+    F = griddedInterpolant({linspace(-ext(1),ext(1),d(1)),...
+                            linspace(-ext(2),ext(2),d(2)),...
+                            linspace(-ext(3),ext(3),d(3))},I,interpmethod);
+    N = round(fov/pixSize);
+    ext = (N-1)*pixSize/2;
+    I = F({linspace(-ext(1),ext(1),N(1)),...
+           linspace(-ext(2),ext(2),N(2)),...
+           linspace(-ext(3),ext(3),N(3))});
     
     info.PixelDimensions = [0.625, 0.625, 0.625];
     info.ImageSize = size(I);

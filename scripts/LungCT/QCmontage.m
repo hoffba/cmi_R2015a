@@ -8,7 +8,7 @@ set(0,'units','pixels');
 scnsz = get(0,'screensize');
 
 % Initialize figure:
-hf = figure('visible','off','Position',scnsz);
+hf = figure('visible','off','Position',scnsz,'PaperPositionMode','auto');
 ha = axes(hf,'DataAspectRatio',voxsz);
 im = imagesc(im_bg(:,:,1),[-1000 0]);
 axis image
@@ -60,8 +60,13 @@ for i = 1:nf
 end
 figure(hf)
 montage(mat/255,'Size',montsz,'Parent',ha);
-[~,tname] = fileparts(fname);
-title(tname,'Interpreter','none');
+% [~,tname] = fileparts(fname);
+% title(tname,'Interpreter','none');
+
+% Fit figure to axes
+axpos = tightPosition(ha);
+ha.Position(1:2) = ha.Position(1:2)-axpos(1:2);
+hf.Position(3:4) = [axpos(3:4)]-1;
 
 %% Print the figure:
 print(hf,fname,'-dtiff');
