@@ -7,8 +7,12 @@ import mlreportgen.dom.*;
 tt = tic;
 
 try
-
     fn_log = fullfile(procdir,'pipeline_log.txt');
+    fn_expMontage = '';
+    fn_insMontage = '';
+    fn_regMontage = '';
+    fn_prmMontage = '';
+    fn_prmScatter = '';
     
     if strcmp(opts.cluster,'GL')
         opts.save_path = checkTurboPath(opts.save_path);
@@ -55,15 +59,12 @@ try
         end
     end
 
-    % Initialize report:
-    % R = pipeline_report(fullfile(procdir,ID));
-
     % Load images
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
-    fn_exp = fullfile(procdir,[ID,'.exp',fn_ext]);
-    if exist(fn_exp,'file')
+    fn_expMontage = fullfile(procdir,[ID,'.exp',fn_ext]);
+    if exist(fn_expMontage,'file')
         writeLog(fn_log,'Reading EXP image ...\n');
-        [img(1).mat,label,fov,orient,info] = cmi_load(1,[],fn_exp);
+        [img(1).mat,label,fov,orient,info] = cmi_load(1,[],fn_expMontage);
         d = size(img(1).mat);
         voxsz = fov./d;
         img(1).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
@@ -100,7 +101,6 @@ try
     end
 
     % QC segmentation
-    rpt_add = {};
     if img(1).flag
         writeLog(fn_log,'Generating EXP montage...\n');
         ind = find(std(single(img(1).mat),1,[1 2])~=0)';
@@ -112,13 +112,12 @@ try
         else
             img(1).QCind = ind(round(linspace(1,Ni,QCns)));
         end
-        fn_save = fullfile(procdir,sprintf('%s_Montage.tif',img(1).info.label));
+        fn_expMontage = fullfile(procdir,sprintf('%s_Montage.tif',img(1).info.label));
         QCmontage('seg',img(1).mat(:,:,img(1).QCind),...
                   logical(img(1).label(:,:,img(1).QCind)),...
                   img(1).info.voxsz,...
-                  fn_save,...
+                  fn_expMontage,...
                   fullfile(opts.save_path,'Montage_exp.gif'));
-        rpt_add = {'Expiration:',fn_save};
     end
     if img(2).flag
         writeLog(fn_log,'Generating INSP montage...\n');
@@ -131,15 +130,13 @@ try
         else
             img(2).QCind = ind(round(linspace(1,Ni,QCns)));
         end
-        fn_save = fullfile(procdir,sprintf('%s_Montage.tif',img(2).info.label));
+        fn_insMontage = fullfile(procdir,sprintf('%s_Montage.tif',img(2).info.label));
         QCmontage('seg',img(2).mat(:,:,img(2).QCind),...
                   logical(img(2).label(:,:,img(2).QCind)),...
                   img(2).info.voxsz,...
-                  fn_save,...
+                  fn_insMontage,...
                   fullfile(opts.save_path,'Montage_ins.gif'));
-        rpt_add = [rpt_add,{'Inspiration:',fn_save}];
     end
-    % pipeline_report(R,'seg',rpt_add{:});
 
     % Airways
     if opts.airway
@@ -231,9 +228,6 @@ try
 
         % Add table to results
         res = addTableVarVal(res,T);
-
-        % Add table to report
-        % pipeline_report(R,'airway',T);
     end
 
     % ScatterNet for AT on Exp CT scan
@@ -252,9 +246,6 @@ try
             T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
             res = addTableVarVal(res,T);
             clear atMap
-
-            % Append to report
-            % pipeline_report(R,'scatnetAT',T);
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -276,9 +267,6 @@ try
             T = lobeLoop(img(2).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,img(2).mat,'scatnetEmph');
             res = addTableVarVal(res,T);
             clear SNemph
-            
-            % Append to report
-            % pipeline_report(R,'scatnetEmph',T)
         end
     catch err
         writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -301,37 +289,30 @@ try
             end
             T = pipeline_vesselseg( tins, tseg, tinfo, procdir, opts, fn_log);
             res = addTableVarVal(res,T);
-            
-            % Append to report
-            % pipeline_report(R,'vessel',T);
         end
     catch err
         writeLog(fn_log,'Vessel Analysis FAILED:\n%s\n',getReport(err));
     end
 
     % Quantify unregistered CT scans
-    rpt_add = {};
     writeLog(fn_log,'Quantifying unregistered statistics\n');
     if opts.unreg && img(1).flag
         T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
         res = addTableVarVal(res,T);
-        rpt_add = {'Expiration Image Statistics:',T};
     end
     if opts.unreg && img(2).flag
         T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
         res = addTableVarVal(res,T);
-        rpt_add = [rpt_add,{'Inspiration Image Statistics:',T}];
     end
-    % pipeline_report(R,'unreg',rpt_add{:});
 
     % Register I2E
     if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
         ins_reg = [];
-        fn_reg = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'ins.reg',fn_ext));
+        fn_regMontage = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'ins.reg',fn_ext));
         elxdir = fullfile(procdir,sprintf('elastix_%s',ID));
-        if exist(fn_reg,'file')
+        if exist(fn_regMontage,'file')
             writeLog(fn_log,'Loading registered INS from file...\n');
-            ins_reg = readNIFTI(fn_reg);
+            ins_reg = readNIFTI(fn_regMontage);
         elseif opts.reg
             writeLog(fn_log,'Performing registration...\nelxdir : %s\n',elxdir)
             pipeline_reg( img , elxdir , res.ID{1} , opts );
@@ -366,17 +347,13 @@ try
 
         % QC registration
         writeLog(fn_log,'Saving Registration Montage ...\n');
-        fn_save = fullfile(procdir,sprintf('%s_Reg_Montage.tif',res.ID{1}));
+        fn_regMontage = fullfile(procdir,sprintf('%s_Reg_Montage.tif',res.ID{1}));
         QCmontage('reg',ins_reg(:,:,img(1).QCind),...
                         logical(img(1).label(:,:,img(1).QCind)),...
                         img(1).info.voxsz,...
-                        fn_save,...
+                        fn_regMontage,...
                         fullfile(opts.save_path,'Montage_reg.gif'));
         img(2) = [];
-
-        % Append to report
-        chap = Chapter('Elastix Registration');
-        append(chap,Section(Title='Coregistered Image:',Content=FormalImage(fn_save)));
 
         % Jacobian analysis
         fn_jac = fullfile(procdir,sprintf('%s.jac%s',res.ID{1},fn_ext));
@@ -415,7 +392,6 @@ try
             if ~isempty(jac)
                 T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
-                % pipeline_report(R,'jac',T);
             end
         end
         
@@ -435,9 +411,6 @@ try
                 T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
                 res = addTableVarVal(res,T);
                 clear SNemph
-
-                % Add to report
-                % pipeline_report(R,'scatnetEmphReg',T);
             end
         catch err
             writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
@@ -458,9 +431,6 @@ try
             if ~isempty(dBlood)
                 T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),dBlood,'dBlood');
                 res = addTableVarVal(res,T);
-
-                % Add to report
-                % pipeline_report(R,'dblood',T);
             end
         end
         clear jac
@@ -497,9 +467,6 @@ try
             T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
             res = addTableVarVal(res,T);
 
-            % Add to report
-            % pipeline_report(R,'prm10');
-
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
             prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
                         [1,2],  3,      [4,5],  [8,9,10],   6    };
@@ -511,34 +478,17 @@ try
 
             % QC PRM
             writeLog(fn_log,'Generating PRM Montage ...\n');
-            fn_save = fullfile(procdir,sprintf('%s_PRM_Montage.tif',res.ID{1}));
+            fn_prmMontage = fullfile(procdir,sprintf('%s_PRM_Montage.tif',res.ID{1}));
             QCmontage('prm',img.mat(:,:,img(1).QCind),...
                             double(prm5(:,:,img(1).QCind)),...
                             img.info.voxsz,...
-                            fn_save,...
+                            fn_prmMontage,...
                             fullfile(opts.save_path,'Montage_PRM.gif'));
 
             % Tabulate 5-color PRM results
             writeLog(fn_log,'Tabulating 5-color PRM results...\n');
             T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
             res = addTableVarVal(res,T);
-
-            % Add to report
-            % pipeline_report(R,'prm',T,fn_save,fullfile(procdir,[res.ID{1},'_PRM_Scatter.tif']));
-
-            chap = Chapter('Standard PRM');
-            T.Properties.RowNames = T.ROI;
-            T = removevars(T,'ROI');
-            t = Table(T);
-            t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-            t.ColSpecGroups(1).Style = {Bold};
-            t.Children(1).Style = {Bold};
-            append(chap,Section(Title='PRM Overlay:',Content=FormalImage(fn_save)));
-            if isfile(fn_save_scatter)
-                append(chap,Section(Title='PRM Scatterplot:',Content=FormalImage(fn_save_scatter)));
-            end
-            append(chap,Section(Title='PRM Statistics:',Content=t));
-            append(R,chap);
 
             % Calculate tPRM
             if opts.tprm
@@ -597,22 +547,11 @@ try
 
                 end
 
-                % Add tPRM results to report
-                chap = Chapter('Topological PRM (tPRM) Results');
-                T = res(:,cellfun(@(x)startsWith(x,'tPRM_'),res.Properties.VariableNames));
-                T.Properties.RowNames = res.ROI';
-                t = Table(T);
-                t.Style = {FontSize('10pt'),NumberFormat('%0.2f')};
-                t.ColSpecGroups(1).Style = {Bold};
-                t.Children(1).Style = {Bold};
-                append(chap,t);
-                append(R,chap);
             end
         end
     end
 
     % Save Results Table:
-    % close(R);
     if istable(res)
         writetable(res,fn_res);
     else

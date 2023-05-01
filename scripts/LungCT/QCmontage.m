@@ -60,8 +60,6 @@ for i = 1:nf
 end
 figure(hf)
 montage(mat/255,'Size',montsz,'Parent',ha);
-% [~,tname] = fileparts(fname);
-% title(tname,'Interpreter','none');
 
 % Fit figure to axes
 axpos = tightPosition(ha);

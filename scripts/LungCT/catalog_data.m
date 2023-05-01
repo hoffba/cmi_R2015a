@@ -47,7 +47,7 @@ if isempty(D)
             %   UMlabel becomes the first string before _
             %   StudyDate becomes the first 8-digit number after that
             umlabel = ''; datstr = '';
-            tok = regexp(fn(j).name,'([^_]*).*(\d{8})?.*','tokens');
+            tok = regexp(fn(j).name,'(?:re_)?([^\.]*)_([^_\.]*)\.','tokens');
             if ~isempty(tok)
                 umlabel = tok{1}{1};
                 datstr = tok{1}{2};
