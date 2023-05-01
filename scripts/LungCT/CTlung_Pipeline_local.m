@@ -33,6 +33,7 @@ try
         orientchk = false;
         % CT from origin files
         writeLog(fn_log,'%s : CT ... ',tagstr{i});
+        img(i).sourcepath = fn_in{i};
         if fnflag(i,1)
             writeLog(fn_log,'file found: %s\n',fn{i,1});
             if ~fnflag(i,2)
@@ -43,7 +44,6 @@ try
         else
             orientchk = true;
             writeLog(fn_log,'   loading data ... ',fn{i,1});
-            img(i).sourcepath = fn_in{i};
             if isfolder(fn_in{i})
                 writeLog(fn_log,'from DICOM\n');
                 [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],'noprompt');
