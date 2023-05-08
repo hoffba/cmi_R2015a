@@ -183,7 +183,7 @@ for i = 1:size(roi,3)
 end
 % Postprocessing
 if nnz(emphMap)
-    emphMap = activecontour(imgaussfilt3(roi,var),emphMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1);
+    emphMap = logical(activecontour(imgaussfilt3(roi,var),emphMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1));
     % avgemphMap = mean(I(emphMap));
     % emphMap = gaussianBlur(roi,var)<= avgemphMap;
 end
