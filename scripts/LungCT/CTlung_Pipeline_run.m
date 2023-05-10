@@ -29,6 +29,7 @@ if strcmp(opts.cluster,'GL')
     end
 end
 
+% Determine pipeline inputs
 for i = 1:ncases
     ind = find(strcmp(cases(i).Scans.Tag,'Exp'));
     if isempty(ind)

@@ -7,29 +7,49 @@ import mlreportgen.dom.*;
 tt = tic;
 
 try
+    % Determine file names
+    [~,ID] = fileparts(procdir);
+    fn_ext = '.nii.gz';
     fn_log = fullfile(procdir,'pipeline_log.txt');
-    fn_expMontage = '';
-    fn_insMontage = '';
-    fn_regMontage = '';
-    fn_prmMontage = '';
-    fn_prmScatter = '';
+    fn_res = fullfile(procdir,[ID,'_PipelineResults.csv']);
+    % tPRM labels
+    prmlabel = ["norm","fsad","emph","pd","ns"];
+    mflabel = ["v","s","b","x"];
+    % ~~ Image files ~~
+    opts.fn.exp = fullfile(procdir,[ID,'.exp',fn_ext]);
+    opts.fn.ins = fullfile(procdir,[ID,'.ins',fn_ext]);
+    opts.fn.exp_seg = fullfile(procdir,[ID,'.exp.label',fn_ext]);
+    opts.fn.ins_seg = fullfile(procdir,[ID,'.ins.label',fn_ext]);
+    opts.fn.scatnetAT = fullfile(procdir,[ID,'.scatnetAT',fn_ext]);
+    opts.fn.scatnetEmph = fullfile(procdir,[ID,'.scatnetEmph',fn_ext]);
+    opts.fn.reg = fullfile(procdir,[ID,'.ins.reg',fn_ext]);
+    opts.fn.jac = fullfile(procdir,[ID,'.jac',fn_ext]);
+    opts.fn.scatnetEmphReg = fullfile(procdir,[ID,'.scatnetEmphInsR',fn_ext]);
+    opts.fn.dBlood = fullfile(procdir,[ID,'.dblood',fn_ext]);
+    opts.fn.prm = fullfile(procdir,[ID,'.prm',fn_ext]);
+    opts.fn.tprm = fullfile(procdir, string(ID) + ".tprm." + prmlabel(1:4) + "." + mflabel' + string(fn_ext));
+    % ~~ QC figure files ~~
+    opts.fn.expMontage = fullfile(procdir,[ID,'_Exp_Montage.tif']);
+    opts.fn.insMontage = fullfile(procdir,[ID,'_Ins_Montage.tif']);
+    opts.fn.regMontage = fullfile(procdir,[ID,'_InsReg_Montage.tif']);
+    opts.fn.prmMontage = fullfile(procdir,[ID,'_PRM_Montage.tif']);
+    opts.fn.prmScatter = fullfile(procdir,[ID,'_PRM_Scatter.tif']);
     
+    % Make sure GL has the correct path
     if strcmp(opts.cluster,'GL')
         opts.save_path = checkTurboPath(opts.save_path);
         opts.save_path = opts.save_path{1};
     end
     
+    % Number of slices to show in montages
     QC_nslice = 25;
-    fn_ext = '.nii.gz';
 
     writeLog(fn_log,'\n\nStarting Pipeline Process : %s\n',datetime('now'));
     writeLog(fn_log,'GIF location: %s\n',opts.save_path);
     
     % Initialize results table
-    [~,ID] = fileparts(procdir);
     regionnames = {'WholeLung','RL','LL','RUL','RML','RULplus','RLL','LUL','LULplus','LLi','LLL'};
     Nr = numel(regionnames);
-    fn_res = fullfile(procdir,sprintf('%s_PipelineResults.csv',ID));
     if exist(fn_res,'file')
         res = readtable(fn_res,'Delimiter',',');
     else
@@ -61,20 +81,18 @@ try
 
     % Load images
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
-    fn_expMontage = fullfile(procdir,[ID,'.exp',fn_ext]);
-    if exist(fn_expMontage,'file')
+    if exist(opts.fn.exp,'file')
         writeLog(fn_log,'Reading EXP image ...\n');
-        [img(1).mat,label,fov,orient,info] = cmi_load(1,[],fn_expMontage);
+        [img(1).mat,label,fov,orient,info] = cmi_load(1,[],opts.fn.exp);
         d = size(img(1).mat);
         voxsz = fov./d;
         img(1).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
             'voxvol',prod(voxsz),'name',label);
         img(1).flag = true;
     end
-    fn_ins = fullfile(procdir,[ID,'.ins',fn_ext]);
-    if exist(fn_ins,'file')
+    if exist(opts.fn.ins,'file')
         writeLog(fn_log,'Reading INS image ...\n');
-        [img(2).mat,label,fov,orient,info] = cmi_load(1,[],fn_ins);
+        [img(2).mat,label,fov,orient,info] = cmi_load(1,[],opts.fn.ins);
         d = size(img(2).mat);
         voxsz = fov./d;
         img(2).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
@@ -83,18 +101,16 @@ try
     end
 
     % Load segmentations
-    fn_exp_seg = fullfile(procdir,[ID,'.exp.label',fn_ext]);
     if img(1).flag
-        if exist(fn_exp_seg,'file')
-            img(1).label = cmi_load(1,[],fn_exp_seg);
+        if exist(opts.fn.exp_seg,'file')
+            img(1).label = cmi_load(1,[],opts.fn.exp_seg);
         else
             img(1).flag = false;
         end
     end
-    fn_ins_seg = fullfile(procdir,[ID,'.ins.label',fn_ext]);
     if img(2).flag
-        if exist(fn_ins_seg,'file')
-            img(2).label = cmi_load(1,[],fn_ins_seg);
+        if exist(opts.fn.ins_seg,'file')
+            img(2).label = cmi_load(1,[],opts.fn.ins_seg);
         else
             img(2).flag = false;
         end
@@ -112,11 +128,10 @@ try
         else
             img(1).QCind = ind(round(linspace(1,Ni,QCns)));
         end
-        fn_expMontage = fullfile(procdir,sprintf('%s_Montage.tif',img(1).info.label));
         QCmontage('seg',img(1).mat(:,:,img(1).QCind),...
                   logical(img(1).label(:,:,img(1).QCind)),...
                   img(1).info.voxsz,...
-                  fn_expMontage,...
+                  opts.fn.expMontage,...
                   fullfile(opts.save_path,'Montage_exp.gif'));
     end
     if img(2).flag
@@ -130,11 +145,10 @@ try
         else
             img(2).QCind = ind(round(linspace(1,Ni,QCns)));
         end
-        fn_insMontage = fullfile(procdir,sprintf('%s_Montage.tif',img(2).info.label));
         QCmontage('seg',img(2).mat(:,:,img(2).QCind),...
                   logical(img(2).label(:,:,img(2).QCind)),...
                   img(2).info.voxsz,...
-                  fn_insMontage,...
+                  opts.fn.insMontage,...
                   fullfile(opts.save_path,'Montage_ins.gif'));
     end
 
@@ -233,17 +247,17 @@ try
     % ScatterNet for AT on Exp CT scan
     try
         if opts.scatnetAT && img(1).flag
-            fn_scatnet = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnetAT',fn_ext));
             writeLog(fn_log,'Air trapping map ... ');
-            if exist(fn_scatnet,'file')
+            if exist(opts.fn.scatnetAT,'file')
                 writeLog(fn_log,'from file\n');
-                atMap = cmi_load(1,img(1).info.d(1:3),fn_scatnet);
+                atMap = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetAT));
             else
                 writeLog(fn_log,'generating with ScatNet\n');
                 atMap = ScatterNetAT(img(1).mat,logical(img(1).label),0);
-                cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,fn_scatnet);
+                cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetAT);
             end
-            T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
+            T = CTlung_LobeStats(img(1).label,'scatnetAT','pct',atMap);
+            % T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
             res = addTableVarVal(res,T);
             clear atMap
         end
@@ -254,17 +268,17 @@ try
     % ScatNet for Emph on Ins CT scan
     try
         if opts.scatnetEmph && img(2).flag
-            fn_SNemph = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnetEmphIns',fn_ext));
             writeLog(fn_log,'scatnetEmph map ... ');
-            if exist(fn_SNemph,'file')
+            if exist(opts.fn.scatnetEmph,'file')
                 writeLog(fn_log,'from file\n');
-                SNemph = cmi_load(1,img(2).info.d(1:3),fn_SNemph);
+                SNemph = logical(cmi_load(1,img(2).info.d(1:3),opts.fn.scatnetEmph));
             else
                 writeLog(fn_log,'generating with ScatNet\n');
                 SNemph = ScatterNetEMPH(img(2).mat,logical(img(2).label),0);
-                cmi_save(0,SNemph,'ScatNet',img(2).info.fov,img(2).info.orient,fn_SNemph);
+                cmi_save(0,SNemph,'ScatNet',img(2).info.fov,img(2).info.orient,opts.fn.scatnetEmph);
             end
-            T = lobeLoop(img(2).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,img(2).mat,'scatnetEmph');
+            T = CTlung_LobeStats(img(2).label,'scatnetEmph','pct',SNemph);
+            % T = lobeLoop(img(2).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,img(2).mat,'scatnetEmph');
             res = addTableVarVal(res,T);
             clear SNemph
         end
@@ -308,11 +322,10 @@ try
     % Register I2E
     if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
         ins_reg = [];
-        fn_regMontage = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'ins.reg',fn_ext));
         elxdir = fullfile(procdir,sprintf('elastix_%s',ID));
-        if exist(fn_regMontage,'file')
+        if exist(opts.fn.reg,'file')
             writeLog(fn_log,'Loading registered INS from file...\n');
-            ins_reg = readNIFTI(fn_regMontage);
+            ins_reg = readNIFTI(opts.fn.reg);
         elseif opts.reg
             writeLog(fn_log,'Performing registration...\nelxdir : %s\n',elxdir)
             pipeline_reg( img , elxdir , res.ID{1} , opts );
@@ -347,21 +360,21 @@ try
 
         % QC registration
         writeLog(fn_log,'Saving Registration Montage ...\n');
-        fn_regMontage = fullfile(procdir,sprintf('%s_Reg_Montage.tif',res.ID{1}));
+        opts.fn.regMontage = fullfile(procdir,sprintf('%s_Reg_Montage.tif',res.ID{1}));
         QCmontage('reg',ins_reg(:,:,img(1).QCind),...
                         logical(img(1).label(:,:,img(1).QCind)),...
                         img(1).info.voxsz,...
-                        fn_regMontage,...
+                        opts.fn.regMontage,...
                         fullfile(opts.save_path,'Montage_reg.gif'));
         img(2) = [];
 
         % Jacobian analysis
-        fn_jac = fullfile(procdir,sprintf('%s.jac%s',res.ID{1},fn_ext));
+        opts.fn.jac = fullfile(procdir,sprintf('%s.jac%s',res.ID{1},fn_ext));
         if opts.jac
             jac = [];
-            if exist(fn_jac,'file')
+            if exist(opts.fn.jac,'file')
                 writeLog(fn_log,'Analyzing Jacobian map...\n');
-                jac = cmi_load(1,[],fn_jac);
+                jac = cmi_load(1,[],opts.fn.jac);
             else
                 writeLog(fn_log,'Jacobian file not found.\n');
                 if isfolder(elxdir)
@@ -382,7 +395,7 @@ try
                     fn_jac_elx = fullfile(elxdir,'spatialJacobian.nii');
                     if exist(fn_jac_elx,'file')
                         jac = cmi_load(1,[],fn_jac_elx);
-                        cmi_save(0,jac,'spatialJacobian',img(1).info.fov,img(1).info.orient,fn_jac);
+                        cmi_save(0,jac,'spatialJacobian',img(1).info.fov,img(1).info.orient,opts.fn.jac);
                         delete(fn_jac_elx);
                     else
                         writeLog(fn_log,'Jacobian processing failed.\n');
@@ -390,7 +403,8 @@ try
                 end
             end
             if ~isempty(jac)
-                T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
+                T = CTlung_LobeStats(img.label,'Jac','mean',[],jac);
+                % T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
             end
         end
@@ -398,17 +412,17 @@ try
         % ScatNet for Emph
         try
             if opts.scatnetEmph && img(1).flag
-                fn_SNemph = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'scatnetEmphInsR',fn_ext));
                 writeLog(fn_log,'scatnetEmph map ... ');
-                if exist(fn_SNemph,'file')
+                if exist(opts.fn.scatnetEmphReg,'file')
                     writeLog(fn_log,'from file\n');
-                    SNemph = cmi_load(1,img(1).info.d(1:3),fn_SNemph);
+                    SNemph = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetEmphReg));
                 else
                     writeLog(fn_log,'generating with ScatNet\n');
                     SNemph = ScatterNetEMPH(ins_reg,logical(img(1).label),0);
-                    cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,fn_SNemph);
+                    cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetEmphReg);
                 end
-                T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
+                T = CTlung_LobeStats(img.label,'scatnetEmphReg','pct',SNemph);
+                % T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
                 res = addTableVarVal(res,T);
                 clear SNemph
             end
@@ -419,39 +433,36 @@ try
         % Blood density change map:
         if opts.dBlood
             dBlood = [];
-            fn_dBlood = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'dblood',fn_ext));
-            if exist(fn_dBlood,'file')
+            if exist(opts.fn.dBlood,'file')
                 writeLog(fn_log,'Loading dBlood from file...\n');
-                dBlood = readNIFTI(fn_dBlood);
+                dBlood = readNIFTI(opts.fn.dBlood);
             elseif exist('ins_reg','var') && exist('jac','var')
                 writeLog(fn_log,'Calculating dBlood...\n');
                 dBlood = pipeline_blood_density(img(1).mat,ins_reg,jac,img(1).label);
-                cmi_save(0,dBlood,{'dBlood'},img(1).info.fov,img(1).info.orient,fn_dBlood);
+                cmi_save(0,dBlood,{'dBlood'},img(1).info.fov,img(1).info.orient,opts.fn.dBlood);
             end
             if ~isempty(dBlood)
-                T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),dBlood,'dBlood');
+                T = CTlung_LobeStats(img.label,'dBlood','mean',[],dBlood);
+                % T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),dBlood,'dBlood');
                 res = addTableVarVal(res,T);
             end
         end
-        clear jac
+        clear jac dBlood
         
         % PRM calculation
         prm10 = [];
         if opts.prm
-            fn_PRM = fullfile(procdir,sprintf('%s.%s%s',res.ID{1},'prm',fn_ext));
-            fn_save_scatter = fullfile(procdir,sprintf('%s_PRM_Scatter',res.ID{1}));
-            if exist(fn_PRM,'file')
+            if exist(opts.fn.prm,'file')
                 writeLog(fn_log,'Loading PRM from file...\n');
-                prm10 = int8(readNIFTI(fn_PRM));
+                prm10 = int8(readNIFTI(opts.fn.prm));
             else
                 writeLog(fn_log,'Calculating PRM...\n');
                 [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
-                    fn_save_scatter,...
-                    fullfile(opts.save_path,'Montage_PRM_Scatter.gif'));
+                    opts.fn.prmScatter,fullfile(opts.save_path,'Montage_PRM_Scatter.gif'));
 
                 % Save PRM
                 writeLog(fn_log,'Saving PRM as NIFTI ... ');
-                stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,fn_PRM);
+                stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,opts.fn.prm);
                 if stat
                     writeLog(fn_log,'  PRM saved\n');
                 else
@@ -464,55 +475,42 @@ try
         if ~isempty(prm10)
             % Tabulate 10-color PRM results
             writeLog(fn_log,'Tabulating 10-color PRM results...\n');
-            T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
+            T = CTlung_LobeStats(img.label,'PRM','pct',categorical(prm10,1:10,string(1:10)));
+            % T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
             res = addTableVarVal(res,T);
 
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
-            prmlabel = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
-                        [1,2],  3,      [4,5],  [8,9,10],   6    };
+            prmtranslate = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
+                            [1,2],  3,      [4,5],  [8,9,10],   6    };
             prm5 = int8(zeros(size(prm10)));
-            for i = 1:size(prmlabel,2)
-                prm5(ismember(prm10,prmlabel{2,i})) = i;
+            for i = 1:size(prmtranslate,2)
+                prm5(ismember(prm10,prmtranslate{2,i})) = i;
             end
             clear prm10
 
             % QC PRM
             writeLog(fn_log,'Generating PRM Montage ...\n');
-            fn_prmMontage = fullfile(procdir,sprintf('%s_PRM_Montage.tif',res.ID{1}));
             QCmontage('prm',img.mat(:,:,img(1).QCind),...
                             double(prm5(:,:,img(1).QCind)),...
                             img.info.voxsz,...
-                            fn_prmMontage,...
+                            opts.fn.prmMontage,...
                             fullfile(opts.save_path,'Montage_PRM.gif'));
 
             % Tabulate 5-color PRM results
             writeLog(fn_log,'Tabulating 5-color PRM results...\n');
-            T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
+            % T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
+            T = CTlung_LobeStats(img.label,'PRM','pct',categorical(prm5,1:5,string(prmlabel)));
             res = addTableVarVal(res,T);
 
             % Calculate tPRM
             if opts.tprm
-                prmlabel = ["norm","fsad","emph","pd"];
-                mflabel = ["v","s","b","x"];
-                fn_tprm = fullfile(procdir,...
-                    string(res.ID{1})+".tprm."+prmlabel+"."+mflabel'+string(fn_ext));
-                if all(cellfun(@(x)exist(x,'file'),fn_tprm))
-                    writeLog(fn_log,'Loading tPRM from files ...\n');
-                    clear prm5;
-                    for iprm = 1:numel(prmlabel)
-                        for imf = 1:numel(mflabel)
-                            writeLog(fn_log,'   %s - %s\n',prmlabel(iprm),mflabel(imf))
-                            tprm = readNIFTI(fn_tprm(imf,iprm));
-                            str = prmlabel(iprm)+'_'+upper(mflabel(imf));
-                            T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                            res = addTableVarVal(res,T);
-                        end
-                    end
-                elseif opts.tprm
-                    t = tic;
-                    writeLog(fn_log,'Generating tPRM ...\n');
+                % Check if tPRM maps already exist
+                fn_chk = all(cellfun(@(x)exist(x,'file'),opts.fn.tprm),"all");
 
-                    % Calculate MF values
+                t = tic;
+                if ~fn_chk
+                    % Need to calculate gridded MF
+                    writeLog(fn_log,'Generating tPRM ...\n');
                     p = minkowskiFun(prm5,'thresh',1:4,...
                         'tmode','==',...
                         'n',10*ones(1,3),...
@@ -520,33 +518,31 @@ try
                         'voxsz',img.info.voxsz,...
                         'mask',logical(img.label),...
                         'prog',0);
-                    clear prm5;
-
-                    % Interpolate to maps
-                    for ithresh = 1:size(p.MF,1)
-                        for imf = 1:size(p.MF,2)
-                            writeLog(fn_log,'   %s - %s\n',prmlabel(ithresh),mflabel(imf));
-
-                            % Interpolate to image space
-                            tstr = prmlabel(ithresh) + '.' + mflabel(imf);
-                            writeLog(fn_log,'       Interpolating\n');
-                            tprm = grid2img(p.MF(ithresh,imf,:),p.ind,p.mask,3,1);
-
-                            % Save tPRM image
-                            writeLog(fn_log,'       Saving NIFTI\n');
-                            cmi_save(0,single(tprm),{char(tstr)},img.info.fov,img.info.orient,char(fn_tprm(imf,ithresh)));
-
-                            % Tabulate statistics
-                            writeLog(fn_log,'       Tabulating means\n');
-                            str = prmlabel(ithresh)+'_'+upper(mflabel(imf));
-                            T = lobeLoop(img.label,@(mask,tprm,str)tabulateTPRM(mask,tprm,str),tprm,str);
-                            res = addTableVarVal(res,T);
-                        end
-                    end
-                    writeLog(fn_log,'... tPRM complete (%s)\n',datetime([0,0,0,0,0,toc(t)],'Format','HH:mm:ss'));
-
+                else
+                    writeLog(fn_log,'Loading tPRM from files ...\n');
                 end
+                clear prm5;
 
+                % Analyze tPRM means
+                for iprm = 1:4
+                    for imf = 1:numel(mflabel)
+                        str = prmlabel(iprm) + '_' + upper(mflabel(imf));
+                        writeLog(fn_log,'   %s ... ',str);
+                        if fn_chk
+                            writeLog(fn_log,'from file ... ');
+                            tprm = readNIFTI(opts.fn.tprm(imf,iprm));
+                        else
+                            writeLog(fn_log,'interpolating ... ');
+                            tprm = grid2img(p.MF(iprm,imf,:),p.ind,p.mask,3,1);
+                            writeLog(fn_log,'Saving NIFTI ... ');
+                            cmi_save(0,single(tprm),{char(str)},img.info.fov,img.info.orient,opts.fn.tprm{imf,iprm});
+                        end
+                        writeLog(fn_log,'Tabulating means\n');
+                        T = CTlung_LobeStats(img.label, "tPRM_" + str, 'mean', [], tprm);
+                        res = addTableVarVal(res,T);
+                    end
+                end
+                writeLog(fn_log,'... tPRM complete (%s)\n',datetime([0,0,0,0,0,toc(t)],'Format','HH:mm:ss'));
             end
         end
     end
