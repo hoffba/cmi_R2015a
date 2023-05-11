@@ -257,7 +257,6 @@ try
                 cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetAT);
             end
             T = CTlung_LobeStats(img(1).label,'scatnetAT','pct',atMap);
-            % T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),atMap,img(1).mat,'scatnetAT');
             res = addTableVarVal(res,T);
             clear atMap
         end
@@ -278,7 +277,6 @@ try
                 cmi_save(0,SNemph,'ScatNet',img(2).info.fov,img(2).info.orient,opts.fn.scatnetEmph);
             end
             T = CTlung_LobeStats(img(2).label,'scatnetEmph','pct',SNemph);
-            % T = lobeLoop(img(2).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,img(2).mat,'scatnetEmph');
             res = addTableVarVal(res,T);
             clear SNemph
         end
@@ -404,7 +402,6 @@ try
             end
             if ~isempty(jac)
                 T = CTlung_LobeStats(img.label,'Jac','mean',[],jac);
-                % T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),jac,'Jac');
                 res = addTableVarVal(res,T);
             end
         end
@@ -422,7 +419,6 @@ try
                     cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetEmphReg);
                 end
                 T = CTlung_LobeStats(img.label,'scatnetEmphReg','pct',SNemph);
-                % T = lobeLoop(img(1).label,@(mask,SN,img,str)tabulateScatNet(mask,SN,img,str),SNemph,ins_reg,'scatnetEmph');
                 res = addTableVarVal(res,T);
                 clear SNemph
             end
@@ -443,7 +439,6 @@ try
             end
             if ~isempty(dBlood)
                 T = CTlung_LobeStats(img.label,'dBlood','mean',[],dBlood);
-                % T = lobeLoop(img.label,@(mask,A,str)tabulateStats(mask,A,str),dBlood,'dBlood');
                 res = addTableVarVal(res,T);
             end
         end
@@ -565,39 +560,5 @@ res.Properties.RowNames = {};
     
 writeLog(fn_log,'Pipeline total time = %s\n',datetime([0,0,0,0,0,toc(tt)],'Format','HH:mm:ss'))
 
-function T = tabulateStats(mask,A,str)
-    vname = strcat(str,{'_mean','_var'});
-    nv = numel(vname);
-    T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),'VariableNames',vname);
-    T.(vname{1}) = mean(A(mask));
-    T.(vname{2}) = var(A(mask));
-    
-function T = tabulateScatNet(mask,scatnet,img,str)
-    vname = strcat(str,{'_pct','_mean'});
-    nv = numel(vname);
-    T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),'VariableNames',vname);
-    T.(vname{1}) = nnz(scatnet(mask))/nnz(mask)*100;
-    T.(vname{2}) = mean(img(mask & scatnet));
 
-function T = tabulatePRM(mask,prm,flag)
-    if flag % 10-color
-        vals = 1:10;
-        tag = cellfun(@num2str,num2cell(vals),'UniformOutput',false);
-    else % 5-color
-        vals = 1:5;
-        tag = {'Norm', 'fSAD', 'Emph', 'PD', 'NS'};
-    end
-    nv = numel(vals);
-    vname = strcat('PRM_',tag);
-    T = table('Size',[1,nv],'VariableTypes',repmat({'double'},1,nv),...
-        'VariableNames',vname);
-    np = nnz(mask);
-    for i = 1:numel(vals)
-        T.(vname{i}) = nnz(prm(mask)==i)/np*100;
-    end
-    
-function T = tabulateTPRM(mask,tprm,str)
-    vname = sprintf('tPRM_%s',str);
-    T = table('Size',[1,1],'VariableTypes',{'double'},'VariableNames',{vname});
-    T.(vname) = mean(tprm(mask));
     
