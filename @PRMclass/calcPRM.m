@@ -8,7 +8,8 @@ function [labels,prmpcts] = calcPRM(self,vals,vec,cvec,clabel,mask)
 
 labels = self.prmmap(:,2);
 prmpcts = zeros(1,length(labels));
-if (nargin==6) % need all inputs
+if (nargin>=6) % need all inputs
+
     [np,ndim] = size(vals);
     if (ndim==length(vec)) && (numel(find(mask))==np)
         tthresh = self.thresh; tthresh(tthresh(1:2*size(tthresh,1))==0) = cvec;
@@ -75,16 +76,21 @@ if (nargin==6) % need all inputs
                 if isempty(self.hascatter) || ~(ishandle(self.hascatter) ...
                         && strcmp(get(self.hascatter,'Tag'),'PRMscatter'))
                     pos = get(0,'ScreenSize');
-                    self.hfscatter = figure('Name','PRMscatter',...
-                        'Position',[pos(3:4),pos(3:4)*2]/4);
-                    self.hascatter = subplot(1,2,1);
+                    self.hfscatter = figure('Name','PRMscatter');
+                    if self.statchk
+                        self.hfscatter.Position = [pos(3:4)/4,pos(3:4)/2];
+                        self.hascatter = subplot(1,2,1);
+                        hatext = subplot(1,2,2);
+                        set(hatext,'YDir','reverse');
+                        axis(hatext,'off');
+                        title(hatext,'PRM Stats:','FontSize',12,'FontWeight','bold');
+                        self.htscatter = text(0,0.5,'');
+                        set(self.htscatter,'FontName','FixedWidth');
+                    else
+                        self.hfscatter.Position = [pos(3:4)/4,ones(1,2)*min(pos(3:4))/2];
+                        self.hascatter = axes;
+                    end
                     set(self.hascatter,'Tag','PRMscatter');
-                    hatext = subplot(1,2,2);
-                    set(hatext,'YDir','reverse');
-                    axis(hatext,'off');
-                    title(hatext,'PRM Stats:','FontSize',12,'FontWeight','bold');
-                    self.htscatter = text(0,0.5,'');
-                    set(self.htscatter,'FontName','FixedWidth');
                 end
                 
                 % Determine threshold lines:
@@ -111,19 +117,31 @@ if (nargin==6) % need all inputs
                 for i = 1:self.nprm
                     tot(i) = sum(prmvals==i);
                 end
-                npcropped = nnz(prmvals);
-                str = [ self.prmmap(:,2) , num2cell(tot/np*100) , ...
-                        num2cell(tot/npcropped*100)]';
-                set(self.htscatter,'String',...
-                    ['                [% of VOI] ; [% of PRM]',newline...
-                     sprintf('%16s = % 7.3f ; % 7.3f\n',str{:})]);
-                
+                if self.statchk
+                    npcropped = nnz(prmvals);
+                    str = [ self.prmmap(:,2) , num2cell(tot/np*100) , ...
+                            num2cell(tot/npcropped*100)]';
+                    set(self.htscatter,'String',...
+                        ['                [% of VOI] ; [% of PRM]',newline...
+                         sprintf('%16s = % 7.3f ; % 7.3f\n',str{:})]);
+                else
+                    ha.Units = 'pixels';
+                    pos = ha.Position;
+                    ti = ha.TightInset;
+                    pos(1) = ti(1);
+                    pos(2) = ti(2);
+                    pos(3) = pos(3) + ti(1) + ti(3);
+                    pos(4) = pos(4) + ti(2) + ti(4);
+                    ha.Position(1:2) = pos(1:2);
+                    self.hfscatter.Position(3:4) = pos(3:4);
+                end
 %   Commented out by CJG 20151103. Using check box for Wiener2 filter in ImageClass/calcPRM.                 
 %                 % Calculate PRM stats to return:
 %                 if self.normchk
 %                     np = nnz(prmvals);
 %                 end
                 prmpcts = tot/np;
+                
                 
                 self.hascatter = ha;
                 self.hfscatter = get(ha,'Parent');

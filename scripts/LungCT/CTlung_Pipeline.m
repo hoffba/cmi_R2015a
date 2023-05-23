@@ -148,6 +148,8 @@ end
         h.panel_other = uipanel(h.tab_opts,'Position',[445, fheight-415, 215, 260],'Title','Other Options','FontWeight','bold');
         h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
             'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
+        h.peds_check = uicheckbox(h.panel_other,'Position',[5,   160, 200, 20],'Text','Pediatrics',...
+            'Value',opts.peds,'ValueChangedFcn',@setOpts,'Tag','peds');
         
     % Panel: Cluster Options
         h.panel_cluster = uipanel(h.tab_opts,'Position',[665, fheight-415, 215, 260],'Title','Cluster Options','FontWeight','bold');

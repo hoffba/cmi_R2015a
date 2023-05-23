@@ -15,15 +15,16 @@ img.prm.setOpts('thresh',info.thresh,...
                 'filtchk', true,...
                 'filttype', 'median',...
                 'filtstr', [3 3 3], ...
-                'SPopts',info.SPopts);
+                'SPopts',info.SPopts,...
+                'statchk',false);
 
 %% Generate PRM:
 [labels,vals] = img.calcPRM(2);
 prm = int8(img.prm.mat);
 
 %% Add title to axes
-[~,tname] = fileparts(svname);
-title(img.prm.hascatter,tname,'Interpreter','none');
+% [~,tname] = fileparts(svname);
+% title(img.prm.hascatter,tname,'Interpreter','none');
 
 %% Save scatterplot figure
 print(img.prm.hfscatter,svname,'-dtiff');

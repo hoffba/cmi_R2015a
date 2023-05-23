@@ -18,6 +18,7 @@ p.addOptional('filttype',nan,@(x) ischar(x));
 p.addOptional('filtstr',nan,@(x) isvector(x) && (length(x)==2||length(x)==3)); %changed this CJG
 p.addOptional('SPopts',nan,@isstruct);
 p.addOptional('guicheck',nan,@isscalar);
+p.addOptional('statchk',true,@isscalar);
 p.parse(varargin{:});
 opts = rmfield(p.Results,p.UsingDefaults);
 
@@ -103,4 +104,7 @@ end
 if isfield(opts,'guicheck')
     self.guicheck = opts.guicheck;
     stat = true;
+end
+if isfield(opts,'statchk')
+    self.statchk = logical(opts.statchk);
 end

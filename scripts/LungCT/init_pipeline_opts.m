@@ -22,6 +22,7 @@ opts = struct( ...
               ...
               'quickreg',       false   ,... % OPTION to skip last step in registration for speed
               'orient_check',   true    ,... % OPTION to auto-correct image orientation
+              'peds',           false   ,... % OPTION for Pediatrics analysis (Scatnet AT)
               'jac',            true    ,... % OPTION to generate Jacobian from reg
               'jacmat',         false   ,... % OPTION to generate Jacobian matrix from reg
               'def',            false   ,... % OPTION to generate deformation fields from reg

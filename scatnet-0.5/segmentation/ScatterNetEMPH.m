@@ -27,14 +27,6 @@ omega=.0007; % to determine the number of clusters to segment each 2D slice
 var = 1.0; % to blur the image if it has a lot of noise
 laaval = -950;
 
-% % NIFTIREAD for Nifti file formats
-% I = niftiread(imgFlNm);
-% mask = niftiread(msFlNm);
-% 
-% % %MHDREAD for MHD file formats
-% % [I,label,fov,info] = readMHD(imgFlNm);
-% % [mask,label2,fov2,info2] = readMHD(msFlNm);
-
 if ~isa(imgFlNm,'char')
     I = imgFlNm;
     mask = msFlNm;
@@ -57,12 +49,9 @@ end
  end
    
 d = size(I);
- 
 roi = double(I).*logical(mask);
-% roi = permute(roi, [2 1 3]);
 mask2 = mask;
 mask = ((mask == 1) | (mask == 2));
-% mask = bwlabeln(logical(mask),26);
 
 % Calculate the -950HU Threshold and the %EMPH due to the LAA Method
 laaMap = roi <= laaval;
@@ -73,6 +62,20 @@ meanvallaaMap = mean(I(laaMap));
 
 % res = FctSegEmph(gaussianBlur(roi,var),ws,segn,1,omega,beta);
 res = FctSegEMPH(imgaussfilt3(roi,var),ws,segn,1,omega,beta,laaval);
+
+% Set of fixed filters
+f1=fspecial('log',[3,3],.05);
+f2=fspecial('log',[5,5],.18);
+f3=fspecial('log',[7,7],.25);
+f4=fspecial('log',[9,9],.35);
+f5=gabor_fn(1.5,pi/2);
+f6=gabor_fn(1.5,0);
+f7=gabor_fn(1.5,pi/4);
+f8=gabor_fn(1.5,-pi/4);
+f9=gabor_fn(2.5,pi/2);
+f10=gabor_fn(2.5,0);
+f11=gabor_fn(2.5,pi/4);
+f12=gabor_fn(2.5,-pi/4);
 
 emphMap = false(d);
 for i = 1:size(roi,3)
@@ -85,19 +88,6 @@ for i = 1:size(roi,3)
         temp = unique(mask(:,:,i));
         if (length(temp) > 1)
 
-            % Set of fixed filters
-            f1=fspecial('log',[3,3],.05);
-            f2=fspecial('log',[5,5],.18);
-            f3=fspecial('log',[7,7],.25);
-            f4=fspecial('log',[9,9],.35);
-            f5=gabor_fn(1.5,pi/2);
-            f6=gabor_fn(1.5,0);
-            f7=gabor_fn(1.5,pi/4);
-            f8=gabor_fn(1.5,-pi/4);
-            f9=gabor_fn(2.5,pi/2);
-            f10=gabor_fn(2.5,0);
-            f11=gabor_fn(2.5,pi/4);
-            f12=gabor_fn(2.5,-pi/4);
 
             Ig1=subImg(img,f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12);
             Ig=cat(3,single(img),Ig1);

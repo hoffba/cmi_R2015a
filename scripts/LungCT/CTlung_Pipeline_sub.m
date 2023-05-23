@@ -9,6 +9,7 @@ tt = tic;
 try
     % Determine file names
     [~,ID] = fileparts(procdir);
+    opts.ID = ID;
     fn_ext = '.nii.gz';
     fn_log = fullfile(procdir,'pipeline_log.txt');
     fn_res = fullfile(procdir,[ID,'_PipelineResults.csv']);
@@ -253,7 +254,12 @@ try
                 atMap = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetAT));
             else
                 writeLog(fn_log,'generating with ScatNet\n');
-                atMap = ScatterNetAT(img(1).mat,logical(img(1).label),0);
+                if opts.peds
+                    str = 'AT_PEDS';
+                else
+                    str = 'AT';
+                end
+                atMap = ScatterNet_Seg(str,img(1).mat,logical(img(1).label));
                 cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetAT);
             end
             T = CTlung_LobeStats(img(1).label,'scatnetAT','pct',atMap);
@@ -273,7 +279,7 @@ try
                 SNemph = logical(cmi_load(1,img(2).info.d(1:3),opts.fn.scatnetEmph));
             else
                 writeLog(fn_log,'generating with ScatNet\n');
-                SNemph = ScatterNetEMPH(img(2).mat,logical(img(2).label),0);
+                SNemph = ScatterNet_Seg('EMPH',img(2).mat,logical(img(2).label));
                 cmi_save(0,SNemph,'ScatNet',img(2).info.fov,img(2).info.orient,opts.fn.scatnetEmph);
             end
             T = CTlung_LobeStats(img(2).label,'scatnetEmph','pct',SNemph);
@@ -415,7 +421,7 @@ try
                     SNemph = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetEmphReg));
                 else
                     writeLog(fn_log,'generating with ScatNet\n');
-                    SNemph = ScatterNetEMPH(ins_reg,logical(img(1).label),0);
+                    SNemph = ScatterNet_Seg('EMPH',ins_reg,logical(img(1).label));
                     cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetEmphReg);
                 end
                 T = CTlung_LobeStats(img.label,'scatnetEmphReg','pct',SNemph);
@@ -550,6 +556,9 @@ try
         save(fn_res,'res');
     end
     
+    % Generate Report
+    % pipeline_report(fullfile(procdir,[ID,'_PipelineReport.pdf']),res,opts);
+
 catch err
     writeLog(fn_log,'ERROR in CTlung_Pipeline_sub:\n%s',getReport(err,'extended','hyperlinks','off'));
     assignin('base','PipelineError',err);
