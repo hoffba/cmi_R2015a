@@ -253,10 +253,12 @@ try
                 writeLog(fn_log,'from file\n');
                 atMap = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetAT));
             else
-                writeLog(fn_log,'generating with ScatNet\n');
+                writeLog(fn_log,'generating with ScatNet ... ');
                 if opts.peds
+                    writeLog(fn_log,'ScatterNetAT_PEDS\n')
                     str = 'AT_PEDS';
                 else
+                    writeLog(fn_log,'ScatterNetAT\n')
                     str = 'AT';
                 end
                 atMap = ScatterNet_Seg(str,img(1).mat,logical(img(1).label));

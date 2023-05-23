@@ -88,7 +88,7 @@ end
         fwidth = scsz(3)/2;
         fheight = scsz(4)*2/3;
         h.fig = uifigure('Position',round([(scsz(3)-fwidth)/2, scsz(4)/6, fwidth, fheight]),...
-            'Name','Select DICOMcatalog data for processing:');%,'CloseRequestFcn',@cancel_callback);
+            'Name','Select DICOMcatalog data for processing:');
         h.tabgroup = uitabgroup(h.fig,'Position',[0,0,fwidth,fheight]);
         h.tab_opts = uitab(h.tabgroup,'Title','Options');
         h.tab_scans = uitab(h.tabgroup,'Title','Scans');
