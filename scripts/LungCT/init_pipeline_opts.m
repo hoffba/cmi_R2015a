@@ -13,6 +13,7 @@ opts = struct( ...
               'unreg',          true    ,... % MODULE unregistered stats for Exp/Ins
               'airway',         true    ,... % MODULE airways results from YACTA
               'scatnetAT',      true    ,... % MODULE scatternet air trapping
+              'scatnetAT_PEDS', false   ,... % MODULE scatternet air trapping for pediatrics
               'vessel',         true    ,... % MODULE blood vessel analysis
               'reg',            true    ,... % MODULE register Ins to Exp
               'scatnetEmph',    true    ,... % MODULE scatternet Emph map

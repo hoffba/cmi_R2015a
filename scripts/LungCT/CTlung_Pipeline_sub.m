@@ -22,6 +22,7 @@ try
     opts.fn.exp_seg = fullfile(procdir,[ID,'.exp.label',fn_ext]);
     opts.fn.ins_seg = fullfile(procdir,[ID,'.ins.label',fn_ext]);
     opts.fn.scatnetAT = fullfile(procdir,[ID,'.scatnetAT',fn_ext]);
+    opts.fn.scatnetAT_PEDS = fullfile(procdir,[ID,'.scatnetAT_PEDS',fn_ext]);
     opts.fn.scatnetEmph = fullfile(procdir,[ID,'.scatnetEmph',fn_ext]);
     opts.fn.reg = fullfile(procdir,[ID,'.ins.reg',fn_ext]);
     opts.fn.jac = fullfile(procdir,[ID,'.jac',fn_ext]);
@@ -254,17 +255,30 @@ try
                 atMap = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetAT));
             else
                 writeLog(fn_log,'generating with ScatNet ... ');
-                if opts.peds
-                    writeLog(fn_log,'ScatterNetAT_PEDS\n')
-                    str = 'AT_PEDS';
-                else
-                    writeLog(fn_log,'ScatterNetAT\n')
-                    str = 'AT';
-                end
-                atMap = ScatterNet_Seg(str,img(1).mat,logical(img(1).label));
+                atMap = ScatterNet_Seg('AT',img(1).mat,logical(img(1).label));
                 cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetAT);
             end
             T = CTlung_LobeStats(img(1).label,'scatnetAT','pct',atMap);
+            res = addTableVarVal(res,T);
+            clear atMap
+        end
+    catch err
+        writeLog(fn_log,'ScatNet FAILED:\n%s\n',getReport(err));
+    end
+
+    % ScatterNet for AT_PEDS on Exp CT scan
+    try
+        if opts.scatnetAT_PEDS && img(1).flag
+            writeLog(fn_log,'Air trapping map ... ');
+            if exist(opts.fn.scatnetAT_PEDS,'file')
+                writeLog(fn_log,'from file\n');
+                atMap = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetAT_PEDS));
+            else
+                writeLog(fn_log,'generating with ScatNetAT_PEDS\n');
+                atMap = ScatterNet_Seg('AT_PEDS',img(1).mat,logical(img(1).label));
+                cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetAT_PEDS);
+            end
+            T = CTlung_LobeStats(img(1).label,'scatnetAT_PEDS','pct',atMap);
             res = addTableVarVal(res,T);
             clear atMap
         end
