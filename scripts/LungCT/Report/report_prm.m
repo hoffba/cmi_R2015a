@@ -9,7 +9,7 @@ function D = report_prm(procdir,res,opts,R)
     else
         % Generate Document object
         D = Document(fullfile(procdir,['PRM_Report_',opts.ID]),'pdf',...
-            fullfile(fileparts(mfilename("fullpath")),'PRM_Report.pdftx'));
+            fullfile(fileparts(which('report_prm')),'PRM_Report.pdftx'));
         open(D);
     
         % Set up page margins
