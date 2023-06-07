@@ -167,16 +167,23 @@
     
     <dptemplate name = "SectionDefaultPageHeader">
         <table width="100%">
-            <tr style="border-bottom: 1pt solid #ccc;">              
-                <td style="text-align:left; padding-bottom:2pt" valign="bottom">
+            <tr>              
+                <td rowspan="2" style="text-align:left; padding-bottom:2pt" valign="bottom">
                     <img src="images/logo.png"></img></td>
-                <td style="text-align:center; padding-bottom:2pt; font-family:arial;
-                    font-size: 10pt; font-weight: bold" valign="bottom">
-                    <hole id="Project">PROJECT</hole></td>
+                <td style="text-align:right; padding-bottom:2pt; font-family:arial;
+                    font-size: 16pt; font-weight: bold" valign="bottom">
+                    Parametric Response Map (PRM)</td>
+            </tr>
+            <tr>
                 <td style="text-align:right; padding-bottom:2pt; font-family:arial;
                     font-size: 10pt" valign="bottom"><hole id="Date">DATE</hole></td>
-             </tr>
+            </tr>
+            <tr>
+                <td style="text-align:left"><p style="display:inline-block">Subject ID: <hole id="SubjectID">SUBJECTID</hole></p></td>
+                <td style="text-align:left"><p style="display:inline-block">Timepoint: <hole id="Timepoint">TIMEPOINT</hole></p></td>
+            </tr>
          </table>
+         <br/>
     </dptemplate>
     
     <dptemplate name = "SectionDefaultPageFooter">
@@ -192,6 +199,44 @@
     <dptemplate name = "SectionEvenPageFooter">
         <hr/>
         <p class="SectionTitleFooter"><page/></p>
+    </dptemplate>
+
+    <dptemplate name="PRMbody">
+        <table style="width:100%; text-align:center">
+            <tr style="height:4in">
+                <td style="width:50%"><hole id="Montage">MONTAGE</hole></td>
+                <td><hole id="Scatterplot">SCATTERPLOT</hole></td>
+            </tr>
+        </table>
+        <br/>
+        <hole id="PRMtable">PRMTABLE</hole>
+        <br/>
+        <table style="font-size:8pt; text-align:left">
+            <tr>
+                <td style="width:0.5in; background-color:#33cc33" rowspan="3"> </td>
+                <td style="font-weight:bold">NORMAL</td>
+            </tr>
+            <tr><td>Voxels ABOVE -950 HU on inspiration</td></tr>
+            <tr><td>Voxels ABOVE -856 HU on expiration</td></tr>
+            <tr>
+                <td style="background-color:#ffff00" rowspan="3"> </td>
+                <td style="font-weight:bold">FUNCTIONAL LOW DENSITY AREA</td>
+            </tr>
+            <tr><td>Voxels ABOVE -950 HU on inspiration</td></tr>
+            <tr><td>Voxels BELOW -856 HU on expiration</td></tr>
+            <tr>
+                <td style="background-color:#ff3300" rowspan="3"> </td>
+                <td style="font-weight:bold">PERSISTENT LOW DENSITY AREA</td>
+            </tr>
+            <tr><td>Voxels BELOW -950 HU on inspiration</td></tr>
+            <tr><td>Voxels BELOW -856 HU on expiration</td></tr>
+            <tr>
+                <td style="background-color:#cc00ff" rowspan="2"> </td>
+                <td style="font-weight:bold">INSPIRATION HIGH DENSITY AREA</td>
+            </tr>
+            <tr><td>Voxels ABOVE -810 HU on inspiration</td></tr>
+        </table>
+
     </dptemplate>
    
     </dplibrary>

@@ -22,50 +22,39 @@ var = 1.0; % to blur the image if it has a lot of noise
 if ~isa(img,'char')
     I = img;
 elseif contains(img,'nii')
-    % NIFTIREAD for Nifti file formats
     I = niftiread(img);
     mask = niftiread(mask);
 elseif contains(img,'mhd')
-    % %MHDREAD for MHD file formats
     I = readMHD(img);
     mask = readMHD(mask);
 end
 mask = logical(mask);
 np = nnz(mask);
 
-if (length(size(I)) > 3)
-    I = I(:,:,:,end);
-    mask = mask(:,:,:,end);
-end
-
-roi = double(I) .* mask;
-
 switch str
     case 'AT'
         laaval = -856;
-        laaMap = roi <= laaval;
-        percentlaaMap = nnz(laaMap)/np;
-        beta = percentlaaMap;
-        res = FctSegAT(imgaussfilt3(roi,var),ws,segn,1,omega,beta,laaval);
+        fcnstr = 'FctSegAT';
     case 'AT_PEDS'
         laaval = -856;
-        laaMap = roi <= laaval;
-        percentlaaMap = nnz(laaMap)/np;
-        beta = percentlaaMap;
-        res = FctSegAT_PEDS(gaussianBlur(roi,var),ws,segn,1,omega,beta,laaval);
+        fcnstr = 'FctSegAT_PEDS';
     otherwise % Emph
         laaval = -950;
-        laaMap = roi <= laaval;
-        percentlaaMap = nnz(laaMap)/np;
-        beta = percentlaaMap;
-        res = FctSegEMPH(imgaussfilt3(roi,var),ws,segn,1,omega,beta,laaval);
+        fcnstr = 'FctSegEMPH';
 end
+
+roi = double(I) .* mask;
+laaMap = roi <= laaval;
+roi = imgaussfilt3(roi,var);
+percentlaaMap = nnz(laaMap)/np;
+beta = percentlaaMap;
+res = feval(fcnstr,roi,ws,segn,1,omega,beta,laaval);
 atMap = (res==1) & mask;
 
 % Postprocessing
 meanvallaaMap = mean(I(laaMap));
 if nnz(atMap)
-    atMap = logical(activecontour(imgaussfilt3(roi,var),atMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1));
+    atMap = logical(activecontour(roi,atMap,ceil(ws/10),'chan-vese','SmoothFactor',0,'ContractionBias',-0.1));
 end
 percentatMap = nnz(atMap)/np;
 meanvalatMap = mean(I(atMap));

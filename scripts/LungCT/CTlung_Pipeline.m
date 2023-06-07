@@ -110,8 +110,8 @@ end
 
     % Panel: Modules
         h.panel_modules = uipanel(h.tab_opts,'Position',[5, fheight-440, 215, 285],'Title','Modules','FontWeight','bold');
-        uibutton(h.panel_modules,  'Position',[5,   220, 100, 20],'Text','Select All','ButtonPushedFcn',@selectAll);
-        uibutton(h.panel_modules,  'Position',[110, 220, 100, 20],'Text','Clear All','ButtonPushedFcn',@clearAll);
+        uibutton(h.panel_modules,  'Position',[5,   245, 100, 20],'Text','Select All','ButtonPushedFcn',@selectAll);
+        uibutton(h.panel_modules,  'Position',[110, 245, 100, 20],'Text','Clear All','ButtonPushedFcn',@clearAll);
         h.unreg =   uicheckbox(h.panel_modules,'Position',[5,   210, 200, 20],'Text','Unreg',...
             'Value',opts.unreg,'ValueChangedFcn',@setOpts,'Tag','unreg');
         h.airway =  uicheckbox(h.panel_modules,'Position',[5,   185, 200, 20],'Text','Airways',...

@@ -329,14 +329,16 @@ try
     end
 
     % Quantify unregistered CT scans
+    if opts.unreg
     writeLog(fn_log,'Quantifying unregistered statistics\n');
-    if opts.unreg && img(1).flag
-        T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
-        res = addTableVarVal(res,T);
-    end
-    if opts.unreg && img(2).flag
-        T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
-        res = addTableVarVal(res,T);
+        if img(1).flag
+            T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
+            res = addTableVarVal(res,T);
+        end
+        if img(2).flag
+            T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
+            res = addTableVarVal(res,T);
+        end
     end
 
     % Register I2E
@@ -518,6 +520,9 @@ try
             % T = lobeLoop(img.label,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
             T = CTlung_LobeStats(img.label,'PRM','pct',categorical(prm5,1:5,string(prmlabel)));
             res = addTableVarVal(res,T);
+
+            % Generate PRM Report
+            report_prm(procdir,res,opts);
 
             % Calculate tPRM
             if opts.tprm
