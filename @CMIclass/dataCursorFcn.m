@@ -13,12 +13,12 @@ voxsz = self.img.voxsz(1:3); voxsz(self.orient) = [];
 pos = get(event_obj,'Position');
 
 % Convert to matrix indices
-matpos = flip(ceil(pos ./ voxsz));
+matpos = ceil(pos ./ voxsz);
 pos(pos == 0) = 1;
 
 % Grab image value
 dimg = self.img.getSlice(self.orient,self.vec,self.slc(self.orient));
-val = dimg(matpos(1),matpos(2));
+val = dimg(matpos(2),matpos(1));
 
 output_txt = {['X: ',num2str(pos(1),4)],...
               ['Y: ',num2str(pos(2),4)],...
