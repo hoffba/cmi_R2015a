@@ -17,25 +17,25 @@ try
     prmlabel = ["norm","fsad","emph","pd","ns"];
     mflabel = ["v","s","b","x"];
     % ~~ Image files ~~
-    opts.fn.exp = fullfile(procdir,[ID,'.exp',fn_ext]);
-    opts.fn.ins = fullfile(procdir,[ID,'.ins',fn_ext]);
-    opts.fn.exp_seg = fullfile(procdir,[ID,'.exp.label',fn_ext]);
-    opts.fn.ins_seg = fullfile(procdir,[ID,'.ins.label',fn_ext]);
-    opts.fn.scatnetAT = fullfile(procdir,[ID,'.scatnetAT',fn_ext]);
-    opts.fn.scatnetAT_PEDS = fullfile(procdir,[ID,'.scatnetAT_PEDS',fn_ext]);
-    opts.fn.scatnetEmph = fullfile(procdir,[ID,'.scatnetEmph',fn_ext]);
-    opts.fn.reg = fullfile(procdir,[ID,'.ins.reg',fn_ext]);
-    opts.fn.jac = fullfile(procdir,[ID,'.jac',fn_ext]);
-    opts.fn.scatnetEmphReg = fullfile(procdir,[ID,'.scatnetEmphInsR',fn_ext]);
-    opts.fn.dBlood = fullfile(procdir,[ID,'.dblood',fn_ext]);
-    opts.fn.prm = fullfile(procdir,[ID,'.prm',fn_ext]);
+    opts.fn.exp =               fullfile(procdir,[ID,'.exp',fn_ext]);
+    opts.fn.ins =               fullfile(procdir,[ID,'.ins',fn_ext]);
+    opts.fn.exp_seg =           fullfile(procdir,[ID,'.exp.label',fn_ext]);
+    opts.fn.ins_seg =           fullfile(procdir,[ID,'.ins.label',fn_ext]);
+    opts.fn.scatnetAT =         fullfile(procdir,[ID,'.scatnetAT',fn_ext]);
+    opts.fn.scatnetAT_PEDS =    fullfile(procdir,[ID,'.scatnetAT_PEDS',fn_ext]);
+    opts.fn.scatnetEmph =       fullfile(procdir,[ID,'.scatnetEmph',fn_ext]);
+    opts.fn.reg =               fullfile(procdir,[ID,'.ins.reg',fn_ext]);
+    opts.fn.jac =               fullfile(procdir,[ID,'.jac',fn_ext]);
+    opts.fn.scatnetEmphReg =    fullfile(procdir,[ID,'.scatnetEmphInsR',fn_ext]);
+    opts.fn.dBlood =            fullfile(procdir,[ID,'.dblood',fn_ext]);
+    opts.fn.prm =               fullfile(procdir,[ID,'.prm',fn_ext]);
     opts.fn.tprm = fullfile(procdir, string(ID) + ".tprm." + prmlabel(1:4) + "." + mflabel' + string(fn_ext));
     % ~~ QC figure files ~~
-    opts.fn.expMontage = fullfile(procdir,[ID,'_Exp_Montage.tif']);
-    opts.fn.insMontage = fullfile(procdir,[ID,'_Ins_Montage.tif']);
-    opts.fn.regMontage = fullfile(procdir,[ID,'_InsReg_Montage.tif']);
-    opts.fn.prmMontage = fullfile(procdir,[ID,'_PRM_Montage.tif']);
-    opts.fn.prmScatter = fullfile(procdir,[ID,'_PRM_Scatter.tif']);
+    opts.fn.expMontage =        fullfile(procdir,[ID,'_Exp_Montage.tif']);
+    opts.fn.insMontage =        fullfile(procdir,[ID,'_Ins_Montage.tif']);
+    opts.fn.regMontage =        fullfile(procdir,[ID,'_InsReg_Montage.tif']);
+    opts.fn.prmMontage =        fullfile(procdir,[ID,'_PRM_Montage.tif']);
+    opts.fn.prmScatter =        fullfile(procdir,[ID,'_PRM_Scatter.tif']);
     
     % Make sure GL has the correct path
     if strcmp(opts.cluster,'GL')
@@ -133,8 +133,8 @@ try
         QCmontage('seg',img(1).mat(:,:,img(1).QCind),...
                   logical(img(1).label(:,:,img(1).QCind)),...
                   img(1).info.voxsz,...
-                  opts.fn.expMontage,...
-                  fullfile(opts.save_path,'Montage_exp.gif'));
+                  {opts.fn.expMontage,...
+                   fullfile(opts.save_path,'Exp_Montage',[ID,'_Exp_Montage.tif'])});
     end
     if img(2).flag
         writeLog(fn_log,'Generating INSP montage...\n');
@@ -150,8 +150,8 @@ try
         QCmontage('seg',img(2).mat(:,:,img(2).QCind),...
                   logical(img(2).label(:,:,img(2).QCind)),...
                   img(2).info.voxsz,...
-                  opts.fn.insMontage,...
-                  fullfile(opts.save_path,'Montage_ins.gif'));
+                  {opts.fn.insMontage,...
+                   fullfile(opts.save_path,'Ins_Montage',[ID,'_Ins_Montage.tif'])});
     end
 
     % Airways
@@ -386,8 +386,8 @@ try
         QCmontage('reg',ins_reg(:,:,img(1).QCind),...
                         logical(img(1).label(:,:,img(1).QCind)),...
                         img(1).info.voxsz,...
-                        opts.fn.regMontage,...
-                        fullfile(opts.save_path,'Montage_reg.gif'));
+                        {opts.fn.regMontage,...
+                         fullfile(opts.save_path,'InsReg_Montage',[ID,'_InsReg_Montage.tif'])});
         img(2) = [];
 
         % Jacobian analysis
@@ -477,7 +477,7 @@ try
             else
                 writeLog(fn_log,'Calculating PRM...\n');
                 [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
-                    opts.fn.prmScatter,fullfile(opts.save_path,'Montage_PRM_Scatter.gif'));
+                    {opts.fn.prmScatter,fullfile(opts.save_path,'PRM_Scatter',[ID,'_PRM_Scatter.tif'])});
 
                 % Save PRM
                 writeLog(fn_log,'Saving PRM as NIFTI ... ');
@@ -512,8 +512,8 @@ try
             QCmontage('prm',img.mat(:,:,img(1).QCind),...
                             double(prm5(:,:,img(1).QCind)),...
                             img.info.voxsz,...
-                            opts.fn.prmMontage,...
-                            fullfile(opts.save_path,'Montage_PRM.gif'));
+                            {opts.fn.prmMontage,...
+                             fullfile(opts.save_path,'PRM_Montage',[ID,'_PRM_Montage.tif'])});
 
             % Tabulate 5-color PRM results
             writeLog(fn_log,'Tabulating 5-color PRM results...\n');

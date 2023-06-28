@@ -1,4 +1,4 @@
-function [prm,info] = pipeline_PRM(exp,exp_info,mask,insR,svname,gifname)
+function [prm,info] = pipeline_PRM(exp,exp_info,mask,insR,svname)
 
 %% Load PRM options
 info = load(fullfile(fileparts(which('cmi')),'PRMdefs','PRMdef_AllLung_5Color.mat'));
@@ -23,16 +23,14 @@ img.prm.setOpts('thresh',info.thresh,...
 prm = int8(img.prm.mat);
 
 %% Add title to axes
-% [~,tname] = fileparts(svname);
-% title(img.prm.hascatter,tname,'Interpreter','none');
+tname = exp_info.label;
+if contains(tname,'.')
+    tname = extractBefore(tname,'.');
+end
+title(img.prm.hascatter,tname,'Interpreter','none');
 
 %% Save scatterplot figure
-print(img.prm.hfscatter,svname,'-dtiff');
-
-%% Add scatterplot to GIF
-if nargin==6 && ischar(gifname)
-    collate_fig(img.prm.hfscatter,gifname);
-end
+pipeline_save_fig(img.prm.hfcatter,svname);
 
 %% Add results to info:
 info.regions = labels;

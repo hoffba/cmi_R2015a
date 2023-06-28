@@ -1,4 +1,4 @@
-function cdata = QCmontage(tag,im_bg,im_over,voxsz,fname,gifname)
+function cdata = QCmontage(tag,im_bg,im_over,voxsz,fname)
 % Generate figures for displaying montage overlays with segmentations or PRM
 
 nf = size(im_over,3);
@@ -68,13 +68,9 @@ axpos = tightPosition(ha);
 ha.Position(1:2) = ha.Position(1:2)-axpos(1:2);
 hf.Position(3:4) = [axpos(3:4)] - 1 + [0 t.Extent(4)];
 
-%% Print the figure:
-print(hf,fname,'-dtiff');
-cdata = print(hf,'-RGBImage','-noui');
+% Print the figure:
+pipeline_save_fig(hf,fname);
 
-%% Add to GIF series
-if nargin==6 && ischar(gifname)
-    collate_fig(hf,gifname);
-end
+cdata = print(hf,'-RGBImage','-noui');
 
 delete(hf);
