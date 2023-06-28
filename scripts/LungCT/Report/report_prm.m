@@ -24,7 +24,7 @@ function D = report_prm(procdir,res,opts,R)
     end
 
     % Set up header
-    dp = DocumentPart('pdf',fn_template,'PageHeader');
+    dp = DocumentPart('pdf',fn_template,'PipelineHeader');
     moveToNextHole(dp);
     append(dp,string(datetime("today")));
     moveToNextHole(dp);
@@ -111,5 +111,5 @@ function D = report_prm(procdir,res,opts,R)
         if ~isfolder(svdir)
             mkdir(svdir);
         end
-        copyfile(fname,)
+        copyfile(fname,svdir);
     end
