@@ -2,14 +2,16 @@ function D = report_prm(procdir,res,opts,R)
     import mlreportgen.report.*;
     import mlreportgen.dom.*;
 
+    fn_template = fullfile(opts.report_path,'PRM_Report.pdftx');
+
     R_flag = nargin==4;
     if R_flag
         % Input as Chapter to Report object
-        D = Chapter();
+        D = Chapter(TemplateSrc=fn_template);
     else
         % Generate Document object
-        D = Document(fullfile(procdir,['PRM_Report_',opts.ID]),'pdf',...
-            fullfile(opts.report_path,'PRM_Report.pdftx'));
+        fname = fullfile(procdir,['PRM_Report_',opts.ID,'.pdf']);
+        D = Document(fname,'pdf',fn_template);
         open(D);
     
         % Set up page margins
@@ -22,7 +24,7 @@ function D = report_prm(procdir,res,opts,R)
     end
 
     % Set up header
-    dp = DocumentPart(D,'PageHeader');
+    dp = DocumentPart('pdf',fn_template,'PageHeader');
     moveToNextHole(dp);
     append(dp,string(datetime("today")));
     moveToNextHole(dp);
@@ -40,7 +42,7 @@ function D = report_prm(procdir,res,opts,R)
     append(D,dp);
     
     % Main body of the report
-    dp = DocumentPart(D,'MainSection');
+    dp = DocumentPart('pdf',fn_template,'MainSection');
 
     % PRM montage
     moveToNextHole(dp);
@@ -98,4 +100,16 @@ function D = report_prm(procdir,res,opts,R)
     append(dp,T);
     
     append(D,dp);
-    close(D);
+
+    if R_flag
+        append(R,D);
+    else
+        close(D);
+
+        % Save a copy to collation directory
+        svdir = fullfile(opts.save_path,'Pipeline_Report');
+        if ~isfolder(svdir)
+            mkdir(svdir);
+        end
+        copyfile(fname,)
+    end
