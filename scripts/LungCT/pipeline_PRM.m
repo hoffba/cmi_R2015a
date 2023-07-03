@@ -30,7 +30,7 @@ end
 title(img.prm.hascatter,tname,'Interpreter','none');
 
 %% Save scatterplot figure
-pipeline_save_fig(img.prm.hfcatter,svname);
+pipeline_save_fig(img.prm.hfscatter,svname);
 
 %% Add results to info:
 info.regions = labels;
