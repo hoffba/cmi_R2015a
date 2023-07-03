@@ -522,7 +522,10 @@ try
             res = addTableVarVal(res,T);
 
             % Generate PRM Report
-            report_prm(procdir,res,opts);
+            try
+                report_prm(procdir,res,opts);
+            catch
+            end
 
             % Calculate tPRM
             if opts.tprm
