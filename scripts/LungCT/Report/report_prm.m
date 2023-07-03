@@ -2,7 +2,7 @@ function D = report_prm(procdir,res,opts,R)
     import mlreportgen.report.*;
     import mlreportgen.dom.*;
 
-    fn_template = fullfile(opts.report_path,'PRM_Report.pdftx');
+    fn_template = fullfile(opts.report_path);
 
     R_flag = nargin==4;
     if R_flag
@@ -26,6 +26,8 @@ function D = report_prm(procdir,res,opts,R)
     % Set up header
     dp = DocumentPart('pdf',fn_template,'PipelineHeader');
     moveToNextHole(dp);
+    append(dp,'Parametric Response Map (PRM)');
+    moveToNextHole(dp);
     append(dp,string(datetime("today")));
     moveToNextHole(dp);
     pos = find(opts.ID=='_',1,"last");
@@ -42,7 +44,7 @@ function D = report_prm(procdir,res,opts,R)
     append(D,dp);
     
     % Main body of the report
-    dp = DocumentPart('pdf',fn_template,'MainSection');
+    dp = DocumentPart('pdf',fn_template,'PRMbody');
 
     % PRM montage
     moveToNextHole(dp);
@@ -107,9 +109,11 @@ function D = report_prm(procdir,res,opts,R)
         close(D);
 
         % Save a copy to collation directory
-        svdir = fullfile(opts.save_path,'Pipeline_Report');
-        if ~isfolder(svdir)
-            mkdir(svdir);
+        if ~isempty(opts.save_path)
+            svdir = fullfile(opts.save_path,'Pipeline_Report');
+            if ~isfolder(svdir)
+                mkdir(svdir);
+            end
+            copyfile(fname,svdir);
         end
-        copyfile(fname,svdir);
     end

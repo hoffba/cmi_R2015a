@@ -1,0 +1,85 @@
+
+h1.SectionTitle1, p.SectionTitle1 {
+    font-family: Cambria, 'Noto Sans', 'Noto Sans CJK JP', 'Noto Sans CJK SC', 'Noto Sans CJK KR', 'Noto Emoji';
+    color: rgb(54,95,145);
+    font-size: 14pt;
+    font-weight: bold;
+    margin-top: 24pt;
+    margin-bottom: 0pt;
+    white-space: pre;
+    -fo-keep-with-next.within-page: always;
+}
+
+h2.SectionTitle2, p.SectionTitle2 {
+    font-family: Cambria, 'Noto Sans', 'Noto Sans CJK JP', 'Noto Sans CJK SC', 'Noto Sans CJK KR', 'Noto Emoji';
+    color: rgb(79,129,189);
+    font-size: 13pt;
+    font-weight: bold;
+    margin-top: 10pt;
+    margin-bottom: 0pt;
+    white-space: pre;
+    -fo-keep-with-next.within-page: always;
+}
+
+h3.SectionTitle3, p.SectionTitle3 {
+    font-family: Cambria, 'Noto Sans', 'Noto Sans CJK JP', 'Noto Sans CJK SC', 'Noto Sans CJK KR', 'Noto Emoji';
+    color: rgb(79,129,189);
+    font-size: 11pt;
+    font-weight: bold;
+    margin-top: 10pt;
+    margin-bottom: 0pt;
+    white-space: pre;
+    -fo-keep-with-next.within-page: always;
+}
+
+h4.SectionTitle4, p.SectionTitle4 {
+    font-family: Cambria,'Noto Sans', 'Noto Sans CJK JP', 'Noto Sans CJK SC', 'Noto Sans CJK KR', 'Noto Emoji';
+    color: rgb(79,129,189);
+    font-size: 11pt;
+    font-weight: bold;
+    font-style: italic;
+    margin-top: 10pt;
+    margin-bottom: 0pt;
+    white-space: pre;
+    -fo-keep-with-next.within-page: always;
+}
+
+h5.SectionTitle5, p.SectionTitle5 {
+    font-family: Cambria, 'Noto Sans', 'Noto Sans CJK JP', 'Noto Sans CJK SC', 'Noto Sans CJK KR', 'Noto Emoji';
+    color: rgb(36,63,96);
+    font-size: 11pt;
+    margin-top: 10pt;
+    margin-bottom: 0pt;
+    white-space: pre;
+    -fo-keep-with-next.within-page: always;
+}
+
+h6.SectionTitle6, p.SectionTitle6 {
+    font-family: Cambria, 'Noto Sans', 'Noto Sans CJK JP', 'Noto Sans CJK SC', 'Noto Sans CJK KR', 'Noto Emoji';
+    color: rgb(36,63,96);
+    font-size: 11pt;
+    font-style: italic;
+    margin-top: 10pt;
+    margin-bottom: 0pt;
+    white-space: pre;
+    -fo-keep-with-next.within-page: always;
+}
+
+p.SectionTitleHeader {
+    font-size: 11pt;
+    color: black;
+    white-space: pre;
+    text-align:center;
+}
+
+p.SectionTitleFooter {
+    font-size: 11pt;
+    color: black;
+    white-space: pre;
+    text-align:center;
+}
+
+span.SectionContent {
+    font-size: 8pt;
+}
+

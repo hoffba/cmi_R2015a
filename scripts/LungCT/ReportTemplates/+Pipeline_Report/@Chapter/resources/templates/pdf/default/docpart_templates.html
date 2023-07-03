@@ -1,0 +1,253 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Document Part Templates</title>
+    <link rel="StyleSheet" href="./stylesheets/root.css" type="text/css" />
+    
+</head>
+<body>
+<dplibrary>
+    
+    <dptemplate name="Section1">
+        <layout style="page-margin: 0.5in 1in 0.5in 1in 0.5in 0.5in 0in; page-size: 8.5in 11in portrait">
+            <pfooter type="first" template-name="SectionFirstPageFooter"/>
+            <pheader type="default" template-name="SectionDefaultPageHeader"/>
+            <pfooter type="default" template-name="SectionDefaultPageFooter"/>
+            <pfooter type="even" template-name="SectionEvenPageFooter"/>
+            <pnumber format="1" />
+        </layout>
+        <hole id="Title" default-style-name="SectionTitle1">TITLE</hole>
+        <hole id="Content" default-style-name="SectionContent">CONTENT</hole>
+    </dptemplate>
+    <dptemplate name="Section2">
+        <hole id="Title" default-style-name="SectionTitle2">TITLE</hole>
+        <hole id="Content" default-style-name="SectionContent">CONTENT</hole>
+    </dptemplate>
+    <dptemplate name="Section3">
+        <hole id="Title" default-style-name="SectionTitle3">TITLE</hole>
+        <hole id="Content" default-style-name="SectionContent">CONTENT</hole>
+    </dptemplate>
+    <dptemplate name="Section4">
+        <hole id="Title" default-style-name="SectionTitle4">TITLE</hole>
+        <hole id="Content" default-style-name="SectionContent">CONTENT</hole>
+    </dptemplate>
+    <dptemplate name="Section5">
+        <hole id="Title" default-style-name="SectionTitle5">TITLE</hole>
+        <hole id="Content" default-style-name="SectionContent">CONTENT</hole>
+    </dptemplate>
+    <dptemplate name="Section6">
+        <hole id="Title" default-style-name="SectionTitle6">TITLE</hole>
+        <hole id="Content" default-style-name="SectionContent">CONTENT</hole>
+    </dptemplate>
+    
+    <dptemplate name="SectionNumberedTitle1">
+        <!--
+         <h1 class="SectionTitle1" style="counter-increment:sect1;counter-reset:sect2 sect3 sect4 sect5 sect6 figure table;"
+         ><hole id="NumberPrefix">NUMBER_PREFIX</hole
+         ><autonumber stream-name="sect1"></autonumber
+         ><hole id="NumberSuffix" >NUMBER_SUFFIX</hole
+         ><hole id="Content">TITLE CONTENT</hole
+         ></h1>
+-->
+    </dptemplate>         
+    <dptemplate name="SectionTitle1">
+         <h1 class="SectionTitle1" 
+         ><hole id="Content">title text</hole
+         ></h1>
+    </dptemplate>         
+    
+    <dptemplate name="SectionNumberedTitle2">
+         <h2 class="SectionTitle2" style="counter-increment:sect2;counter-reset:sect3 sect4 sect5 sect6;"
+         ><hole id="NumberPrefix">NUMBER_PREFIX</hole
+         ><autonumber stream-name="sect1"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect2"></autonumber
+         ><hole id="NumberSuffix" >NUMBER_SUFFIX</hole
+         ><hole id="Content">TITLE DATE CONTENT</hole
+         ></h2>
+    </dptemplate>         
+    <dptemplate name="SectionTitle2">
+         <h2 class="SectionTitle2" 
+         ><hole id="Content" default-style-name="SectionTitle1">title text</hole
+         ></h2>
+    </dptemplate>         
+    
+    <dptemplate name="SectionNumberedTitle3">
+         <h3 class="SectionTitle3" style="counter-increment:sect3;counter-reset:sect4 sect5 sect6;"
+         ><hole id="NumberPrefix">NUMBER_PREFIX</hole
+         ><autonumber stream-name="sect1"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect2"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect3"></autonumber
+         ><hole id="NumberSuffix" >NUMBER_SUFFIX</hole
+         ><hole id="Content">TITLE CONTENT</hole
+         ></h3>
+    </dptemplate>         
+    <dptemplate name="SectionTitle3">
+         <h3 class="SectionTitle3" 
+         ><hole id="Content" default-style-name="SectionTitle1">title text</hole
+         ></h3>
+    </dptemplate>         
+    
+    <dptemplate name="SectionNumberedTitle4">
+         <h4 class="SectionTitle4" style="counter-increment:sect4;counter-reset:sect5 sect6;"
+         ><hole id="NumberPrefix">NUMBER_PREFIX</hole
+         ><autonumber stream-name="sect1"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect2"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect3"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect4"></autonumber
+         ><hole id="NumberSuffix" >NUMBER_SUFFIX</hole
+         ><hole id="Content">TITLE CONTENT</hole
+         ></h4>
+    </dptemplate>         
+    <dptemplate name="SectionTitle4">
+         <h4 class="SectionTitle4" 
+         ><hole id="Content" default-style-name="SectionTitle1">title text</hole
+         ></h4>
+    </dptemplate>         
+
+    <dptemplate name="SectionNumberedTitle5">
+         <h5 class="SectionTitle5" style="counter-increment:sect5;counter-reset:sect6;"
+         ><hole id="NumberPrefix">NUMBER_PREFIX</hole
+         ><autonumber stream-name="sect1"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect2"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect3"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect4"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect5"></autonumber
+         ><hole id="NumberSuffix" >NUMBER_SUFFIX</hole
+         ><hole id="Content">TITLE CONTENT</hole
+         ></h5>
+    </dptemplate>         
+    <dptemplate name="SectionTitle5">
+         <h5 class="SectionTitle5" 
+         ><hole id="Content" default-style-name="SectionTitle1">title text</hole
+         ></h5>
+    </dptemplate>         
+    
+    <dptemplate name="SectionNumberedTitle6">
+         <h6 class="SectionTitle6" style="counter-increment:sect6"
+         ><hole id="NumberPrefix">NUMBER_PREFIX</hole
+         ><autonumber stream-name="sect1"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect2"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect3"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect4"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect5"></autonumber
+         ><span>.</span
+         ><autonumber stream-name="sect6"></autonumber
+         ><hole id="NumberSuffix" >NUMBER_SUFFIX</hole
+         ><hole id="Content">TITLE CONTENT</hole
+         ></h6>
+    </dptemplate>         
+    <dptemplate name="SectionTitle6">
+         <h6 class="SectionTitle6" 
+         ><hole id="Content" default-style-name="SectionTitle1">title text</hole
+         ></h6>
+    </dptemplate>         
+
+    <!-- SectionTitle1 page header and footer templates -->
+    <dptemplate name = "SectionFirstPageHeader">
+        <p class="SectionTitleHeader"></p>
+        <hr/>
+    </dptemplate>
+    
+    <dptemplate name = "SectionFirstPageFooter">
+        <hr/>
+        <p class="SectionTitleFooter"><page/></p>
+    </dptemplate>
+    
+    <dptemplate name = "SectionDefaultPageHeader">
+<!--
+        <p class="SectionTitleHeader"></p>
+        <hr/>
+-->
+    </dptemplate>
+    
+    <dptemplate name = "SectionDefaultPageFooter">
+        <hr/>
+        <p class="SectionTitleFooter"><page/></p>
+    </dptemplate>
+    
+    <dptemplate name = "SectionEvenPageHeader">
+<!--
+        <p class="SectionTitleHeader"><StyleRef style-name="SectionTitle1"/></p>
+        <hr/>
+-->
+    </dptemplate>
+    
+    <dptemplate name = "SectionEvenPageFooter">
+        <hr/>
+        <p class="SectionTitleFooter"><page/></p>
+    </dptemplate>
+
+    <dptemplate name = "PipelineHeader">
+        <table width="100%">
+            <tr>              
+                <td rowspan="2" style="text-align:left; padding-bottom:2pt" valign="bottom">
+                    <img src="images/logo.png"></img></td>
+                <td style="text-align:right; padding-bottom:2pt; font-family:arial;
+                    font-size: 16pt; font-weight: bold" valign="bottom">
+                    <hole id="Title">TITLE</hole></td>
+            </tr>
+            <tr>
+                <td style="text-align:right; padding-bottom:2pt; font-family:arial;
+                    font-size: 10pt" valign="bottom"><hole id="Date">DATE</hole></td>
+            </tr>
+            <tr>
+                <td style="text-align:left"><p style="display:inline-block">Subject ID: <hole id="SubjectID">SUBJECTID</hole></p></td>
+                <td style="text-align:left"><p style="display:inline-block">Timepoint: <hole id="Timepoint">TIMEPOINT</hole></p></td>
+            </tr>
+         </table>
+         <br/>
+    </dptemplate>
+
+    <dptemplate name="PRMbody">
+        <table style="width:100%; text-align:center">
+            <tr style="height:4in">
+                <td style="width:50%"><hole id="PRM_Montage">PRM_Montage</hole></td>
+                <td><hole id="PRM_Scatter">PRM_Scatter</hole></td>
+            </tr>
+        </table>
+        <hole id="PRM_Table">PRM_Table</hole>
+        <br/>
+        <table style="font-size:8pt; text-align:left">
+            <tr>
+                <td style="width:0.5in; background-color:#33cc33" rowspan="3"> </td>
+                <td style="font-weight:bold">NORMAL</td>
+            </tr>
+            <tr><td>Voxels ABOVE -950 HU on inspiration</td></tr>
+            <tr><td>Voxels ABOVE -856 HU on expiration</td></tr>
+            <tr>
+                <td style="background-color:#ffff00" rowspan="3"> </td>
+                <td style="font-weight:bold">FUNCTIONAL LOW DENSITY AREA</td>
+            </tr>
+            <tr><td>Voxels ABOVE -950 HU on inspiration</td></tr>
+            <tr><td>Voxels BELOW -856 HU on expiration</td></tr>
+            <tr>
+                <td style="background-color:#ff3300" rowspan="3"> </td>
+                <td style="font-weight:bold">PERSISTENT LOW DENSITY AREA</td>
+            </tr>
+            <tr><td>Voxels BELOW -950 HU on inspiration</td></tr>
+            <tr><td>Voxels BELOW -856 HU on expiration</td></tr>
+            <tr>
+                <td style="background-color:#cc00ff" rowspan="2"> </td>
+                <td style="font-weight:bold">INSPIRATION HIGH DENSITY AREA</td>
+            </tr>
+            <tr><td>Voxels ABOVE -810 HU on inspiration</td></tr>
+        </table>
+    </dptemplate>
+   
+    </dplibrary>
+</body>
+</html>
