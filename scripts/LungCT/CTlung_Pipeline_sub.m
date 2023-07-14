@@ -160,7 +160,9 @@ try
             ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
             writeLog(fn_log,'YACTA directory: %s\n',ydir);
             airway_res = readYACTAairways(ydir);
-            if ~isempty(airway_res)
+            if isempty(airway_res)
+                writeLog(fn_log,'   FAILED to read YACTA results.\n')
+            else
                 % Initialize table
                 T = table('Size',[Nr,1],'VariableTypes',{'cellstr'},'VariableNames',{'ROI'});
                 T.ROI = regionnames';
@@ -525,6 +527,7 @@ try
             try
                 report_prm(procdir,res,opts);
             catch
+                writeLog(fn_log,'PRM Report FAILED\n');
             end
 
             % Calculate tPRM

@@ -18,7 +18,7 @@ else
     str = strsplit(str','\n')';
     
     % Airways Analysis
-    ind = find(strcmp(str,'Airway Analysis Results'),1);
+    ind = find(contains(str,'Airway Analysis Results'),1);
     if ~isempty(ind)
         ind = ind+1;
         go = true;
@@ -53,7 +53,7 @@ else
               'WT [mm] vs. Generations'             , 'WT';...
               'Total Diameter [mm] vs. Generations' , 'TotalDiameter'};
     for j = 1:size(genstr,1)
-        ind = find(strcmp(str,genstr{j,1}),1);
+        ind = find(contains(str,genstr{j,1}),1);
         if ~isempty(ind)
             ind = ind+2;
             genT.Properties.VariableNames = strsplit(str{ind},';');
@@ -75,7 +75,7 @@ else
         end
     end
     
-    ind = find(strcmp(str,'#BronchiectasisIndex (path-based) vs. Generations'),1);
+    ind = find(contains(str,'#BronchiectasisIndex (path-based) vs. Generations'),1);
     if ~isempty(ind)
         label = strsplit(str{ind+2},';');
         ind = ind+3;
