@@ -46,19 +46,56 @@ if isempty(D)
             % Extract UMlabel and Date
             %   UMlabel becomes the first string before _
             %   StudyDate becomes the first 8-digit number after that
-            umlabel = ''; datstr = '';
-            tok = regexp(fn(j).name,'(?:re_)?([^\.]*)_([^_\.]*)\.','tokens');
-            if ~isempty(tok)
-                umlabel = tok{1}{1};
-                datstr = tok{1}{2};
-            end
+
+            tok = regexp(fn(j).name,'([^\.]+)(.*)','tokens');
+            namestr = tok{1}{1};
+            ext = tok{1}{2};
+
             tT = Tdef;
             tT.SeriesDescription = {fn(j).name};
-            tT.UMlabel = {umlabel};
-            tT.PatientName = {umlabel};
-            tT.StudyDate = {datstr};
+            nametok = strsplit(namestr,'_');
+            ind = 1;
+            tT.PatientName = nametok(1);
+            if numel(nametok)>1 && any(cellfun(@(x)~isempty(regexp(nametok{2},x,'once')),{'\d{8}','t\d+'}))
+                tT.StudyDate = nametok(2);
+                ind = 2;
+            end
+            tT.UMlabel = {strjoin(nametok(1:ind),'_')};
+            nametok(1:ind) = [];
+            if ~isempty(nametok)
+                tT.StudyDescription = {strjoin(nametok,'_')};
+            end
             tT.DataPath = {fullfile(fn(j).folder,fn(j).name)};
             tT.DataType = filtstr(i);
+
+            % Try and find tags
+            tset = false;
+            if contains(ext,'.exp.label.')
+                tT.Tag{1} = 'ExpLabel'; tset = true;
+            elseif contains(ext,'.exp.')
+                tT.Tag{1} = 'Exp'; tset = true;
+            elseif contains(ext,'.ins.label.')
+                tT.Tag{1} = 'InsLabel'; tset = true;
+            elseif contains(ext,'.ins.')
+                tT.Tag{1} = 'Ins'; tset = true;
+            end
+            if ~tset
+                TF = contains({'label','voi','seg'},nametok,'IgnoreCase',true);
+                if any(strcmpi(nametok,'exp'))
+                    if any(TF)
+                        tT.Tag = {'ExpLabel'};
+                    else
+                        tT.Tag = {'Exp'};
+                    end
+                elseif any(strcmpi(nametok,'ins'))
+                    if any(TF)
+                        tT.Tag = {'InsLabel'};
+                    else
+                        tT.Tag = {'Ins'};
+                    end
+                end
+            end
+
             T = [T;tT];
         end
     end

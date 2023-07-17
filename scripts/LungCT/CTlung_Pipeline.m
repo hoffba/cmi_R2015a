@@ -474,6 +474,8 @@ end
 
             % Remove empty data and sort array
             % Find groups of scans with unique PatientName and StudyDate
+
+            % Force these fields to be cellstr
             tlabel = {'UMlabel','StudyID','StudyDate','PatientName'};
             for i = 1:numel(tlabel)
                 if ismember(tlabel{i},C.Properties.VariableNames) && isnumeric(C.(tlabel{i}))
