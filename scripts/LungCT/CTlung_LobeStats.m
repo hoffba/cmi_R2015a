@@ -1,4 +1,4 @@
-function T = CTlung_LobeStats(seg,str,stats,label,img)
+function T = CTlung_LobeStats(seg,str,stats,varargin)
 % seg =     lobe segmentation map
 % str =     name of stats to tabulate
 % stats =   statistics to run (e.g. 'mean', 'pct', ...)
@@ -13,9 +13,24 @@ if ischar(stats)
     stats = {stats};
 end
 stats(~ismember(stats,{'mean','var','pct','prm'})) = [];
-if nargin<4 || isempty(label)
-    label = true;
+label = true;
+img = [];
+vname = string(str);
+for i = 1:numel(varargin)
+    if ~isempty(varargin{i})
+        if iscategorical(varargin{i})
+            label = varargin{i};
+            labl_vals = categories(label);
+            vname = vname + '_' + labl_vals;
+        elseif islogical(varargin{i})
+            label = varargin{i};
+            labl_vals = true;
+        elseif isnumeric(varargin{i})
+            img = varargin{i};
+        end
+    end
 end
+vname = vname + '_' + stats;
 
 % Determine regions to analyze
 ROI = {};
@@ -32,16 +47,6 @@ if ~isempty(lobe)
     ROI = [ROI;...
            [{lobe.name}' , {lobe.val}']];
 end
-
-% Determine variable names
-vname = string(str);
-if iscategorical(label)
-    labl_vals = categories(label);
-    vname = vname + '_' + labl_vals;
-else
-    labl_vals = true;
-end
-vname = vname + '_' + stats;
 
 % if startsWith(str,'prm')
 %     if strcmp(str,'prm10') % 10-color
@@ -77,9 +82,13 @@ for irow = 1:nr
         for istat = 1:numel(stats)
             switch stats{istat}
                 case 'mean'
-                    T.(vname{ilabl,istat})(irow) = mean(img(mask));
+                    if ~isempty(img)
+                        T.(vname{ilabl,istat})(irow) = mean(img(mask));
+                    end
                 case 'var'
-                    T.(vname{ilabl,istat})(irow) = var(img(mask));
+                    if ~isempty(img)
+                        T.(vname{ilabl,istat})(irow) = var(img(mask));
+                    end
                 case 'pct'
                     T.(vname{ilabl,istat})(irow) = nnz(mask)/np*100;
             end
