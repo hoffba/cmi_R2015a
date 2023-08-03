@@ -164,6 +164,7 @@ else
                 val = job(i).fetchOutputs;
                 val = val{1};
                 if istable(val) && ~isempty(val) && (isempty(T) || (size(val,2) == size(T,2)))
+                    T.Properties.RowNames = {};
                     T = [T;val];
                 elseif ischar(val)
                     fprintf(val);
@@ -180,21 +181,23 @@ else
         rmdir(jobdir,'s');
         
         % Write table with mean values to save path
-        svdir = checkTurboPath(p.save_path);
-        jobnum_str = '';
-        if ~isnan(jobnum)
-            jobnum_str = [num2str(jobnum),'_'];
+        if ~isempty(p.save_path)
+            svdir = checkTurboPath(p.save_path);
+            jobnum_str = '';
+            if ~isnan(jobnum)
+                jobnum_str = [num2str(jobnum),'_'];
+            end
+            svname = fullfile(svdir{1},sprintf('%s_%sResults',jobname,jobnum_str));
+            fprintf('Attempting to save results:\n');
+            if istable(T)
+                svname = [svname,'.csv'];
+                writetable(T,svname,'WriteRowNames',true);
+            else
+                svname = [svname,'.mat'];
+                save(svname,T);
+            end
+            fprintf('   ... %s\n',svname);
         end
-        svname = fullfile(svdir{1},sprintf('%s_%sResults',jobname,jobnum_str));
-        fprintf('Attempting to save results:\n');
-        if istable(T)
-            svname = [svname,'.csv'];
-            writetable(T,svname,'WriteRowNames',true);
-        else
-            svname = [svname,'.mat'];
-            save(svname,T);
-        end
-        fprintf('   ... %s\n',svname);
         
         fprintf('Processing complete.\nAverage processing time = %.1f (%.1f) minutes.\n',...
             mean(dt(errflag)),std(dt(errflag)));
@@ -228,7 +231,11 @@ for i = 1:numel(opts.inputs)
     
     % Validate directory inputs:
     if opts.path_flag(i)
+        tclass = class(opts.inputs{i});
         [opts.inputs{i},~,LOC_Turbo_Path] = checkTurboPath(opts.inputs{i});
+        if ismember(tclass,{'char','string'})
+            opts.inputs{i} = opts.inputs{i}{1};
+        end
     end
 end
 

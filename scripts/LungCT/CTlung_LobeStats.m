@@ -14,6 +14,7 @@ if ischar(stats)
 end
 stats(~ismember(stats,{'mean','var','pct','prm'})) = [];
 label = true;
+labl_vals = true;
 img = [];
 vname = string(str);
 for i = 1:numel(varargin)
@@ -24,7 +25,6 @@ for i = 1:numel(varargin)
             vname = vname + '_' + labl_vals;
         elseif islogical(varargin{i})
             label = varargin{i};
-            labl_vals = true;
         elseif isnumeric(varargin{i})
             img = varargin{i};
         end
