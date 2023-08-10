@@ -22,7 +22,7 @@ function lobe = getLobeTags(seg)
         % YACTA -- OLD
         lobeTag = num2cell(1:6);
         lobeName = {'LUL','LLi','LLL','RUL','RML','RLL'};
-    elseif all(ismember(utags,[11,12,13,21,22,30]))
+    elseif all(ismember(utags,[11,12,13,21,22,30,255]))
         % ImBio
         lobeTag = {11,12,13,21,22};
         lobeName = {'RUL','RLL','RML','LUL','LLL'};

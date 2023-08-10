@@ -144,7 +144,7 @@ else
         end
         
         % Initialize table for statistics:
-        T = [];
+        T = table;
         
         % Wait for all jobs to complete
         errflag = true(p.Niter,1);
@@ -164,7 +164,7 @@ else
                 val = job(i).fetchOutputs;
                 val = val{1};
                 if istable(val) && ~isempty(val) && (isempty(T) || (size(val,2) == size(T,2)))
-                    T.Properties.RowNames = {};
+                    val.Properties.RowNames = {};
                     T = [T;val];
                 elseif ischar(val)
                     fprintf(val);

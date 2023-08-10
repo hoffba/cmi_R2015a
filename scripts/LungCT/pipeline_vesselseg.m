@@ -28,18 +28,12 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     end
     
     %% Find and load INSP CT file:
-    tag_type = 1;
-    if ~all(info.PixelDimensions==0.625)
-        writeLog(fn_log,'  Resampling CT image ...\n');
-        ct = resample_subj(ct,info,fullfile(save_path,[ID,'.ct.nii']),tag_type);
-    end
+    writeLog(fn_log,'  Resampling CT image ...\n');
+    ct = resample_subj(ct,info,fullfile(save_path,[ID,'.ct.nii']),1);
    
     %% Resample segmentation map:
-    tag_type = 2;
-    if ~all(info.PixelDimensions==0.625)
-        writeLog(fn_log,'  Resampling SEGMENTATION image ...\n');
-        seg = resample_subj(seg,info,fullfile(save_path,[ID,'.lobe_segmentation.nii']),tag_type);
-    end
+    writeLog(fn_log,'  Resampling SEGMENTATION image ...\n');
+    seg = resample_subj(single(seg),info,fullfile(save_path,[ID,'.lobe_segmentation.nii']),2);
     
     %% Validate size of loaded data:
     if ~all(size(ct)==size(seg))
@@ -167,30 +161,32 @@ end
 function [I,info] = resample_subj(I,info,fname,tag_type)
     
 %     if endsWith(fname,'.lobe_segmentation.nii.gz')
-    if tag_type == 2
-        interpmethod = 'nearest';
-    else
-        interpmethod = 'linear';
+    if ~all(info.PixelDimensions==0.625)
+        if tag_type == 2
+            interpmethod = 'nearest';
+        else
+            interpmethod = 'linear';
+        end
+    
+        %Get new size
+        pixDim = info.PixelDimensions;
+        pixSize = 0.625;
+        
+        d = size(I);
+        fov = pixDim .* d;
+        ext = (fov - pixDim)/2;
+        F = griddedInterpolant({linspace(-ext(1),ext(1),d(1)),...
+                                linspace(-ext(2),ext(2),d(2)),...
+                                linspace(-ext(3),ext(3),d(3))},I,interpmethod);
+        N = round(fov/pixSize);
+        ext = (N-1)*pixSize/2;
+        I = F({linspace(-ext(1),ext(1),N(1)),...
+               linspace(-ext(2),ext(2),N(2)),...
+               linspace(-ext(3),ext(3),N(3))});
+        
+        info.PixelDimensions = [0.625, 0.625, 0.625];
+        info.ImageSize = size(I);
     end
-
-    %Get new size
-    pixDim = info.PixelDimensions;
-    pixSize = 0.625;
-    
-    d = size(I);
-    fov = pixDim .* d;
-    ext = (fov - pixDim)/2;
-    F = griddedInterpolant({linspace(-ext(1),ext(1),d(1)),...
-                            linspace(-ext(2),ext(2),d(2)),...
-                            linspace(-ext(3),ext(3),d(3))},I,interpmethod);
-    N = round(fov/pixSize);
-    ext = (N-1)*pixSize/2;
-    I = F({linspace(-ext(1),ext(1),N(1)),...
-           linspace(-ext(2),ext(2),N(2)),...
-           linspace(-ext(3),ext(3),N(3))});
-    
-    info.PixelDimensions = [0.625, 0.625, 0.625];
-    info.ImageSize = size(I);
     
     % Save resampled data to file:
     [subj_dir,fname] = fileparts(fname);
