@@ -149,7 +149,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     %% Tabulate results and save to subject directory
     writeLog(fn_log,'Tabulating results ... ');
     t = tic;
-    T = lobeLoop(seg,@(mask,ins,binvessels,csa)vesselStats(mask,ins,binvessels,csa),ct,bin_vessels,csa_map);
+    T = lobeLoop(seg,@(mask,binvessels,csa)vesselStats(mask,binvessels,csa),bin_vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_vesselMetrics.csv']));
     writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
     
