@@ -18,7 +18,7 @@ if ~isempty(self.Tx0)
         fname = x;
     end
     if ~isempty(fname)
-        permchk = strcmp(self.outfmt,'.nii');
+        permchk = ismember(self.outfmt,{'.nii','.mhd'});
         switch self.Tx0.Transform
             case 'TranslationTransform'
                 pari = [2  1  3];

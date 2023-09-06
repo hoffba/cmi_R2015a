@@ -1,4 +1,4 @@
-function opts = init_pipeline_opts
+function opts = init_pipeline_opts(varargin)
 
 opts = struct( ...
               'dcm_path',       ''      ,... % Location of catalog file
@@ -29,3 +29,16 @@ opts = struct( ...
               'def',            false   ,... % OPTION to generate deformation fields from reg
               'Tvoi',           true     ... % OPTION to transform Ins VOI
              );
+
+if nargin && (iscellstr(varargin) || isstring(varargin))
+    fld = fieldnames(opts);
+    for i = 8:numel(fld)
+        if islogical(opts.(fld{i}))
+            if ismember(fld{i},varargin)
+                opts.(fld{i}) = true;
+            else
+                opts.(fld{i}) = false;
+            end
+        end
+    end
+end
