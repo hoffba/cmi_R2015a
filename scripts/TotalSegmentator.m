@@ -28,6 +28,7 @@ if ischar(ct)
         return;
     end
 elseif nargin==4
+    cleanup_chk = true;
     ct_fname = fullfile(savepath,[id,'.nii']);
     saveNIFTI(ct_fname,ct,id,info.fov,info.orient)
 else
@@ -42,7 +43,9 @@ system(['cd /D ',savepath,' & ',...
         ' -o ',savepath,...
         ' --ml']);
 % Clean up
-delete(tfname);
+if cleanup_chk
+    delete(ct_fname);
+end
 % Compile resulting lobe segmentations
 seg = readNIFTI(fullfile(savepath,['TotalSegmentator_',id,'.nii']));
 seg(~ismember(seg,13:17)) = 0; % Remove non-lung
