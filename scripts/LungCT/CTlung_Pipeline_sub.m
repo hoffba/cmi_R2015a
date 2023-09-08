@@ -464,7 +464,7 @@ try
                 cmi_save(0,dBlood,{'dBlood'},img(1).info.fov,img(1).info.orient,opts.fn.dBlood);
             end
             if ~isempty(dBlood)
-                T = CTlung_LobeStats(img.label,'dBlood','mean',[],dBlood);
+                T = CTlung_LobeStats(img.label,'dBlood',{'mean','var'},[],dBlood);
                 res = addTableVarVal(res,T);
             end
         end
