@@ -55,33 +55,11 @@ switch method
             end
         end
     case 5
-        % Find python installation
-        if ispc
-            str = 'where';
-        else
-            str = 'which';
-        end
-        [~,TSpath] = system([str,' TotalSegmentator']);
-        TSpath = strsplit(TSpath,'\n');
-        ind = find(contains(TSpath,'Python'),1,'last');
-        if isempty(ind)
-            writeLog(logfn,'TotalSegmentator not found\n');
+        writeLog(logfn,'- Generating VOI from TotalSegmentator ...\n');
+        seg = TotalSegmentator(ct,info,id,savepath);
+        if ischar(seg) % Failed to run
+            writeLog(logfn,'  TotalSegmentator: %s\n',seg);
             seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
-        else
-            writeLog(logfn,'- Generating VOI from TotalSegmentator ...\n');
-            TSpath = TSpath{ind};
-            tfname = fullfile(savepath,[id,'.nii']);
-            saveNIFTI(tfname,ct,id,info.fov,info.orient);
-            system(['cd /D ',savepath,' & ',...
-                    'python ',TSpath,...
-                    ' -i ',tfname,...
-                    ' -o ',savepath,...
-                    ' --ml']);
-            % Clean up
-            delete(tfname);
-            % Compile resulting lobe segmentations
-            seg = readNIFTI(fullfile(savepath,['TotalSegmentator_',id,'.nii']));
-            seg(~ismember(seg,13:17)) = 0; % Remove non-lung
         end
 
     otherwise
