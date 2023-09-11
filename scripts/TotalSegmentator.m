@@ -19,6 +19,7 @@ end
 TSpath = TSpath{ind};
 
 % Manage inputs
+cleanup_chk = false;
 if ischar(ct)
     if isfile(ct) && contains(ct,'.nii')
         ct_fname = ct;
