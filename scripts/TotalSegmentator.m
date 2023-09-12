@@ -1,22 +1,12 @@
 function seg = TotalSegmentator(ct,info,id,savepath)
 % Whole body CT segmentation using TotalSegmentator
 
-seg = [];
 
 % First make sure TotalSegmentator is installed
-if ispc
-    str = 'where';
-else
-    str = 'which';
-end
-[~,TSpath] = system([str,' TotalSegmentator']);
-TSpath = strsplit(TSpath,'\n');
-ind = find(contains(TSpath,'Python'),1,'last');
-if isempty(ind)
-    seg = 'TotalSegmentator not found';
+TSpath = findTS(false);
+if isempty(TSpath) || ~isfile(TSpath)
     return;
 end
-TSpath = TSpath{ind};
 
 % Manage inputs
 cleanup_chk = false;
@@ -29,6 +19,7 @@ if ischar(ct)
     [savepath,id] = fileparts(ct);
     id = extractBefore(id,'.');
 elseif nargin==4
+    % Will save a temporary image file for TotalSegmentator to read
     cleanup_chk = true;
     ct_fname = fullfile(savepath,[id,'.nii']);
     saveNIFTI(ct_fname,ct,id,info.fov,info.orient)
@@ -52,6 +43,43 @@ end
 seg = readNIFTI(sv_name);
 seg(~ismember(seg,13:17)) = 0; % Remove non-lung
 
+
+function TSpath = findTS(flag)
+    TSpath = [];
+    if ispc
+        str = 'where';
+    else
+        str = 'which';
+    end
+    [~,tpath] = system([str,' TotalSegmentator']);
+    tpath = strsplit(tpath,'\n');
+    ind = find(contains(tpath,'Python'),1,'last');
+    if isempty(ind)
+        if flag
+            TSpath = 'TotalSegmentator not available. See documentation for installation instructions';
+        else
+            % Try to install TotalSegmentator
+            stat = TSinstall;
+            if stat
+                TSpath = findTS(true);
+            end
+        end
+    else
+        TSpath = tpath{ind};
+    end
+
+
 function stat = TSinstall
-    'pip install TotalCommander'
-    'pip install cupy-cuda11x cucim'
+    if ispc
+        connect_str = ' && ';
+    else
+        connect_str = ' ; ';
+    end
+    cmd = {'pip install TotalSegmentator',...
+           'pip install cupy-cuda11x cucim'};
+    [stat,cmd_out] = system(strjoin(cmd,connect_str));
+    
+
+
+
+
