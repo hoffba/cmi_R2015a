@@ -427,7 +427,7 @@ try
                 end
             end
             if ~isempty(jac)
-                T = CTlung_LobeStats(img.label,'Jac','mean',[],jac);
+                T = CTlung_LobeStats(img.label,'Jac',{'mean','var'},[],jac);
                 res = addTableVarVal(res,T);
             end
         end

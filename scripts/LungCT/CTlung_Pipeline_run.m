@@ -1,4 +1,6 @@
 function [opts,cases,results] = CTlung_Pipeline_run(cases,opts)
+% Script for looping over selected Pipeline cases
+%   AND optionally setting up inputs for running on Great Lakes
 
 results = [];
 
