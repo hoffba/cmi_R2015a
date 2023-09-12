@@ -111,13 +111,12 @@ function res = vesselMF_sub(ID,procdir)
         return;
     end
     fn_lung = fullfile(procdir,fn_lung.name);
-
-    fn_re_lung = fullfile(procdir,['re_',ID,'.lobe_segmentation.nii.gz']);
-    fn_vessels = fullfile(procdir,[ID,'_binVessel.nii.gz']);
-
     if ~(isfile(fn_ct) && isfile(fn_lung))
         return;
     end
+
+    fn_re_lung = fullfile(procdir,['re_',ID,'.lobe_segmentation.nii.gz']);
+    fn_vessels = fullfile(procdir,[ID,'_binVessel.nii.gz']);
 
     fn_vess_results = fullfile(procdir,[ID,'_vesselMetrics.csv']);
     if isfile(fn_vessels) && isfile(fn_vess_results) && isfile(fn_re_lung)

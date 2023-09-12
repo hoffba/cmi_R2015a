@@ -21,13 +21,13 @@ TSpath = TSpath{ind};
 % Manage inputs
 cleanup_chk = false;
 if ischar(ct)
-    if isfile(ct) && contains(ct,'.nii')
-        ct_fname = ct;
-        savepath = fileparts(ct);
-    else
+    if ~(isfile(ct) && contains(ct,'.nii'))
         seg = 'Invalid input file name';
         return;
     end
+    ct_fname = ct;
+    [savepath,id] = fileparts(ct);
+    id = extractBefore(id,'.');
 elseif nargin==4
     cleanup_chk = true;
     ct_fname = fullfile(savepath,[id,'.nii']);
@@ -38,16 +38,20 @@ else
 end
 
 % Run TotalSegmentator
+sv_name = fullfile(savepath,[id,'.TotalSegmentator.nii.gz']);
 system(['cd /D ',savepath,' & ',...
         'python ',TSpath,...
         ' -i ',ct_fname,...
-        ' -o ',savepath,...
+        ' -o ',sv_name,...
         ' --ml']);
 % Clean up
 if cleanup_chk
     delete(ct_fname);
 end
 % Compile resulting lobe segmentations
-seg = readNIFTI(fullfile(savepath,['TotalSegmentator_',id,'.nii']));
+seg = readNIFTI(sv_name);
 seg(~ismember(seg,13:17)) = 0; % Remove non-lung
 
+function stat = TSinstall
+    'pip install TotalCommander'
+    'pip install cupy-cuda11x cucim'
