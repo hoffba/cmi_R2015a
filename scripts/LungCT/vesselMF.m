@@ -14,47 +14,48 @@ function res = vesselMF(varargin)
         % Run single process (e.g. on Great Lakes, or for debugging)
         res = vesselMF_sub(varargin{2:3});
     else
-        data_path = 'Y:\COPDGene_P1_data\batch07252023_1_to_1000';
-        method = 'parbatch';
-        if nargin
-            data_path = varargin{1};
-        end
-        if nargin>1
-            method = varargin{2};
-        end
-        fn_results = fullfile(data_path,...
+        opts = parseInputs(varargin);
+
+        fn_results = fullfile(opts.procdir,...
             sprintf('Minkowski_output_%s.xlsx',char(datetime('now','Format','yyyyMMddHHmmss'))));
         
         % Find data to process
         % ** may need to adjust input parameters based on file structure
         % Files all saved in same folder
-        procdir = data_path;
-        fn = dir(fullfile(procdir,'*.ct.nii.gz'));
+        fn = dir(fullfile(opts.procdir,'*.ct.nii.gz'));
         ID = cellfun(@(x)extractBefore(x,'.'),{fn.name}','UniformOutput',false);
         ID(startsWith(ID,'re_')) = [];
         
-        switch method
+        switch opts.method
             case 'debug'
-                batchloop(ID,procdir,fn_results);
+                batchloop(ID,opts.procdir,fn_results);
             case 'batch'
-                batch(@batchloop,0,{ID,procdir,fn_results});
+                batch(@batchloop,0,{ID,opts.procdir,fn_results});
             case 'parbatch'
-                batch(@parbatchloop,0,{ID,procdir,fn_results});
+                batch(@parbatchloop,0,{ID,opts.procdir,fn_results});
             case 'GL'
-                if nargin>2
-                    username = varargin{3};
-                else
-                    username = '';
-                end
-                GL_run(username, 'vesselMF',...
-                    {true,   ID,     procdir},...
+                GL_run(opts.username, 'vesselMF',...
+                    {true,   ID,     opts.procdir},...
                     [false,  false,  true],... % flag for path names
                     [true,   false,  true],...  % flag for static inputs
-                    'ProcessMemory',24,'ProcessTime',200,'Partition','standard','Nodes',10,...
+                    'ProcessMemory',opts.mem,'ProcessTime',opts.time,...
+                    'Partition',opts.part,'Nodes',opts.nnodes,...
                     'TimeStamp',char(datetime('now','Format','yyyyMMddHHmmss')),...
-                    'save_path',procdir);
+                    'save_path',opts.procdir);
         end
     end
+
+function opts = parseInputs(var_in)
+    p = inputParser;
+    addParameter(p,'procdir',pwd,@isfolder);
+    addParameter(p,'method','parbatch',@(x)ismember(x,{'debug','batch','parbatch','GL'}));
+    addParameter(p,'username','',@ischar);
+    addParameter(p,'mem',24,@isnumeric);
+    addParameter(p,'time',200,@isnumeric);
+    addParameter(p,'part','standard',@(x)ismember(x,{'standard','largemem'}));
+    addOptional(p,'nnodes',1,@isnumeric);
+    parse(p,var_in{:});
+    opts = p.Results;
 
 function batchloop(ID,procdir)
     N = numel(ID);

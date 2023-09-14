@@ -170,7 +170,7 @@ else
                     fprintf(val);
                 end
             end
-            fprintf('Job %u finished after %.1f minutes.\n',i,dt(i));
+            fprintf('Job %u finished after %.1f minutes.\n',ind(i),dt(i));
             fprintf('  State: %s\n',job(i).State);
             job(i).diary
             
