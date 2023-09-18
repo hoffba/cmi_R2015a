@@ -189,9 +189,9 @@ function [I,info] = resample_subj(I,info,fname,tag_type)
     end
     
     % Save resampled data to file:
-    [subj_dir,fname] = fileparts(fname);
-    fname = fullfile(subj_dir,['re_',fname,'.nii']);
-    niftiwrite(cast(I,info.Datatype),fname,info,'Compressed',true);
+    % [subj_dir,fname] = fileparts(fname);
+    % fname = fullfile(subj_dir,['re_',fname,'.nii']);
+    % niftiwrite(cast(I,info.Datatype),fname,info,'Compressed',true);
     
 end
 
