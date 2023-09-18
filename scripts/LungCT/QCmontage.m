@@ -60,13 +60,13 @@ for i = 1:nf
 end
 figure(hf)
 montage(mat/255,'Size',montsz,'Parent',ha);
-[~,tname] = fileparts(fname);
-t = title(tname,'Interpreter','none');
+% [~,tname] = fileparts(fname);
+% t = title(tname,'Interpreter','none');
 
 % Fit figure to axes
 axpos = tightPosition(ha);
 ha.Position(1:2) = ha.Position(1:2)-axpos(1:2);
-hf.Position(3:4) = [axpos(3:4)] - 1 + [0 t.Extent(4)];
+hf.Position(3:4) = [axpos(3:4)] - 1;% + [0 t.Extent(4)];
 
 % Print the figure:
 pipeline_save_fig(hf,fname);

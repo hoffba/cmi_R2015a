@@ -33,10 +33,14 @@ function D = report_prm(procdir,res,opts,R)
     pos = find(opts.ID=='_',1,"last");
     if isempty(pos)
         ID = opts.ID;
-        tp = '';
+        tp = 'Unknown';
     else
         ID = opts.ID(1:pos-1);
         tp = opts.ID(pos+1:end);
+        % Re-format date for display
+        if numel(tp)==8 % 'YYYYmmdd'
+            tp = char(datetime(tp,'InputFormat','yyyyMMdd','Format','d, MMMM yyyy'));
+        end
     end
     append(dp,ID);
     moveToNextHole(dp);
@@ -91,13 +95,16 @@ function D = report_prm(procdir,res,opts,R)
         T.Children(2).Children.Entries(i).InnerMargin = '10px';
         T.Children(2).Children.Entries(i).Children.Color = bgcolor{i-1};
         T.Children(2).Children.Entries(i).Children.Bold = true;
+        T.Children(2).Children.Entries(i).Children.Style = [T.Children(2).Children.Entries(i).Children.Style,{HAlign('center')}];
         % Remove extra quotes
         for j = 1:Nr
             T.Children(1).Children(j).Children(i).Children.Content = strip(T.Children(1).Children(j).Children(i).Children.Content,'''');
+            % Center table entries
+            T.Children(1).Children(j).Children(i).Style = [T.Children(1).Children(1).Children(i).Style,{HAlign('center')}];
         end
     end
     for i = 2:2:Nr
-        T.Children(1).Children(i).Style = {BackgroundColor('#cfcfcf')};
+        T.Children(1).Children(i).Style = [T.Children(1).Children(i).Style,{BackgroundColor('#cfcfcf')}];
     end
     append(dp,T);
     

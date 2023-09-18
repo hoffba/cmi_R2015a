@@ -61,8 +61,6 @@ end
 %  - 'GL'    = run DICOM loading and YACTA locally, then the rest on GL
 %  - 'batch' = run full pipeline locally in batch job
 %  - 'debug' = run full pipeline locally in command window
-opts.timestamp = char(datetime('now','Format','yyyyMMddHHmmss'));
-opts.report_path = fullfile(fileparts(mfilename("fullpath")),'ReportTemplates\+Pipeline_Report\@Chapter\resources\templates\pdf\default.pdftx');
 if strcmp(opts.cluster,'debug')
     
 %~~~~~~~~~ debug ~~~~~~~~~

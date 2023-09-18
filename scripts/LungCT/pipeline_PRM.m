@@ -23,11 +23,11 @@ img.prm.setOpts('thresh',info.thresh,...
 prm = int8(img.prm.mat);
 
 %% Add title to axes
-tname = exp_info.label;
-if contains(tname,'.')
-    tname = extractBefore(tname,'.');
-end
-title(img.prm.hascatter,tname,'Interpreter','none');
+% tname = exp_info.label;
+% if contains(tname,'.')
+%     tname = extractBefore(tname,'.');
+% end
+% title(img.prm.hascatter,tname,'Interpreter','none');
 
 %% Save scatterplot figure
 pipeline_save_fig(img.prm.hfscatter,svname);
