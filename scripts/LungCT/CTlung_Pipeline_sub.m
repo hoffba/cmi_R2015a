@@ -38,7 +38,7 @@ try
     opts.fn.prmScatter =        fullfile(procdir,[ID,'_PRM_Scatter.tif']);
     
     % Make sure GL has the correct path
-    if strcmp(opts.cluster,'GL')
+    if ismember(opts.cluster,{'GL','tier2'})
         opts.save_path = checkTurboPath(opts.save_path);
         opts.save_path = opts.save_path{1};
     end

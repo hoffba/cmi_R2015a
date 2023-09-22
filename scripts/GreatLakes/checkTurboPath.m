@@ -17,7 +17,8 @@ if ispc
     LOC_turbo_dir = netdrives.Drive;
 end
 
-if ischar(fnames)
+charflag = ischar(fnames);
+if charflag
     fnames = {fnames};
 end
 nf = numel(fnames);
@@ -37,3 +38,7 @@ for i = 1:nf
     end
 end
 fn(flag) = [];
+
+if charflag
+    fn = fn{1};
+end

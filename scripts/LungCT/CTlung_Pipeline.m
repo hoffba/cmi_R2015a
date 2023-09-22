@@ -93,87 +93,98 @@ end
         h.tab_opts = uitab(h.tabgroup,'Title','Options');
         h.tab_scans = uitab(h.tabgroup,'Title','Scans');
 
-    %% Tab 1: Settings and options
-        uilabel(h.tab_opts,   'Position',[5,   fheight-50, 100, 20],'Text','Uniquename:','FontWeight','bold');
-        h.edit_username = uieditfield(h.tab_opts,'Position',[110, fheight-50, 300, 20],'Editable',1,...
-            'ValueChangedFcn',@setOpts,'Tag','username','Value',opts.username);
-        uibutton(h.tab_opts,  'Position',[fwidth-45,  fheight-50, 40, 20],'Text','Help','ButtonPushedFcn',@pipelineHELP,'BackgroundColor',[.73,.92,1]);
-        uilabel(h.tab_opts,   'Position',[5,   fheight-75, 70, 20],'Text','Catalog: ','FontWeight','bold');
-        uibutton(h.tab_opts,  'Position',[80,  fheight-75, 50, 20],'Text','Select','ButtonPushedFcn',@selectCatalog,'Tag','cat_select');
-        uibutton(h.tab_opts,  'Position',[135, fheight-75, 50, 20],'Text','New','ButtonPushedFcn',@selectCatalog,'Tag','cat_new');
-        uibutton(h.tab_opts,  'Position',[190, fheight-75, 50, 20],'Text','Save','ButtonPushedFcn',@saveCatalog);
-        h.text_cat = uitextarea(h.tab_opts,'Position',[80, fheight-100, fwidth-85, 20],'Editable',0);
+        % Size and spacing
+        tab_hd = 25;
+        gap = 5;
+        line_h = 20;
+        line_step = line_h + gap;
+        % Main figure:
+        button_w = 50;
+        button_step = button_w + gap;
+        % Panel:
+        pan_hd = 20;
+        pan_w = 215;
+        pan_w_ = pan_w - 2*gap;
+        pan_h = 350;
+        pan_posy = pan_h - pan_hd - line_step*(1:10);
 
-        uilabel(h.tab_opts,   'Position',[5,   fheight-125,  70, 20],'Text','Results:','FontWeight','bold');
-        uibutton(h.tab_opts,  'Position',[80,   fheight-125, 50,20],'Text','Select','ButtonPushedFcn',@setSavePath);
-        h.text_save = uitextarea(h.tab_opts,'Position',[80, fheight-150, fwidth-85, 20],'Editable',0);
+    %% Tab 1: Settings and options
+        posy = fheight-tab_hd-line_step;
+        uilabel(h.tab_opts,   'Position',[5, posy, 100, line_h],'Text','Uniquename:','FontWeight','bold');
+        h.edit_username = uieditfield(h.tab_opts,'Position',[110, posy, 300, line_h],'Editable',1,'ValueChangedFcn',@setOpts,'Tag','username','Value',opts.username);
+        uibutton(h.tab_opts,  'Position',[fwidth-45, posy, 40, 20],'Text','Help','ButtonPushedFcn',@pipelineHELP,'BackgroundColor',[.73,.92,1]);
+        
+        posy = posy - line_step;  lbl_w = 70;
+        uilabel(h.tab_opts, 'Position',[gap,                posy, lbl_w, line_h],'Text','Catalog: ','FontWeight','bold');
+        posx = lbl_w + 2*gap;
+        uibutton(h.tab_opts,'Position',[posx,               posy, button_w, line_h],'Text','Select','ButtonPushedFcn',@selectCatalog,'Tag','cat_select');
+        uibutton(h.tab_opts,'Position',[posx+button_step,   posy, button_w, line_h],'Text','New','ButtonPushedFcn',@selectCatalog,'Tag','cat_new');
+        uibutton(h.tab_opts,'Position',[posx+button_step*2, posy, button_w, line_h],'Text','Save','ButtonPushedFcn',@saveCatalog);
+        h.text_cat = uitextarea(h.tab_opts,'Position',[posx, posy-line_step, fwidth-posx-gap, line_h],'Editable',0);
+
+        posy = posy - line_step*2;
+        uilabel(h.tab_opts,   'Position',[gap,  posy, lbl_w,    line_h],'Text','Results:','FontWeight','bold');
+        uibutton(h.tab_opts,  'Position',[posx, posy, button_w, line_h],'Text','Select','ButtonPushedFcn',@setSavePath);
+        h.text_save = uitextarea(h.tab_opts,'Position',[posx, posy-line_step, fwidth-posx-gap, line_h],'Editable',0);
 
     % Panel: Modules
-        h.panel_modules = uipanel(h.tab_opts,'Position',[5, fheight-440, 215, 285],'Title','Modules','FontWeight','bold');
-        uibutton(h.panel_modules,  'Position',[5,   245, 100, 20],'Text','Select All','ButtonPushedFcn',@selectAll);
-        uibutton(h.panel_modules,  'Position',[110, 245, 100, 20],'Text','Clear All','ButtonPushedFcn',@clearAll);
-        h.unreg =   uicheckbox(h.panel_modules,'Position',[5,   210, 200, 20],'Text','Unreg',...
-            'Value',opts.unreg,'ValueChangedFcn',@setOpts,'Tag','unreg');
-        h.airway =  uicheckbox(h.panel_modules,'Position',[5,   185, 200, 20],'Text','Airways',...
-            'Value',opts.airway,'ValueChangedFcn',@setOpts,'Tag','airway');
-        h.scatnetAT = uicheckbox(h.panel_modules,'Position',[5,   160, 200, 20],'Text','ScatNet-AT',...
-            'Value',opts.scatnetAT,'ValueChangedFcn',@setOpts,'Tag','scatnetAT');
-        h.scatnetAT_PEDS = uicheckbox(h.panel_modules,'Position',[5,   135, 200, 20],'Text','ScatNet-AT-Peds',...
-            'Value',opts.scatnetAT_PEDS,'ValueChangedFcn',@setOpts,'Tag','scatnetAT_PEDS');
-        h.vessel =  uicheckbox(h.panel_modules,'Position',[5,    110, 200, 20],'Text','Vessels',...
-            'Value',opts.vessel,'ValueChangedFcn',@setOpts,'Tag','vessel');
-        h.reg =     uicheckbox(h.panel_modules,'Position',[5,    85, 200, 20],'Text','Registration',...
-            'Value',opts.reg,'ValueChangedFcn',@setOpts,'Tag','reg');
-        h.scatnetEmph = uicheckbox(h.panel_modules,'Position',[5,   60, 200, 20],'Text','ScatNet-Emph',...
-            'Value',opts.scatnetEmph,'ValueChangedFcn',@setOpts,'Tag','scatnetEmph');
-        h.prm =     uicheckbox(h.panel_modules,'Position',[5,    35, 200, 20],'Text','PRM',...
-            'Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
-        h.tprm =    uicheckbox(h.panel_modules,'Position',[5,    10, 200, 20],'Text','tPRM',...
-            'Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
+        pany = posy - line_step - gap - pan_h;
+        panx = gap;
+        h.panel_modules = uipanel(h.tab_opts,'Position',[gap, pany, pan_w, pan_h],'Title','Modules','FontWeight','bold');
+        button_w = 100;
+        posy_ = pan_h - pan_hd - line_step;
+        uibutton(h.panel_modules,'Position',[gap,            pan_posy(1), button_w, line_h],'Text','Select All','ButtonPushedFcn',@selectAll);
+        uibutton(h.panel_modules,'Position',[button_w+2*gap, pan_posy(1), button_w, line_h],'Text','Clear All','ButtonPushedFcn',@clearAll);
+        h.unreg =          uicheckbox(h.panel_modules,'Position',[gap, pan_posy(2),  pan_w_, line_h],'Text','Unreg','Value',opts.unreg,'ValueChangedFcn',@setOpts,'Tag','unreg');
+        h.airway =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(3),  pan_w_, line_h],'Text','Airways','Value',opts.airway,'ValueChangedFcn',@setOpts,'Tag','airway');
+        h.scatnetAT =      uicheckbox(h.panel_modules,'Position',[gap, pan_posy(4),  pan_w_, line_h],'Text','ScatNet-AT','Value',opts.scatnetAT,'ValueChangedFcn',@setOpts,'Tag','scatnetAT');
+        h.scatnetAT_PEDS = uicheckbox(h.panel_modules,'Position',[gap, pan_posy(5),  pan_w_, line_h],'Text','ScatNet-AT-Peds','Value',opts.scatnetAT_PEDS,'ValueChangedFcn',@setOpts,'Tag','scatnetAT_PEDS');
+        h.vessel =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(6),  pan_w_, line_h],'Text','Vessels','Value',opts.vessel,'ValueChangedFcn',@setOpts,'Tag','vessel');
+        h.reg =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(7),  pan_w_, line_h],'Text','Registration','Value',opts.reg,'ValueChangedFcn',@setOpts,'Tag','reg');
+        h.scatnetEmph =    uicheckbox(h.panel_modules,'Position',[gap, pan_posy(8),  pan_w_, line_h],'Text','ScatNet-Emph','Value',opts.scatnetEmph,'ValueChangedFcn',@setOpts,'Tag','scatnetEmph');
+        h.prm =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(9),  pan_w_, line_h],'Text','PRM','Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
+        h.tprm =           uicheckbox(h.panel_modules,'Position',[gap, pan_posy(10), pan_w_, line_h],'Text','tPRM','Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
     % Panel: Registration Options
-        h.panel_reg = uipanel(h.tab_opts,'Position',[225, fheight-415, 215, 260],'Title','Reg Options','FontWeight','bold');
-        h.dBlood =  uicheckbox(h.panel_reg,'Position',[5, 185, 200, 20],'Text','Blood density change',...
-            'Value',opts.dBlood,'ValueChangedFcn',@setOpts,'Tag','dBlood');
-        h.quickreg = uicheckbox(h.panel_reg,'Position',[5,160,200,20],'Text','Quick Registration',...
-            'Value',opts.quickreg,'ValueChangedFcn',@setOpts,'Tag','quickreg');
-        h.jac =      uicheckbox(h.panel_reg,'Position',[5,135,200,20],'Text','|Jacobian|',...
-            'Value',opts.jac,'ValueChangedFcn',@setOpts,'Tag','jac');
-        h.jacmat =   uicheckbox(h.panel_reg,'Position',[5,110,200,20],'Text','Jacobian Matrix',...
-            'Value',opts.jacmat,'ValueChangedFcn',@setOpts,'Tag','jacmat');
-        h.def =      uicheckbox(h.panel_reg,'Position',[5,85,200,20],'Text','Deformation Fields',...
-            'Value',opts.def,'ValueChangedFcn',@setOpts,'Tag','def');
-        h.Tvoi =  uicheckbox(h.panel_reg,'Position',[5,60,200,20],'Text','Transform VOI',...
-            'Value',opts.Tvoi,'ValueChangedFcn',@setOpts,'Tag','Tvoi');
+        panx = panx + gap + pan_w;
+        h.panel_reg = uipanel(h.tab_opts,'Position',[panx, pany, pan_w, pan_h],'Title','Reg Options','FontWeight','bold');
+        h.dBlood =   uicheckbox(h.panel_reg,'Position',[gap, pan_posy(1), pan_w_, line_h],'Text','Blood density change','Value',opts.dBlood,'ValueChangedFcn',@setOpts,'Tag','dBlood');
+        h.quickreg = uicheckbox(h.panel_reg,'Position',[gap, pan_posy(2), pan_w_, line_h],'Text','Quick Registration','Value',opts.quickreg,'ValueChangedFcn',@setOpts,'Tag','quickreg');
+        h.jac =      uicheckbox(h.panel_reg,'Position',[gap, pan_posy(3), pan_w_, line_h],'Text','|Jacobian|','Value',opts.jac,'ValueChangedFcn',@setOpts,'Tag','jac');
+        h.jacmat =   uicheckbox(h.panel_reg,'Position',[gap, pan_posy(4), pan_w_, line_h],'Text','Jacobian Matrix','Value',opts.jacmat,'ValueChangedFcn',@setOpts,'Tag','jacmat');
+        h.def =      uicheckbox(h.panel_reg,'Position',[gap, pan_posy(5), pan_w_, line_h],'Text','Deformation Fields','Value',opts.def,'ValueChangedFcn',@setOpts,'Tag','def');
+        h.Tvoi =     uicheckbox(h.panel_reg,'Position',[gap, pan_posy(6), pan_w_, line_h],'Text','Transform VOI','Value',opts.Tvoi,'ValueChangedFcn',@setOpts,'Tag','Tvoi');
 
     % Panel: Other Options
-        h.panel_other = uipanel(h.tab_opts,'Position',[445, fheight-415, 215, 260],'Title','Other Options','FontWeight','bold');
-        h.orient_check = uicheckbox(h.panel_other,'Position',[5,185, 200, 20],'Text','Auto-correct Orientation',...
-            'Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
-        h.peds_check = uicheckbox(h.panel_other,'Position',[5,   160, 200, 20],'Text','Pediatrics',...
-            'Value',opts.peds,'ValueChangedFcn',@setOpts,'Tag','peds');
+        panx = panx + gap + pan_w;
+        h.panel_other =  uipanel(h.tab_opts,'Position',[panx, pany, pan_w, pan_h],'Title','Other Options','FontWeight','bold');
+        h.orient_check = uicheckbox(h.panel_other,'Position',[gap, pan_posy(1), pan_w_, line_h],'Text','Auto-correct Orientation','Value',opts.orient_check,'ValueChangedFcn',@setOpts,'Tag','orient_check');
+        h.peds_check =   uicheckbox(h.panel_other,'Position',[gap, pan_posy(2), pan_w_, line_h],'Text','Pediatrics','Value',opts.peds,'ValueChangedFcn',@setOpts,'Tag','peds');
         
     % Panel: Cluster Options
-        h.panel_cluster = uipanel(h.tab_opts,'Position',[665, fheight-415, 215, 260],'Title','Cluster Options','FontWeight','bold');
-        bg = uibuttongroup(h.panel_cluster,'Position',[5,110,205,95],'Title','Cluster:',...
-            'SelectionChangedFcn',@setOpts,'Tag','cluster');
-        h.radio_GL = uiradiobutton(bg,'Position',[5,55,195,20],'Text','Great Lakes','Tag','GL');
-        h.radio_batch = uiradiobutton(bg,'Position',[5,30,195,20],'Text','Local Batch','Tag','batch');
-        h.radio_debug = uiradiobutton(bg,'Position',[5,5,195,20],'Text','Debug','Tag','debug');
+        panx = panx + gap + pan_w;
+        h.panel_cluster = uipanel(h.tab_opts,'Position',[panx, pany, pan_w, pan_h],'Title','Cluster Options','FontWeight','bold');
+        bg_posy = 5*line_step + gap - line_step*(0:10);
+        bg = uibuttongroup(h.panel_cluster,'Position',[gap, posy_-bg_posy(2), pan_w_, bg_posy(1)-gap],'Title','Cluster:','SelectionChangedFcn',@setOpts,'Tag','cluster');
+        h.radio_GL =    uiradiobutton(bg,'Position',[gap, bg_posy(3), pan_w_, line_h],'Text','Great Lakes','Tag','GL');
+        h.radio_tier2 = uiradiobutton(bg,'Position',[gap, bg_posy(4), pan_w_, line_h],'Text','Tier2','Tag','tier2');
+        h.radio_batch = uiradiobutton(bg,'Position',[gap, bg_posy(5), pan_w_, line_h],'Text','Local Batch','Tag','batch');
+        h.radio_debug = uiradiobutton(bg,'Position',[gap, bg_posy(6), pan_w_, line_h],'Text','Debug','Tag','debug');
         h.(sprintf('radio_%s',opts.cluster)).Value = true;
-        uilabel(h.panel_cluster,'Position',[5, 80, 120, 20],'Text','Parallel Pool Size:');
-        h.edit_npar = uieditfield(h.panel_cluster,'numeric','Position',[125,80,50,20],'Enable',false,...
-            'Editable',1,'Value',opts.par_size,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','par_size');
-        uilabel(h.panel_cluster,'Position',[5, 55, 120, 20],'Text','Partition Type:');
-        h.partition = uidropdown(h.panel_cluster,'Position',[125,55,80,20],...
-            'Items',{'auto','standard','largemem'},'ValueChangedFcn',@setOpts,'Tag','partition');
-        uilabel(h.panel_cluster,'Position',[5, 30, 120, 20],'Text','Memory / process: ');
-        h.edit_mem = uieditfield(h.panel_cluster,'numeric','Position',[125, 30, 50, 20],...
-            'Editable',1,'Value',opts.mem,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','mem');
-        uilabel(h.panel_cluster,'Position',[5, 5, 120, 20],'Text','Number of Nodes: ');
-        h.nnodes = uidropdown(h.panel_cluster,'Position',[125, 5, 80, 20],...
-            'Items',{'1','2','3','4','5'},'ItemsData',1:5,'ValueChangedFcn',@setOpts,'Tag','nnodes');
-                
+        
+        pan_hlf = (pan_w - 3*gap)/2;
+        posy_ = posy_ - gap;
+        uilabel(h.panel_cluster,'Position',[gap, posy_-line_step*5, pan_hlf, line_h],'Text','Parallel Pool Size:');
+        uilabel(h.panel_cluster,'Position',[gap, posy_-line_step*6, pan_hlf, line_h],'Text','Partition Type:');
+        uilabel(h.panel_cluster,'Position',[gap, posy_-line_step*7, pan_hlf, line_h],'Text','GBytes / process: ');
+        uilabel(h.panel_cluster,'Position',[gap, posy_-line_step*8, pan_hlf, line_h],'Text','# of Nodes: ');
+
+        posx = (pan_w + gap)/2;
+        h.edit_npar = uieditfield(h.panel_cluster,'numeric','Position',[posx, posy_-line_step*5, pan_hlf, line_h],'Enable',false,'Editable',1,'Value',opts.par_size,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','par_size');
+        h.partition = uidropdown(h.panel_cluster,           'Position',[posx, posy_-line_step*6, pan_hlf, line_h],'Items',{'auto','standard','largemem'},'ValueChangedFcn',@setOpts,'Tag','partition');
+        h.edit_mem =  uieditfield(h.panel_cluster,'numeric','Position',[posx, posy_-line_step*7, pan_hlf, line_h],'Editable',1,'Value',opts.mem,'HorizontalAlignment','center','ValueChangedFcn',@setOpts,'Tag','mem');
+        h.nnodes =    uidropdown(h.panel_cluster,           'Position',[posx, posy_-line_step*8, pan_hlf, line_h],'Items',{'1','2','3','4','5'},'ItemsData',1:5,'ValueChangedFcn',@setOpts,'Tag','nnodes');
+        
     %% Tab 2: tables for selecting images, and execution buttons
         % Filter selection:
         uilabel(h.tab_scans,'Position',[5,fheight-50,50,20],'Text','Filter:');

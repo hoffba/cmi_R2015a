@@ -80,7 +80,6 @@ else
     c.JobStorageLocation = jobdir;
     np = min([c.NumWorkers-1,ncases,opts.par_size]);
     if strcmp(opts.cluster,'GL') % Run DICOM load and YACTA locally, then the rest on GL
-        
 %~~~~~~~~~ GL ~~~~~~~~~
         fprintf(['Running local processes as batch with pool size of %d\n',...
                  'Please wait at least an hour before starting GL process\n'],np);
@@ -88,8 +87,15 @@ else
         batch(@pipeline_loop,1,{cases,opts},'Pool',nworkers_orig,'Pool',np);
         GL_run(opts.username, 'CTlung_Pipeline_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
             'ProcessMemory',24,'ProcessTime',720,'TimeStamp',opts.timestamp,'save_path',save_path{1});
+    elseif strcmp(opts.cluster,'tier2')
+%~~~~~~~~~ Tier2 ~~~~~~~~~
+        fprintf(['Running local processes as batch with pool size of %d\n,...' ...
+                 'Please wait at least an hour before starting server processing\n'],np)
+        save_path = checkTurboPath(opts.save_path);
+        batch(@pipeline_loop,1,{cases,opts},'Pool',nworkers_orig,'Pool',np);
+        Tier2_run(opts.username,'CTlung_Pipeline_sub',{{cases.procdir}',opts}, [true,false], [false,true],...
+            'TimeStamp',opts.timestamp,'save_path',save_path{1});
     else
-        
 %~~~~~~~~~ batch ~~~~~~~~~
         fprintf('Running FULL PIPELINE in batch with pool size of %d\n',np);
         batch(@pipeline_loop,1,{cases,opts},'Pool',np);
