@@ -24,14 +24,18 @@ if nargin~=2
     % Initialize log file:
     opts.fn_log = fullfile(opts.TempDir,[opts.jobname,'.log']);
 
+    % Fix file system paths for the server
+    
+
     % Save batch job inputs to Turbo temp directory
     fname_inputs = fullfile(opts.TempDir,sprintf('%s_INPUTS.mat',opts.jobname));
     save(fname_inputs,'-struct','opts');
 
     % Generate Tier2 system call:
+    fname_inputs = checkTurboPath(fname_inputs);
     cmd_str = ['ml MATLAB/2023a ; '...
                'matlab -nodisplay -r "cd(''/nfs/turbo/umms-cgalban/GreatLakes/cmi_R2015a'');cmi_setPath;'...
-                                     'Tier2_run(1,''',fname_inputs,''');exit'];
+                                     'Tier2_run(1,''',fname_inputs,''');exit"'];
 
     % Copy command to run on Tier2 server terminal
     clipboard('copy',cmd_str);
@@ -40,8 +44,8 @@ if nargin~=2
              '   Host Name: galban-ap-ps1a\n',...
              '   Login: Level 2\n',...
              '2) Make sure Turbo is mounted:\n',...
-             '   Try: >> cd /nfs/turbo/umms-cgalban ; ll'
-             '   If folder is empty: >> sudo mount -t nfs umms-cgalban.turbo.storage.umich.edu:/umms-cgalban /nfs/turbo/umms-cgalban'
+             '   Try: >> cd /nfs/turbo/umms-cgalban ; ll\n',...
+             '   If folder is empty: >> sudo mount -t nfs umms-cgalban.turbo.storage.umich.edu:/umms-cgalban /nfs/turbo/umms-cgalban\n',...
              '3) Paste command into terminal to run script:\n',...
              '   (ALREADY IN CLIPBOARD, just paste into PuTTy)\n',...
              '   ',cmd_str,'\n']);

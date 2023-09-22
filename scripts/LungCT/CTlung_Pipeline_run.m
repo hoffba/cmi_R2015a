@@ -24,7 +24,7 @@ end
 ncases = numel(cases);
 
 % Make sure the save directory is on Turbo, for access from GL
-if strcmp(opts.cluster,'GL')
+if ismember(opts.cluster,{'GL','tier2'})
     [~,flag_turbo] = checkTurboPath(opts.save_path);
     if flag_turbo
         error('Save path must be on Turbo for access from Great Lakes.');
@@ -104,7 +104,7 @@ end
 
     
 catch err
-    getReport(err);
+    getReport(err)
 end
 
 
