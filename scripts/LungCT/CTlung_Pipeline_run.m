@@ -116,7 +116,7 @@ ncases = numel(cases);
 
 f(1:ncases) = parallel.FevalFuture;
 switch opts.cluster
-    case 'GL' 
+    case {'GL','tier2'} 
         % Start queue for local processes:
         for i = 1:ncases
             fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
