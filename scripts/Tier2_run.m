@@ -25,7 +25,7 @@ if nargin~=2
     opts.fn_log = fullfile(opts.TempDir,[opts.jobname,'.log']);
 
     % Fix file system paths for the server
-    
+
 
     % Save batch job inputs to Turbo temp directory
     fname_inputs = fullfile(opts.TempDir,sprintf('%s_INPUTS.mat',opts.jobname));
@@ -33,7 +33,7 @@ if nargin~=2
 
     % Generate Tier2 system call:
     fname_inputs = checkTurboPath(fname_inputs);
-    cmd_str = ['ml MATLAB/2023a ; '...
+    cmd_str = ['ml MATLAB/R2023a ; '...
                'matlab -nodisplay -r "cd(''/nfs/turbo/umms-cgalban/GreatLakes/cmi_R2015a'');cmi_setPath;'...
                                      'Tier2_run(1,''',fname_inputs,''');exit"'];
 

@@ -38,7 +38,15 @@ classdef ElxClass < handle
                     self.xtstr = 'module load Bioinformatics elastix ; module load gcc ; ';
                     self.sepstr = ' ; ';
                     self.sys = 4;
+                elseif contains(hostname,'galban-ap-ps1a.med.umich.edu')
+                    % Galban lab Tier2 server
+                    fprintf('Galban Teir2!\n')
+                    self.xtstr = '';
+                    self.sepstr = ' ; ';
+                    self.sys = 4;
                 else
+                    % Unknown system
+                    fprintf('Unknown System!\n')
                     self.elxdir = '/opt/elastix/bin/';
                     self.xtstr = 'xterm -geometry 170x50 ';
                     self.sepstr = ' ; ';

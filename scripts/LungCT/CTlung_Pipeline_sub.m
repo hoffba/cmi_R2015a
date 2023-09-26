@@ -40,7 +40,6 @@ try
     % Make sure GL has the correct path
     if ismember(opts.cluster,{'GL','tier2'})
         opts.save_path = checkTurboPath(opts.save_path);
-        opts.save_path = opts.save_path{1};
     end
     
     % Number of slices to show in montages
