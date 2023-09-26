@@ -38,7 +38,6 @@ for i = 1:nf
     end
 end
 fn(flag) = [];
-
 if charflag
     fn = fn{1};
 end

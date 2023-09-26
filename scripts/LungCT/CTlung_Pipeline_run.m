@@ -76,7 +76,9 @@ else
     c = parcluster('local');
     nworkers_orig = c.NumWorkers;
     jobdir = fullfile(c.JobStorageLocation,sprintf('pipeline_local_%s',opts.timestamp));
-    mkdir(jobdir);
+    if ~isfolder(jobdir)
+        mkdir(jobdir);
+    end
     c.JobStorageLocation = jobdir;
     np = min([c.NumWorkers-1,ncases,opts.par_size]);
     if strcmp(opts.cluster,'GL') % Run DICOM load and YACTA locally, then the rest on GL
