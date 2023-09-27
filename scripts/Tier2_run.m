@@ -34,7 +34,7 @@ if nargin~=2
     % Generate Tier2 system call:
     fname_inputs = checkTurboPath(fname_inputs);
     cmd_str = ['ml MATLAB/R2023a ; '...
-               'matlab -nodisplay -r "cd(''/nfs/turbo/umms-cgalban/GreatLakes/cmi_R2015a'');cmi_setPath;'...
+               'matlab -nodesktop -r "cd(''/nfs/turbo/umms-cgalban/GreatLakes/cmi_R2015a'');cmi_setPath;'...
                                      'Tier2_run(1,''',fname_inputs,''');exit"'];
 
     % Copy command to run on Tier2 server terminal
@@ -46,9 +46,11 @@ if nargin~=2
              '2) Make sure Turbo is mounted:\n',...
              '   Try: >> cd /nfs/turbo/umms-cgalban ; ll\n',...
              '   If folder is empty: >> sudo mount -t nfs umms-cgalban.turbo.storage.umich.edu:/umms-cgalban /nfs/turbo/umms-cgalban\n',...
-             '3) Paste command into terminal to run script:\n',...
+             '3) Start a screen terminal named by screen_name: >> screen -S screen_name',...
+             '4) Paste command into terminal to run script:\n',...
              '   (ALREADY IN CLIPBOARD, just paste into PuTTy)\n',...
-             '   ',cmd_str,'\n']);
+             '   ',cmd_str,'\n',...
+             '5) Detach from screen session: type Ctrl-A then Ctrl-D']);
 
 else
     
@@ -65,6 +67,8 @@ else
             error('Invalid input: must be valid .mat file containing function inputs.');
         end
 
+        jobname = extractBefore(inputs_fname,'_INPUTS.mat');
+
         p = load(inputs_fname);
         
         % Print number of available workers
@@ -73,8 +77,10 @@ else
         
         % Set up cluster properties
         c = parcluster;
-        jobdir = fullfile(c.JobStorageLocation,sprintf('%s_array%u',jobname,jobnum));
-        mkdir(jobdir);
+        jobdir = fullfile(c.JobStorageLocation,sprintf('%s',jobname));
+        if ~isfolder(jobdir)
+            mkdir(jobdir);
+        end
         c.JobStorageLocation = jobdir;
         
         % Start batch jobs
