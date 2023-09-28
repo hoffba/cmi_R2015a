@@ -192,29 +192,48 @@
             <dptemplate name = "PipelineHeader">
                 <table width="100%">
                     <tr>
-                        <td rowspan="2" style="text-align:left; padding-bottom:2pt" valign="bottom">
+                        <td rowspan="2" style="text-align:left; padding-bottom:2pt;" valign="bottom">
                             <img src="images/MiTAP_Logo.png"></img></td>
                         <td style="text-align:right; padding-bottom:2pt; font-family:arial;
-                                   font-size: 16pt; font-weight: bold" valign="bottom">
+                                   font-size: 16pt; font-weight: bold;" valign="bottom">
                             <hole id="Title">TITLE</hole></td>
                     </tr>
                     <tr>
                         <td style="text-align:right; padding-bottom:2pt; font-family:arial;
-                                   font-size: 10pt" valign="bottom"><hole id="Date">DATE</hole></td>
+                                   font-size: 10pt" valign="top">Report Generated: <hole id="Date">DATE</hole></td>
                     </tr>
                     <tr>
                         <td style="text-align:left"><p style="display:inline-block">Subject ID: <hole id="SubjectID">SUBJECTID</hole></p></td>
-                        <td style="text-align:left"><p style="display:inline-block">Timepoint: <hole id="Timepoint">TIMEPOINT</hole></p></td>
+                        <td style="text-align:left"><p style="display:inline-block">Study Date: <hole id="Timepoint">TIMEPOINT</hole></p></td>
                     </tr>
                 </table>
                 <br/>
             </dptemplate>
 
+            <dptemplate name="INSbody">
+                <table style="width:100%; text-align:center">
+                    <tr style="height:4in">
+                        <td style="width:50%" valign="middle"><hole id="INS_Montage">INS_Montage</hole></td>
+                        <td valign="middle"><hole id="INS_Render">INS_Render</hole></td>
+                    </tr>
+                </table>
+                <hole id="INS_Table" style="text-align:center">INS_Table</hole>
+            </dptemplate>
+
+            <dptemplate name="EXPbody">
+            </dptemplate>
+
+            <dptemplate name="AIRbody">
+            </dptemplate>
+
+            <dptemplate name="VESbody">
+            </dptemplate>
+
             <dptemplate name="PRMbody">
                 <table style="width:100%; text-align:center">
                     <tr style="height:4in">
-                        <td style="width:50%"><hole id="PRM_Montage">PRM_Montage</hole></td>
-                        <td><hole id="PRM_Scatter">PRM_Scatter</hole></td>
+                        <td style="width:50%" valign="middle"><hole id="PRM_Montage">PRM_Montage</hole></td>
+                        <td valign="middle"><hole id="PRM_Scatter">PRM_Scatter</hole></td>
                     </tr>
                 </table>
                 <hole id="PRM_Table">PRM_Table</hole>
@@ -228,22 +247,25 @@
                     <tr><td>Voxels ABOVE -856 HU on expiration</td></tr>
                     <tr>
                         <td style="background-color:#ffff00" rowspan="3"> </td>
-                        <td style="font-weight:bold">FUNCTIONAL LOW DENSITY AREA</td>
+                        <td style="font-weight:bold">FUNCTIONAL LOW DENSITY AREA (fSAD)</td>
                     </tr>
                     <tr><td>Voxels ABOVE -950 HU on inspiration</td></tr>
                     <tr><td>Voxels BELOW -856 HU on expiration</td></tr>
                     <tr>
                         <td style="background-color:#ff3300" rowspan="3"> </td>
-                        <td style="font-weight:bold">PERSISTENT LOW DENSITY AREA</td>
+                        <td style="font-weight:bold">PERSISTENT LOW DENSITY AREA (Emph)</td>
                     </tr>
                     <tr><td>Voxels BELOW -950 HU on inspiration</td></tr>
                     <tr><td>Voxels BELOW -856 HU on expiration</td></tr>
                     <tr>
                         <td style="background-color:#cc00ff" rowspan="2"> </td>
-                        <td style="font-weight:bold">INSPIRATION HIGH DENSITY AREA</td>
+                        <td style="font-weight:bold">INSPIRATION HIGH DENSITY AREA (PD)</td>
                     </tr>
                     <tr><td>Voxels ABOVE -810 HU on inspiration</td></tr>
                 </table>
+            </dptemplate>
+
+            <dptemplate name="tPRMbody">
             </dptemplate>
 
         </dplibrary>
