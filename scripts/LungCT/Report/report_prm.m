@@ -2,7 +2,8 @@ function D = report_prm(procdir,res,opts,R)
     import mlreportgen.report.*;
     import mlreportgen.dom.*;
 
-    fn_template = fullfile(opts.report_path);
+    fn_template = fullfile(fileparts(which('cmi')),'scripts','LungCT','ReportTemplates',...
+        '+Pipeline_Report','@Chapter','resources','templates','pdf','default.pdftx');
 
     R_flag = nargin==4;
     if R_flag
