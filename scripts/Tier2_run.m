@@ -143,7 +143,7 @@ else
         % Write table with mean values to save path
         if ~isempty(p.save_path)
             svdir = checkTurboPath(p.save_path);
-            svname = fullfile(svdir{1},sprintf('%s_Results',jobname));
+            svname = fullfile(svdir,sprintf('%s_Results',jobname));
             fprintf('Attempting to save results:\n');
             if istable(T)
                 svname = [svname,'.csv'];
