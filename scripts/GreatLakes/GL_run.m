@@ -187,7 +187,7 @@ else
             if ~isnan(jobnum)
                 jobnum_str = [num2str(jobnum),'_'];
             end
-            svname = fullfile(svdir{1},sprintf('%s_%sResults',jobname,jobnum_str));
+            svname = fullfile(svdir,sprintf('%s_%sResults',jobname,jobnum_str));
             fprintf('Attempting to save results:\n');
             if istable(T)
                 svname = [svname,'.csv'];
@@ -231,11 +231,7 @@ for i = 1:numel(opts.inputs)
     
     % Validate directory inputs:
     if opts.path_flag(i)
-        tclass = class(opts.inputs{i});
         [opts.inputs{i},~,LOC_Turbo_Path] = checkTurboPath(opts.inputs{i});
-        if ismember(tclass,{'char','string'})
-            opts.inputs{i} = opts.inputs{i}{1};
-        end
     end
 end
 
