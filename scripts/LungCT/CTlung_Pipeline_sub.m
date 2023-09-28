@@ -525,8 +525,8 @@ try
             % Generate PRM Report
             try
                 report_prm(procdir,res,opts);
-            catch
-                writeLog(fn_log,'PRM Report FAILED\n');
+            catch err
+                writeLog(fn_log,'PRM Report FAILED\n%s\n',getReport(err,'extended'));
             end
 
             % Calculate tPRM
