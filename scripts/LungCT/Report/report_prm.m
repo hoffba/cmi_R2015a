@@ -2,6 +2,16 @@ function D = report_prm(procdir,res,opts,R)
     import mlreportgen.report.*;
     import mlreportgen.dom.*;
 
+    if nargin==1
+        [~,ID] = fileparts(procdir);
+        opts = struct('ID',ID,...
+                      'save_path','',...
+                      'fn',struct('prmMontage',[ID,'_PRM_Montage.tif'],...
+                                  'prmScatter',[ID,'_PRM_Scatter.tif']));
+        res = readtable(fullfile(procdir,[ID,'_PipelineResults.csv']));
+        res.Properties.RowNames = res.ROI;
+    end
+
     fn_template = fullfile(fileparts(which('cmi')),'scripts','LungCT','ReportTemplates',...
         '+Pipeline_Report','@Chapter','resources','templates','pdf','default.pdftx');
 
