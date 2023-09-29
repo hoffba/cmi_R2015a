@@ -67,7 +67,8 @@ else
             error('Invalid input: must be valid .mat file containing function inputs.');
         end
 
-        jobname = extractBefore(inputs_fname,'_INPUTS.mat');
+        jobname = flip(extractBefore(flip(inputs_fname),filesep));
+        jobname = extractBefore(jobname,'_INPUTS.mat');
 
         p = load(inputs_fname);
         
