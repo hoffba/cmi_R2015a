@@ -255,7 +255,7 @@ try
                 writeLog(fn_log,'from file\n');
                 atMap = logical(cmi_load(1,img(1).info.d(1:3),opts.fn.scatnetAT));
             else
-                writeLog(fn_log,'generating with ScatNet ... ');
+                writeLog(fn_log,'generating with ScatNet ... \n');
                 atMap = ScatterNet_Seg('AT',img(1).mat,logical(img(1).label));
                 cmi_save(0,atMap,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetAT);
             end
@@ -343,7 +343,7 @@ try
     end
 
     % Register I2E
-    if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.jac)
+    if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm)
         ins_reg = [];
         elxdir = fullfile(procdir,sprintf('elastix_%s',ID));
         if exist(opts.fn.reg,'file')
