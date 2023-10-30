@@ -6,6 +6,12 @@ if nargin<6
     logfn = '';
 end
 
+% Switch string input method to corresponding numeric index:
+if ischar(method)
+    segmethod = {'segLungHuman','getRespiratoryOrgans','DL_Craig','YACTA','TotalSegmentator'};
+    method = find(strcmp(method,segmethod));
+end
+
 if method==4 && (nargin<5 || ~ischar(savepath) || ~isfolder(savepath))
     warning('YACTA must have a valid input path for saving results. Trying DL instead.');
     method = 3;
@@ -25,7 +31,7 @@ switch method
         writeLog(logfn,'- Generating VOI from getRespiratoryOrgans ...\n');
         seg = getRespiratoryOrgans(ct);
     case 3
-        fprintf(logfn,'- Generating VOI from DL_lung_segmetation ...\n');
+        fprintf(logfn,'- Generating VOI from DL_lung_segmentation ...\n');
         seg = DL_lung_segmentation(ct);
     case 4
         writeLog(logfn,'- Generating VOI from YACTA ...\n');
