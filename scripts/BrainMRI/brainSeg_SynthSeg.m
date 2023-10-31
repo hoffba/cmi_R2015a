@@ -1,4 +1,16 @@
 function [seg,vols] = brainSeg_SynthSeg(img,info)
+% [seg,vols] = brainSeg_SynthSeg(nifti_filename)
+%   - Performs segmentation on image in input Nifti file
+%   - Writes result to file, with *.SynthSeg.* tag
+% [seg,vols] = brainSeg_SynthSeg(img,info)
+%   - Performs segmentation on input image matrix
+%   - Requires image geometry paramters in the info structure (in Nifti format)
+%       * Fields: .Transform.T ; .PixelDimensions
+%
+% **SynthSeg: Segmentation of brain MRI scans of any contrast and resolution without retraining** \
+% B. Billot, D.N. Greve, O. Puonti, A. Thielscher, K. Van Leemput, B. Fischl, A.V. Dalca, J.E. Iglesias \
+% Medical Image Analysis (2023) \
+% [ [article](https://www.sciencedirect.com/science/article/pii/S1361841523000506) | [arxiv](https://arxiv.org/abs/2107.09559) | [bibtex](bibtex.bib) ]
 
 seg = []; vols = [];
 
@@ -21,9 +33,9 @@ voxsz = info.PixelDimensions;
 %% Preprocess image
     disp('... Pre-processing segmentation map')
 % Resample image
-    [img,aff] = resampleData(img,voxsz,aff);% Align volume to ref
+    [X1,aff] = resampleData(img,voxsz,aff);% Align volume to ref
 % Align to reference geometry
-    [X1,~] = AlignToRef(img, aff, eye(4));
+    [X1,~] = AlignToRef(X1, aff, eye(4));
 % pad if needed
     numLevels = 5;
     N = 2^numLevels;
@@ -131,6 +143,9 @@ warning('on','all')
         'VariableNames',{'ROI','Volume_mm3'});
     vols.Volume_mm3 = squeeze(sum(sum(sum(predictIm,1),2),3));
     vols.ROI = classNames';
+
+%% Show a few slices
+labelSlice3D(img,seg,voxsz);
 
 %% Write segmenation to file
     if write_flag
