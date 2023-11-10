@@ -589,9 +589,9 @@ if ns~=d(3)
         error('Matrix cannot be separated into 4D.')
     end
 else
-    dcmdata.img = dcmdata.img(:,:,ix);
+    dcmdata.img = dcmdata.img(:,:,ix,:);
     dcmdata.SlicePos = dcmdata.SlicePos(ix,:);
-    dcmdata.AcquisitionNumber = dcmdata.AcquisitionNumber(ix);
+    dcmdata.AcquisitionNumber = dcmdata.AcquisitionNumber(:,ix);
 end
 if (n4d>1) && (d(3)==(n4d*nnz(uind==1)))
     ns = d(3)/n4d;

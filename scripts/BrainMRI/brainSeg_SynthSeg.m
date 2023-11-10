@@ -6,6 +6,8 @@ function [seg,vols] = brainSeg_SynthSeg(img,info)
 %   - Performs segmentation on input image matrix
 %   - Requires image geometry paramters in the info structure (in Nifti format)
 %       * Fields: .Transform.T ; .PixelDimensions
+% [classNames,labelIDs] = brainSeg_SynthSeg();
+%   - Returns segmentation labeling scheme
 %
 % **SynthSeg: Segmentation of brain MRI scans of any contrast and resolution without retraining** \
 % B. Billot, D.N. Greve, O. Puonti, A. Thielscher, K. Van Leemput, B. Fischl, A.V. Dalca, J.E. Iglesias \
@@ -14,15 +16,32 @@ function [seg,vols] = brainSeg_SynthSeg(img,info)
 
 seg = []; vols = [];
 
+% Return labeling scheme if no inputs
+if nargin==0
+    [classNames,labelIDs] = getBrainCANDISegmentationLabels();
+    seg = classNames;
+    vols = labelIDs;
+    return;
+end
+
 t = tic;
 
 %% Load image
 write_flag = false;
-if ischar(img) && isfile(img)
-    fn = img;
-    info = niftiinfo(fn);
-    img = niftiread(info);
-    write_flag = true;
+if ischar(img)
+    if isfolder(img)
+        [img,label,fov,orient,~] = cmi_load(1,[],img);
+        d = size(img,1:3);
+        info = init_niftiinfo(label,fov./d,'single',d,orient);
+        img = single(img);
+    elseif isfile(img)
+        fn = img;
+        info = niftiinfo(fn);
+        img = niftiread(info);
+        write_flag = true;
+    else
+        return;
+    end
 end
 
 %% Find image geometry
@@ -200,13 +219,15 @@ function largeCompFinal =  findLargestComponent(postInMask)
 largeCompFinal = zeros(size(postInMask));
 for ii = 1:size(postInMask,4)
     tmp =  postInMask(:,:,:,ii);
-    % get_largest_connected_component
-    CC = bwconncomp(postInMask(:,:,:,ii),6);
-    numPixels = cellfun(@numel,CC.PixelIdxList);
-    [~,idx] = max(numPixels);
-    largeComp = false(size(tmp));
-    largeComp(CC.PixelIdxList{idx}) = true;
-    largeCompFinal(:,:,:,ii) = largeComp;
+    if any(tmp,'all')
+        % get_largest_connected_component
+        CC = bwconncomp(postInMask(:,:,:,ii),6);
+        numPixels = cellfun(@numel,CC.PixelIdxList);
+        [~,idx] = max(numPixels);
+        largeComp = false(size(tmp));
+        largeComp(CC.PixelIdxList{idx}) = true;
+        largeCompFinal(:,:,:,ii) = largeComp;
+    end
 end
 
 

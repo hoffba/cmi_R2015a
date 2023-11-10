@@ -6,20 +6,25 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
 
     ver = 'pipeline_vesselSeg BH-20221006';
 
-    writeLog(fn_log,'Vessel Segmentation Version: %s\n',ver);
-    
     T = [];
     tt = tic;
 
     %% Initialize options
     opts = struct('frangi',false,...
                   'curvi',false);
-    for i = fieldnames(opts)
-        if isfield(opts_in,i{1})
-            opts.(i{1}) = opts_in.(i{1});
+    if nargin>4
+        for i = fieldnames(opts)
+            if isfield(opts_in,i{1})
+                opts.(i{1}) = opts_in.(i{1});
+            end
         end
     end
+    if nargin<6
+        fn_log = '';
+    end
     
+    writeLog(fn_log,'Vessel Segmentation Version: %s\n',ver);
+
     ID = info.Description;
     %% Check save directory
     writeLog(fn_log,'   Saving to folder: %s\n',save_path);

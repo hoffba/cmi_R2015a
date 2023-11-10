@@ -2,6 +2,7 @@ function [V] = vesselSeg_subj_boxes(ct, lobes)
     lobes = lobes > 0;
     I = double(ct) .*double(lobes);
     I = Normalize(I);
+    I(isnan(I)) = 0;
     
     V = zeros(size(I));
     
@@ -35,5 +36,4 @@ function [V] = vesselSeg_subj_boxes(ct, lobes)
 %         end
     end
     V = double(V) .* double(lobes);
-    
 end

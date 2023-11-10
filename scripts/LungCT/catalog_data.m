@@ -1,37 +1,6 @@
 function T = catalog_data(path)
 
 T = [];
-vars = {'CaseNumber',             'uint16',       false;...
-        'Tag',                    'cellstr',      false;...
-        'UMlabel',                'cellstr',      false;...
-        'PatientName',            'cellstr',      true;...
-        'StudyDate',              'cellstr',      true;...
-        'SeriesNumber',           'uint32',       true;...
-        'ConvolutionKernel',      'cellstr',      true;...
-        'SliceThickness',         'double',       true;...
-        'Slices',                 'uint16',       false;...
-        'DataPath',               'cellstr',      false;...
-        'DataType',               'cellstr',      false;...
-        'StudyID',                'cellstr',      true;...
-        'PatientID',              'cellstr',      true;...
-        'AccessionNumber',        'cellstr',      true;...
-        'AcquisitionNumber',      'uint16',       true;...
-        'StudyDescription',       'cellstr',      true;...
-        'SeriesDescription',      'cellstr',      true;...
-        'ScanOptions',            'cellstr',      true;...
-        'FilterTypes',            'cellstr',      true;...
-        'ManufacturerModelName',  'cellstr',      true;...
-        'Manufacturer',           'cellstr',      true;...
-        'KVP',                    'double',       true;...
-        'XRayTubeCurrent',        'double',       true;...
-        'ExposureTime',           'double',       true;...
-        'Exposure',               'double',       true;...
-        'Rows',                   'uint16',       true;...
-        'Columns',                'uint16',       true;...
-        'dy',                     'double',       false;... % Actually looks for PixelSpacing
-        'dx',                     'double',       false};
-nvar = size(vars,1);
-Tdef = table('Size',[1,nvar],'VariableNames',vars(:,1)','VariableTypes',vars(:,2)');
 
 % Search for DICOMs
 filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
@@ -51,98 +20,103 @@ if isempty(D)
             namestr = tok{1}{1};
             ext = tok{1}{2};
 
-            tT = Tdef;
-            tT.SeriesDescription = {fn(j).name};
+            t = getDICOMvars;
+            t.SeriesDescription = {fn(j).name};
             nametok = strsplit(namestr,'_');
             ind = 1;
-            tT.PatientName = nametok(1);
+            t.PatientName = nametok(1);
             if numel(nametok)>1 && any(cellfun(@(x)~isempty(regexp(nametok{2},x,'once')),{'\d{8}','t\d+'}))
-                tT.StudyDate = nametok(2);
+                t.StudyDate = nametok(2);
                 ind = 2;
             end
-            tT.UMlabel = {strjoin(nametok(1:ind),'_')};
+            t.UMlabel = {strjoin(nametok(1:ind),'_')};
             nametok(1:ind) = [];
             if ~isempty(nametok)
-                tT.StudyDescription = {strjoin(nametok,'_')};
+                t.StudyDescription = {strjoin(nametok,'_')};
             end
-            tT.DataPath = {fullfile(fn(j).folder,fn(j).name)};
-            tT.DataType = filtstr(i);
+            t.DataPath = {fullfile(fn(j).folder,fn(j).name)};
+            t.DataType = filtstr(i);
 
             % Try and find tags
             tset = false;
             if contains(ext,'.exp.label.')
-                tT.Tag{1} = 'ExpLabel'; tset = true;
+                t.Tag{1} = 'ExpLabel'; tset = true;
             elseif contains(ext,'.exp.')
-                tT.Tag{1} = 'Exp'; tset = true;
+                t.Tag{1} = 'Exp'; tset = true;
             elseif contains(ext,'.ins.label.')
-                tT.Tag{1} = 'InsLabel'; tset = true;
+                t.Tag{1} = 'InsLabel'; tset = true;
             elseif contains(ext,'.ins.')
-                tT.Tag{1} = 'Ins'; tset = true;
+                t.Tag{1} = 'Ins'; tset = true;
             end
             if ~tset
                 TF = contains({'label','voi','seg'},nametok,'IgnoreCase',true);
                 if any(strcmpi(nametok,'exp'))
                     if any(TF)
-                        tT.Tag = {'ExpLabel'};
+                        t.Tag = {'ExpLabel'};
                     else
-                        tT.Tag = {'Exp'};
+                        t.Tag = {'Exp'};
                     end
                 elseif any(strcmpi(nametok,'ins'))
                     if any(TF)
-                        tT.Tag = {'InsLabel'};
+                        t.Tag = {'InsLabel'};
                     else
-                        tT.Tag = {'Ins'};
+                        t.Tag = {'Ins'};
                     end
                 end
             end
 
-            T = [T;tT];
+            T = [T;t];
         end
     end
 else
     for i = 1:numel(D)
         fname = fullfile(D{i},F{i}{1});
-        if isdicom(fname)
+        dcm_flag = false;
+        try
+            dcm_flag = isdicom(fname);
+        catch err
+            disp(fname)
+        end
+        if dcm_flag
             info = dicominfo(fname,'UseDictionaryVR',true);
             if all(isfield(info,{'StudyDate','SeriesNumber','AccessionNumber','AcquisitionNumber'}))
-                tT = Tdef;
-                tT.DataPath = D(i);
-                tT.DataType = {'DICOM'};
-                tT.Slices = numel(F{i});
+                [t,vname] = getDICOMvars(info.Modality);
+                t.DataPath = D(i);
+                t.DataType = {'DICOM'};
+                t.Slices = numel(F{i});
                 if isfield(info,'PixelSpacing')
-                    tT.dx = info.PixelSpacing(1);
-                    tT.dy = info.PixelSpacing(2);
+                    t.dx = info.PixelSpacing(1);
+                    t.dy = info.PixelSpacing(2);
                 end
-                for j = 1:nvar
-                    vname = vars{j,1};
-                    if isfield(info,vname)
-                        if strcmp(vname,'PatientName')
+                for j = 1:numel(vname)
+                    if isfield(info,vname{j})
+                        if strcmp(vname{j},'PatientName')
                             val = info.PatientName.FamilyName;
                         else
-                            val = info.(vars{j,1});
+                            val = info.(vname{j});
                         end
                         if ischar(val)
                             val = {val};
                         end
                         if ~isempty(val)
-                            tT.(vars{j,1}) = val;
+                            t.(vname{j}) = val;
                         end
                     end
                 end
 
                 % Determine UM label:
                 if isfield(info,'PatientName') && ~isempty(info.PatientName) && ~strcmp(info.PatientName.FamilyName,'Anonymous')
-                    tT.UMlabel = {info.PatientName.FamilyName};
+                    t.UMlabel = {info.PatientName.FamilyName};
                 elseif isfield(info,'PatientID')
-                    tT.UMlabel = {info.PatientID};
+                    t.UMlabel = {info.PatientID};
                 elseif isfield(info,'StudyID')
-                    tT.UMlabel = info.StudyID;
+                    t.UMlabel = info.StudyID;
                 else
-                    tT.UMlabel = sprintf('SUBJ%5.0f',i);
+                    t.UMlabel = sprintf('SUBJ%5.0f',i);
                 end
-                tT.UMlabel = regexprep(tT.UMlabel,' ','_');
+                t.UMlabel = regexprep(t.UMlabel,' ','_');
 
-                T = [T;tT];
+                T = addTableRow(T,t);
             end
         end
     end
@@ -154,4 +128,79 @@ T = sortrows(T,{'StudyID','PatientName','StudyDate','SeriesNumber'});
 [~,~,ugroups_ic] = unique(strcat(T.StudyID,T.PatientName,T.StudyDate));
 T.CaseNumber = ugroups_ic;
 
-writetable(T,fullfile(path,'Pipeline_catalog.csv'));
+writetable(T,fullfile(path,'Data_Catalog.csv'));
+
+function [t,vnames] = getDICOMvars(modstr)
+%       Catalog value             Value class
+vnames = {'CaseNumber',             'uint16';...
+          'Tag',                    'cellstr';...
+          'UMlabel',                'cellstr';...
+          'PatientName',            'cellstr';...
+          'StudyDate',              'cellstr';...
+          'SeriesNumber',           'uint32';...
+          'SliceThickness',         'double';...
+          'Slices',                 'uint16';...
+          'DataPath',               'cellstr';...
+          'DataType',               'cellstr';...
+          'StudyID',                'cellstr';...
+          'PatientID',              'cellstr';...
+          'AccessionNumber',        'cellstr';...
+          'AcquisitionNumber',      'uint16';...
+          'StudyDescription',       'cellstr';...
+          'SeriesDescription',      'cellstr';...
+          'ScanOptions',            'cellstr';...
+          'Manufacturer',           'cellstr';...
+          'ManufacturerModelName',  'cellstr';...
+          'Rows',                   'uint16';...
+          'Columns',                'uint16';...
+          'dy',                     'double';... % Actually looks for PixelSpacing
+          'dx',                     'double'};
+if nargin
+    switch modstr
+        case 'CT'
+            vnames = [vnames;...
+                    {'ConvolutionKernel',  'cellstr';...
+                     'FilterTypes',        'cellstr';...
+                     'KVP',                'double';...
+                     'XRayTubeCurrent',    'double';...
+                     'ExposureTime',       'double';...
+                     'Exposure',           'double'}];
+        case 'MR'
+            vnames = [vnames;...
+                    {'ScanningSequence',   'cellstr';...
+                     'MRAcquisitionType',  'cellstr';...
+                     'RepetitionTime',     'double';...
+                     'EchoTime',           'double'}];
+    end
+end
+t = table('Size',[1,size(vnames,1)],'VariableTypes',vnames(:,2)','VariableNames',vnames(:,1)');
+vnames = vnames(:,1)';
+
+function T = addTableRow(T,t)
+if isempty(T)
+    T = t;
+else
+    % Find any new variable to add to table
+    T = addVars(T,t);
+    % Add missing variables to input to match the output
+    t = addVars(t,T);
+    % Add new
+    idx = zeros(1,size(T,2));
+    for i = 1:numel(idx)
+        idx(i) = find(strcmp(T.Properties.VariableNames{i},t.Properties.VariableNames),1);
+    end
+    T = [T;t(:,idx)];
+end
+
+function T = addVars(T,t)
+Nr = size(T,1);
+T_vnames = T.Properties.VariableNames;
+t_vnames = t.Properties.VariableNames;
+newvar = t_vnames(~ismember(t_vnames,T_vnames));
+for i = 1:numel(newvar)
+    if ischar(t.(newvar{i}))
+        T.(newvar{i}) = repmat({''},Nr,1);
+    else
+        T.(newvar{i}) = cast(nan(Nr,1),class(t.newvar{i}));
+    end
+end

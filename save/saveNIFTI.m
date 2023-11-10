@@ -12,17 +12,20 @@ switch dtype
         dtype = 'int8';
         img = int8(img);
 end
-info = init_niftiinfo(label,fov./d(1:3),dtype,d);
+
+% Adjust for saving to Nifti
+orient = diag([-1 -1 1 1]) * orient;
+d = d([2,1,3]);
+fov = fov([2,1,3]);
+img = permute(img,[2,1,3]);
+
+info = init_niftiinfo(label,fov./d,dtype,d);
 gz_flag = strcmp(fname(end-2:end),'.gz');
 if gz_flag
     svname = fname(1:end-3);
 else
     svname = fname;
 end
-
-% Adjust for saving to Nifti
-orient = diag([-1 -1 1 1]) * orient;
-img = permute(img,[2,1,3]);
 
 info.TransformName = 'Sform';
 info.Transform = affine3d(orient');
