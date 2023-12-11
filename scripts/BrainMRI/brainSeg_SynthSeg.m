@@ -170,7 +170,7 @@ labelSlice3D(img,seg,voxsz);
     if write_flag
         gzflag = endsWith(fn,'.gz');
         [fpath,fn] = fileparts(fn);
-        fn = fullfile(fpath,[extractBefore(fn,'.'),'.SynthSeg.nii']);
+        fn = fullfile(fpath,[extractBefore(fn,'.nii'),'.SynthSeg.nii']);
         disp('... Writing segmentation to file');
         info.Datatype = 'uint8';
         info.BitsPerPixel = 8;
