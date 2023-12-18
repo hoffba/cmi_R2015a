@@ -329,7 +329,8 @@ if stat(1)
         end
         writeLog(self.fn_log,'Added to queue: %s\n',namestr);
     else
-        stat = ~system(cmdstr);
+        [stat,~] = system(cmdstr);
+        stat = ~stat;
     end
 end
 pause(0.01);
