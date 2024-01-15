@@ -1,4 +1,4 @@
-function fn = brainReg(procdir,ref,hom,flag)
+function fn = brainReg(procdir,ref,hom,warpflag)
 % Inputs:
 %   procdir = Folder containing study data
 %   ref = Reference image (Ax MPR):
@@ -27,14 +27,19 @@ if ischar(hom)
     hom = struct('img',img,'label',label,'fov',fov,'orient',orient,'name',hom,'info',info);
 end
 if nargin<4
-    flag = false;
+    warpflag = false;
 end
 
+% Initialize Reg Object
 regObj = RegClass(false);
 regObj.cmiObj(1).setImg(ref.img,ref.label,ref.fov,ref.orient,ref.name);
 regObj.cmiObj(1).img.mask.merge('replace',logical(ref.seg));
-% Dilate mask by 5mm
-regObj.UDpreproc('dilaten',[round(5./regObj.cmiObj(1).img.voxsz);0,0,0])
+[~,homname] = fileparts(hom.name);
+homname = regexprep(extractBefore(homname,'.nii'),'\.','_');
+regObj.cmiObj(2).setImg(hom.img,hom.label,hom.fov,hom.orient,homname);
+
+% Dilate mask by 10mm
+regObj.UDpreproc('dilaten',[round(10./regObj.cmiObj(1).img.voxsz);0,0,0])
 
 % Determine output directory
 odir = fullfile(procdir,['elxreg_',hom.label]);
@@ -49,7 +54,7 @@ regObj.addElxStep('Affine','NumberOfResolutions',1,...
                            'NumberOfSpatialSamples',5000,...
                            'DefaultPixelValue',0,...
                            'WriteResultImage','false');
-if flag
+if warpflag
     % Warping transform for longitudinal registrations
     fips = [max(round(8./regObj.cmiObj(1).img.voxsz),1),...
             max(round(3./regObj.cmiObj(1).img.voxsz),1)];
@@ -72,9 +77,6 @@ if flag
                          'WriteResultImage','false');
     odir = [odir,'_long'];
 end
-[~,homname] = fileparts(hom.name);
-homname = regexprep(extractBefore(homname,'.nii'),'\.','_');
-regObj.cmiObj(2).setImg(hom.img,hom.label,hom.fov,hom.orient,homname);
 
 if ~isfolder(odir)
     mkdir(odir);

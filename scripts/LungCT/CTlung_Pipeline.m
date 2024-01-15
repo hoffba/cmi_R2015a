@@ -294,23 +294,22 @@ end
         end
 
         if any(TF)
-            TF_tag = strcmp(tags,filt_tag);
-            if any(TF_tag)
-                % Apply filter to exiting selections
-                tags(TF_tag) = {''};
-                TF = TF & TF_tag;
-            end
+            % TF_tag = strcmp(tags,filt_tag);
+            % if any(TF_tag)
+            %     % Apply filter to existing selections
+            %     tags(TF_tag) = {''};
+            %     TF = TF & TF_tag;
+            % end
             tags(TF) = {filt_tag};
             
             % Set Tags in table
             if page_flag
                 C.Tag(page_ic) = tags;
+                h.table_select.Data(:,1) = tags;
             else
                 C.Tag = tags;
+                h.table_select.Data(:,1) = tags(page_ic);
             end
-
-            % Update current page
-            h.table_select.Data(:,1) = tags;
 
             % Validate new selections
             checkValid;
