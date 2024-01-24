@@ -221,6 +221,7 @@ end
 
     end
     function setPage(hObject,eventData)
+        page_reset = false;
         if isnumeric(hObject)
             hObject = round(hObject);
             if hObject>0 && hObject<=pageN
@@ -245,6 +246,8 @@ end
                 case 'edit_gp_per'
                     val = round(eventData.Value);
                     if val>0
+                        page_reset = true;
+                        newpage = ceil((1+(curr_page-1)*gp_per_page)/val);
                         gp_per_page = val;
                         pageN = ceil(ngroups/gp_per_page);
                         h.edit_gp_per_page.Value = gp_per_page;
@@ -259,7 +262,7 @@ end
         else % Invalid input
             return;
         end
-        if newpage ~= curr_page
+        if (newpage ~= curr_page) || page_reset
             curr_page = newpage;
             h.text_page.Value = curr_page;
             page_ic = ismember(ugroups_ic,(gp_per_page*(curr_page-1))+1:min(ngroups,gp_per_page*curr_page));
