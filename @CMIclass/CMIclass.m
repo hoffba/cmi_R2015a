@@ -334,13 +334,19 @@ classdef CMIclass < handle
         % Update display colormap
         function dispUDcmap(self)
             if ishandle(self.hfig)
-                tcmap = eval([self.bgcmap '(' num2str(self.ncolors) ')']);
-                if self.prmcheck
-                    tcmap = [tcmap; self.img.prm.cmap];
+                if ischar(self.bgcmap)
+                    bg_cmap = eval([self.bgcmap '(' num2str(self.ncolors) ')']);
                 else
-                    tcmap = [tcmap; eval([self.cmap '(' num2str(self.ncolors) ')'])];
+                    bg_cmap = self.bgcmap;
                 end
-                set(self.hfig,'ColorMap',tcmap);
+                if self.prmcheck
+                    ov_cmap = self.img.prm.cmap;
+                elseif ischar(self.cmap)
+                    ov_cmap = eval([self.cmap '(' num2str(self.ncolors) ')']);
+                else
+                    ov_cmap = self.cmap;
+                end
+                set(self.hfig,'ColorMap',[bg_cmap;ov_cmap]);
             end
         end
         % Update displays associated with the mask

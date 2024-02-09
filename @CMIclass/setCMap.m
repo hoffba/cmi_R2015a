@@ -2,7 +2,7 @@
 % Set colormap for selected image (background or overlay)
 function setCMap(self,x,~)
 opts = {'jet','hsv','hot','cool','spring','summer','autumn','winter',...
-        'gray','bone','copper','pink','lines'};
+        'gray','bone','copper','pink','lines','AtlasCTA'};
 str = [];
 if (nargin>1)
     if (nargin==3) && ishandle(x) && strcmp(get(x,'Tag'),'popup_colormap')
@@ -13,6 +13,19 @@ if (nargin>1)
     end
 end
 if ~isempty(str)
+    if strcmp(str,'AtlasCTA')
+        ls = linspace(0.25,1,50)';
+        z = zeros(50,1);
+        str = [ 0 , 0 , 0 ;...   % black for background
+                z , ls , z  ;... % green
+                z , ls , ls ;... % cyan
+                ls , z , z  ;... % red
+                ls , ls , z ;... % yellow
+                ls , z , ls      % magenta
+              ];
+        % Need to set min/max
+        self.setClim([self.vec,0,599]);
+    end
     if self.bgcheck
         self.bgcmap = str;
     else
