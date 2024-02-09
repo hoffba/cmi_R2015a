@@ -43,31 +43,56 @@ end
 seg = readNIFTI(sv_name);
 seg(~ismember(seg,13:17)) = 0; % Remove non-lung
 
-
 function TSpath = findTS(flag)
     TSpath = [];
     if ispc
-        str = 'where';
-    else
-        str = 'which';
-    end
-    [~,tpath] = system([str,' TotalSegmentator']);
-    tpath = strsplit(tpath,'\n');
-    ind = find(contains(tpath,'Python'),1,'last');
-    if isempty(ind)
-        if flag
-            TSpath = 'TotalSegmentator not available. See documentation for installation instructions';
-        else
-            % Try to install TotalSegmentator
-            stat = TSinstall;
-            if stat
-                TSpath = findTS(true);
+        [~,tpath] = system('where TotalSegmentator');
+        tpath = strsplit(tpath,'\n');
+        ind = find(contains(tpath,'Python'),1,'last');
+        if isempty(ind)
+            if flag
+                TSpath = 'TotalSegmentator not available. See documentation for installation instructions';
+            else
+                % Try to install TotalSegmentator
+                stat = TSinstall;
+                if stat
+                    TSpath = findTS(true);
+                end
             end
+        else
+            TSpath = tpath{ind};
         end
-    else
-        TSpath = tpath{ind};
-    end
+    elseif isunix
+        [~,hostname] = system('uname -n');
+        fprintf('ElxClass : Linux : hostname = %s\n',hostname);
+        if contains(hostname,'.arc-ts.umich.edu')
+            % For Great Lakes, don't open a terminal
+            fprintf('Great Lakes!\n')
+            system('module load python3.10-anaconda/2023.03');
+            % Find TS environment
+            [~,str] = system('conda env list');
+            if contains(str,'TSenv')
+                system('conda activate TSenv');
+            else
+                % Creat environment
+                system(['conda create -n TSenv',...
+                        ' & conda activate TSenv',...
+                        ' & conda install pytorch torchvision',...
+                        ' & pip install totalsegmentator']);
+            end
+            [~,str] = system('whoami');
+            [~,str] = system(['find /home/',strtrim(str),'/.conda/envs/TSenv -name "TotalSegmentator.py"']);
+            str = strsplit(strtrim(str));
+            TSpath = str{end};
+        elseif contains(hostname,'galban-ap-ps1a.med.umich.edu')
+            % Galban lab Tier2 server
+            fprintf('Galban Teir2!\n')
+        else
+            % Unknown system
+            fprintf('Unknown System!\n')
+        end
 
+    end
 
 function stat = TSinstall
     if ispc
@@ -77,7 +102,7 @@ function stat = TSinstall
     end
     cmd = {'pip install TotalSegmentator',...
            'pip install cupy-cuda11x cucim'};
-    [stat,cmd_out] = system(strjoin(cmd,connect_str));
+    stat = system(strjoin(cmd,connect_str));
     
 
 
