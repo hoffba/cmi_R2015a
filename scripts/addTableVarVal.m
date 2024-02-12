@@ -1,5 +1,13 @@
    
 function T = addTableVarVal(T,varargin)
+% T = addTableVarVal(T,t)
+%   Inputs: T - table to add values to
+%           t - table to add to T
+% T = addTableVarVal(T,varname,regionstr,vals)
+%   Inputs: T - table to add values to
+%           varname     - variable name
+%           regionstr   - name of segmentation region
+%           val         - value of input
     if nargin==2 && istable(varargin{1}) && any(strcmp(varargin{1}.Properties.VariableNames,'ROI'))
         vals = varargin{1};
         regionstr = vals.ROI;

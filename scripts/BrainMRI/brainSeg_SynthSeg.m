@@ -1,4 +1,4 @@
-function [seg,vols] = brainSeg_SynthSeg(img,info)
+function [seg,vols] = brainSeg_SynthSeg(varargin)
 % [seg,vols] = brainSeg_SynthSeg(nifti_filename)
 %   - Performs segmentation on image in input Nifti file
 %   - Writes result to file, with *.SynthSeg.* tag
@@ -15,28 +15,42 @@ function [seg,vols] = brainSeg_SynthSeg(img,info)
 % [ [article](https://www.sciencedirect.com/science/article/pii/S1361841523000506) | [arxiv](https://arxiv.org/abs/2107.09559) | [bibtex](bibtex.bib) ]
 
 seg = []; vols = [];
+fname = '';
+write_flag = false;
+qc_chk = false;
 
-% Return labeling scheme if no inputs
+%% Handle inputs
 if nargin==0
+    % Return labeling scheme if no inputs
     [classNames,labelIDs] = getBrainCANDISegmentationLabels();
     seg = classNames;
     vols = labelIDs;
     return;
+elseif ischar(varargin{1})
+    fname = varargin{1};
+    if nargin==2
+        qc_chk = varargin{2};
+    end
+elseif (nargin>1) && isnumeric(varargin{1}) && isstruct(varargin{2})
+    img = varargin{1};
+    info = varargin{2};
+    if nargin==3
+        qc_chk = varargin{3};
+    end
 end
 
 t = tic;
 
-%% Load image
-write_flag = false;
-if ischar(img)
-    if isfolder(img)
-        [img,label,fov,orient,~] = cmi_load(1,[],img);
+%% Load image from file
+if fname
+    % Load image from file
+    if isfolder(fname)
+        [img,label,fov,orient,~] = cmi_load(1,[],fname);
         d = size(img,1:3);
         info = init_niftiinfo(label,fov./d,'single',d,orient);
         img = single(img);
-    elseif isfile(img)
-        fn = img;
-        info = niftiinfo(fn);
+    elseif isfile(fname)
+        info = niftiinfo(fname);
         img = niftiread(info);
         write_flag = true;
     else
@@ -158,23 +172,27 @@ warning('on','all')
     seg = resampleData(seg,voxsz,dims);
 
 %% Calculate segmentation region volumes
-    vols = table('Size',[numel(classNames),2],'VariableTypes',{'cellstr','double'},...
-        'VariableNames',{'ROI','Volume_mm3'});
-    vols.Volume_mm3 = squeeze(sum(sum(sum(predictIm,1),2),3));
-    vols.ROI = classNames';
+    if nargout == 2
+        vols = table('Size',[numel(classNames),2],'VariableTypes',{'cellstr','double'},...
+            'VariableNames',{'ROI','Volume_mm3'});
+        vols.Volume_mm3 = squeeze(sum(sum(sum(predictIm,1),2),3));
+        vols.ROI = classNames';
+    end
 
 %% Show a few slices
-labelSlice3D(img,seg,voxsz);
+    if logical(qc_chk)
+        labelSlice3D(img,seg,voxsz);
+    end
 
 %% Write segmenation to file
     if write_flag
-        gzflag = endsWith(fn,'.gz');
-        [fpath,fn] = fileparts(fn);
-        fn = fullfile(fpath,[extractBefore(fn,'.'),'.SynthSeg.nii']);
+        gzflag = endsWith(fname,'.gz');
+        [fpath,fname] = fileparts(fname);
+        fname = fullfile(fpath,[extractBefore(fname,'.nii'),'.SynthSeg.nii']);
         disp('... Writing segmentation to file');
         info.Datatype = 'uint8';
         info.BitsPerPixel = 8;
-        niftiwrite(seg, fn, info, Compressed=gzflag);
+        niftiwrite(seg, fname, info, Compressed=gzflag);
     end
 
 fprintf('Segmentation complete (%s)\n',string(datetime(0,0,0,0,0,toc(t),'Format','mm:ss')));

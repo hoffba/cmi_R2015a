@@ -1,6 +1,6 @@
 % Function for combining multiple transforms in Transformix
 % Syntax: multiTform(tp)
-% Inputs: tp = structure containging:
+% Inputs: tp = structure containing:
 %               .fname  = string file name of TransformParameters.*.txt
 %               .chain  = chain number (see below)
 %               .im     = {nx4} cell array of image file names and output names
@@ -83,6 +83,7 @@ elseif isstruct(tp) && ~isempty(tp) && all(isfield(tp,{'fname','chain','im','jac
             par = readTransformParam(C{1});
             sz = par.Size;
             sp = par.Spacing;
+            affdir = par.Direction;
             orig = par.Origin;
             geochk = false;
         end
@@ -115,7 +116,7 @@ elseif isstruct(tp) && ~isempty(tp) && all(isfield(tp,{'fname','chain','im','jac
         for j = 1:ntot
             if j==ntot
                 % Only need to set geometry in transformix input TP file:
-                copytp(C{j},odir,j,intrp(i,:),sz,sp,orig,fmt);
+                copytp(C{j},odir,j,intrp(i,:),sz,sp,affdir,orig,fmt);
             else
                 copytp(C{j},odir,j,intrp(i,:));
             end
@@ -190,7 +191,7 @@ function str = tpfname(odir,i,nn)
     end
     str = fullfile(odir,sprintf('MultiTransPar.%02u%s.txt',i,nnstr));
 
-function copytp(fname,odir,i,nn,sz,sp,orig,fmt)
+function copytp(fname,odir,i,nn,sz,sp,affdir,orig,fmt)
 % Copies transform parameter file to new directory and adjust relevant parameters:
 % Inputs:
 %   fname   = transform parameter file to copy
@@ -211,9 +212,10 @@ function copytp(fname,odir,i,nn,sz,sp,orig,fmt)
     end
 
     % Parameters for final transform in chain
-    if nargin==8
+    if nargin==9
         p.Size = sz;
         p.Spacing = sp;
+        p.Direction = affdir;
         p.Origin = orig;
         if endsWith(fmt,'.gz')
             p.CompressResultImage = 'true';

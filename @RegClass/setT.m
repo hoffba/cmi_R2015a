@@ -31,8 +31,8 @@ if isnumeric(val) && ~(isempty(val) || isnan(val))
     M(i) = val;
     A = M(1:3,1:3)';
     T = M(1:3,4);
-    self.elxObj.setTx0([A(:)',T'],self.cmiObj(1).img.voxsz,...
-        self.cmiObj(1).img.dims(1:3),self.cmiObj(1).img.orient,'DefaultPixelValue',self.T0defVal);
+    self.elxObj.setTx0([A(:)',T'],self.cmiObj(1).img.voxsz([2,1,3]),...
+        self.cmiObj(1).img.dims([2,1,3]),self.cmiObj(1).img.orient,'DefaultPixelValue',self.T0defVal);
     self.setTchk(true);
 else
     if ~isempty(self.elxObj.Tx0) && strncmp(self.elxObj.Tx0.Transform,'Affine',6)

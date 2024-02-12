@@ -1,6 +1,9 @@
 function [D,F] = dirtree(tpath,filtstr)
 
 % Loops over filters
+if ischar(filtstr)
+    filtstr = {filtstr};
+end
 fn = [];
 for i = 1:numel(filtstr)
     fn = [fn;dir(fullfile(tpath,['**',filesep,filtstr{i}]))]; %#ok<AGROW>

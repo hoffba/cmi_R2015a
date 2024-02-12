@@ -55,9 +55,12 @@ for i = 1:nf
     elseif ~ismember(fname(end-3:end),{'.dcv','.mhd'})
 
         % Must convert to MHD for YACTA to read:
-        fpath = fileparts(fname);
-        [img,label,fov,orient,~,fnameOut] = cmi_load(1,[],fname);
-        fname = fullfile(fpath,[fnameOut,'.mhd']);
+        [img,label,fov,orient,~,~] = cmi_load(1,[],fname);
+        [fpath,fname,ext] = fileparts(fname);
+        if strcmp(ext,'.gz')
+            [~,fname] = fileparts(fname);
+        end
+        fname = fullfile(fpath,[fname,'.mhd']);
         stat = saveMHD(fname,img,label,fov,orient);
 
     end
