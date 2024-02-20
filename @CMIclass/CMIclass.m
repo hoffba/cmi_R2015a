@@ -331,6 +331,7 @@ classdef CMIclass < handle
                                             'YData',[dpix(1) fov(1)]-dpix(1)/2);
             end
         end
+        
         % Update display colormap
         function dispUDcmap(self)
             if ishandle(self.hfig)
@@ -349,6 +350,7 @@ classdef CMIclass < handle
                 set(self.hfig,'ColorMap',[bg_cmap;ov_cmap]);
             end
         end
+
         % Update displays associated with the mask
         function dispUDmask(self)
             if self.img.check
