@@ -16,5 +16,5 @@ if ismember(2,ord)
     p(ord==2) = imMeanBreadth(BW,voxsz)/normval;
 end
 if ismember(3,ord)
-    p(ord==3) = imEuler3dEstimate(BW)/nnz(mask);
+    p(ord==3) = imEuler3dEstimate(BW);
 end
