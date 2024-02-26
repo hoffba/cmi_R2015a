@@ -14,17 +14,20 @@ if (nargin>1)
 end
 if ~isempty(str)
     if strcmp(str,'AtlasCTA')
-        ls = linspace(0.25,1,50)';
-        z = zeros(50,1);
-        str = [ 0 , 0 , 0 ;...   % black for background
-                z , ls , z  ;... % green
-                z , ls , ls ;... % cyan
-                ls , z , z  ;... % red
-                ls , ls , z ;... % yellow
-                ls , z , ls      % magenta
+        ls = linspace(0.25,1,25)';
+        z = zeros(25,1);
+        str = [ 0 ,  0 ,  0  ;...
+                z ,  ls , z  ;... % green
+                z ,  ls , ls ;... % cyan
+                ls , z ,  z  ;... % red
+                ls , ls , z  ;... % yellow
+                ls , z ,  ls      % magenta
               ];
+        self.ncolors = size(str,1);
         % Need to set min/max
-        self.setClim([self.vec,0,599]);
+        self.setClim([self.vec,91,599]);
+    else
+        self.ncolors = 128;
     end
     if self.bgcheck
         self.bgcmap = str;
