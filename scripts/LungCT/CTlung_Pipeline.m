@@ -106,7 +106,7 @@ end
         pan_w = 215;
         pan_w_ = pan_w - 2*gap;
         pan_h = 350;
-        pan_posy = pan_h - pan_hd - line_step*(1:10);
+        pan_posy = pan_h - pan_hd - line_step*(1:11);
 
     %% Tab 1: Settings and options
         posy = fheight-tab_hd-line_step;
@@ -136,14 +136,15 @@ end
         uibutton(h.panel_modules,'Position',[gap,            pan_posy(1), button_w, line_h],'Text','Select All','ButtonPushedFcn',@selectAll);
         uibutton(h.panel_modules,'Position',[button_w+2*gap, pan_posy(1), button_w, line_h],'Text','Clear All','ButtonPushedFcn',@clearAll);
         h.unreg =          uicheckbox(h.panel_modules,'Position',[gap, pan_posy(2),  pan_w_, line_h],'Text','Unreg','Value',opts.unreg,'ValueChangedFcn',@setOpts,'Tag','unreg');
-        h.airway =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(3),  pan_w_, line_h],'Text','Airways','Value',opts.airway,'ValueChangedFcn',@setOpts,'Tag','airway');
-        h.scatnetAT =      uicheckbox(h.panel_modules,'Position',[gap, pan_posy(4),  pan_w_, line_h],'Text','ScatNet-AT','Value',opts.scatnetAT,'ValueChangedFcn',@setOpts,'Tag','scatnetAT');
-        h.scatnetAT_PEDS = uicheckbox(h.panel_modules,'Position',[gap, pan_posy(5),  pan_w_, line_h],'Text','ScatNet-AT-Peds','Value',opts.scatnetAT_PEDS,'ValueChangedFcn',@setOpts,'Tag','scatnetAT_PEDS');
-        h.vessel =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(6),  pan_w_, line_h],'Text','Vessels','Value',opts.vessel,'ValueChangedFcn',@setOpts,'Tag','vessel');
-        h.reg =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(7),  pan_w_, line_h],'Text','Registration','Value',opts.reg,'ValueChangedFcn',@setOpts,'Tag','reg');
-        h.scatnetEmph =    uicheckbox(h.panel_modules,'Position',[gap, pan_posy(8),  pan_w_, line_h],'Text','ScatNet-Emph','Value',opts.scatnetEmph,'ValueChangedFcn',@setOpts,'Tag','scatnetEmph');
-        h.prm =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(9),  pan_w_, line_h],'Text','PRM','Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
-        h.tprm =           uicheckbox(h.panel_modules,'Position',[gap, pan_posy(10), pan_w_, line_h],'Text','tPRM','Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
+        h.totalseg =       uicheckbox(h.panel_modules,'Position',[gap, pan_posy(3),  pan_w_, line_h],'Text','TotalSegmentator','Value',opts.totalseg,'ValueChangedFcn',@setOpts,'Tag','totalseg');
+        h.airway =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(4),  pan_w_, line_h],'Text','Airways','Value',opts.airway,'ValueChangedFcn',@setOpts,'Tag','airway');
+        h.scatnetAT =      uicheckbox(h.panel_modules,'Position',[gap, pan_posy(5),  pan_w_, line_h],'Text','ScatNet-AT','Value',opts.scatnetAT,'ValueChangedFcn',@setOpts,'Tag','scatnetAT');
+        h.scatnetAT_PEDS = uicheckbox(h.panel_modules,'Position',[gap, pan_posy(6),  pan_w_, line_h],'Text','ScatNet-AT-Peds','Value',opts.scatnetAT_PEDS,'ValueChangedFcn',@setOpts,'Tag','scatnetAT_PEDS');
+        h.vessel =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(7),  pan_w_, line_h],'Text','Vessels','Value',opts.vessel,'ValueChangedFcn',@setOpts,'Tag','vessel');
+        h.reg =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(8),  pan_w_, line_h],'Text','Registration','Value',opts.reg,'ValueChangedFcn',@setOpts,'Tag','reg');
+        h.scatnetEmph =    uicheckbox(h.panel_modules,'Position',[gap, pan_posy(9),  pan_w_, line_h],'Text','ScatNet-Emph','Value',opts.scatnetEmph,'ValueChangedFcn',@setOpts,'Tag','scatnetEmph');
+        h.prm =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(10), pan_w_, line_h],'Text','PRM','Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
+        h.tprm =           uicheckbox(h.panel_modules,'Position',[gap, pan_posy(11), pan_w_, line_h],'Text','tPRM','Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
     % Panel: Registration Options
         panx = panx + gap + pan_w;

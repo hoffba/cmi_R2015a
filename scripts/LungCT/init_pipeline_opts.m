@@ -11,6 +11,7 @@ opts = struct( ...
               'username',       ''      ,... % GL your uniquename for email notifications
               ...
               'unreg',          true    ,... % MODULE unregistered stats for Exp/Ins
+              'totalseg',       true    ,... % MODULE TotalSegmentator
               'airway',         true    ,... % MODULE airways results from YACTA
               'scatnetAT',      true    ,... % MODULE scatternet air trapping
               'scatnetAT_PEDS', false   ,... % MODULE scatternet air trapping for pediatrics

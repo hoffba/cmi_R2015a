@@ -153,6 +153,16 @@ try
                    fullfile(opts.save_path,'Ins_Montage',[ID,'_Ins_Montage.tif'])});
     end
 
+    % TotalSegmentator
+    if opts.totalseg
+        if img(1).flag
+            TotalSegmentator(opts.fn.exp);
+        end
+        if img(2).flag
+            TotalSegmentator(opts.fn.ins);
+        end
+    end
+
     % Airways
     if opts.airway
         if img(2).flag
