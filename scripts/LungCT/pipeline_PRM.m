@@ -30,7 +30,9 @@ prm = int8(img.prm.mat);
 % title(img.prm.hascatter,tname,'Interpreter','none');
 
 %% Save scatterplot figure
-pipeline_save_fig(img.prm.hfscatter,svname);
+if nargin==5
+    pipeline_save_fig(img.prm.hfscatter,svname);
+end
 
 %% Add results to info:
 info.regions = labels;
