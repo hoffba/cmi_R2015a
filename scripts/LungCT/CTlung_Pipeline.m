@@ -267,6 +267,7 @@ end
             curr_page = newpage;
             h.text_page.Value = curr_page;
             page_ic = ismember(ugroups_ic,(gp_per_page*(curr_page-1))+1:min(ngroups,gp_per_page*curr_page));
+            h.table_select.Data = table.empty;
             h.table_select.Data = table2cell(C(page_ic,:));
             h.table_select.ColumnName = C.Properties.VariableNames;
             nv = size(C,2);

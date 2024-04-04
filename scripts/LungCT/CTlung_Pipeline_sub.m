@@ -156,10 +156,12 @@ try
     % TotalSegmentator
     if opts.totalseg
         if img(1).flag
-            TotalSegmentator(opts.fn.exp);
+            writeLog(fn_log,'Generating TotalSegmentator on EXP\n');
+            TotalSegmentator(opts.fn.exp,fn_log);
         end
         if img(2).flag
-            TotalSegmentator(opts.fn.ins);
+            writeLog(fn_log,'Generating TotalSegmentator on INS\n');
+            TotalSegmentator(opts.fn.ins,fn_log);
         end
     end
 
