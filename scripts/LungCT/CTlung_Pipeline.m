@@ -403,8 +403,8 @@ end
                 set([h.partition,h.edit_mem,h.nnodes],'Enable',strcmp(eData.NewValue.Tag,'GL'));
                 opts.cluster = eData.NewValue.Tag;
             case 'partition'
-                Ncases = numel(unique(ugroups_ic(C.Exp|C.Ins)));
-                stat = checkSLURM(numcases,eData.Value,opts.mem,opts.nnodes);
+                % Ncases = numel(unique(ugroups_ic(C.Exp|C.Ins)));
+                % stat = checkSLURM(numcases,eData.Value,opts.mem,opts.nnodes);
                 opts.partition = eData.Value;
             case 'mem'
                 opts.mem = eData.Value;

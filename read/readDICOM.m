@@ -203,6 +203,8 @@ for ifn = 1:nf
         if isfield(tinfo,'RepetitionTime') && ~isempty(tinfo.RepetitionTime)
             TR = tinfo.RepetitionTime;
         end
+        d = [tinfo.Rows,tinfo.Columns];
+
         j = [];
         if ~isempty(dcmdata)
             j = find( strcmp(tinfo.SeriesInstanceUID,{dcmdata(:).SeriesInstanceUID}) ...
@@ -211,7 +213,8 @@ for ifn = 1:nf
                 & (diffN == [dcmdata(:).DiffusionNumber]) ...
                 & ismember([dcmdata(:).DiffusionDir]',diffD','rows')' ...
                 & (TE==[dcmdata(:).TE]) ...
-                & (TR==[dcmdata(:).TR]) ,1);
+                & (TR==[dcmdata(:).TR]) ...
+                & cellfun(@(x)all(x==[tinfo.Rows,tinfo.Columns]),{dcmdata.d}) ,1);
         end
         if isempty(j)
             % Initialize new series in structure:
@@ -342,7 +345,7 @@ for ifn = 1:nf
             % RGB data from ImBio
             timg = permute(timg,[1,2,4,3]);
         end
-        if (length(tinfo.ImageType)>5) && strcmp(tinfo.ImageType(end-5:end),'MOSAIC')
+        if isfield(tinfo,'ImageType') && (length(tinfo.ImageType)>5) && strcmp(tinfo.ImageType(end-5:end),'MOSAIC')
             ns = int32(tinfo.LocationsInAcquisition(1));
             nslab = ceil(sqrt(double(ns)));
             md = size(timg);
@@ -573,7 +576,7 @@ dcmdata.img(:,:,ind) = [];
 dcmdata.SlicePos(ind,:) = [];
 
 % Sort slices by location:
-[d(1),d(2),d(3),d(4)] = size(dcmdata.img);
+[d(1),d(2),d(3),d(4)] = size(dcmdata.img); d = double(d);
 n4d = d(4);
 uind = dcmdata.SlicePos(:,3);
 [~,ix,~] = unique(uind,'rows');
@@ -617,7 +620,7 @@ if (n4d>1) && (d(3)==(n4d*nnz(uind==1)))
 end
 
 % Check for dimension match
-[d(1),d(2),d(3),d(4)] = size(dcmdata.img);
+[d(1),d(2),d(3),d(4)] = size(dcmdata.img); d = double(d);
 if ~isempty(din) && ~all(d(1:3)==din)
     error(['Dimensions must match!',sprintf(' %f',d)])
 end
@@ -634,7 +637,6 @@ img = dcmdata.img;
 dcmdata = rmfield(dcmdata,'img');
 info = struct('format','DICOM','meta',dcmdata);
 
-[d(1),d(2),d(3),d(4)] = size(img);
 fov = [dcmdata.PixelSpacing([2,1])',1] .* d([2,1,3]);
 if size(dcmdata.SlicePos,1)>1
     fov(3) = abs(sqrt(sum(diff(dcmdata.SlicePos([1,end],:),1).^2,2))) * d(3)/(d(3)-1);
