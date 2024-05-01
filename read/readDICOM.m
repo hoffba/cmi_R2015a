@@ -512,7 +512,9 @@ if ~isempty(dcmdata)
                 tmat(:,:,ind(:)) = oimg(:,:,ix);
                 tacq = nan(1,d(3));
                 tacq(ind) = tdata.AcquisitionNumber(ix);
-                tdata.SlicePos = (0:d(3)-1)'*dz + oloc(1,:);
+                tdata.SlicePos = [interp1(ind,oloc(:,1),1:d(3),'linear','extrap')',...
+                                  interp1(ind,oloc(:,2),1:d(3),'linear','extrap')',...
+                                  interp1(ind,oloc(:,3),1:d(3),'linear','extrap')'];
                 tdata.SlcThk = dz;
                 tdata.img = tmat;
                 tdata.AcquisitionNumber = tacq;

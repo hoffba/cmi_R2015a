@@ -40,9 +40,20 @@ switch method
             mkdir(ydir);
         end
         tname = fullfile(ydir,sprintf('%s.mhd',id));
-        saveMHD(tname,ct,id,info.fov,info.orient);
+
+        % Check for gapped data. Remove gaps for YACTA processing
+        gapchk = false;
+        orient = info.orient;
+        ind = find(any(ct>-1000,[1,2]));
+        if numel(ind)~=size(ct,3)
+            gapchk = true;
+            orient = orient*diag([1,1,(ind(2)-ind(1)),1]);
+        end
+
+        saveMHD(tname,ct(:,:,ind),id,info.fov,orient);
         yacta(tname,'wait');
 %         yacta(tname,'wait','airways','renderer','hide','exportlabels','yactascp');
+
         resname = dir(fullfile(ydir,'*lung_lobes*explabels.mhd'));
         if ~isempty(resname)
             seg = cmi_load(1,[],fullfile(ydir,resname(end).name));
@@ -60,6 +71,14 @@ switch method
                 seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
             end
         end
+
+        % Add gaps back into gapped segmentations
+        if gapchk
+            tseg = seg;
+            seg = zeros(size(ct));
+            seg(:,:,ind) = tseg;
+        end
+
     case 5
         writeLog(logfn,'- Generating VOI from TotalSegmentator ...\n');
         seg = TotalSegmentator(ct,info,id,savepath);
