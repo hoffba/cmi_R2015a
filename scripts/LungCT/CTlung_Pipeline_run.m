@@ -88,7 +88,8 @@ else
         save_path = checkTurboPath(opts.save_path);
         batch(@pipeline_loop,1,{cases,opts},'Pool',nworkers_orig,'Pool',np);
         GL_run(opts.username, 'CTlung_Pipeline_sub', {{cases.procdir}',opts}, [true,false], [false,true],...
-            'ProcessMemory',24,'ProcessTime',720,'TimeStamp',opts.timestamp,'save_path',save_path);
+            'Partition',opts.cluster_type,'ProcessMemory',opts.mem,'ProcessTime',720,'Nodes',opts.nnodes,...
+            'TimeStamp',opts.timestamp,'save_path',save_path);
     elseif strcmp(opts.cluster,'tier2')
 %~~~~~~~~~ Tier2 ~~~~~~~~~
         fprintf(['Running local processes as batch with pool size of %d\n,...' ...

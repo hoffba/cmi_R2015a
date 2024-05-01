@@ -450,9 +450,10 @@ if ~isempty(dcmdata)
     uN = unique(cellfun(@(x)size(x,1),{dcmdata(:).SlicePos})); % Number of slices per set
     uS = unique(round(diff(dcmdata(1).SlicePos(:,3)),3));      % Spacing between slices for first set
     % Looking for significant differences in slice spacing:
-    if (n==1) && (length(uS)==2) && (mean(abs(uS-mean(uS))/mean(uS))>0.001)
+    if (n==1) && (length(uS)<3) && ...
+            ((mean(abs(uS-mean(uS))/mean(uS))>0.001) || any(sqrt(sum(diff(dcmdata.SlicePos,1,1).^2,2)) >= 2*dcmdata.SlcThk))
         % Case for 2-slice gapped CT data
-        gflag = 2;
+        gflag = length(uS); % Number of slices per image section
         oimg = dcmdata.img;
         oloc = dcmdata.SlicePos;
     elseif (length(uN)==1) && ismember(uN,1:2)
@@ -461,6 +462,11 @@ if ~isempty(dcmdata)
         gflag = numel(uS);
         oimg = cat(3,dcmdata(:).img);
         oloc = cat(1,dcmdata(:).SlicePos);
+    elseif uS/dcmdata.SlcThk >= 2
+        % Case for single-slice gapped data not separated into diff vectors
+        gflag = 1;
+        oimg = dcmdata.img;
+        oloc = dcmdata.SlicePos;
     end
     if gflag
         if ~noprompt
