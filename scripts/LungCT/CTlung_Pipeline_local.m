@@ -129,12 +129,21 @@ try
                 img(i).mat(:,:,ind(:)) = oimg;
                 tacq = nan(1,d(3));
                 tacq(ind) = img(i).info.natinfo.meta.AcquisitionNumber;
-                img(i).info.natinfo.meta.SlicePos = (0:d(3)-0.5)' * dz + slcloc(1,:);
+                img(i).info.natinfo.meta.SlicePos = [ interp1(ind,slcloc(:,1),1:d(3),'linear','extrap')',...
+                                                      interp1(ind,slcloc(:,2),1:d(3),'linear','extrap')',...
+                                                      interp1(ind,slcloc(:,3),1:d(3),'linear','extrap')' ];
                 img(i).info.fov(3) = dz*d(3);
                 img(i).info.d = d;
                 img(i).info.voxsz(3) = dz;
                 img(i).info.natinfo.meta.SlcThk = dz;
                 img(i).info.natinfo.meta.AcquisitionNumber = tacq;
+                
+                img(i).info.orient = [ [  img(i).info.natinfo.meta.Orient(1:3)*img(i).info.natinfo.meta.PixelSpacing(1) ,...
+                                          img(i).info.natinfo.meta.Orient(4:6)*img(i).info.natinfo.meta.PixelSpacing(2) ,...
+                                         (img(i).info.natinfo.meta.SlicePos(end,:)-img(i).info.natinfo.meta.SlicePos(1,:))'/(d(3)-1) ,...
+                                          img(i).info.natinfo.meta.SlicePos(1,:)' ] ;...
+                                          0 0 0 1];
+
                 
                 % Insert gaps for the segmentation to match
                 tseg = zeros(d);

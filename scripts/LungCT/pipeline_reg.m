@@ -50,7 +50,7 @@ if gapchk(2)
 end
 
 %% Set up preprocessing options
-regObj.UDpreproc('filtn',[3,3,0;3,3,0],'dilaten',[15,15,15;0,0,0],'clamp',[-1000,0;-1000,0])
+regObj.UDpreproc('filtn',[3,3,0;3,3,0],'dilaten',[15,15,15*~gapchk(1);0,0,0],'clamp',[-1000,0;-1000,0])
 
 %% Set up registration resolutions
 f_sched = {8*ones(1,3), 10*ones(1,3), [5*ones(1,3),2*ones(1,3)]};

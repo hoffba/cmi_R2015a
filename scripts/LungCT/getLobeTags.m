@@ -30,6 +30,10 @@ function lobe = getLobeTags(seg)
         % TotalSegmentator
         lobeTag = {15,16,17,13,14};
         lobeName = {'RUL','RML','RLL','LUL','LLL'};
+    elseif all(ismember(utags,61:66))
+        % Sextants
+        lobeTag = num2cell(61:66);
+        lobeName = {'RUS','RMS','RLS','LUS','LMS','LLS'};
     else
         error('Could not match valid segmentation labeling schema: %s',num2str(utags'));
     end
