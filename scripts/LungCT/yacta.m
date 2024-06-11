@@ -61,6 +61,8 @@ for i = 1:nf
             [~,fname] = fileparts(fname);
         end
         fname = fullfile(fpath,[fname,'.mhd']);
+
+
         stat = saveMHD(fname,img,label,fov,orient);
 
     end

@@ -106,7 +106,7 @@ end
         pan_w = 215;
         pan_w_ = pan_w - 2*gap;
         pan_h = 350;
-        pan_posy = pan_h - pan_hd - line_step*(1:11);
+        pan_posy = pan_h - pan_hd - line_step*(1:15);
 
     %% Tab 1: Settings and options
         posy = fheight-tab_hd-line_step;
@@ -143,8 +143,9 @@ end
         h.vessel =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(7),  pan_w_, line_h],'Text','Vessels','Value',opts.vessel,'ValueChangedFcn',@setOpts,'Tag','vessel');
         h.reg =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(8),  pan_w_, line_h],'Text','Registration','Value',opts.reg,'ValueChangedFcn',@setOpts,'Tag','reg');
         h.scatnetEmph =    uicheckbox(h.panel_modules,'Position',[gap, pan_posy(9),  pan_w_, line_h],'Text','ScatNet-Emph','Value',opts.scatnetEmph,'ValueChangedFcn',@setOpts,'Tag','scatnetEmph');
-        h.prm =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(10), pan_w_, line_h],'Text','PRM','Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
-        h.tprm =           uicheckbox(h.panel_modules,'Position',[gap, pan_posy(11), pan_w_, line_h],'Text','tPRM','Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
+        h.saa =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(10), pan_w_, line_h],'Text','SAA','Value',opts.saa,'ValueChangedFcn',@setOpts,'Tag','saa');
+        h.prm =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(11), pan_w_, line_h],'Text','PRM','Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
+        h.tprm =           uicheckbox(h.panel_modules,'Position',[gap, pan_posy(12), pan_w_, line_h],'Text','tPRM','Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
     % Panel: Registration Options
         panx = panx + gap + pan_w;
@@ -267,7 +268,7 @@ end
             curr_page = newpage;
             h.text_page.Value = curr_page;
             page_ic = ismember(ugroups_ic,(gp_per_page*(curr_page-1))+1:min(ngroups,gp_per_page*curr_page));
-            h.table_select.Data = table2cell(C(page_ic,:));
+            h.table_select.Data = table2cell(C(page_ic,:)); drawnow
             h.table_select.ColumnName = C.Properties.VariableNames;
             nv = size(C,2);
             set(h.table_select,'ColumnEditable',[true(1,2),false(1,nv-2)],...
@@ -405,7 +406,7 @@ end
             case 'partition'
                 % Ncases = numel(unique(ugroups_ic(C.Exp|C.Ins)));
                 % stat = checkSLURM(numcases,eData.Value,opts.mem,opts.nnodes);
-                opts.partition = eData.Value;
+                opts.cluster_type = eData.Value;
             case 'mem'
                 opts.mem = eData.Value;
             case 'nnodes'
@@ -626,6 +627,9 @@ end
                 end
             end
             selected_data(empty_flag) = [];
+
+            % Update timestamp based on when the Run button was pushed:
+            opts.timestamp = char(datetime('now','Format','yyyyMMddHHmmss'));
 
             CTlung_Pipeline_run(selected_data,opts);
             

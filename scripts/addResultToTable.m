@@ -11,8 +11,10 @@ function T = addResultToTable(T,tT,varnames)
         defvals = cell(1,size(vtypes,2));
         defvals(strcmp(vtypes,'cell')) = {''};
         defvals(strcmp(vtypes,'double')) = {nan};
-        T = addprop(T,{'defvals'},{'variable'});
-        T.Properties.CustomProperties.defvals = defvals;
+        if ~isprop(T,'defvals')
+            T = addprop(T,{'defvals'},{'variable'});
+            T.Properties.CustomProperties.defvals = defvals;
+        end
     else
         nr0 = size(T,1);
         [nr,nc] = size(tT);
@@ -24,14 +26,13 @@ function T = addResultToTable(T,tT,varnames)
             vname = tT.Properties.VariableNames{j};
             if ~ismember(vname,T.Properties.VariableNames)
                 % Determine variable type and default value
-                vtype = class(tT.(vname));
-                switch vtype
-                    case 'cell'
-                        defval = {''};
-                    case 'double'
-                        defval = nan;
-                    otherwise
-                        defval = {};
+                if iscell(tT.(vname))
+                    defval = {''};
+                elseif isdouble(tT.(vname))
+                    defval = nan;
+                else
+                    cellchk = true;
+                    defval = {};
                 end
 
                 % Add variable to table T

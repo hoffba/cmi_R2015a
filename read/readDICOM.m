@@ -90,7 +90,7 @@ dcmdata = struct('SeriesInstanceUID',{},... % for sorting multiple images
 % hp = waitbar(0,'','Name','Loading DICOM image ...','WindowStyle','modal',...
 %     'CreateCancelBtn','setappdata(gcbf,''canceling'',1)'); % Option to cancel load midway
 % setappdata(hp,'canceling',0)
-fprintf('\nLoading DICOM images from %u files\n',nf);
+fprintf('Loading DICOM images from %u files\n',nf);
 for ifn = 1:nf
     
     % Check for Cancel button press
@@ -346,7 +346,11 @@ for ifn = 1:nf
             timg = permute(timg,[1,2,4,3]);
         end
         if isfield(tinfo,'ImageType') && (length(tinfo.ImageType)>5) && strcmp(tinfo.ImageType(end-5:end),'MOSAIC')
-            ns = int32(tinfo.LocationsInAcquisition(1));
+            if isfield(tinfo,'LocationsInAcquisition')
+                ns = int32(tinfo.LocationsInAcquisition(1));
+            elseif isfield(tinfo,'AcquisitionMatrix')
+                ns = prod([tinfo.Rows,tinfo.Columns]./tinfo.AcquisitionMatrix([1,4])');
+            end
             nslab = ceil(sqrt(double(ns)));
             md = size(timg);
             d = md/nslab;
@@ -357,6 +361,11 @@ for ifn = 1:nf
             for i = 1:ns
                 timg(:,:,i) = mosi( (ri(i)-1)*d(1)+(1:d(1)) , (ci(i)-1)*d(2)+(1:d(2)) );
             end
+            % Remove blank slices
+            ind = squeeze(std(timg,0,[1,2]))>0;
+            timg(:,:,~ind) = [];
+            ns = nnz(ind);
+
             dcmdata(j).d = d;
             kk = k - 1 + (1:ns);
             dcmdata(j).AcquisitionNumber(kk) = dcmdata(j).AcquisitionNumber(k);
@@ -462,7 +471,7 @@ if ~isempty(dcmdata)
         gflag = numel(uS);
         oimg = cat(3,dcmdata(:).img);
         oloc = cat(1,dcmdata(:).SlicePos);
-    elseif uS/dcmdata.SlcThk >= 2
+    elseif (n==1) && any(uS/dcmdata.SlcThk >= 2)
         % Case for single-slice gapped data not separated into diff vectors
         gflag = 1;
         oimg = dcmdata.img;
@@ -645,7 +654,7 @@ img = dcmdata.img;
 dcmdata = rmfield(dcmdata,'img');
 info = struct('format','DICOM','meta',dcmdata);
 
-fov = [dcmdata.PixelSpacing([2,1])',1] .* d([2,1,3]);
+fov = [dcmdata.PixelSpacing',1] .* d(1:3);
 if size(dcmdata.SlicePos,1)>1
     fov(3) = abs(sqrt(sum(diff(dcmdata.SlicePos([1,end],:),1).^2,2))) * d(3)/(d(3)-1);
 elseif ~isempty(dcmdata.SlcThk)

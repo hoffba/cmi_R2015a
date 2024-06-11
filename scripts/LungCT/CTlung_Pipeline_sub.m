@@ -251,12 +251,11 @@ try
                         end
                     end
                 end
-
+                % Add table to results
+                res = addTableVarVal(res,T);
             end
         end
 
-        % Add table to results
-        res = addTableVarVal(res,T);
     end
 
     % ScatterNet for AT on Exp CT scan
@@ -323,18 +322,7 @@ try
     try
         if opts.vessel && img(2).flag
             writeLog(fn_log,'Vessel analysis ...\n');
-            fn_re_ins = fullfile(procdir,sprintf('re_%s.ct.nii.gz',res.ID{1}));
-            fn_re_seg = fullfile(procdir,sprintf('re_%s.lobe_segmentation.nii.gz',res.ID{1}));
-            if exist(fn_re_ins,'file') && exist(fn_re_seg,'file')
-                tinfo = niftiinfo(fn_re_ins);
-                tins = niftiread(tinfo);
-                tseg = niftiread(fn_re_seg);
-            else
-                tinfo = init_niftiinfo(res.ID{1},img(2).info.voxsz,class(img(2).mat),img(2).info.d);
-                tins = img(2).mat;
-                tseg = img(2).label;
-            end
-            T = pipeline_vesselseg( tins, tseg, tinfo, procdir, opts, fn_log);
+            T = pipeline_vesselseg( img(2).mat , img(2).label , img(2).info , procdir, opts, fn_log);
             res = addTableVarVal(res,T);
         end
     catch err
@@ -343,7 +331,7 @@ try
 
     % Quantify unregistered CT scans
     if opts.unreg
-    writeLog(fn_log,'Quantifying unregistered statistics\n');
+        writeLog(fn_log,'Quantifying unregistered statistics\n');
         if img(1).flag
             T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
             res = addTableVarVal(res,T);
@@ -480,6 +468,14 @@ try
             end
         end
         clear jac dBlood
+
+        % Stratified Axial Analysis
+        if opt.saa && img(1).flag && img(2).flag
+            writeLog(fn_log,'Quantifying Stratified Axial Analysis (SAA)\n');
+            T = CTlung_SAA( img(1).mat-ins_reg, logical(img(1).label),'dim',[1,3]);
+            T = addvars(T,{'WholeLung'},'Before',1,'NewVariableNames',{'ROI'};
+            res = addTableVarVal(res,T);
+        end
         
         % PRM calculation
         prm10 = [];

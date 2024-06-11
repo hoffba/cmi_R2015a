@@ -168,9 +168,9 @@ if ~isempty(fullname)
         end
     end
     label = [alabel{:}];
-    if ~isempty(fov)
-        fov = fov([2,1,3]); % change to matlab coordinates: [y,x,z]
-    end
+    % if ~isempty(fov)
+    %     fov = fov([2,1,3]); % change to matlab coordinates: [y,x,z]
+    % end
 end
 if (imgflag == 0)
     img = logical(img);
