@@ -76,8 +76,12 @@ if stat
     end
 
     % Set filenames:
-    [~,outfn] = fileparts(self.cmiObj(2).img.name);
-    outfn = fullfile(self.odir,[outfn,'_R',self.elxObj.outfmt]);
+    outfn = self.cmiObj(2).img.name;
+    if contains(outfn,filesep)
+        outfn = flip(extractBefore(flip(outfn),filesep));
+    end
+    outfn = erase(outfn,{'.nii','.nii.gz','.mhd'});
+    outfn = fullfile(self.odir,[regexprep(outfn,'\.','_'),'_R',self.elxObj.outfmt]);
     origfn = fullfile(self.odir,['elxtemp-origm',self.elxObj.outfmt]);
     fname = fullfile(self.odir,['elxtemp-f',self.elxObj.outfmt]);
     mname = fullfile(self.odir,['elxtemp-m',self.elxObj.outfmt]);

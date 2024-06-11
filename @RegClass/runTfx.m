@@ -44,8 +44,8 @@ elseif (self.Tfx.jac || self.Tfx.jacmat || self.Tfx.def || (nf>0))
     
     ofn = cell(nf,1);
     for i = 1:nf
-        [~,tfn,ext] = fileparts(self.Tfx.fnames{i});
-        ofn{i} = fullfile(self.Tfx.out,[tfn,'_R',ext]);
+        tfn = flip(extractBefore(flip(self.Tfx.fnames{i}),filesep));
+        ofn{i} = fullfile(self.Tfx.out,[regexprep(tfn,'\.','_'),'_R',ext]);
     end
     if (nf==0)
         tp = {tpfn};
