@@ -1,10 +1,18 @@
-function T = catalog_data(path)
+function T = catalog_data(path,gflag)
+
+if nargin<2
+    gflag = false;
+end
 
 T = [];
 
 % Search for DICOMs
 filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
 [D,F] = dirtree(path,filtstr);
+
+if gflag
+    hw = waitbar(0,'Searching for files ...');
+end
 
 if isempty(D)
     % Search for image files
@@ -69,7 +77,11 @@ if isempty(D)
         end
     end
 else
-    for i = 1:numel(D)
+    ND = numel(D);
+    for i = 1:ND
+        if gflag && isvalid(hw)
+            waitbar(i/ND,hw,sprintf('Cataloging; %d / %d',i,ND));
+        end
         fname = fullfile(D{i},F{i}{1});
         dcm_flag = false;
         try
@@ -129,6 +141,10 @@ T = sortrows(T,{'StudyID','PatientName','StudyDate','SeriesNumber'});
 T.CaseNumber = ugroups_ic;
 
 writetable(T,fullfile(path,'Data_Catalog.csv'));
+
+if gflag && isvalid(hw)
+    delete(hw);
+end
 
 function [t,vnames] = getDICOMvars(modstr)
 %       Catalog value             Value class
@@ -193,14 +209,17 @@ else
 end
 
 function T = addVars(T,t)
-Nr = size(T,1);
-T_vnames = T.Properties.VariableNames;
-t_vnames = t.Properties.VariableNames;
-newvar = t_vnames(~ismember(t_vnames,T_vnames));
-for i = 1:numel(newvar)
-    if ischar(t.(newvar{i}))
-        T.(newvar{i}) = repmat({''},Nr,1);
-    else
-        T.(newvar{i}) = cast(nan(Nr,1),class(t.newvar{i}));
+    Nr = size(T,1);
+    T_vnames = T.Properties.VariableNames;
+    t_vnames = t.Properties.VariableNames;
+    newvar = t_vnames(~ismember(t_vnames,T_vnames));
+    for i = 1:numel(newvar)
+        if ischar(t.(newvar{i})) || iscellstr(t.(newvar{i}))
+            T.(newvar{i}) = repmat({''},Nr,1);
+        elseif isstring(t.(newvar{i}))
+            T.(newvar{i}) = repmat("",Nr,1);
+        else
+            T.(newvar{i}) = cast(nan(Nr,1),class(t.(newvar{i})));
+        end
     end
-end
+

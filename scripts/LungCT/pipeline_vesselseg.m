@@ -25,7 +25,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     writeLog(fn_log,'Vessel Segmentation Version: %s\n',ver);
 
-    ID = info.Description;
+    ID = info.name;
     %% Check save directory
     writeLog(fn_log,'   Saving to folder: %s\n',save_path);
     if ~isfolder(save_path)
@@ -34,7 +34,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     %% Find and load INSP CT file:
     writeLog(fn_log,'  Resampling CT image ...\n');
-    voxsz_orig = info.PixelDimensions;
+    voxsz_orig = info.voxsz;
     d_orig = size(ct);
     [ct,info_re] = resample_subj(ct,info,[],0.625*ones(1,3),'linear');
    
@@ -50,17 +50,17 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     %% Save eroded lobe map:
     lobeval = unique(seg(seg~=0));
-    fname = fullfile(save_path,[ID,'_erodedLobes']);
-    if exist([fname,'.nii.gz'],'file')
+    fname = fullfile(save_path,[ID,'.erodedLobes.nii.gz']);
+    if isfile(fname)
         writeLog(fn_log,'Loading eroded lobe map from file ...\n');
-        eroded_lobes = readNIFTI([fname,'.nii.gz']);
+        eroded_lobes = resample_subj(readNIFTI(fname),info,info_re.d,info_re.voxsz,'nearest');
     else
         writeLog(fn_log,'Eroding lobe map ... ');
         t = tic;
         se = strel('sphere',5);
-        eroded_lobes = zeros(size(seg));
+        eroded_lobes = zeros(size(seg_re));
         for i = 1:numel(lobeval)
-                eroded_lobes(imerode(seg == lobeval(i),se)) = lobeval(i);
+                eroded_lobes(imerode(seg_re == lobeval(i),se)) = lobeval(i);
         end
         save_result(fname,int8(eroded_lobes),info_re,info,'nearest');
         writeLog(fn_log,'done (%s)\n',duration(0,0,toc(t)));
@@ -68,13 +68,13 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     eroded_lobes = eroded_lobes > 0;
     
     %% Full lung volume:
-    segBW = logical(seg);
+    segBW = logical(seg_re);
 
     %% Generate enhanced vessel maps
-    fname = fullfile(save_path,[ID,'_enhancedVessel']);
-    if exist([fname,'.nii.gz'],'file')
+    fname = fullfile(save_path,[ID,'.enhancedVessel.nii.gz']);
+    if isfile(fname)
         writeLog(fn_log,'Loading enhanced vessel map from file ...\n');
-        vessels = readNIFTI([fname,'.nii.gz']);
+        vessels = resample_subj(readNIFTI(fname),info,info_re.d,info_re.voxsz,'linear');
     else
         writeLog(fn_log,'Calculating enhanced vessel maps ... \n');
         t = tic;
@@ -85,40 +85,36 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     end
 
     %% Binarize vessels:
-    fname = fullfile(save_path,[ID,'_binVessel']);
-    if exist([fname,'.nii.gz'],'file')
+    fname = fullfile(save_path,[ID,'.binVessel.nii.gz']);
+    if isfile(fname)
         writeLog(fn_log,'Reading binary vessel map from file ...\n');
-        bin_vessels = readNIFTI([fname,'.nii.gz']);
+        bin_vessels = resample_subj(readNIFTI(fname),info,info_re.d,info_re.voxsz,'nearest');
     else
         writeLog(fn_log,'Binarizing vessel map ... ');
-        t = tic; 
-        info.Datatype = 'int8';
-        info.BitsPerPixel = 8;
+        t = tic;
         perLaa = nnz(ct(segBW) < -950) / nnz(segBW);
         bin_vessels = binarizeVessels(vessels,eroded_lobes,perLaa);
-        bin_vessels = resample_subj(bin_vessels,info_re,d_orig,voxsz_orig,2);
         save_result(fname,int8(vessels),info_re,info,'nearest');
         writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
     end
     
     %% Generate CSA maps
-    fname = fullfile(save_path,[ID,'_CSA_skel']);
-    if exist([fname,'.nii.gz'],'file')
+    fname = fullfile(save_path,[ID,'.CSA_skel.nii.gz']);
+    if isfile(fname)
         writeLog(fn_log,'Reading CSA from file ...\n');
-        csa_map = readNIFTI([fname,'.nii.gz']);
+        csa_map = resample_subj(readNIFTI(fname),info,info_re.d,info_re.voxsz,'linear');
     else
         writeLog(fn_log,'Generating CSA maps ... \n');
         t = tic;
         csa_map = CSA_create_maps(bin_vessels);
-        csa_map = resample_subj(csa_map,info_re,d_orig,voxsz_orig,2);
         save_result(fname,csa_map,info_re,info,'linear');
         writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
     end
     
     %% Frangi Filter
     if opts.frangi
-        fname = fullfile(save_path,[ID,'_enhancedVessel_frangi']);
-        if exist([fname,'.nii.gz'],'file')
+        fname = fullfile(save_path,[ID,'.enhancedVessel_frangi.nii.gz']);
+        if isfile(fname)
             writeLog(fn_log,'Frangi Filtered image file found ...\n');
         else
             writeLog(fn_log,'Generating Frangi Filtered image ... \n');
@@ -135,14 +131,13 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     %% Curvilinear Filter
     if opts.curvi
-        fname = fullfile(save_path,[ID,'_enhancedVessel_curv']);
-        if exist([fname,'.nii.gz'],'file')
+        fname = fullfile(save_path,[ID,'.enhancedVessel_curv.nii.gz']);
+        if isfile(fname)
             writeLog(fn_log,'Curvilinear filtered image file found ...\n');
         else
             writeLog(fn_log,'Generating Curvilinear Filtered image ... \n');
             t = tic;
             curv_enhanced_vessels = vesselness3D(ct.*segBW, 0.5:1:5.5, [1,1,1], 1, true).*segBW;
-            curv_enhanced_vessels = resample_subj(curv_enhanced_vessels,info_re,d_orig,voxsz_orig,1);
             save_result(fname,curv_enhanced_vessels,info_re,info,'linear');
             clear curv_enhanced_vessels;
             writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
@@ -152,7 +147,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     %% Tabulate results and save to subject directory
     writeLog(fn_log,'Tabulating results ... ');
     t = tic;
-    T = lobeLoop(seg,@(mask,binvessels,csa)vesselStats(mask,binvessels,csa),bin_vessels,csa_map);
+    T = lobeLoop(seg_re,@(mask,binvessels,csa)vesselStats(mask,binvessels,csa),bin_vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_vesselMetrics.csv']));
     writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
     
@@ -197,11 +192,14 @@ function save_result(fname,I,info,info_orig,interpm)
     if ~all(info.voxsz==info_orig.voxsz)
         I = resample_subj(I,info,info_orig.d,info_orig.voxsz,interpm);
     end
-    label = regexp(fname,[filesep,'(\w+)\.'],'tokens');
+    rstr = [filesep,'([\w\.]+)\.nii'];
+    if ispc
+        rstr = [filesep,rstr];
+    end
+    label = regexp(fname,rstr,'tokens');
     if isempty(label)
         warning('Invalid file name: %s\n',fname)
     else
-        label = label{end};
-        saveNIFTI(fname,I,label,info_orig.fov,info_orig.orient);
+        saveNIFTI(fname,I,label{1},info_orig.fov,info_orig.orient);
     end
 end

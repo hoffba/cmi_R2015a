@@ -473,7 +473,7 @@ try
         if opt.saa && img(1).flag && img(2).flag
             writeLog(fn_log,'Quantifying Stratified Axial Analysis (SAA)\n');
             T = CTlung_SAA( img(1).mat-ins_reg, logical(img(1).label),'dim',[1,3]);
-            T = addvars(T,{'WholeLung'},'Before',1,'NewVariableNames',{'ROI'};
+            T = addvars(T,{'WholeLung'},'Before',1,'NewVariableNames',{'ROI'});
             res = addTableVarVal(res,T);
         end
         
