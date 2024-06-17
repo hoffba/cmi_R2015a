@@ -470,7 +470,7 @@ try
         clear jac dBlood
 
         % Stratified Axial Analysis
-        if opt.saa && img(1).flag && img(2).flag
+        if opts.saa && img(1).flag && ~isempty(ins_reg)
             writeLog(fn_log,'Quantifying Stratified Axial Analysis (SAA)\n');
             T = CTlung_SAA( img(1).mat-ins_reg, logical(img(1).label),'dim',[1,3]);
             T = addvars(T,{'WholeLung'},'Before',1,'NewVariableNames',{'ROI'});

@@ -18,7 +18,7 @@ function [image] = CSA_create_maps(V)
     csa = (D.*0.625).^2.*pi;
     
     %Skeleton to fill with CSA 
-    image = zeros(size(V));
+    % image = zeros(size(V));
 
     image = single(csa.*logical(skel));
     
@@ -54,4 +54,3 @@ function [image] = CSA_create_maps(V)
 %     end
 %     fprintf('\n');
 %     image = single(image);
-end
