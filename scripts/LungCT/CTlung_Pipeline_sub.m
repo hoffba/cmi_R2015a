@@ -531,10 +531,9 @@ try
             res = addTableVarVal(res,T);
 
             % Generate PRM Report
-            try
-                report_prm(procdir,res,opts);
-            catch err
-                writeLog(fn_log,'PRM Report FAILED\n%s\n',getReport(err,'extended'));
+            D = report_prm(procdir,res,opts);
+            if isempty(D)
+                writeLog(fn_log,'PRM Report FAILED\n');
             end
 
             % Calculate tPRM

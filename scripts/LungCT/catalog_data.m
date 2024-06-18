@@ -6,13 +6,13 @@ end
 
 T = [];
 
-% Search for DICOMs
-filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
-[D,F] = dirtree(path,filtstr);
-
 if gflag
     hw = waitbar(0,'Searching for files ...');
 end
+
+% Search for DICOMs
+filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
+[D,F] = dirtree(path,filtstr);
 
 if isempty(D)
     % Search for image files

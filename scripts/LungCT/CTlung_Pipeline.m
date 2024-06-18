@@ -440,7 +440,7 @@ end
             fn = '';
         elseif ischar(fn) && isfolder(fn)
             % If a folder was input, generate new catalog
-            newC = catalog_data(fn);
+            newC = catalog_data(fn,true);
             fn = fullfile(fn,'Pipeline_catalog.csv');
         elseif ischar(fn) && exist(fn,'file')==2
             iopt = detectImportOptions(fn);

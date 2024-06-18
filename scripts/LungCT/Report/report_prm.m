@@ -1,4 +1,12 @@
 function D = report_prm(procdir,res,opts,R)
+
+    % Check that Matlab's report generator toolbox is available
+    if ~license('test','matlab_report_gen')
+        fprintf('MATLAB Report Generator not available.\n');
+        D = [];
+        return
+    end
+
     import mlreportgen.report.*;
     import mlreportgen.dom.*;
 
