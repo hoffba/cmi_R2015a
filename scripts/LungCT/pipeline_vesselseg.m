@@ -47,8 +47,9 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     end
     
     %% Save eroded lobe map:
+    info_re.tag = 'vessel.erodedLobes';
     lobeval = unique(seg(seg~=0));
-    fname = fullfile(save_path,[ID,'.vessel.erodedLobes.nii.gz']);
+    fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
     if isfile(fname)
         writeLog(fn_log,'Loading eroded lobe map from file ...\n');
         eroded_lobes = readNIFTI(fname);
@@ -69,7 +70,8 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     segBW = logical(seg_re);
 
     %% Generate enhanced vessel maps
-    fname = fullfile(save_path,[ID,'.vessel.enhancedVessel.nii.gz']);
+    info_re.tag = 'vessel.enhancedVessel';
+    fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
     if isfile(fname)
         writeLog(fn_log,'Loading enhanced vessel map from file ...\n');
         vessels = readNIFTI(fname);
@@ -83,7 +85,8 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     end
 
     %% Binarize vessels:
-    fname = fullfile(save_path,[ID,'.vessel.binVessel.nii.gz']);
+    info_re.tag = 'vessel.binVessel';
+    fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
     if isfile(fname)
         writeLog(fn_log,'Reading binary vessel map from file ...\n');
         bin_vessels = readNIFTI(fname);
@@ -97,7 +100,8 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     end
     
     %% Generate CSA maps
-    fname = fullfile(save_path,[ID,'.vessel.CSA_skel.nii.gz']);
+    info_re.tag = 'vessel.CSA_skel';
+    fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
     if isfile(fname)
         writeLog(fn_log,'Reading CSA from file ...\n');
         csa_map = readNIFTI(fname);
@@ -111,7 +115,8 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     %% Frangi Filter
     if opts.frangi
-        fname = fullfile(save_path,[ID,'.vessel.enhancedVessel_frangi.nii.gz']);
+        info_re.tag = 'vessel.enhancedVessel_frangi';
+        fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
         if isfile(fname)
             writeLog(fn_log,'Frangi Filtered image file found ...\n');
         else
@@ -129,8 +134,8 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     %% Curvilinear Filter
     if opts.curvi
-        info.tag = 'vessel.enhancedVessel_curv';
-        fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info.tag));
+        info_re.tag = 'vessel.enhancedVessel_curv';
+        fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
         if isfile(fname)
             writeLog(fn_log,'Curvilinear filtered image file found ...\n');
         else
