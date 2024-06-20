@@ -1,4 +1,4 @@
-function pipeline_report(str,procdir,res,opts,R)
+function pipeline_report(procdir,res,opts,str)
 % Function to generate analysis report for Mi-TAP Pipeline
 % Inputs:
 %   dp_body_name =  <char>  name of dptemplate body section in template file
@@ -9,6 +9,53 @@ function pipeline_report(str,procdir,res,opts,R)
 
 import mlreportgen.report.*;
 import mlreportgen.dom.*;
+
+chapters = {
+    'ins',      'Inspiratory CT',                   'INSbody';...
+    'exp',      'Expiratory CT',                    'EXPbody';...
+    'airways',  'Airways (YACTA)',                  'AIRbody';...
+    'vessels',  'Blood Vessels',                    'VESbody';...
+    'prm',      'Parametric Response Map (PRM)',    'PRMbody';...
+    'tprm',     'Topological PRM (tPRM)',           'tPRMbody'
+    };
+
+ind = 1:size(chapters,1);
+if nargin==4
+    ind = find(strcmpi(chapters(:,1),str),1);
+end
+
+if ~isempty(ind)
+    % Determine PDF file name
+    pdfname = fullfile(procdir,[opts.ID,'_Report.pdf']);
+
+    % Initialize report
+    R = [];
+    if numel(ind)>1
+        R = Report(pdfname,'pdf');
+        tR = PageMargins();
+        tR.Top = ".5in";
+        tR.Bottom = ".5in";
+        tR.Left = ".5in";
+        tR.Right = ".5in";
+        tR.Header = "0pt";
+        R.Layout.PageMargins = tR;
+        
+        tR = TitlePage;
+        tR.Title = 'Pipeline Results';
+        tR.Author = opts.ID;
+        append(R,tR);
+        append(R,TableOfContents);
+    end
+
+    % Loop over analyses
+    for i = ind
+        D = genReport(chapters{i,:},procdir,res,opts);
+    end
+
+end
+
+
+function D = genReport(tag,title_str,docprt,procdir,res,opts)
 
 switch lower(str)
     case 'ins'
