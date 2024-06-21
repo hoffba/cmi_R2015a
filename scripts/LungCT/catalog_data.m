@@ -13,6 +13,8 @@ end
 % Search for DICOMs
 filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
 [D,F] = dirtree(path,filtstr);
+% Files to exclude (endsWith):
+exlstr = {'.bmp'};
 
 if isempty(D)
     % Search for image files
@@ -82,12 +84,19 @@ else
         if gflag && isvalid(hw)
             waitbar(i/ND,hw,sprintf('Cataloging; %d / %d',i,ND));
         end
-        fname = fullfile(D{i},F{i}{1});
+        % Exclude files with extension:
+        for j = 1:numel(exlstr)
+            F{i}(endsWith(F{i},exlstr{j})) = [];
+        end
+
         dcm_flag = false;
-        try
-            dcm_flag = isdicom(fname);
-        catch err
-            disp(fname)
+        if ~isempty(F{i})
+            fname = fullfile(D{i},F{i}{1});
+            try
+                dcm_flag = isdicom(fname);
+            catch err
+                disp(fname)
+            end
         end
         if dcm_flag
             info = dicominfo(fname,'UseDictionaryVR',true);
@@ -134,13 +143,15 @@ else
     end
 end
 
-% Sort data, and determine groupings
-T = sortrows(T,{'StudyID','PatientName','StudyDate','SeriesNumber'});
-% Find case groupings
-[~,~,ugroups_ic] = unique(strcat(T.StudyID,T.PatientName,T.StudyDate));
-T.CaseNumber = ugroups_ic;
+if ~isempty(T)
+    % Sort data, and determine groupings
+    T = sortrows(T,{'StudyID','PatientName','StudyDate','SeriesNumber'});
+    % Find case groupings
+    [~,~,ugroups_ic] = unique(strcat(T.StudyID,T.PatientName,T.StudyDate));
+    T.CaseNumber = ugroups_ic;
 
-writetable(T,fullfile(path,'Data_Catalog.csv'));
+    writetable(T,fullfile(path,'Data_Catalog.csv'));
+end
 
 if gflag && isvalid(hw)
     delete(hw);
