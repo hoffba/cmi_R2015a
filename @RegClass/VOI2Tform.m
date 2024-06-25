@@ -10,7 +10,7 @@ if self.cmiObj(1).img.mask.check && self.cmiObj(2).img.mask.check
     cent = zeros(2,3);
     for i = 1:2
         d = self.cmiObj(i).img.dims(1:3);
-        [vx,vy,vz] = ind2sub(d,find(self.cmiObj(i).img.mask.mat));
+        [vy,vx,vz] = ind2sub(d,find(self.cmiObj(i).img.mask.mat));
         n = length(vy);
         xyz = [vx,vy,vz,ones(n,1)] * self.cmiObj(i).img.orient';
         xyz(:,4) = [];

@@ -64,7 +64,7 @@ try
             img(i).info.name = img(i).info.label;
 
             % Check orientation using a bone threshold
-            if orientchk && opts.orient_check && check_CTlung_orientation(img(i).mat)
+            if orientchk && opts.orient_check && check_CTlung_orientation(img(i).mat,img(i).info.voxsz)
                 writeLog(fn_log,'Permuting %s\n',tagstr{i});
                 img(i).mat = permute(img(i).mat,[2,1,3]);
                 img(i).info.voxsz = img(i).info.voxsz([2,1,3]);
