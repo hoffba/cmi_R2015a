@@ -104,24 +104,25 @@ if (nargin>=4)
             'FontSize',22,'FontWeight','bold');
         
         % Axes limits:
+        maxxy = max([x;y]);
         if ischar(opts.xlim) || isinf(opts.xlim(1)) || isnan(opts.xlim(1))
-            tlim(1) = min(x);
+            tlim(1) = 0;
         else
             tlim(1) = opts.xlim(1);
         end
         if ischar(opts.xlim) || isinf(opts.xlim(2)) || isnan(opts.xlim(2))
-            tlim(2) = max(x);
+            tlim(2) = maxxy;
         else
             tlim(2) = opts.xlim(2);
         end
         xlim(ha,tlim);
         if ischar(opts.ylim) || isinf(opts.ylim(1)) || isnan(opts.ylim(1))
-            tlim(1) = min(y);
+            tlim(1) = 0;
         else
             tlim(1) = opts.ylim(1);
         end
         if ischar(opts.ylim) || isinf(opts.ylim(2)) || isnan(opts.ylim(2))
-            tlim(2) = max(y);
+            tlim(2) = maxxy;
         else
             tlim(2) = opts.ylim(2);
         end

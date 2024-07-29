@@ -1,13 +1,17 @@
 % CMIclass function
 % Create Montage of current image
-function hf = genMontage(self,x,~)
+function hf = genMontage(self,x,nrows)
 % Inputs:
 %   
 if self.img.check && self.guicheck
     if isa(x,'matlab.ui.container.Menu')
     	F = self.grabFrames;
+        nrows = [];
     elseif isstruct(x) && all(isfield(x,{'vdim','mdim','mind'}))
         F = self.grabFrames(x);
+        if nargin<3
+            nrows = [];
+        end
     else
         error('CMIclass/genMontage : Invalid inputs.')
     end
@@ -22,8 +26,15 @@ if self.img.check && self.guicheck
             timg(:,:,:,i) = double(im);
         end
         warning('off','Images:initSize:adjustingMag');
-        dim = round(sqrt(size(timg,4)));
-        dim = round(str2double(inputdlg('Desired number of rows:','Rows',1,{num2str(dim)})));
-        hf = figure;montage(timg/255,'Size',[dim,NaN]);
+        if isempty(nrows)
+            nrows = round(str2double(inputdlg('Desired number of rows:','Rows',1,...
+                {num2str(round(sqrt(size(timg,4))))})));
+        end
+        hf = figure;
+        if nf>1
+            montage(timg/255,'Size',[nrows,NaN]);
+        else
+            imshow(timg/255);
+        end
     end
 end

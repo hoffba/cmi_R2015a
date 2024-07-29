@@ -21,6 +21,7 @@ try
     opts.fn.ins =               fullfile(procdir,[ID,'.ins',fn_ext]);
     opts.fn.exp_seg =           fullfile(procdir,[ID,'.exp.label',fn_ext]);
     opts.fn.ins_seg =           fullfile(procdir,[ID,'.ins.label',fn_ext]);
+    opts.fn.airways =           fullfile(procdir,[ID,'.airways',fn_ext]);
     opts.fn.scatnetAT =         fullfile(procdir,[ID,'.scatnetAT',fn_ext]);
     opts.fn.scatnetAT_PEDS =    fullfile(procdir,[ID,'.scatnetAT_PEDS',fn_ext]);
     opts.fn.scatnetEmph =       fullfile(procdir,[ID,'.scatnetEmph',fn_ext]);
@@ -253,9 +254,24 @@ try
                 end
                 % Add table to results
                 res = addTableVarVal(res,T);
+
+                % Save airways map
+                fn = dir(fullfile(ydir,'*_tbt_lobes_*.mhd'));
+                if isempty(fn)
+                    writeLog(fn_log,'Airways map not found\n');
+                else
+                    [timg,~,fov,orient] = cmi_load(1,[],fullfile(fn(1).folder,fn(1).name));
+                    saveNIFTI(opts.fn.airways,timg,{'YACTA_Airways'},fov,orient);
+                end
             end
         end
 
+    end
+
+    if opts.airsim && img(2).flag
+        if isfile(opts.fn.ins_seg) && isfile(opts.fn.airways)
+            airway_processing(opts.fn.ins_seg,opts.fn.airways,procdir);
+        end
     end
 
     % ScatterNet for AT on Exp CT scan
