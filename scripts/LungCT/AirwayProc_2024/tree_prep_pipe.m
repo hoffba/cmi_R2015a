@@ -5,26 +5,20 @@ warning('off','MATLAB:triangulation:PtsNotInTriWarnId')
 
 % Lobe Segmentation
 L = double(niftiread(fn_seg));
+dim = size(L);
 
 % Airways
 A_info = niftiinfo(fn_airways);
 A = logical(niftiread(A_info));
-szA=size(A);
 p.pixDim = A_info.PixelDimensions;
 
 % Check that marix size matches
-if any(size(A)~=size(L))
+if any(size(A)~=dim)
     error('Matrix dimensions do not match.');
 end
 
 % Check lobe IDs
-lobeIDs=unique(L)';
-lobeIDs=lobeIDs(ismember(lobeIDs,1:29));
-if length(lobeIDs)~=5
-    error('Check lobe labelling!')
-end
-p.lobe_ids = lobeIDs;
-
+lobe = getLobeTags(L);
 
 %% 1. the major airway centreline graph
 
@@ -72,10 +66,10 @@ for i = 1:n
     tmp = zeros(1,length(pnts));
     
     for j = 1:length(tmp)
-        [x,y,z] = ind2sub(szA,pnts(j));
+        [x,y,z] = ind2sub(dim,pnts(j));
         CLpnt = [p.pixDim(1)*x p.pixDim(2)*y p.pixDim(3)*z]; % point on centreline
         ind = A_D_idx(x,y,z);
-        [x,y,z] = ind2sub(szA,ind);
+        [x,y,z] = ind2sub(dim,ind);
         NRpnt = [p.pixDim(1)*x p.pixDim(2)*y p.pixDim(3)*z]; % nearest point from bwdist
         tmp(j) = d2(CLpnt,NRpnt);                   % Euclidean distance in mm between points
     end
@@ -328,8 +322,8 @@ B(:,4) = G; % append generation, Strahler and Horsfield (in that order)
 %
 L_surfs = cell(1,5);
 
-for i = 1:5
-    tmp = L==lobeIDs(i); % isolate lobe
+for i = numel(lobe)
+    tmp = L==lobe(i).val; % isolate lobe
     tmp = im2coords3Dbin(tmp); % convert to [x,y,z]
     
     for j = 1:3
@@ -360,7 +354,7 @@ close(hf);
 % basic approximation given by multiplying by average of pixel dims, n.b.
 % typically z dim is different to x and y dims which themselves match
 
-p.lobe_ids = lobeIDs;
+p.lobe_ids = [lobe.val];
 p.lobe_surfs = L_surfs;
 p.B = B;
 p.N = N;
