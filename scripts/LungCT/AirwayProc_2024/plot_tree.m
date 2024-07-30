@@ -9,6 +9,7 @@ s = size(B,1);
 
 hold(ha,'on');
 grid(ha,'on');
+view(ha,[0,1,0]);
 
 maxC=max(B(:,k)); alph=0.9;
 for i=1:s
@@ -30,5 +31,4 @@ for i=1:s
         'MarkerSize',1)
     
 end
-
 %plot3(N(:,2),N(:,3),N(:,4),'ro')

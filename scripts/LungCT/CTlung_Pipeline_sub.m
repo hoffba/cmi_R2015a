@@ -256,6 +256,16 @@ try
                 res = addTableVarVal(res,T);
 
                 % Save airways map
+            end
+        end
+
+    end
+
+    if opts.airsim && img(2).flag
+        if isfile(opts.fn.ins_seg)
+            if ~isfile(opts.fn.airways)
+                % Find airways map from YACTA and save into procdir
+                ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
                 fn = dir(fullfile(ydir,'*_tbt_lobes_*.mhd'));
                 if isempty(fn)
                     writeLog(fn_log,'Airways map not found\n');
@@ -264,13 +274,11 @@ try
                     saveNIFTI(opts.fn.airways,timg,{'YACTA_Airways'},fov,orient);
                 end
             end
-        end
 
-    end
-
-    if opts.airsim && img(2).flag
-        if isfile(opts.fn.ins_seg) && isfile(opts.fn.airways)
-            airway_processing(opts.fn.ins_seg,opts.fn.airways,procdir);
+            if isfile(opts.fn.airways)
+                % Run airway simulation
+                airway_processing(opts.fn.ins_seg,opts.fn.airways,procdir);
+            end
         end
     end
 

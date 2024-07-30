@@ -19,6 +19,7 @@ end
 
 % Check lobe IDs
 lobe = getLobeTags(L);
+lobe = lobe(cellfun(@(x)numel(x)==1,{lobe.val})); % Use singular regions
 
 %% 1. the major airway centreline graph
 
@@ -320,9 +321,9 @@ B(:,4) = G; % append generation, Strahler and Horsfield (in that order)
 
 %% obtaining lobe surface maps in mm (to match tree)
 %
-L_surfs = cell(1,5);
-
-for i = numel(lobe)
+nl = numel(lobe);
+L_surfs = cell(1,nl);
+for i = 1:nl
     tmp = L==lobe(i).val; % isolate lobe
     tmp = im2coords3Dbin(tmp); % convert to [x,y,z]
     
