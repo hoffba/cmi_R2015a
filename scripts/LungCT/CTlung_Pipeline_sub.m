@@ -254,8 +254,6 @@ try
                 end
                 % Add table to results
                 res = addTableVarVal(res,T);
-
-                % Save airways map
             end
         end
 
