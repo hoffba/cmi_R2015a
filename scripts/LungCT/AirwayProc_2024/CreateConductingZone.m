@@ -37,6 +37,7 @@ newBranches = Branches;
 options.minBranchLength = 1;
 meanAcinarVolume = 187; %This will determine (roughly) how many branches the output tree has.
 radiusReductionFactor = 0.87; 
+nlobes = length(lobe_TRI);
 
 %% Rescale Nodes structure 
 for i = 1:3
@@ -88,7 +89,7 @@ Nodes = Nodes(sort_idx,:);
 % First calculate dimensions of lung (from lobe triangulations)
 min_xyz = min(Nodes(:,2:4)); 
 max_xyz = max(Nodes(:,2:4)); 
-for i = 1:5
+for i = 1:nlobes
     curTRI = lobe_TRI{i}; 
     new_min_xyz = min(curTRI.Points).*pxDim; 
     new_max_xyz = max(curTRI.Points).*pxDim; 
@@ -128,9 +129,8 @@ newBranches = Branches;
 newNodes = Nodes; 
 Lobe = zeros(size(Branches,1),1); %Holds which Lobe a branch is in
 
-%% Loop through the 5 lobes, and for each, algorithmically grow conducting 
-% zone airways
-for i = 1:length(lobe_TRI)
+%% Loop through all lobes, and for each, algorithmically grow conducting zone airways
+for i = 1:nlobes
     curTRI = lobe_TRI{i}; 
     curVert = curTRI.Points;
     %% Rescale current lobe dimensions, into mm
@@ -176,7 +176,7 @@ end
 
 %% Remove branches with nodes outside the lobe structures
 outside_idx = zeros(size(newNodes,1),1); 
-for i = 1:length(lobe_TRI)
+for i = 1:nlobes
     curTRI = lobe_TRI{i}; 
     curVert = curTRI.Points;
     %% Rescale current lobe dimensions, into mm
