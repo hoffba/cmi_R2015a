@@ -343,7 +343,7 @@ end
 %
 hf = figure('Name','Final Visual'); ha = axes(hf);
 plot_tree(ha,B,N,4)
-for i=1:5
+for i = 1:nl
     trisurf(L_surfs{i},'FaceColor','b','FaceAlpha',0.05,'EdgeColor','none');
 end
 saveas(hf,fullfile(outD,[pID,'.final_visual.fig']));
