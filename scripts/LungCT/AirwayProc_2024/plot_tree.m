@@ -7,28 +7,36 @@ function plot_tree(ha,B,N,k)
 
 s = size(B,1);
 
+kstr = {'Node1';...
+        'Node2';...
+        'Radius';...
+        'Generation';...
+        'Strahler';...
+        'Horsfield'};
+
 hold(ha,'on');
 grid(ha,'on');
-view(ha,[0,1,0]);
+view(ha,[1,0,0]);
+title(ha,kstr{k});
 
-maxC=max(B(:,k)); alph=0.9;
+
+maxC = max(B(:,k)); alph = 0.9;
 for i=1:s
     
-    n1=N(ismember(N(:,1),B(i,1)),2:4);
-    n2=N(ismember(N(:,1),B(i,2)),2:4);
+    n1 = N(N(:,1)==B(i,1),2:4);
+    n2 = N(N(:,1)==B(i,2),2:4);
     
     %plot3([n1(1) n2(1)],[n1(2) n2(2)],[n1(3) n2(3)],'black-',...
     %    'LineWidth',B(i,3))
 
-    colFac=(B(i,k)-1)/(maxC-1);
-    colFac=alph*colFac;
-    colFac=1-colFac;
+    colFac = (B(i,k)-1)/(maxC-1);
+    colFac = alph*colFac;
+    colFac = 1-colFac;
     
     plot3(ha,[n1(1) n2(1)],[n1(2) n2(2)],[n1(3) n2(3)],'-',...
         'LineWidth',1,'Color',[1-colFac 0 colFac])
     %B(i,3)
     plot3(ha,n2(1),n2(2),n2(3),'blacko','MarkerFaceColor','black',...
         'MarkerSize',1)
-    
 end
 %plot3(N(:,2),N(:,3),N(:,4),'ro')

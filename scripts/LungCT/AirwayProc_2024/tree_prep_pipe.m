@@ -1,16 +1,39 @@
-function p = tree_prep_pipe(pID,fn_seg,fn_airways,outD)
-p = struct('pixDim',{[]},'lobe_ids',{''},'B',{[]},'N',{[]},'lobe_surfs',{[]});
+function [B,N,L_surfs] = tree_prep_pipe(pID,fn_seg,fn_airways,outD,voxsz)
+% Inputs:
+%      pID          Case ID
+%      fn_seg       Lobe segmentation
+%      fn_airways   Airways map
+%      outD         Case directory for saving results
+%      voxsz        Voxel dimensions
+% Outputs:
+%      B            Branches, and branch-related stats [Node1, Node2, Radius, Horsfield, Strahler, Generation]
+%      N            Nodes [ID, Xi, Yi, Zi]
+%      lobe_surf    Lobe surface triangulations
+
+p = struct('pixDim',{[]},'lobe_ids',{''},'B',{[]},'N',{[]},...
+    'Radius',{[]},'Gen',{[]},'Strahler',{[]},'Horsfield',{[]},'lobe_surfs',{[]});
 warning('off','MATLAB:triangulation:PtsNotInTriWarnId')
+
 %% 0. load data (ariways and lobes)
 
 % Lobe Segmentation
-L = double(niftiread(fn_seg));
+if ischar(fn_seg) && isfile(fn_seg)
+    L = double(niftiread(fn_seg));
+else
+    L = fn_seg;
+end
 dim = size(L);
 
 % Airways
-A_info = niftiinfo(fn_airways);
-A = logical(niftiread(A_info));
-p.pixDim = A_info.PixelDimensions;
+if ischar(fn_airways) && isfile(fn_airways)
+    A_info = niftiinfo(fn_airways);
+    A = logical(niftiread(A_info));
+    voxsz = A_info.PixelDimensions;
+elseif nargin==5
+    A = fn_airways;
+else
+    error('Invalid inputs\n');
+end
 
 % Check that marix size matches
 if any(size(A)~=dim)
@@ -23,6 +46,7 @@ lobe = lobe(cellfun(@(x)numel(x)==1,{lobe.val})); % Use singular regions
 
 %% 1. the major airway centreline graph
 
+A = logical(A);
 [A_D,A_D_idx] = bwdist(~A,'euclidean'); % to use for radii approximation
 
 A_vox = im2coords3Dbin(A);
@@ -33,7 +57,7 @@ A_cl_vox = A_cl_vox(:,1:4);
 hf = figure('Name','Centreline Voxels'); ha = axes(hf);
 plot3(ha,A_cl_vox(:,1),A_cl_vox(:,2),A_cl_vox(:,3),'.');
 axis(ha,'equal');
-view(ha,[0,1,0]);
+view(ha,[1,0,0]);
 saveas(hf,fullfile(outD,[pID,'.cl_vox.fig']));
 close(hf)
 
@@ -46,16 +70,39 @@ A_tri = triangulation(A_bound,A_vox);
 trisurf(A_tri,'FaceColor','black','FaceAlpha',0.1,'EdgeColor','none');
 grid(ha,'on');
 axis(ha,'equal');
-view(ha,[0 1 0]);
+view(ha,[1 0 0]);
 saveas(hf,fullfile(outD,[pID,'.cl_graph.fig']));
 close(hf);
 
 
-%% 2. graph link radii assignment
+%% 2. formatting data into branches and nodes, more familiar structures
 %
-n = size(link,2); R = zeros(1,n);
-d2 = @(v1,v2) sqrt(sum((v1-v2).^2));
-for i = 1:n
+% Initialize branches output (B)
+nB = size(link,2);
+B = zeros(nB,3); % [Node1, Node2, Radius]
+B(:,1) = [link.n1]';
+B(:,2) = [link.n2]';
+
+% Initialize nodes output (N)
+nN = numel(node);
+N = [ (1:nN); node.comx; node.comy; node.comz ]';
+
+% N_ids = unique(B(:,1:2));
+% N = zeros(max(N_ids),4);
+% for i = 1:numel(N_ids)
+%     N_id = N_ids(i);
+%     N(N_id,1) = N_id;
+%     N(N_id,2) = node(1,N_id).comx;
+%     N(N_id,3) = node(1,N_id).comy;
+%     N(N_id,4) = node(1,N_id).comz;
+% end
+
+
+%% 3. graph link radii assignment
+
+% Calculate branch radii
+d2 = @(v1,v2) sqrt(sum((v1-v2).^2,2));
+for i = 1:nB
     brc = link(i);
     pnts = brc.point;
     len = length(pnts);
@@ -68,87 +115,38 @@ for i = 1:n
     
     for j = 1:length(tmp)
         [x,y,z] = ind2sub(dim,pnts(j));
-        CLpnt = [p.pixDim(1)*x p.pixDim(2)*y p.pixDim(3)*z]; % point on centreline
+        CLpnt = voxsz.*[x,y,z]; % point on centreline
         ind = A_D_idx(x,y,z);
         [x,y,z] = ind2sub(dim,ind);
-        NRpnt = [p.pixDim(1)*x p.pixDim(2)*y p.pixDim(3)*z]; % nearest point from bwdist
+        NRpnt = voxsz.*[x,y,z]; % nearest point from bwdist
         tmp(j) = d2(CLpnt,NRpnt);                   % Euclidean distance in mm between points
     end
     
-    R(i) = mean(tmp); % approximate radius in mm from mean of sampled midpoints
-end
-
-
-%% 3. formatting data into branches and nodes, more familiar structures
-%
-s = size(link,2);
-B = zeros(s,3); % node 1, node 2, radius
-for i = 1:s
-    B(i,1) = link(1,i).n1;
-    B(i,2) = link(1,i).n2;
-    B(i,3) = R(i);
-end
-% NOD_ids=unique([B(:,1);B(:,2)]);
-% NOD=zeros(length(NOD_ids),4);
-% for i=1:length(NOD_ids)
-%     N_id=NOD_ids(i);
-%     NOD(i,1)=N_id;
-%     NOD(i,2)=node(1,N_id).comx;
-%     NOD(i,3)=node(1,N_id).comy;
-%     NOD(i,4)=node(1,N_id).comz;
-% end
-N_ids = unique([B(:,1);B(:,2)]);
-N = zeros(max(N_ids),4);
-for i = 1:numel(N_ids)
-    N_id = N_ids(i);
-    N(N_id,1)=N_id;
-    N(N_id,2) = node(1,N_id).comx;
-    N(N_id,3) = node(1,N_id).comy;
-    N(N_id,4) = node(1,N_id).comz;
+    B(i,3) = mean(tmp); % approximate radius in mm from mean of sampled midpoints
 end
 
 
 %% 4. tree orientation
 
 % 1. distal nodes
-n = size(N,1);
-distN = zeros(n,1);
-for i = 1:n
-    chk = B(:,1:2)==N(i,1);
-    if sum(sum(chk)) == 1
-        distN(i) = 1;
-    end
-end
-distN = N(logical(distN),:);
+distN = N(histcounts(B(:,1:2),nN)==1,1);
 
 % 2. distal branches
-n = size(B,1);
-distB = zeros(n,1);
-for i = 1:n
-    if ismember(B(i,1),distN(:,1)) || ismember(B(i,2),distN(:,1))
-        distB(i) = 1;
-    end
-end
-B2 = [(1:n)' B];
-distB = B2(logical(distB),:);
-maxR = max(distB(:,end)); % largest radius
-trach = B2(B2(:,4)==maxR,:); % root branch (assuming trachea)
-idT = trach(1); % row index for trachea
+distB = sum(ismember(B(:,1:2),distN),2)==1;
+idT = find(B(:,3)==max(B(distB,3)) & distB,1); % root branch (assuming trachea)
 B = [B(idT,:) ; B(1:idT-1,:) ; B(idT+1:end,:)]; % place root first in B
 
 % 3. check root is oriented proximal to distal
-if sum(sum(B(:,1:2)==B(1,2)))==1 % check if external node is 'distal' here
-    B(1,:) = [B(1,2) B(1,1) B(1,3)]; % transpose if required
+if nnz(B(:,1:2)==B(1,2))==1 % check if external node is 'distal' here
+    B(1,1:2) = [B(1,2) B(1,1)]; % transpose if required
 end
 
 % 4. orient tree relative to root branch
-rootN = B(1,1); % root node
 G = graph(B(:,1),B(:,2));
-TR = shortestpathtree(G,rootN); e=TR.Edges;
-B2 = e.EndNodes;
+TR = shortestpathtree(G,B(1,1)); %e=TR.Edges;
+B2 = TR.Edges.EndNodes;
 
-hf = figure; ha = axes(hf);
-hold(ha,"on");
+hf = figure; ha = axes(hf); view([1,0,0]); hold(ha,"on");
 for i = 1:size(B2,1)
     try
         pnt = [N(B2(i,1),2) N(B2(i,1),3) N(B2(i,1),4)];
@@ -164,35 +162,29 @@ end
 saveas(hf,fullfile(outD,[pID,'.oriented_tree.fig']));
 close(hf);
 
-B2 = B2(end:-1:1,:); % place root at top, tree is now oriented
+B2 = flip(B2,1); % place root at top, tree is now oriented
 
 % 5. include radii from B in oriented tree
-for i = 1:size(B2,1)
-    brc = B2(i,1:2); % prox id dist id for branch
-    [a,b] = ismember(brc,B(:,1:2),'rows');
-    if a
-        B2(i,3) = B(b,3); % bring over radii
-    else
-        [~,b] = ismember([brc(2) brc(1)],B(:,1:2),'rows');
-        B2(i,3) = B(b,3);
-    end
-end
-B=B2; % complete conversion, B is now an oriented branch matrix with NOD as
+% Flip nodes if needed
+[a,b] = ismember(B2,B(:,1:2),'rows');
+B2(a,3) = B(b(logical(b)),3);
+[~,b] = ismember(B2(:,[2,1]),B(:,1:2),'rows');
+B2(~a,3) = B(b(logical(b)),3);
+B = B2;
+nB = size(B,1);
+% complete conversion, B is now an oriented branch matrix with NOD as
 % associated matrix of nodes, with the root (trachea) as first element
 
 
 %% tree generation, Strahler and Horsfield order assignment
 %
 
-H=calc_ho(B); H=H(:,end); S=calc_so(B); S=S(:,end);
-
+H = calc_ho(B(:,1:2)); B(:,6) = H(:,end);
+S = calc_so(B(:,1:2)); B(:,5) = S(:,end);
 % calculating generation no. given a recursive function defined in footer
-n = size(B,1);
-G = zeros(n,1);
-for i = 1:n
-    G(i) = gen_no(B(i,:),B);
+for i = 1:nB
+    B(i,4) = gen_no(B(i,1:2),B(:,1:2));
 end
-B = [B G S H]; % append generation, Strahler and Horsfield (in that order)
 
 hf = figure; t = tiledlayout(hf,1,3);
 for i = 4:6
@@ -202,8 +194,8 @@ saveas(hf,fullfile(outD,[pID,'.raw_tree_orders.fig']));
 close(hf);
 
 hf = figure; t = tiledlayout(hf,1,3);
-T={'Generation' 'Strahler' 'Horsfield'};
-for i=4:6
+T = {'Generation' 'Strahler' 'Horsfield'};
+for i = 4:6
     ha = nexttile(t);
     h = histogram(ha,B(:,i));
     h.BinWidth = 1;
@@ -217,18 +209,10 @@ close(hf);
 % 0. add branch lengths to end (7) of B
 %
 % first converting NOD to mm
-for i = 2:4
-    N(:,i) = N(:,i)*p.pixDim(i-1);
-end
+N(:,2:4) = N(:,2:4).*voxsz;
 
 % now branch length assignment using d2 metric
-n=size(B,1); Lengs=zeros(n,1);
-for i = 1:n
-    n1 = N(B(i,1),:);
-    n2 = N(B(i,2),:);
-    Lengs(i) = d2(n1(2:end),n2(2:end));
-end
-B = [B Lengs];
+B(:,7) = d2( N(B(:,1),2:4) , N(B(:,2),2:4) );
 
 hf = figure; t = tiledlayout(hf,1,2);
 ha = nexttile(t);
@@ -236,7 +220,7 @@ histogram(ha,B(:,3));
 title(ha,'Radii')
 xlabel(ha,'airway radius (mm)')
 ha = nexttile(t);
-histogram(ha,B(:,end));
+histogram(ha,B(:,7));
 title(ha,'Lengths')
 xlabel(ha,'airway length (mm)')
 saveas(hf,fullfile(outD,[pID,'.pre_QC_lengths_and_radii.fig']));
@@ -260,24 +244,24 @@ L_fix = 2; % addition to algorithm, a fixed minimum length (mm) for all branches
 
 while flg % whole process loop
    
-    n = size(B2,1); elim = ones(n,1); flg = 0;
+    n = size(B2,1); elim = true(n,1); flg = 0;
     
     % step 1: testing terminal branches to alter based on length
     for i = 2:n % always skip root
         b = B2(i,:);
         if not(ismember(b(2),B2(:,1))) % test if terminal
             B_P = B2(B2(:,2)==b(1),:); % obtain parent branch
-            L_P = B_P(end); % parent branch length
-            if b(end)<t1*L_P || b(end)<L_fix
+            L_P = B_P(7); % parent branch length
+            if b(7)<t1*L_P || b(7)<L_fix
                 flg = 1; % put flag back up to continue trimming
                 elim(i) = 0; % mark for elimination
-            elseif not(b(end)>t2*L_P)
+            elseif b(7) <= t2*L_P
                 % take action on assumption of 'truncated branch'
             end
         end
     end
     
-    B2 = B2(logical(elim),:); % remove marked branches
+    B2 = B2(elim,:); % remove marked branches
     
     % cleaning of intermediate nodes...
     % idea check all branches except the root for number of children, if
@@ -286,35 +270,29 @@ while flg % whole process loop
     
     flg_clean = 1;
     while flg_clean 
-        n=size(B2,1); elim=ones(n,1); flg_clean=0;
+        n = size(B2,1); flg_clean = 0;
         for i = 2:n
-            b = B2(i,:);
-            ch = B2(B2(:,1)==b(2),:);
-            if size(ch,1)==1 % branch has one child
-                [~,j] = ismember(ch,B2,'rows');
-                % i and j now index rows of B2 to replace with merged brch
-                B2(i,:) = [b(1) ch(2) 0.5*(b(3)+ch(3)) b(4:6) (b(7)+ch(7))];
-                elim(j) = 0; 
-                B2 = B2(logical(elim),:);
+            j = B2(:,1)==B2(i,2);
+            if nnz(j)==1 % branch has one child
+                % i and ind now index rows of B2 to replace with merged brch
+                B2(i,2) = B2(j,2);
+                B2(i,3) = (B2(i,3)+B2(j,3))/2;
+                B2(i,7) = B2(i,7)+B2(j,7);
+                B2(j,:) = [];
                 flg_clean = 1;
                 break
             end
         end
     end
 end
-
-%
 B = B2;
 % re-evaluate Strahler and Horsfield orders
-H=calc_ho(B); H=H(:,end); S=calc_so(B); S=S(:,end);
-B(:,5) = S; B(:,6) = H;
-n = size(B,1);
-G = zeros(n,1);
-for i = 1:n
-    G(i) = gen_no(B(i,:),B);
+H = calc_ho(B(:,1:2)); B(:,6) = H(:,end);
+S = calc_so(B(:,1:2)); B(:,5) = S(:,end);
+nB = size(B,1);
+for i = 1:nB
+    B(i,4) = gen_no(B(i,1:2),B(:,1:2));
 end
-
-B(:,4) = G; % append generation, Strahler and Horsfield (in that order)
 % remove redundant nodes from NOD?
 % Leaving in for now to maintain row ID agreement
 
@@ -324,12 +302,9 @@ B(:,4) = G; % append generation, Strahler and Horsfield (in that order)
 nl = numel(lobe);
 L_surfs = cell(1,nl);
 for i = 1:nl
-    tmp = L==lobe(i).val; % isolate lobe
-    tmp = im2coords3Dbin(tmp); % convert to [x,y,z]
-    
-    for j = 1:3
-        tmp(:,j) = p.pixDim(j)*tmp(:,j);
-    end
+
+    [xx,yy,zz] = ind2sub(dim,find(L==lobe(i).val));
+    tmp = [xx,yy,zz].*voxsz; clear xx yy zz
     
     s = size(tmp);
     tmp2 = datasample(tmp,floor(s(1)/10)); % random sample of 10%
@@ -337,6 +312,7 @@ for i = 1:nl
     TR = triangulation(tmp3,double(tmp2));
     L_surfs{i} = TR;
 end
+clear tmp
 
 
 %% final visual check
@@ -355,19 +331,16 @@ close(hf);
 % basic approximation given by multiplying by average of pixel dims, n.b.
 % typically z dim is different to x and y dims which themselves match
 
-p.lobe_ids = [lobe.val];
-p.lobe_surfs = L_surfs;
-p.B = B;
-p.N = N;
-save(fullfile(outD,[pID,'.tree_data.mat']),'-struct','p');
+lobe_ids = [lobe.val];
+save(fullfile(outD,[pID,'.tree_data.mat']),'B','N','lobe_ids','L_surfs');
 
 warning('on','MATLAB:triangulation:PtsNotInTriWarnId')
 
 % generation no., given all roads lead to root (B(1,:)).
 function y = gen_no(b,B) % given branch b from B, output generation no.
-    if b(1,1)==B(1,1) % root, define as generation 1
-        y=1;
+    if b(1,1) == B(1,1) % root, define as generation 1
+        y = 1;
     else % recursion using parent branch
-        b=B(B(:,2)==b(1,1),:);
-        y=1+gen_no(b,B);
+        b = B( B(:,2)==b(1,1) ,:);
+        y = 1 + gen_no(b,B);
     end

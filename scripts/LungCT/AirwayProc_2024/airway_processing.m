@@ -1,18 +1,19 @@
 % airway_processing.m
-function airway_processing(fn_seg,fn_airways,procdir)
-
-if nargin<2
-    procdir = 'R:\CGalban_Lab\LabMembers\BenHoff\tempDATA\AirwayProc_2024';
-    fn_seg = fullfile(procdir,'11001N_INSP_STD_BAY_COPD.njh.lobe_segmentation.nii.gz');
-    fn_airways = fullfile(procdir,'11001N_INSP_STD_BAY_COPD_Airways.nii.gz');
-end
-if (nargin < 3) && ~exist('procdir','var')
-    procdir = fileparts(fn_airways);
-end
+function B = airway_processing(pID,ins,seg,A,voxsz,img,label,fcn,procdir)
+%% function airway_processing(pID,ins,seg,A,voxsz,img,fcn,procdir)
+%   Inputs: pID =       string ID of subject/case (base filename)
+%           ins =       inspiratory image
+%           seg =       inspiratory lung segmentation
+%           A =         airways segmentation
+%           voxsz =     voxel dimensions
+%           img =       4D image matrix for association with airway tree
+%           label =     cell array of labels for each input img
+%           fcn =       cell array with function handles to apply to association window
+%                           ** functions must have single output and vector input
+%           procdir =   directory to save results to
 
 % Case ID
-[~,pID] = fileparts(fn_seg);
-pID = extractBefore(pID,'.');
+dim = size(ins);
 disp(['Processing subject: ' pID])
 
 % Create folder for outputs
@@ -22,7 +23,63 @@ if ~isfolder(outD)
 end
 
 % Prep tree
-p = tree_prep_pipe(pID,fn_seg,fn_airways,outD);
+[B,N,lobe_surf] = tree_prep_pipe(pID,seg,A,outD,voxsz);
+CZ = CreateConductingZone(B(:,1:3), N, lobe_surf,[1 1 1],outD);
+nB = size(CZ.B,1);
 
-CreateConductingZone(p.B(:,1:3), p.N, p.lobe_surfs,[1 1 1],outD);
+%% Compute voxel associations with branches
+segBW = seg & ins>-1000 & ins<-500;         % Throw away values outside of threshold
+[xi,yi,zi] = ind2sub(dim,find(segBW));      % Voxel index [ i, j, k ]
+nv = size(img,4);
+S = struct('xyz',[xi,yi,zi],...                                                 % xyz indices of segmentation voxels
+           'V',splitvars(table(reshape(img(repmat(segBW,1,1,1,nv)),[],nv))),... % segmentation values to associate
+           'fcn',{fcn});                                                          % functions to apply to association window
+S.V.Properties.VariableNames = label;
+S.voxsz = voxsz;
 
+% r ~ radius for obtaining points (set above)
+r=4; % arbitrary, just for testing
+
+
+%% temp set up for old version of calVoxel
+brc = CZ.B{:,[2,3,4,8]};
+bro = CZ.N{:,2:4};
+imb = [S.xyz,S.V.test,S.V.test];
+so = CZ.B.Strahler;
+ASSOC = calcVoxel_AB(brc,bro,imb,so,r,voxsz,B,N);
+
+
+
+
+
+% fprintf('Computing voxel assoc... ');
+% t = tic;
+% ASSOC = calcVoxel(CZ,S,p,r);
+% % ASSOC = calcVoxel(BRC,BRO,IMB,Strahler,r,voxsz,p.B,p.N);
+% fprintf('%d\n',toc(t)/60);
+
+
+
+
+% Yixuan produces huge number of columns, I believe the assigned values
+% from voxels are in columns 7 and 8 here; other columns are based on PRM
+% and other metrics using both exp and ins HU, and measuring at different
+% depths in the tree I believe
+
+B = [zeros(nB,1), ASSOC(:,[1 2 7])]; % taking just node IDs and assigned values
+% N.B. the 3rd column here is the essenital output, the associated voxel
+% values (via mean of nearby voxels to terminal airways, and using mean to
+% average up to other airways)
+
+% some further processing to get branches in correct order for use with
+% other variables such as Strahler
+
+% B3 = [zeros(size(B2,1),1) B2]; % for branch ids
+for i = 1:nB
+    [~,b] = ismember(B(i,2:3),CZ.B{:,2:3},"rows");
+    B(i,1) = CZ.B.ID(b); % found branch ID
+end
+B = sortrows(B,1); % sort in order of Branch ID
+
+% Save to procdir
+save(fullfile(outD,'ASSOC.mat'),'B');

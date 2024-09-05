@@ -80,7 +80,7 @@ if isempty(ind)
     else
         tagFLAIR = tagFLAIR{ind};
         fn_tVOI = fullfile(casedir,fn_tVOI{ind});
-        copyfile(fn{ind},casedir);
+        copyfile(fn_tVOI,casedir);
     end
 else
     tagFLAIR = tagFLAIR{ind};
@@ -195,12 +195,18 @@ if ~isfield(p,'cmi') || ~isa(p.cmi,'CMIclass')
 end
 p.cmi.img.prm.setOpts('labels',{['ADC (',baseID,')'],['ADC (',caseID,')']});
 
-% Run fDM
+% Load images and VOI(s)
 p.cmi.loadImg(0,{p.fn_ref,fn_adc0,fn_adc1});
 p.cmi.loadMask(fn_voi0);
 if ~bl_chk
-    % p.cmi.loadMask(fn_voi1,'intersect');
+    % p.cmi.loadMask(fn_voi1,'intersect'); % <---- comment this line for baseline VOI only
 end
+
+% Calculate and save difference map
+dADC = diff(p.cmi.img.mat(:,:,:,[2,3]),4);
+saveNIFTI(fullfile(casedir,[caseID,'.dADC.nii.gz']),dADC,{'dADC'},p.cmi.img.voxsz.*p.cmi.img.dims(1:3),p.cmi.img.orient);
+
+% Run fDM
 p.cmi.setVec(3);
 [~,~,vals] = p.cmi.activatePRM(true);
 % Convert to percent of cutoff-thresholded VOI
