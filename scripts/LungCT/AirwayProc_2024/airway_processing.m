@@ -31,11 +31,11 @@ nB = size(CZ.B,1);
 segBW = seg & ins>-1000 & ins<-500;         % Throw away values outside of threshold
 [xi,yi,zi] = ind2sub(dim,find(segBW));      % Voxel index [ i, j, k ]
 nv = size(img,4);
-S = struct('xyz',[xi,yi,zi],...                                                 % xyz indices of segmentation voxels
-           'V',splitvars(table(reshape(img(repmat(segBW,1,1,1,nv)),[],nv))),... % segmentation values to associate
-           'fcn',{fcn});                                                          % functions to apply to association window
-S.V.Properties.VariableNames = label;
-S.voxsz = voxsz;
+S = struct('xyz',[xi,yi,zi],...                               % xyz indices of segmentation voxels
+           'V',reshape(img(repmat(segBW,1,1,1,nv)),[],nv),... % segmentation values to associate
+           'V_label',label,...                                % how to label input vectors
+           'fcn',{fcn},...                                    % functions to apply to association window
+           'voxsz',voxsz);                                    % Voxel dimensions
 
 % r ~ radius for obtaining points (set above)
 r=4; % arbitrary, just for testing
@@ -44,22 +44,9 @@ r=4; % arbitrary, just for testing
 %% temp set up for old version of calVoxel
 brc = CZ.B{:,[2,3,4,8]};
 bro = CZ.N{:,2:4};
-imb = [S.xyz,S.V.test,S.V.test];
+imb = [S.xyz,S.V,S.V];
 so = CZ.B.Strahler;
 ASSOC = calcVoxel_AB(brc,bro,imb,so,r,voxsz,B,N);
-
-
-
-
-
-% fprintf('Computing voxel assoc... ');
-% t = tic;
-% ASSOC = calcVoxel(CZ,S,p,r);
-% % ASSOC = calcVoxel(BRC,BRO,IMB,Strahler,r,voxsz,p.B,p.N);
-% fprintf('%d\n',toc(t)/60);
-
-
-
 
 % Yixuan produces huge number of columns, I believe the assigned values
 % from voxels are in columns 7 and 8 here; other columns are based on PRM

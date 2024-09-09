@@ -570,6 +570,7 @@ end
         fldn = fieldnames(h.mod);
         for i = 1:numel(fldn)
             set(h.mod.(fldn{i}),'Value',val);
+            opts.(fldn{i}) = val;
         end
     end
     function preview(~,~)

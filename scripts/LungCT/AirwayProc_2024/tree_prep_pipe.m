@@ -13,6 +13,7 @@ function [B,N,L_surfs] = tree_prep_pipe(pID,fn_seg,fn_airways,outD,voxsz)
 p = struct('pixDim',{[]},'lobe_ids',{''},'B',{[]},'N',{[]},...
     'Radius',{[]},'Gen',{[]},'Strahler',{[]},'Horsfield',{[]},'lobe_surfs',{[]});
 warning('off','MATLAB:triangulation:PtsNotInTriWarnId')
+viewdir = [1,0,0];
 
 %% 0. load data (ariways and lobes)
 
@@ -26,9 +27,8 @@ dim = size(L);
 
 % Airways
 if ischar(fn_airways) && isfile(fn_airways)
-    A_info = niftiinfo(fn_airways);
-    A = logical(niftiread(A_info));
-    voxsz = A_info.PixelDimensions;
+    [A,~,fov,~,~] = readNIFTI(fn_airways);
+    voxsz = fov./size(A,1:3);
 elseif nargin==5
     A = fn_airways;
 else
@@ -57,7 +57,7 @@ A_cl_vox = A_cl_vox(:,1:4);
 hf = figure('Name','Centreline Voxels'); ha = axes(hf);
 plot3(ha,A_cl_vox(:,1),A_cl_vox(:,2),A_cl_vox(:,3),'.');
 axis(ha,'equal');
-view(ha,[1,0,0]);
+view(ha,viewdir);
 saveas(hf,fullfile(outD,[pID,'.cl_vox.fig']));
 close(hf)
 
@@ -70,7 +70,7 @@ A_tri = triangulation(A_bound,A_vox);
 trisurf(A_tri,'FaceColor','black','FaceAlpha',0.1,'EdgeColor','none');
 grid(ha,'on');
 axis(ha,'equal');
-view(ha,[1 0 0]);
+view(ha,viewdir);
 saveas(hf,fullfile(outD,[pID,'.cl_graph.fig']));
 close(hf);
 
@@ -146,7 +146,7 @@ G = graph(B(:,1),B(:,2));
 TR = shortestpathtree(G,B(1,1)); %e=TR.Edges;
 B2 = TR.Edges.EndNodes;
 
-hf = figure; ha = axes(hf); view([1,0,0]); hold(ha,"on");
+hf = figure; ha = axes(hf); view(viewdir); hold(ha,"on");
 for i = 1:size(B2,1)
     try
         pnt = [N(B2(i,1),2) N(B2(i,1),3) N(B2(i,1),4)];

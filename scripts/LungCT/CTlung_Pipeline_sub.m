@@ -275,7 +275,9 @@ try
 
             if isfile(opts.fn.airways)
                 % Run airway simulation
-                airway_processing(opts.fn.ins_seg,opts.fn.airways,procdir);
+                airway_processing(ID,img(2).mat,img(2).label,opts.fn.airways,img(2).info.voxsz,...
+                                     img(2).mat,{'InsHU'},{{@mean}},... % Values to associate with airways tree
+                                     procdir);
             end
         end
     end
