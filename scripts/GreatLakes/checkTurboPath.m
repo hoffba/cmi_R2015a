@@ -38,6 +38,6 @@ for i = 1:nf
     end
 end
 fn(flag) = [];
-if charflag
+if charflag && ~isempty(fn) 
     fn = fn{1};
 end

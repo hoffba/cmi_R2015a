@@ -16,7 +16,7 @@ p.addParameter('mMask','',@ischar);
 p.addParameter('p','',@(x)ischar(x)||iscellstr(x));
     % (p can be explicitly set or saved from GUI inputs)
 p.addParameter('t0','',@ischar);
-p.addParameter('threads',[],@(x)isnumeric(x)&&(x>0)&&(x<=mxCores));
+p.addParameter('threads',1,@(x)isnumeric(x)&&(x>0)&&(x<=mxCores));
 % Transformix:
 p.addParameter('tp','',@(x)ischar(x)||iscellstr(x));
 p.addParameter('in','',@(x)ischar(x)||iscellstr(x));

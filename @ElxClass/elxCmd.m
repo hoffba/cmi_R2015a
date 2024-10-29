@@ -107,7 +107,11 @@ if ns~=0
     % Save Initial Transforms:
     pstr = '';
     if self.T0check && ~isempty(self.Tx0)
-        pstr = self.saveTx0(fullfile(pp.odir,'InitialTransform.txt'));
+        if ischar(self.Tx0)
+            pstr = self.Tx0;
+        else
+            pstr = self.saveTx0(fullfile(pp.odir,'InitialTransform.txt'));
+        end
     end
     if ~isempty(self.Tx0guess)
         fnames = fullfile({self.Tx0guess(:).fpath},...

@@ -2,7 +2,7 @@
 
 % 09.01.2022
 % Inputs...
-% brc ~ [proximal node, distal node, radius, lobe]
+% brc ~ [proximal node, distal node, radius, lobe
 % bro ~ [x,y,z] ~ nodes
 % imb ~ imbio n x 4 matrix, n ~ order 10^6or7 4th col. ~ functional val.
 % so ~ strahler order for branches (indexed same as brc)
@@ -12,81 +12,97 @@
 % Outputs...
 % brc: expHU and InsHU for all nodes
 
-% function out = calcVoxel(brc,bro,imb,so,r,px,b,Nod)
-function res = calcVoxel(CZ,S,p,r)
-% CZ = ConductingZone output
-% S = struct containing Segmentation and input image values to plot
-% p = Tree prep output
+function out = calcVoxel_AB(brc,bro,imb,so,r,px,b,Nod)
 
 %% 1. Find terminal branches(sorting by soc)
 
-nv = size(S.V,2); % no. of image values to map
+n = length(so); % no. of branches to go through
 
-soCnt = numel(unique(CZ.B.Strahler)); % number of SO, assuming 1,2,...,soCnt
-soCnts = histcounts(CZ.B.Strahler);
+soCnt = length(unique(so)); % number of SO, assuming 1,2,...,soCnt
+soCnts = zeros(1,soCnt);
 
-% Arrange with lowest SO first
-CZ.B = sortrows(CZ.B,'Strahler');
+for i = 1 : soCnt
+   
+    soCnts(i) = sum(so==i); % number of each SO occuring
+    
+end
+
+brc = [brc so]; % attach so info to 5th column of brc
+brc = sortrows(brc,5); % arrange with lowest SO at top
+brc = [brc nan(n,17)]; % fill several col (to record other measurements) with NaN
+
+%% 2. Creating 3D matrix to store Mask and real CT data
+imData = nan(max(imb(:,1)),max(imb(:,2)),max(imb(:,3))); % create 3D matrix to store the raw CT data and mask  
+eHUData = imData; % to store expHU
+iHUData = imData; % to store insHU
+
+broZ = round(bro./px); %% Convert the coordinate into intergral
+for i = 1:size(imb,1)
+    eHUData(imb(i,1),imb(i,2),imb(i,3)) = imb(i,4); % Store the data 
+    iHUData(imb(i,1),imb(i,2),imb(i,3)) = imb(i,5);
+end
+
+se = calcSe(px,r); % n * 3 matrix, the distance between the nodes within the range and the central nodes(end of the terminal branch).
 
 %% 3. Voxel Association
 
-Nind = round(CZ.N{:,2:4}./S.voxsz);
-se = calcSe(S.voxsz,r); % n * 3 matrix, the distance between the nodes within the range and the central nodes(end of the terminal branch).
-
-vnames = cellfun(@(x,y)strcat(x,'_',y(:,1)'),S.V.Properties.VariableNames,S.fcn,'UniformOutput',false);
-vnames = [vnames{:}]; nvar = numel(vnames);
-res = table('Size',[soCnts(1),nvar],'VariableTypes',repmat({'double'},1,nvar),'VariableNames',vnames);
-for i = 1:soCnts(1) % Strahler==1 are terminal
-    % Find indices around distal node
-    ind = se + Nind( find(CZ.N.ID==CZ.B.Dist_N(i),1) ,:);
-    % Find image values (S) within the window
-    ind = ismember(S.xyz,ind,'rows');
-
-    if nnz(ind)
-        ii = 0;
-        for i_nv = 1:nv
-            for i_fcn = 1:numel(S.fcn{i_nv})
-                ii = ii+1;
-                res.(vnames{ii})(i) = feval(S.fcn{i_fcn},S.V(ind,i_nv));
+len = size(se,1);
+for i = 1:soCnts(1)
+    index = se + [broZ(brc(i,2),1),broZ(brc(i,2),2),broZ(brc(i,2),3)]; % get the coordinate of all possible nodes (no mather if there have some values)
+    num = 1; 
+%     tmpIndex = zeros(len,3); % Used to store the coordinate of nodes within the range R.
+    tmpData = NaN(len,2); %[eHU iHU delHU]
+    for j = 1:len
+        if index(j,1) > 0 && index(j,2) >0 && index(j,3) >0 
+            if index(j,1)<=size(eHUData,1) && index(j,2)<=size(eHUData,2) && index(j,3)<=size(eHUData,3)  % make sure it stays in the boundary 
+                if ~(isnan(eHUData(index(j,1),index(j,2),index(j,3))))     % whether there is data at the point
+                    tmpData(num,1) = eHUData(index(j,1),index(j,2),index(j,3));
+                    tmpData(num,2) = iHUData(index(j,1),index(j,2),index(j,3));              
+%                     tmpIndex(num,:) = index(j,:);
+                    num = num+1;                
+                end
             end
-        end
+        end  
+    end
+    tmpData = tmpData(1:(num-1),:);
+
+%     cellIndex{i} = tmpIndex(1:(num-1),:);   % uncommand these lines if
+%     wish to return the coordinate of nodes with in the range
+%     cellIndex{i} = cat(2,tmpIndex(1:(num-1),:),tmpData); %  
+
+    if ~isnan(tmpData)
+        brc(i,6) = 0; %% indicate if it is real branches; 0 means 'no', 1 means 'yes'
+        brc(i,7) = mean(tmpData(:,1),1); %eHU
+        brc(i,8) = mean(tmpData(:,2),1); %iHU
+        brc(i,9) = sum(tmpData(:,1) > -856); %% Numbers of nodes beyond -856
+        brc(i,10)= num - 1 - brc(i,9); %% Numbers of nodes below -856
+        brc(i,11)= sum(tmpData(:,2) > -950); %% Numbers of node beyond -950
+        brc(i,12)= num - 1 - brc(i,11); %% Numbers of node below -950
+        
+        
+        %%% PRM Classification
+        brc(i,13) = sum(tmpData(:,2) > -810); %% p_a
+        brc(i,14) = sum(tmpData(:,1) < -856 & tmpData(:,2) > -950 & tmpData(:,2) < -810); %% y_a/ fsad
+        brc(i,15) = sum(tmpData(:,1) > -856 & tmpData(:,2) > -950 & tmpData(:,2) < -810); %% g_a/ 
+        brc(i,16) = sum(tmpData(:,1) < -856 & tmpData(:,2) < 950); %% r_a / prm_emph
+        
+        %%% Result of Voting 
+        brc(i,17) = sum(tmpData(:,1) < -856) / (num-1); % percentage of nodes that are gas trapping
+        brc(i,18) = sum(tmpData(:,2) < -950) / (num-1); % percentage of nodes that are emphsema
+        brc(i,19) = brc(i,13) / (num-1); %% prm classification
+        brc(i,20) = brc(i,14) / (num-1);
+        brc(i,21) = brc(i,15) / (num-1);
+        brc(i,22) = brc(i,16) / (num-1);
+    
     else
-        res{i,:} = nan;
+        brc(i,6:22) = zeros(1,17); %% Boxes with no voxels are signed with zero
     end
 end
-                % Old version stats for Ins/Exp inputs
-                    % brc(i,6) = 0; %% indicate if it is real branches; 0 means 'no', 1 means 'yes'
-                    % brc(i,7) = mean(tmpData(:,1),1); %eHU
-                    % brc(i,8) = mean(tmpData(:,2),1); %iHU
-                    % brc(i,9) = sum(tmpData(:,1) > -856); %% Numbers of nodes beyond -856
-                    % brc(i,10)= num - 1 - brc(i,9); %% Numbers of nodes below -856
-                    % brc(i,11)= sum(tmpData(:,2) > -950); %% Numbers of node beyond -950
-                    % brc(i,12)= num - 1 - brc(i,11); %% Numbers of node below -950
-                    % 
-                    % 
-                    % %%% PRM Classification
-                    % brc(i,13) = sum(tmpData(:,2) > -810); %% p_a
-                    % brc(i,14) = sum(tmpData(:,1) < -856 & tmpData(:,2) > -950 & tmpData(:,2) < -810); %% y_a/ fsad
-                    % brc(i,15) = sum(tmpData(:,1) > -856 & tmpData(:,2) > -950 & tmpData(:,2) < -810); %% g_a/ 
-                    % brc(i,16) = sum(tmpData(:,1) < -856 & tmpData(:,2) < 950); %% r_a / prm_emph
-                    % 
-                    % %%% Result of Voting 
-                    % brc(i,17) = sum(tmpData(:,1) < -856) / (num-1); % percentage of nodes that are gas trapping
-                    % brc(i,18) = sum(tmpData(:,2) < -950) / (num-1); % percentage of nodes that are emphsema
-                    % brc(i,19) = brc(i,13) / (num-1); %% prm classification
-                    % brc(i,20) = brc(i,14) / (num-1);
-                    % brc(i,21) = brc(i,15) / (num-1);
-                    % brc(i,22) = brc(i,16) / (num-1);
-                % 
-                % else
-                %     brc(i,6:22) = zeros(1,17); %% Boxes with no voxels are signed with zero
-                % end
-% end
 
-%% 4. Replace those nodes assigned to zero with mean value <-- (BH) Why would you do this?
-% indZ = isnan(res{:,1});
-% indNz = find(brc(1:soCnts(1),7)~=0);
-% brc(indZ,7:22) = mean(brc(indNz,7:22), 1) .* ones(1,length(indZ))';
+%% 4. Replace those nodes assigned to zero with mean value
+indZ = brc(:,7)==0;
+indNz = brc(1:soCnts(1),7)~=0;
+brc(indZ,7:22) = mean(brc(indNz,7:22), 1) .* ones(1,nnz(indZ))';
 
 %% 5. Calculate the value around other branches with higer so
 len = soCnts(1);

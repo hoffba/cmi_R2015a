@@ -166,7 +166,7 @@ try
         end
     end
 
-    % Airways
+    % YACTA Airways
     if opts.airway
         if img(2).flag
             ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
@@ -275,9 +275,7 @@ try
 
             if isfile(opts.fn.airways)
                 % Run airway simulation
-                airway_processing(ID,img(2).mat,img(2).label,opts.fn.airways,img(2).info.voxsz,...
-                                     img(2).mat,{'InsHU'},{{@mean}},... % Values to associate with airways tree
-                                     procdir);
+                airway_processing(ID,img(2).label,opts.fn.airways,img(2).info.voxsz,procdir);
             end
         end
     end
@@ -501,6 +499,10 @@ try
             res = addTableVarVal(res,T);
         end
         
+        % Transform airway tree to EXP space
+        if opts.airsim
+        end
+
         % PRM calculation
         prm10 = [];
         if opts.prm

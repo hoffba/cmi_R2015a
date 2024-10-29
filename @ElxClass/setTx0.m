@@ -7,7 +7,8 @@ if nargin==1 % no initial transform desired
     self.T0check = false;
 elseif (nargin==2) && ischar(x) && strcmp(x(end-3:end),'.txt')
     % Input file name for existing TransformParameter.txt file
-    
+    self.Tx0 = x;
+    self.T0check = true;
 elseif (nargin>3)
     p = inputParser;
     p.CaseSensitive = false;

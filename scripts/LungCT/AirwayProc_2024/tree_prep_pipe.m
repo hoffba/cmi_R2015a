@@ -10,8 +10,6 @@ function [B,N,L_surfs] = tree_prep_pipe(pID,fn_seg,fn_airways,outD,voxsz)
 %      N            Nodes [ID, Xi, Yi, Zi]
 %      lobe_surf    Lobe surface triangulations
 
-p = struct('pixDim',{[]},'lobe_ids',{''},'B',{[]},'N',{[]},...
-    'Radius',{[]},'Gen',{[]},'Strahler',{[]},'Horsfield',{[]},'lobe_surfs',{[]});
 warning('off','MATLAB:triangulation:PtsNotInTriWarnId')
 viewdir = [1,0,0];
 
@@ -332,7 +330,7 @@ close(hf);
 % typically z dim is different to x and y dims which themselves match
 
 lobe_ids = [lobe.val];
-save(fullfile(outD,[pID,'.tree_data.mat']),'B','N','lobe_ids','L_surfs');
+save(fullfile(outD,[pID,'.tree_data.mat']),'B','N','lobe_ids','L_surfs','voxsz');
 
 warning('on','MATLAB:triangulation:PtsNotInTriWarnId')
 
