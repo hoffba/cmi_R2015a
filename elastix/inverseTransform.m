@@ -66,10 +66,10 @@ txt = regexprep(txt,'\(InitialTransformParametersFileName [^\)]*',...
     '(InitialTransformParametersFileName "NoInitialTransform"');
 writelines(txt,fn_save);
 
-fn_tfi = regexprep(fn_save,'\\','\\\\');
+fn_tfi = fn_save;
 txt = fileread(fullfile(tdir,'TransformParameters.1.txt'));
 txt = regexprep(txt,'\(InitialTransformParametersFileName [^\)]*',...
-    ['\(InitialTransformParametersFileName "',fn_tfi,'"']);
+    ['\(InitialTransformParametersFileName "',regexprep(fn_tfi,'\\','\\\\'),'"']);
 writelines(txt,fullfile(elxdir,'InverseTransformParameters.1.txt'));
 
 % Cleanup

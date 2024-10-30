@@ -275,6 +275,7 @@ try
 
             if isfile(opts.fn.airways)
                 % Run airway simulation
+                writeLog(fn_log,'Performing airways simulation\n');
                 airway_processing(ID,img(2).label,opts.fn.airways,img(2).info.voxsz,procdir);
             end
         end
@@ -501,6 +502,8 @@ try
         
         % Transform airway tree to EXP space
         if opts.airsim
+            writeLog(fn_log,'Transforming airway simulation to EXP...\n')
+            airwaytree2exp(procdir);
         end
 
         % PRM calculation

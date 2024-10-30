@@ -21,11 +21,11 @@ if isfile(fn_tree)
             % Find inverse transform
             fn_tfi = dir(fullfile(path_elx,'InverseTransformParameters.*.txt'));
             if isempty(fn_tfi)
-                fn_tf = dir(fullfile(path_elx,'TransformParameteres.*.txt'));
+                fn_tf = dir(fullfile(path_elx,'TransformParameters.*.txt'));
                 if isempty(fn_tf)
                     fn_tfi = '';
                 else
-                    fn_tfi = inverseTransform(fn_tf,fn_ref,fn_seg);
+                    fn_tfi = inverseTransform(fullfile(path_elx,fn_tf(end).name),fn_ref,fn_seg);
                 end
             else
                 fn_tfi = fullfile(path_elx,fn_tfi(end).name);
@@ -39,8 +39,8 @@ if isfile(fn_tree)
                 % [~,~,fov,orient,info] = readNIFTI(fn_hom);
                 % orient = diag([-1 -1 1 1]) * orient;
                 % voxsz = fov ./ info.ImageSize;
-                xyz = (orient * [p.N(:,[3,2,4])./info.PixelDimensions,...
-                                                ones(size(p.N,1),1)]')';
+                xyz = p.N(:,[3,2,4])./info.PixelDimensions;
+                xyz = (info.Transform.T' * [ xyz , ones(size(xyz,1),1) ]')';
                 N_exp = transformPoints(fn_tfi,xyz(:,1:3));
                 N_exp = [p.N(:,1),N_exp(:,[2,1,3])];
 
