@@ -1,117 +1,145 @@
 % Assigns quantitative values to distal nodes in the airway tree
-function [V,V_label] = airwaytreeAssociation(B,N,voxsz,r,M,M_label)
+function [B,Blabel] = airwaytreeAssociation(B,Blabel,N,voxsz,M,M_label,r,func_flag)
 % Inputs:
-%   B = Branches matrix
-%   N = Nodes matrix
-%   voxsz = voxel dimensions
-%   r = radius of window
-%   M = quantitative maps to associate with airway tree (4D)
-%   M_label = {Nx2} cell array of M labels (col1) and function flags (col2)
-% Function flags:
-%   1 = mean
-%   2 = %Volume of binary matrix
-%   2 = PRM% (5-color)
+%   B           = Branches matrix
+%   Blabel      = labels for columns in B
+%   N           = Nodes matrix [ID,x,y,z]
+%   voxsz       = voxel dimensions
+%   M           = quantitative maps to associate with airway tree (4D)
+%   M_label     = {1xN} labels of input image(s)
+%   r           = radius of window
+%   func_flag   = (optional) 1=mean, 2=vol%
 
-%% Initialization
-d = size(M,1:3);
-np = prod(d);
-nv = size(M,4);
-
-% Window for grabbing voxels values around a node (n x 3 matrix)
-se = calcSe(voxsz,r);
-
-% Find terminal branches
-iterm = find(B(:,6)==1);
-nterm = numel(iterm);
-
-% Convert node locations to indices
-Ni = round(N(:,2:4)./voxsz);
-
-% Determine number of output values for each node
-prm_val = cell(nv,1);
-n = 0;
-for i = 1:nv
-    fcn_ind = M_label{i,2};
-    if ismember(1,fcn_ind)
-        n = n+1;
-    end
-    if ismember(2,fcn_ind)
-        n = n+1;
-    end
-    if ismember(3,fcn_ind)
-        uM = unique(M(:,:,:,i));
-        uM(uM==0) = [];
-        prm_val{i} = uM;
-        n = n + numel(uM);
+% Find col indices for relevant values
+% ID = 1 ; N_Prox = 2 ; N_Dist = 3
+j_so = find(strcmp(Blabel,'Strahler'),1);
+j_lobe = find(strcmp(Blabel,'Lobe'),1);
+[nB,nBcol] = size(B);
+nM = size(M,4);
+if nargin<8
+    if islogical(M)
+        func_flag = 2*ones(1,nM);
+    else
+        func_flag = ones(1,nM);
     end
 end
 
-%% Associate quantitative values to node locations using window
-ii = 0;
-V = [ B(iterm,1) , nan(nterm,n) ];
-V_label = strings(1,n);
-for i = 1:nterm
+%% 1. Find terminal branches(sorting by soc)
 
-    % Determine window locations in matrix centered on distal node
-    w = se + Ni(B(iterm(i),3),:);
+soCnts = histcounts(B(:,j_so));
+soCnt = numel(soCnts);
+B = [sortrows(B,j_so),nan(nB,1)]; % arrange with lowest SO at top
 
-    % Remove invalid indices
-    ind = any(w<1,2) | w(:,1)>d(1) | w(:,2)>d(2) | w(:,3)>d(3);
-    w(ind,:) = [];
 
-    % Convert window subscripts to indices
-    ind = sub2ind(d,w(:,1),w(:,2),w(:,3));
+%% 3. Voxel Association
 
-    % Loop over input quantitative maps
-    for j = 1:nv
-        vals = vals(ind + (j-1)*np);
-        nval = numel(vals);
-        Mstr = M_label{j,1};
+% Determine output labels
+j_out = nBcol + (1:nM);
+i_mean = func_flag==1;
+i_pct = func_flag==2;
+V_label = M_label;
+V_label(i_mean) = strcat(V_label(i_mean),'_mean');
+V_label(i_pct) = strcat(V_label(i_pct),'_pct');
+Blabel = [Blabel,V_label];
 
-        % Loop over functions
-        fcn_ind = M_label{j,2};
-        for k = 1:numel(fcn_ind)
-            switch fcn_ind(k)
-                case 1 % Mean
-                    res = mean(vals);
-                    res_label = {[Mstr,"_mean"]};
-                case 2 % Percent volume
-                    res = nnz(vals)/nval *100;
-                    res_label = {[Mstr,"_%"]};
-                case 3 % Percent volume for each value (PRM)
-                    nprm = numel(prm_val{j});
-                    res = zeros(1,nprm);
-                    for i_prm = 1:nprm
-                        res(i_prm) = (vals==prm_val{iprm})/nval *100;
-                    end
-                    res_label = Mstr + "_" + prm_val{j};
+se = calcSe(voxsz,r); % n * 3 matrix, the distance between the nodes within the range and the central nodes(end of the terminal branch).
+broZ = round(N(:,2:4)./voxsz); %% Convert the coordinate into intergral
+Nse = size(se,1);
+for i = 1:soCnts(1)
+    index = se + [broZ(B(i,3),1),broZ(B(i,3),2),broZ(B(i,3),3)]; % get the coordinate of all possible nodes (no mather if there have some values)
+    num = 1; 
+    tmpData = NaN(Nse,nM); % values of image(s) M within the radius r
+    for j = 1:Nse
+        if index(j,1) > 0 && index(j,2) >0 && index(j,3) >0 
+            if index(j,1)<=size(eHUData,1) && index(j,2)<=size(eHUData,2) && index(j,3)<=size(eHUData,3)  % make sure it stays in the boundary 
+                if ~(isnan(eHUData(index(j,1),index(j,2),index(j,3))))     % whether there is data at the point
+                    tmpData(num,:) = squeeze(M(index(j,1),index(j,2),index(j,3),:))';    
+                    num = num+1;                
+                end
             end
-            Vind = ii + (1:numel(res));
-            V(i,Vind) = res;
-            V_label(Vind) = res_label;
-        end
+        end  
+    end
+    tmpData = tmpData(1:(num-1),:);
 
+    % Calculate 
+    if ~isnan(tmpData)
+        B(i,j_out(i_mean)) = mean(tmpData(:,i_mean),1);
+        B(i,j_out(i_pct)) = sum(logical(tmpData(:,i_pct)),1)/size(tmpData,1)*100;
+    else
+        B(i,j_out) = zeros(1,nM); %% Boxes with no voxels are signed with zero
+    end
+end
+
+%% 4. Replace terminal nodes assigned to zero with mean value over all terminal nodes
+indZ = B(:,j_out)==0;
+indNz = B(1:soCnts(1),1)~=0;
+B(indZ,:) = mean(B(indNz,:), 1) .* ones(1,nnz(indZ))';
+
+%% 5. Calculate the value around other branches with higer so
+Nso = soCnts(1);
+for i = 2:soCnt  %% sort each row so as to make it easier to find mother branches
+    ii = (Nso+1):(Nso+soCnts(i));
+    B(ii,:) = sortrows(B(ii,:),3,'descend');
+    Nso = Nso + soCnts(i);   
+end
+
+%% 7. Calc all the nodes with Strahler order larger than 1 and record the position of missing value
+k = 0;
+reChk = [1 0 0 0 0 0 0] .*ones(200,1);  %% Store the branches whose daughter branches haven't been assign with value yet.
+% [postID, distID, rowIndMotherNode, rowInd_DaughterNode1, rowInd_DaughterNode2, rowInd_DaughterNode3]
+    for i = (soCnts(1)+1):nB
+        tmpi = find(B(:,2)==B(i,3)); %% row_th of daughter nodes
+        tmpa = B(tmpi,j_out:end); %% values of daughter nodes
+        %%% Finding lobe_id
+        if var(B(tmpi,j_lobe)) == 0 % Lobe id of all daughter nodes are equal
+            B(i,j_lobe) = B(tmpi(1),j_lobe);
+        end
+        %%% Assign value
+        if sum(isnan(tmpa)) == 0 %~isnan(tmpa(1)) && ~isnan(tmpa(2)) which means both two daughter nodes have been found
+            Nn = (tmpa ~= 0); 
+            if sum(Nn(:,1)) == 0 % if daughter nodes don't have value
+                B(i,j_out:end) = 0;
+            else
+                B(i,j_out) = mean(tmpa((Nn(:,1)~=0),1),1);
+            end
+        else 
+            reChk(k+1,1:3) = [B(i,2:3) i]; %% [prox.id, dist.id, rows] 
+            reChk(k+1,4:3+size(tmpi,1)) = tmpi'; %% dist.daughers'row (2to3 daughters),
+            k = k+1;
+        end
     end
 
+%% 8. Recheck those missing data by changing sorting order of col3 each time.
+reChk = reChk(1:k,:);
+a = 1;
+dir = {'descend','ascend'}; k = 1; % change the direction of finding nodes
+%%% reChk = [prox.id, dist.id, row_id_Mother, row_id_daughter1, row_id_daughter2, row_id_daughter3, chk]
+while a >0 %% whether there is NaN in reChk
+    ii = find(reChk(:,6)>0); % find which nodes have three daughter branches
+    for i = 1:size(reChk,1)
+        if ismember(i,ii) % Indicate a node with three daughter nodes
+            tmpi = reChk(i,4:6); % tmpi are the row-th for daughter nodes
+        else
+            tmpi = reChk(i,4:5);
+        end
+        if sum(isnan(B(tmpi,j_out:end))) == 0 %% if tmpi has some value
+            if var(B(tmpi,j_lobe)) == 0
+                B(reChk(i,3),j_lobe) = B(tmpi(1),j_lobe);
+            end
+            B(reChk(i,3),j_out:end) = mean(B(tmpi,j_out:end),1);
+            reChk(i,7) = 1;
+        end
+        
+    end
+    a = sum(isnan(B(:,j_out:end)));
+    k = mod(k,2)+1;
+    reChk = sortrows(reChk,3,dir(k));     
 end
 
-%% Replace zero value with average between adjacent values
+%% Re-organize output values by branch ID to return
+B = sortrows(B,1);
 
 
-
-
-
-
-
-
-
-
-
-uStrahl = unique(B(:,6));
-for i = 2:numel(uStrahl)
-    ind = find(B(:,6)==uStrahl(i));
-
-end
 
 
 

@@ -33,15 +33,24 @@ if isfile(fn_tree)
         
             % Transform points with transformix
             if ~isempty(fn_tfi)
-                % Find INS node locations to transform
+
+                % Load relevant data
                 p = load(fn_tree);
-                info = niftiinfo(fn_hom);
-                % [~,~,fov,orient,info] = readNIFTI(fn_hom);
-                % orient = diag([-1 -1 1 1]) * orient;
-                % voxsz = fov ./ info.ImageSize;
-                xyz = p.N(:,[3,2,4])./info.PixelDimensions;
-                xyz = (info.Transform.T' * [ xyz , ones(size(xyz,1),1) ]')';
-                N_exp = transformPoints(fn_tfi,xyz(:,1:3));
+                np = size(p.N,1);
+                info_h = niftiinfo(fn_hom);
+                info_r = niftiinfo(fn_ref);
+
+                % Find transformed node locations in INS space
+                N_ins = p.N(:,[3,2,4]) ./ info_h.PixelDimensions;
+                N_ins = (info_h.Transform.T' * [ N_ins , ones(np,1) ]')';
+                N_ins = N_ins(:,2:4);
+
+                % Transform points using elastix results
+                N_exp = transformPoints(fn_tfi,N_ins(:,1:3));
+
+                % Convert points back to scaled index format in EXP space
+                N_exp = (info_r.Transform.T' \ [ N_exp , ones(np,1) ]')';
+                N_exp = N_exp .* info_r.PixelDimensions;
                 N_exp = [p.N(:,1),N_exp(:,[2,1,3])];
 
                 % Save points to airway tree MAT file

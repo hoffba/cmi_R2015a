@@ -1,42 +1,37 @@
-function plot_tree(ha,B,N,k)
+function plot_tree(ha,B,N,Bval,val_name)
 % given branch matrix B ~ [prox,dist,radius] and node matrix [id,x,y,z]
 % produce a plot with line thickness set by radii in B
 % Update 7/28/20: B appended with generation, Strahler and Horsfield info
 % Idea: color lines using one of these features (generation).
 % k: 4 ~ generation, 5 ~ Stahler, 6 ~ Horsfield
 
-s = size(B,1);
+nB = size(B,1);
 
-kstr = {'Node1';...
-        'Node2';...
-        'Radius';...
-        'Generation';...
-        'Strahler';...
-        'Horsfield'};
+% kstr = {'Node1';...
+%         'Node2';...
+%         'Radius';...
+%         'Generation';...
+%         'Strahler';...
+%         'Horsfield'};
 
+if isempty(ha)
+    hf = figure('Name','Final Visual'); ha = axes(hf);
+end
 hold(ha,'on');
 grid(ha,'on');
 view(ha,[1,0,0]);
-title(ha,kstr{k});
+title(ha,val_name);
 
+% Normalize values to [0 1] scale
+Bmin = min(min(Bval),0);
+Bval = (Bval - Bmin)/(max(Bval) - Bmin);
 
-maxC = max(B(:,k)); alph = 0.9;
-for i=1:s
+for i = 1:nB
     
-    n1 = N(N(:,1)==B(i,1),2:4);
-    n2 = N(N(:,1)==B(i,2),2:4);
+    n = [ N(N(:,1)==B(i,1),2:4);
+          N(N(:,1)==B(i,2),2:4) ];
     
-    %plot3([n1(1) n2(1)],[n1(2) n2(2)],[n1(3) n2(3)],'black-',...
-    %    'LineWidth',B(i,3))
+    plot3(ha,n(:,1),n(:,2),n(:,3),'-','LineWidth',1,'Color',[Bval(i) 0 1-Bval(i)]);
 
-    colFac = (B(i,k)-1)/(maxC-1);
-    colFac = alph*colFac;
-    colFac = 1-colFac;
-    
-    plot3(ha,[n1(1) n2(1)],[n1(2) n2(2)],[n1(3) n2(3)],'-',...
-        'LineWidth',1,'Color',[1-colFac 0 colFac])
-    %B(i,3)
-    plot3(ha,n2(1),n2(2),n2(3),'blacko','MarkerFaceColor','black',...
-        'MarkerSize',1)
+    plot3(ha,n(2,1),n(2,2),n(2,3),'blacko','MarkerFaceColor','black','MarkerSize',1);
 end
-%plot3(N(:,2),N(:,3),N(:,4),'ro')
