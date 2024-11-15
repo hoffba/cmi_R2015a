@@ -40,7 +40,7 @@ i_pct = func_flag==2;
 V_label = M_label;
 V_label(i_mean) = strcat(V_label(i_mean),'_mean');
 V_label(i_pct) = strcat(V_label(i_pct),'_pct');
-Blabel = [Blabel,V_label];
+Blabel = [Blabel,V_label]; % append to Branches table
 
 se = calcSe(voxsz,r); % n * 3 matrix, the distance between the nodes within the range and the central nodes(end of the terminal branch).
 broZ = round(N(:,2:4)./voxsz); %% Convert the coordinate into intergral
