@@ -26,7 +26,8 @@ end
 
 %% 1. Find terminal branches(sorting by soc)
 
-soCnts = histcounts(B(:,j_so));
+edges = ( 1 : (max(B(:,j_so)))+1 ) -0.5;
+soCnts = histcounts(B(:,j_so),edges);
 soCnt = numel(soCnts);
 B = [sortrows(B,j_so),nan(nB,1)]; % arrange with lowest SO at top
 
