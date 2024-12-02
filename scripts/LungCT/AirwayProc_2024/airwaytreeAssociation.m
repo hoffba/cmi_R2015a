@@ -32,7 +32,7 @@ soCnt = numel(soCnts);
 B = [sortrows(B,j_so),nan(nB,1)]; % arrange with lowest SO at top
 
 
-%% 3. Voxel Association
+%% 3. Voxel Association (terminal airways only)
 
 % Determine output labels
 j_out = nBcol + (1:nM);
@@ -85,6 +85,7 @@ for i = 2:soCnt  %% sort each row so as to make it easier to find mother branche
 end
 
 %% 7. Calc all the nodes with Strahler order larger than 1 and record the position of missing value
+% (Mean of daughter nodes)
 k = 0;
 reChk = [1 0 0 0 0 0 0] .*ones(200,1);  %% Store the branches whose daughter branches haven't been assign with value yet.
 % [postID, distID, rowIndMotherNode, rowInd_DaughterNode1, rowInd_DaughterNode2, rowInd_DaughterNode3]

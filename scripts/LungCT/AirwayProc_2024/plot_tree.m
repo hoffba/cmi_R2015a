@@ -1,18 +1,13 @@
-function plot_tree(ha,B,N,Bval,val_name)
-% given branch matrix B ~ [prox,dist,radius] and node matrix [id,x,y,z]
-% produce a plot with line thickness set by radii in B
-% Update 7/28/20: B appended with generation, Strahler and Horsfield info
-% Idea: color lines using one of these features (generation).
-% k: 4 ~ generation, 5 ~ Stahler, 6 ~ Horsfield
+function plot_tree(ha,B,N,Bind,val_name)
+% Inputs:
+%   ha = handle to axes for plotting (if empty a new figure and axes are created)
+%   B = Branches matrix
+%   N = Nodes matrix
+%   Bind = 1) index for column of B to color the plot
+%          2) values to plot on branches B
+%   val_name = string to title the plot
 
 nB = size(B,1);
-
-% kstr = {'Node1';...
-%         'Node2';...
-%         'Radius';...
-%         'Generation';...
-%         'Strahler';...
-%         'Horsfield'};
 
 if isempty(ha)
     hf = figure('Name','Final Visual'); ha = axes(hf);
@@ -23,8 +18,11 @@ view(ha,[1,0,0]);
 title(ha,val_name);
 
 % Normalize values to [0 1] scale
-Bmin = min(min(Bval),0);
-Bval = (Bval - Bmin)/(max(Bval) - Bmin);
+if numel(Bind)==1
+    Bmin = min(min(B(:,Bind)),0);
+    Bval = (B(:,Bind) - Bmin)/(max(B(:,Bind)) - Bmin);
+else
+end
 
 for i = 1:nB
     

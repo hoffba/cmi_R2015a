@@ -604,9 +604,11 @@ end
     function run(~,~)    
         % Check that each timepoint has Ins/Exp selected (and only one of each)
         if any(gp_valid == 3)
-            warning('No case can have more than one Exp/Ins selected.');
+            wstr = sprintf('%s\n',gp_caselabel{gp_valid==3});
+            warning('No case can have more than one Exp/Ins selected:\n%s',wstr);
         elseif any(gp_valid == 4)
-            warning('Each case must have a unique UMlabel.');
+            wstr = sprintf('%s\n',gp_caselabel{gp_valid==4});
+            warning('Each case must have a unique UMlabel:\n%s',wstr);
         elseif ~isempty(C)
             % Run Pipeline on selected data
             

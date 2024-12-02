@@ -14,74 +14,59 @@ function [B,N,lobe_surf] = airway_processing(pID,seg,A,voxsz,procdir)
 %   Outputs: B = [ID, N_prox, N_dist, Radius, Gen, Strahl, Hors, Lobe, Real, Terminal]
 %            N = [ID, x, y, z]
 
-% Create folder for outputs
+%% Create folder for outputs
 outD = fullfile(procdir,[pID,'.AirwayProc']);
 if ~isfolder(outD)
     mkdir(outD);
 end
 
-% Prep tree
+%% Prep tree
+t = tic;
 [B,N,lobe_surf] = tree_prep_pipe(pID,seg,A,outD,voxsz);
+t = round(toc(t));
+fprintf('Tree prep = %d:%d\n',floor(t/60),rem(t,60));
+% B ~ [Node1, Node2, Radius, Horsfield, Strahler, Generation]
 
-% Simulation
+%% Simulation
+t = tic;
 [Bsim,Nsim,~,~] = CreateConductingZone( B(:,1:3), N, lobe_surf , outD );
+t = round(toc(t));
+fprintf('Simulation = %d:%d\n',floor(t/60),rem(t,60));
+% Bsim ~ [ID, Node1, Node2, Radius, ...]
 
-% Tag real vs simulated branches
-Nreal = Nsim(ismember(Nsim(:,2:4),N(:,2:4),'rows'),1); % Find original nodes
-B = [ Bsim , sum(ismember(Bsim(:,2:3),Nreal),2)==2 ]; % Find branches between original nodes
+%% Tag simulated branches
+%  0    = Real branch
+% -1:-N = Real terminal
+%  1:N  = Simulated (# associated with -# for real terminal)
+t = tic;
+tag = zeros(size(Bsim,1),1);
+
+% Find real terminal branches
+Nr_term = N( ismember(N(:,1),B(B(:,5)==1,2)) , 2:4 );   % xyz
+Ns_term = Nsim(ismember(Nsim(:,2:4),Nr_term,'rows'),1); % ID
+Br_term = find(ismember( Bsim(:,3) , Ns_term ));
+nterm = numel(Br_term);
+tag(Br_term) = -(1:nterm);
+
+% Label each simulated branch
+for i = 1:nterm
+    Bnext = ismember (Bsim(:,2) , Bsim(Br_term(i),3) );
+    while nnz(Bnext)
+        tag(Bnext) = i;
+
+        % Find daughter branches
+        Bnext = ismember( Bsim(:,2) , Bsim(Bnext,3) );
+    end
+end
+B = [ Bsim , tag ];
 N = Nsim;
+t = round(toc(t));
+fprintf('Branch tags = %d:%d\n',floor(t/60),rem(t,60));
 
-% Save tree
-B_label = {'ID','N_Prox','N_Dist','Radius','Gen','Strahler','Horsfield','Lobe','Real','Terminal'};
+%% Save tree
+B_label = {'ID','N_Prox','N_Dist','Radius','Gen','Strahler','Horsfield','Lobe','Tag'};
 dims = size(seg);
 save(fullfile(outD,[pID,'_AirwayTreeSim.mat']),'dims','voxsz','B','N','B_label','lobe_surf');
 
 
 
-
-
-
-
-
-
-
-
-
-return
-%% Compute voxel associations with branches
-segBW = seg & ins>-1000 & ins<-500;         % Throw away values outside of threshold
-[xi,yi,zi] = ind2sub(dim,find(segBW));      % Voxel index [ i, j, k ]
-nv = size(img,4);
-V = reshape(img(repmat(segBW,1,1,1,nv)),[],nv);
-
-% r ~ radius for obtaining points (set above)
-r=4; % arbitrary, just for testing
-
-%% temp set up for old version of calVoxel
-t = tic;
-ASSOC = calcVoxel_AB( Bsim(:,[2,3,4,8]) , Nsim(:,2:4) , [xi,yi,zi,V,V] , Bsim(:,5) , r , voxsz , B , N );
-toc(t);
-
-% Yixuan produces huge number of columns, I believe the assigned values
-% from voxels are in columns 7 and 8 here; other columns are based on PRM
-% and other metrics using both exp and ins HU, and measuring at different
-% depths in the tree I believe
-
-nB = size(B,1);
-B = [zeros(nB,1), ASSOC(:,[1 2 7])]; % taking just node IDs and assigned values
-% N.B. the 3rd column here is the essenital output, the associated voxel
-% values (via mean of nearby voxels to terminal airways, and using mean to
-% average up to other airways)
-
-% some further processing to get branches in correct order for use with
-% other variables such as Strahler
-
-% B3 = [zeros(size(B2,1),1) B2]; % for branch ids
-for i = 1:nB
-    [~,b] = ismember(B(i,2:3),B{:,2:3},"rows");
-    B(i,1) = B.ID(b); % found branch ID
-end
-B = sortrows(B,1); % sort in order of Branch ID
-
-% Save to procdir
-save(fullfile(outD,'ASSOC.mat'),'B');

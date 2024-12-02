@@ -1,5 +1,6 @@
 function D = report_prm(procdir,res,opts,R)
 
+try
     % Check that Matlab's report generator toolbox is available
     if ~license('test','matlab_report_gen')
         fprintf('MATLAB Report Generator not available.\n');
@@ -143,3 +144,6 @@ function D = report_prm(procdir,res,opts,R)
             copyfile(fname,svdir);
         end
     end
+catch err
+    fprintf('PRM report generation failed.\n');
+end

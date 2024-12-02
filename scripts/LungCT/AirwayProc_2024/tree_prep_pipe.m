@@ -184,9 +184,10 @@ for i = 1:nB
     B(i,4) = gen_no(B(i,1:2),B(:,1:2));
 end
 
+B_label = {'Node1','Node2','Radius','Generation','Strahler','Horsfield'};
 hf = figure; t = tiledlayout(hf,1,3);
 for i = 4:6
-    plot_tree(nexttile(t),B,N,i);
+    plot_tree(nexttile(t),B,N,i,B_label{i});
 end
 saveas(hf,fullfile(outD,[pID,'.raw_tree_orders.fig']));
 close(hf);
@@ -316,7 +317,7 @@ clear tmp
 %% final visual check
 %
 hf = figure('Name','Final Visual'); ha = axes(hf);
-plot_tree(ha,B,N,4)
+plot_tree(ha,B,N,4,B_label{4});
 for i = 1:nl
     trisurf(L_surfs{i},'FaceColor','b','FaceAlpha',0.05,'EdgeColor','none');
 end
