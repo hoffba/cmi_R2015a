@@ -20,7 +20,6 @@ fov = fov([2,1,3]);
 img = permute(img,[2,1,3]);
 
 info = init_niftiinfo(label,fov./d,dtype,d);
-gz_flag = strcmp(fname(end-2:end),'.gz');
 if gz_flag
     svname = fname(1:end-3);
 else
