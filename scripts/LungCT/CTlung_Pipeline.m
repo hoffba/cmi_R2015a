@@ -394,7 +394,10 @@ end
     end
     function clearTags(~,~)
         h.table_select.Data(:,1) = {''};
-        C.Tag(page_ic) = {''};
+
+        % C.Tag(page_ic) = {''};
+        C.Tag(:) = {''};
+        
         checkValid;
     end
     function setOpts(hObject,eData)

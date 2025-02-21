@@ -39,7 +39,7 @@ try
             if ~fnflag(i,2)
                 % Need to load image for segmentation
                 writeLog(fn_log,'   Loading for segmentation.\n');
-                [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
+                [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn{i,1});
             end
         else
             orientchk = true;

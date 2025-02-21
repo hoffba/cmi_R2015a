@@ -475,7 +475,7 @@ try
         end
         
         % Blood density change map:
-        if opts.dBlood
+        if opts.dBlood && opts.jac
             dBlood = [];
             if exist(opts.fn.dBlood,'file')
                 writeLog(fn_log,'Loading dBlood from file...\n');
