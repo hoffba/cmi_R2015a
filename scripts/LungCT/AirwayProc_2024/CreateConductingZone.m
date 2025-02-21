@@ -1,4 +1,4 @@
-function CZ = CreateConductingZone(Branches, Nodes, lobe_TRI, pxDim, file_directory)
+function [Branches,Nodes,lower_branches,lower_nodes] = CreateConductingZone(Branches, Nodes, lobe_TRI, file_directory)
 %% CREATECONDUCTINGZONE(BRANCHES, NODES, LOBE_TRI) grows out an airway tree
 % within the input lobe boundaries, using the given seeding airway tree.
 % This is based off an algorithm presented in detail in Bordas et al.
@@ -40,9 +40,10 @@ function CZ = CreateConductingZone(Branches, Nodes, lobe_TRI, pxDim, file_direct
     nlobes = length(lobe_TRI);
     
     %% Rescale Nodes structure 
-    for i = 1:3
-        Nodes(:,i+1) = Nodes(:,i+1)*pxDim(i); 
-    end
+    %% Already in xyz coordinates (BH)
+    % for i = 1:3
+    %     Nodes(:,i+1) = Nodes(:,i+1)*pxDim(i); 
+    % end
     
     %% Need to set max branch length, using T = max(Vb - Dl*n, 5mm)
     % where Vb = size of the diagonal of the bounding box of the lobe
@@ -91,8 +92,8 @@ function CZ = CreateConductingZone(Branches, Nodes, lobe_TRI, pxDim, file_direct
     max_xyz = max(Nodes(:,2:4)); 
     for i = 1:nlobes
         curTRI = lobe_TRI{i}; 
-        new_min_xyz = min(curTRI.Points).*pxDim; 
-        new_max_xyz = max(curTRI.Points).*pxDim; 
+        new_min_xyz = min(curTRI.Points); 
+        new_max_xyz = max(curTRI.Points); 
         for j = 1:3
             if new_min_xyz(j) < min_xyz(j)
                 min_xyz(j) = new_min_xyz(j);
@@ -134,9 +135,9 @@ function CZ = CreateConductingZone(Branches, Nodes, lobe_TRI, pxDim, file_direct
         curTRI = lobe_TRI{i}; 
         curVert = curTRI.Points;
         %% Rescale current lobe dimensions, into mm
-        for j = 1:3
-            curVert(:,j) = curVert(:,j)*pxDim(j); 
-        end
+        % for j = 1:3
+        %     curVert(:,j) = curVert(:,j)*pxDim(j); 
+        % end
         
         curFace = curTRI.ConnectivityList;
         % Calculate which points in the overall grid are inside the given lobe
@@ -180,9 +181,9 @@ function CZ = CreateConductingZone(Branches, Nodes, lobe_TRI, pxDim, file_direct
         curTRI = lobe_TRI{i}; 
         curVert = curTRI.Points;
         %% Rescale current lobe dimensions, into mm
-        for j = 1:3
-            curVert(:,j) = curVert(:,j)*pxDim(j); 
-        end
+        % for j = 1:3
+        %     curVert(:,j) = curVert(:,j)*pxDim(j); 
+        % end
         curFace = curTRI.ConnectivityList;
         outside_idx = outside_idx + inpolyhedron(curFace, curVert, newNodes(:,2:4));
     end
@@ -248,13 +249,8 @@ function CZ = CreateConductingZone(Branches, Nodes, lobe_TRI, pxDim, file_direct
     save([file_directory, '/Horsfield.mat'], 'Horsfield');
     save([file_directory, '/Lobe.mat'], 'Lobe'); 
     
-    %% Create table to return
-    CZ.B = splitvars(table([Branches,Gen,Strahler,Horsfield,Lobe]));
-    CZ.B.Properties.VariableNames = {'ID','Prox_N','Dist_N','R','Gen','Strahler','Horsfield','Lobe'};
-    CZ.N = splitvars(table(Nodes));
-    CZ.N.Properties.VariableNames = {'ID','X','Y','Z'};
-    CZ.N_low = lower_nodes;
-    CZ.B_low = lower_branches;
+    %% Return resulting branches
+    Branches = [Branches,Gen,Strahler,Horsfield,Lobe];
 
 end
 
