@@ -1,4 +1,4 @@
-function plot_tree(ha,B,Blbl,N,Bind,val_name)
+function plot_tree(ha,B,Blbl,N,Bind,val_name,L_surfs)
 % Inputs:
 %   ha          = handle to axes for plotting (if empty a new figure and axes are created)
 %   B           = Branches matrix

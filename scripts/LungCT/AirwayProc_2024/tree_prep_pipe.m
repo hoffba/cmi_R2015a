@@ -173,6 +173,23 @@ nB = size(B,1);
 % complete conversion, B is now an oriented branch matrix with NOD as
 % associated matrix of nodes, with the root (trachea) as first element
 
+%% obtaining lobe surface maps in mm (to match tree)
+%
+nl = numel(lobe);
+L_surfs = cell(1,nl);
+for i = 1:nl
+
+    [xx,yy,zz] = ind2sub(dim,find(L==lobe(i).val));
+    tmp = [xx,yy,zz].*voxsz; clear xx yy zz
+    
+    s = size(tmp);
+    tmp2 = datasample(tmp,floor(s(1)/10)); % random sample of 10%
+    tmp3 = boundary(tmp2); % obtain indices for boundary set of voxels
+    TR = triangulation(tmp3,double(tmp2));
+    L_surfs{i} = TR;
+end
+clear tmp
+
 
 %% tree generation, Strahler and Horsfield order assignment
 %
@@ -187,7 +204,7 @@ end
 B_label = {'Node1','Node2','Radius','Generation','Strahler','Horsfield'};
 hf = figure; t = tiledlayout(hf,1,3);
 for i = 4:6
-    plot_tree(nexttile(t),B,B_label{i},N,i,'Raw Tree Orders');
+    plot_tree(nexttile(t),B,B_label{i},N,i,'Raw Tree Orders',L_surfs);
 end
 saveas(hf,fullfile(outD,[pID,'.raw_tree_orders.fig']));
 close(hf);
@@ -296,28 +313,10 @@ end
 % Leaving in for now to maintain row ID agreement
 
 
-%% obtaining lobe surface maps in mm (to match tree)
-%
-nl = numel(lobe);
-L_surfs = cell(1,nl);
-for i = 1:nl
-
-    [xx,yy,zz] = ind2sub(dim,find(L==lobe(i).val));
-    tmp = [xx,yy,zz].*voxsz; clear xx yy zz
-    
-    s = size(tmp);
-    tmp2 = datasample(tmp,floor(s(1)/10)); % random sample of 10%
-    tmp3 = boundary(tmp2); % obtain indices for boundary set of voxels
-    TR = triangulation(tmp3,double(tmp2));
-    L_surfs{i} = TR;
-end
-clear tmp
-
-
 %% final visual check
 %
 hf = figure('Name','Final Visual'); ha = axes(hf);
-plot_tree(ha,B,B_label,N,4,'Final Visual');
+plot_tree(ha,B,B_label,N,4,'Final Visual',L_surfs);
 for i = 1:nl
     trisurf(L_surfs{i},'FaceColor','b','FaceAlpha',0.05,'EdgeColor','none');
 end
