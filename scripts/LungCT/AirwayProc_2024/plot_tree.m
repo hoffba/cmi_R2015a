@@ -1,4 +1,4 @@
-function plot_tree(ha,B,Blbl,N,varargin) %,Bind,val_name)
+function plot_tree(ha,B,Blbl,N,Bind,val_name)
 % Inputs:
 %   ha          = handle to axes for plotting (if empty a new figure and axes are created)
 %   B           = Branches matrix
@@ -15,12 +15,12 @@ if ~isempty(cTag)
     nsub = max(B(:,cTag));
 end
 
-% Parse inputs
-p = inputParser();
-addParameter(p,'Lobes',[],@(x)validateattributes(x,'cell',{}));
-addParameter(p,'BranchColor','k',@(x)validateattributes(x,{'numeric'},{'size',[nB,1]}));
-addParameter(p,'Subtree',[],@(x)validateattributes(x,{'numeric'},{'positive','integer','<=',nsub}));
-addParameter(p,'Label','',@(x)validateattributes(x,{'string','char'},{}));
+% % Parse inputs
+% p = inputParser();
+% addParameter(p,'Lobes',[],@(x)validateattributes(x,'cell',{}));
+% addParameter(p,'BranchColor','k',@(x)validateattributes(x,{'numeric'},{'size',[nB,1]}));
+% addParameter(p,'Subtree',[],@(x)validateattributes(x,{'numeric'},{'positive','integer','<=',nsub}));
+% addParameter(p,'Label','',@(x)validateattributes(x,{'string','char'},{}));
 
 
 
