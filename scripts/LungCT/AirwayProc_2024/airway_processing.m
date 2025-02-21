@@ -2,17 +2,20 @@
 function [B,N,lobe_surf] = airway_processing(pID,seg,A,voxsz,procdir)
 %% function airway_processing(pID,ins,seg,A,voxsz,img,fcn,procdir)
 %   Inputs: pID =       string ID of subject/case (base filename)
-%           ins =       inspiratory image
 %           seg =       inspiratory lung segmentation
 %           A =         airways segmentation
 %           voxsz =     voxel dimensions
-%           img =       4D image matrix for association with airway tree
-%           label =     cell array of labels for each input img
-%           fcn =       cell array with function handles to apply to association window
-%                           ** functions must have single output and vector input
 %           procdir =   directory to save results to
 %   Outputs: B = [ID, N_prox, N_dist, Radius, Gen, Strahl, Hors, Lobe, Real, Terminal]
 %            N = [ID, x, y, z]
+%            lobe_surf = structure containing lobe suface triangulations
+
+if ischar(seg)
+    seg = cmi_load(1,[],seg);
+end
+if ischar(A)
+    A = cmi_load(1,[],A);
+end
 
 %% Create folder for outputs
 outD = fullfile(procdir,[pID,'.AirwayProc']);
