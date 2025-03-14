@@ -46,6 +46,7 @@ Blabel = [Blabel,V_label]; % append to Branches table
 se = calcSe(voxsz,r); % n * 3 matrix, the distance between the nodes within the range and the central nodes(end of the terminal branch).
 broZ = round(N(:,2:4)./voxsz); %% Convert the coordinate into intergral
 Nse = size(se,1);
+eHUData = M;
 for i = 1:soCnts(1)
     index = se + [broZ(B(i,3),1),broZ(B(i,3),2),broZ(B(i,3),3)]; % get the coordinate of all possible nodes (no mather if there have some values)
     num = 1; 
