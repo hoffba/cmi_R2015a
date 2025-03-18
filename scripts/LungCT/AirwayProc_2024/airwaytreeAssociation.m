@@ -46,15 +46,14 @@ Blabel = [Blabel,V_label]; % append to Branches table
 se = calcSe(voxsz,r); % n * 3 matrix, the distance between the nodes within the range and the central nodes(end of the terminal branch).
 broZ = round(N(:,2:4)./voxsz); %% Convert the coordinate into intergral
 Nse = size(se,1);
-eHUData = M;
 for i = 1:soCnts(1)
     index = se + [broZ(B(i,3),1),broZ(B(i,3),2),broZ(B(i,3),3)]; % get the coordinate of all possible nodes (no mather if there have some values)
     num = 1; 
     tmpData = NaN(Nse,nM); % values of image(s) M within the radius r
     for j = 1:Nse
         if index(j,1) > 0 && index(j,2) >0 && index(j,3) >0 
-            if index(j,1)<=size(eHUData,1) && index(j,2)<=size(eHUData,2) && index(j,3)<=size(eHUData,3)  % make sure it stays in the boundary 
-                if ~(isnan(eHUData(index(j,1),index(j,2),index(j,3))))     % whether there is data at the point
+            if index(j,1)<=size(M,1) && index(j,2)<=size(M,2) && index(j,3)<=size(M,3)  % make sure it stays in the boundary 
+                if ~(isnan(M(index(j,1),index(j,2),index(j,3))))     % whether there is data at the point
                     tmpData(num,:) = squeeze(M(index(j,1),index(j,2),index(j,3),:))';    
                     num = num+1;                
                 end
