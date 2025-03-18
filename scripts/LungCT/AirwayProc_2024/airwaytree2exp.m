@@ -1,4 +1,4 @@
-function xyz = airwaytree2exp(procdir)
+function N_exp = airwaytree2exp(procdir)
 % Transforms airway nodes (real and simulated) to EXP space
 % ** Note: Node coordinates are in non-oriented units
 % Inputs:
@@ -9,7 +9,7 @@ fn_tree = fullfile(procdir,[ID,'.AirwayProc'],[ID,'_AirwayTreeSim.mat']);
 if isfile(fn_tree)
     p = load(fn_tree);
     if isfield(p,'N_exp')
-        xyz = p.N_exp(:,2:4);
+        N_exp = p.N_exp(:,2:4);
     else
         % Filenames relevant to registration
         fn_ref = fullfile(procdir,[ID,'.exp.nii.gz']);
@@ -50,7 +50,7 @@ if isfile(fn_tree)
 
                 % Convert points back to scaled index format in EXP space
                 N_exp = (info_r.Transform.T' \ [ N_exp , ones(np,1) ]')';
-                N_exp = N_exp .* info_r.PixelDimensions;
+                N_exp = N_exp(:,1:3) .* info_r.PixelDimensions;
                 N_exp = [p.N(:,1),N_exp(:,[2,1,3])];
 
                 % Save points to airway tree MAT file
