@@ -67,11 +67,27 @@ if ~isempty(pp.tp) && (~isempty(pp.in) || pp.jac || pp.jacmat || pp.def)
             str{1,i} = [str{1,i},' -jacmat all'];
             pp.jacmat = false; % only need to perform once
         end
+        
         if outchk && ~isempty(pp.outfn) && ~isempty(pp.outfn{i})
-            [odir,outfn] = fileparts(pp.outfn{i});
+            outfn = pp.outfn{i};
+            
+            % Elastix can't save as zipped
+            gzflag = endsWith(outfn,'.gz');
+            if gzflag
+                outfn = outfn(1:end-3);
+            end
+
+            [odir,outfn,ext] = fileparts(outfn);
             switch self.sys
                 case 2 % PC
-                    str{2,i} = ['rename "',fullfile(odir,'result.???'),'" "',outfn,'.???"'];
+                    if strcmp(ext,'.mhd')
+                        ext = {'.mhd','.raw'};
+                    else 
+                        ext = {ext};
+                    end
+                    for iext = 1:numel(ext)
+                        str{2,i} = ['rename "',fullfile(odir,['result',ext{iext}]),'" "',outfn,ext{iext},'"'];
+                    end
                 case 4 % Great Lakes
                     str{2,i} = ['rename result ',outfn,' ',fullfile(odir,'result.???')];
                 otherwise

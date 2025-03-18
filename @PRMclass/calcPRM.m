@@ -140,7 +140,7 @@ if (nargin>=6) % need all inputs
 %                 if self.normchk
 %                     np = nnz(prmvals);
 %                 end
-                prmpcts = tot/np;
+                prmpcts = tot'/np;
                 
                 
                 self.hascatter = ha;

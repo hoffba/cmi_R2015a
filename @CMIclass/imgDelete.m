@@ -1,11 +1,14 @@
 % CMIclass function
 % Delete Image
-function imgDelete(self,~,~)
+function imgDelete(self,inds,~)
 nvec = self.img.dims(4);
 if (nvec > 1) % don't delete if only 1 image
-    inds = listdlg('ListString',self.img.labels,...
-        'PromptString','Image vector(s) to remove:');
+    if nargin>2
+        inds = listdlg('ListString',self.img.labels,...
+            'PromptString','Image vector(s) to remove:');
+    end
     % Do nothing unless all input values are valid
+    inds(inds<1 | inds>nvec) = [];
     if ~isempty(inds)
         self.img.imgDelete(inds);
         self.clim(inds,:) = [];

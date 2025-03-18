@@ -135,9 +135,9 @@ elseif isstruct(tp) && ~isempty(tp) && all(isfield(tp,{'fname','chain','im','jac
                     fixMHDnames(tp(i).im{j,2})
                 end
                 if (size(tp(i).im,2)==1) || isempty(tp(i).im{j,3})
-                    outfn = fullfile(odir,sprintf('TransformedImage.%02u.%02u.%02u.mhd',chain,chlink,j));
+                    outfn = fullfile(odir,sprintf(['TransformedImage.%02u.%02u.%02u.',fmt],chain,chlink,j));
                 else
-                    outfn = fullfile(odir,tp(i).im{j,3});
+                    outfn = fullfile(odir,[tp(i).im{j,3},fmt]);
                 end
                 inputs = {'in',tp(i).im{j,2},'outfn',outfn};
                 nn = tp(i).im{j,1};

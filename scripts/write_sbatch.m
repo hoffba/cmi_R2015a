@@ -112,6 +112,10 @@ function [fname,jobname,fcn,inputs_fname,part_str,cores,mem,walltime,array,usern
     p.addRequired('jobname',@(x)ischar(x)&&isempty(regexp(x,'[/\*:?"<>|]','once')));
     p.addRequired('fcn',@(x)ischar(x)&&~isempty(which(x)));
     p.addParameter('inputs_fname','',@(x)ischar(x)&&exist(x,'file'));
+    p.addParameter('acctname','cgalban0',@(x)ismember(x,{'cgalban0','cgalban1','cgalban99'}));
+        % cgalban0 - UMRCP free alotment
+        % cgalban1 - Paid account
+        % cgalban99 - Med School free alotment
     p.addParameter('partition','standard',@(x)ischar(x)&&ismember(x,{'standard','largemem','gpu'}))
     p.addParameter('cores',1,@(x)isnumeric(x)&&(x>0)&&~isinf(x)&&floor(x)==x);
     p.addParameter('mem',8,@(x)isnumeric(x)&&(x>0)&&~isinf(x)&&floor(x)==x);

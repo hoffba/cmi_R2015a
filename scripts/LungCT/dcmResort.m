@@ -1,17 +1,16 @@
 % dcmResort.m
 % take folder of dcm files and resort into a set of folders with files
 % allocated by 'SeriesNumber'
-function dcmResort
-fnames = dir;
-for i = 1:numel(fnames)
-    if ~isfolder(fnames(i).name) && isdicom(fnames(i).name)
-        info = dicominfo(fnames(i).name);
-        serpath = fullfile(pwd,num2str(info.SeriesNumber));
+function dcmResort(dcmfolder)
+fn = dir(dcmfolder);
+for i = 1:numel(fn)
+    fnfull = fullfile(fn(i).folder,fn(i).name);
+    if ~fn(i).isdir && isdicom(fnfull)
+        info = dicominfo(fnfull);
+        serpath = fullfile(dcmfolder,num2str(info.SeriesNumber));
         if ~isfolder(serpath)
             mkdir(serpath)
         end
-        movefile(fnames(i).name,serpath,'f');
-    else
-        continue
+        movefile(fnfull,serpath,'f');
     end
 end

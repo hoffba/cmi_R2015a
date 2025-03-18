@@ -227,7 +227,10 @@ end
         page_reset = false;
         if isnumeric(hObject)
             hObject = round(hObject);
-            if hObject>0 && hObject<=pageN
+            if hObject==0 % Re-set when loading a new catalog
+                page_reset = true;
+                newpage = 1;
+            elseif hObject>0 && hObject<=pageN
                 newpage = hObject;
             else
                 warning('Invalid numerical input. Max page = %s',pageN);
@@ -547,7 +550,7 @@ end
             set(h.filt_fld_dd,'Items',C.Properties.VariableNames(3:end))
             
             %% Set table data:
-            setPage(1);
+            setPage(0);
             
             pause(1);
             checkValid;

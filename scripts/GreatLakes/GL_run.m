@@ -62,7 +62,7 @@ if nargin~=2
 
     % Write SBATCH file
     SBopts = {'partition',opts.Partition, 'cores',cores, 'mem',mem, 'walltime',walltime,...
-        'username',opts.username, 'inputs_fname',fname_inputs};
+        'username',opts.username, 'inputs_fname',fname_inputs,'acctname','cgalban0'};
     if opts.Nodes > 1
         SBopts = [SBopts,{'array',opts.Nodes}];
     end
