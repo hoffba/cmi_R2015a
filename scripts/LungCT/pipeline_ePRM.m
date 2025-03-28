@@ -41,7 +41,7 @@ finalCTAtable = cta_csv(img, voi, caseID, info, {'PRM'}, pSize, fn_log);
 
 % Load data used to make original Elastic Graph Model
 path_ePRM = fullfile(fileparts(which('cmi')),'scripts/LungCT/ePRM');
-origDataFile = fullfile(path_ePRM,'caseSelection_ID_Final300_random.csv');
+origDataFile = fullfile(path_ePRM,'caseSelection_ID_Final300_random_V.csv');
 if isfile(origDataFile)
     origData = readtable(origDataFile,'VariableNamingRule','preserve');
 else
@@ -52,11 +52,11 @@ end
 rootNode = 1;
 numComp = 3; % based on original Elastic Graph Model
 % Extract the same features
-m = contains(finalCTAtable.Properties.VariableNames, ["norm.v" "fsad.v" "emph.v" "pd.v"]);
+vnames = {'norm_v','fsad_v','emph_v','pd_v'};
+m = contains(finalCTAtable.Properties.VariableNames, vnames);
 X_case = finalCTAtable{:,m};
-m_ref = contains(origData.Properties.VariableNames, ["norm.v" "fsad.v" "emph.v" "pd.v"]);
+m_ref = contains(origData.Properties.VariableNames, vnames);
 X_ref = origData{:,m_ref};
-
 
 % Calculate normalization statistics from reference data only
 mean_val_original = mean(X_ref, 1);
@@ -143,7 +143,7 @@ PseudoTimeTraj = quantify_pseudotime_from_python(all_trajectories, all_trajector
 % Save only your points using the modified function
 CTA = save_point_projections_in_table_yours(vec_labels_by_branches, PseudoTimeTraj, fn_results, your_data_size, finalCTAtable);
 % After calculating pseudotime
-feature_name = 'fsad.v';
+feature_name = 'fsad_v';
 fn_results = fullfile(savepath, [caseID '_' feature_name '_tree.png']);
 % Call visualization function
 visualize_eltree_from_python(tree_elpi, score_case, finalCTAtable, feature_name, fn_results);
@@ -291,7 +291,7 @@ for j = 1:size(img_rs,4)
                 mask = pat_mask{ii,1}; mask(isnan(mask)) = 0;
                 for mf_i = 1:1 % set to only generate volume density
                     p(1,count_PRM) = calcMF3D(BW,info.PixelDimensions,mf_i-1,logical(mask)); % topology of PRM
-                    prmStr = "Y.Z";
+                    prmStr = "Y_Z";
                     prmStr = strrep(prmStr,"Y",prm_class{prm_i});
                     prmStr = strrep(prmStr,"Z",prm_top{mf_i});
                     prmLabel = [prmLabel prmStr];
