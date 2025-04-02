@@ -1,4 +1,4 @@
-function [T,p] = dipg_case(ID,TP,C,p)
+function [T,p] = dipg_case_2(ID,TP,C,p)
 % Processing for each case
 % Inputs:
 %   ID = Subject ID (e.g. DMG013)
@@ -6,12 +6,19 @@ function [T,p] = dipg_case(ID,TP,C,p)
 %   C = Catalog entries for this case (cell array)
 %   p = processing options (struct)
 %
-%   
-
+%   Assumes correct geometry info is available for resampling of images to anatomical
+%       - use of identity transform in elastix
+%   Required images:
+%       tumorVOI
+%       FLAIR or T2w corresponding to the tumorVOI
+%       ADC
 
 T = table();
 
 bl_chk = isempty(p.fn_ref);
+
+
+
 
 caseID = [ID,'_',TP];
 casedir = fullfile(p.procdir,ID,TP);
@@ -19,75 +26,127 @@ if ~isfolder(casedir)
     mkdir(casedir);
 end
 
+% Define relevant filenames
+fn_ADC           = fullfile(casedir,[caseID,'.ADC.nii.gz']);
+fn_DWI           = fullfile(casedir,[caseID,'.DWI.b0.nii.gz']);
+fn_Anat          = fullfile(casedir,strcat(caseID,'.',{'FLAIR','FLAIR_post','T2w'},'.nii.gz'));
+fn_postFLAIR     = fullfile(casedir,[caseID,'.FLAIR_post.nii.gz']);
+fn_T2w           = fullfile(casedir,[caseID,'.T2w.nii.gz']);
+fn_CBV           = fullfile(casedir,[caseID,'.nlCBV.nii.gz']);
+
 %% Find relevant image files
 fprintf('\n\n%s : Beginning analysis ...\n',caseID)
+
 % ADC    
-info_adc = [];
-fn_ADC = fullfile(casedir,[caseID,'.ADC.nii.gz']);
-if ~isfile(fn_ADC)
-    ind = find(strcmp(C.Tag,'ADC'),1);
-    if isempty(ind)
-        fprintf('%s : Image not found: ADC\n',caseID); return;
-% ----------------- Maybe calculate from DWI or DTI?
-                            % % Assumes b-values of 0 and 1000
-                            % img = img(:,:,:,2)./img(:,:,:,1);
-                            % img(isnan(img) | isinf(img)) = 0;
-                            % if mean(img,"all")>1
-                            %     img = 1./img;
-                            %     img(isnan(img) | isinf(img)) = 0;
-                            % end
-                            % img = -log(img);
-    else
-        % Load DICOM and save as Nifti
-        [img,~,fov,orient,~] = readDICOM(C.DataPath{ind},'noprompt');
-        % Account for undocumented image scaling (found in a handful of Philips cases)
-        v = mode(img,'all');
-        if abs(v) > 0.1 % Background should be around 0
-            img = img - v;
+    info_adc = [];
+    if isfile(fn_ADC)
+        fprintf('%s : ADC.nii file found',caseID);
+
+        % Double-check ADC data
+        % Need ADC values in units of x10^-3 mm^2/s
+        [img,~,fov,orient,~] = readNIFTI(fn_ADC);
+        info_adc = struct('fov',fov,'orient',orient,'dim',size(img));
+        s = round(log10(mean(img(img>0))));
+        if s~=1
+            fprintf(' ... scale incorrect, scaling by 10^-%d',s);
+            saveNIFTI(fn_ADC,img/10^s,[caseID,'_ADC'],fov,orient);
         end
-        % Make sure ADC scale is correct
-        img = img(:,:,:,1)./10.^round(log10(squeeze(prctile(img(:,:,:,1),95,'all'))'));
+        fprintf('\n');
+    else
+        ind = find(strcmp(C.Tag,'ADC'),1);
+        if isempty(ind)
+            fprintf('%s : Image not found: ADC\n',caseID); return;
+    % ----------------- Maybe calculate from DWI or DTI?
+                                % % Assumes b-values of 0 and 1000
+                                % img = img(:,:,:,2)./img(:,:,:,1);
+                                % img(isnan(img) | isinf(img)) = 0;
+                                % if mean(img,"all")>1
+                                %     img = 1./img;
+                                %     img(isnan(img) | isinf(img)) = 0;
+                                % end
+                                % img = -log(img);
+        else
+            fprintf('%s : Converting ADC from DICOM\n',caseID);
+
+            % Load DICOM and save as Nifti
+            [img,~,fov,orient,~] = readDICOM(C.DataPath{ind},'noprompt');
+            img = img(:,:,:,1);
+
+            % Account for undocumented image scale intersection
+            %       (found in a handful of Philips cases)
+            v = mode(img,'all'); % This should be the background
+            if abs(v) > 0.1 % Background should be around 0
+                img = img - v;
+            end
+
+            % Make sure ADC scale is correct
+            img = img / 10^round(log10(mean(img(img>0))));
+        end
+
+        % Save ADC map to Nifti (units of x10^-3 mm^2/s)
+        saveNIFTI(fn_ADC,img,[caseID,'_ADC'],fov,orient);
+        info_adc = struct('fov',fov,'orient',orient,'dim',size(img));
     end
-    % Save ADC map to Nifti (units of x10^-3 mm^2/s)
-    saveNIFTI(fn_ADC,img,[caseID,'_ADC'],fov,orient);
-    info_adc = struct('fov',fov,'orient',orient,'dim',size(img,[1,2,3]));
-end
 
 % DWI
-fn_b0 = fullfile(casedir,[caseID,'.DWI.b0.nii.gz']);
-if ~isfile(fn_b0)
-    ind = find(strcmp(C.Tag,'DWI'),1);
-    if isempty(ind)
-        ind = find(strcmp(C.Tag,'DTI'),1);
-    end
-    if isempty(ind)
-        fprintf('%s : Image not found: DWI\n',caseID); return;
-    else
-        % Load DICOM and save as Nifti
-        img = readDICOM(C.DataPath{ind},'noprompt');
-        if all(size(img,[1,2,3])==info_adc.dim)
-            saveNIFTI(fn_b0,img(:,:,:,1),[caseID,'_b0'],info_adc.fov,info_adc.orient);
+    if ~isfile(fn_DWI)
+        ind = find(strcmp(C.Tag,'DWI'),1);
+        if isempty(ind)
+            ind = find(strcmp(C.Tag,'DTI'),1);
+        end
+        if isempty(ind)
+            fprintf('%s : Image not found: DWI\n',caseID); return;
+        else
+            fprintf('%s : Converting DWI image from DICOM\n',caseID);
+            % Load DICOM and save as Nifti
+            img = readDICOM(C.DataPath{ind},'noprompt');
+            if all(size(img,[1,2,3])==info_adc.dim)
+                mx = max(img,[],[1,2,3]);
+                ind = find(mx==max(mx),1);
+                saveNIFTI(fn_DWI,img(:,:,:,ind),[caseID,'_b0'],info_adc.fov,info_adc.orient);
+            end
         end
     end
-end
 
 % tumorVOI
-tagFLAIR = {'FLAIR','FLAIR_post'};
-fn_tVOI = strcat(caseID,'.',tagFLAIR,'.tumorVOI.nii.gz');
-ind = find(isfile(fullfile(casedir,fn_tVOI)),1);
-if isempty(ind)
-    % Try to copy from VOI folder
-    fn = fullfile(p.voidir,fn_tVOI);
-    ind = find(isfile(fn),1);
-    if isempty(ind)
-        fprintf('%s : Tumor VOI not found.\n',caseID); return;
+    fn_VOI = dir(fullfile(casedir,'*.tumorVOI.nii.gz'));
+    if isempty(fn_VOI)
+        fprintf('%s : Tumor VOI not found.\n',caseID);
     else
-        tagFLAIR = tagFLAIR{ind};
-        fn_tVOI = fullfile(casedir,fn_tVOI{ind});
-        copyfile(fn_tVOI,casedir);
+        reftag = extractBetween(fn_VOI,[caseID,'.'],'.tumorVOI.nii.gz');
+        fn_VOI = fullfile(casedir,fn_VOI.name);
+        switch reftag
+            case 'FLAIR'
+                fn_ref = fn_FLAIR;
+            case 'FLAIR_post'
+                fn_ref = fn_postFLAIR;
+            case 'T2w'
+                fn_ref = fn_T2w;
+        end
+        fprintf('%s : Found tumorVOI file for image: %s\n',caseID,reftag);
     end
-else
-    tagFLAIR = tagFLAIR{ind};
+% tagFLAIR = {'FLAIR','FLAIR_post'};
+% fn_tVOI = strcat(caseID,'.',tagFLAIR,'.tumorVOI.nii.gz');
+% ind = find(isfile(fullfile(casedir,fn_tVOI)),1);
+% if isempty(ind)
+%     % Try to copy from VOI folder
+%     fn = fullfile(p.voidir,fn_tVOI);
+%     ind = find(isfile(fn),1);
+%     if isempty(ind)
+%         fprintf('%s : Tumor VOI not found.\n',caseID); return;
+%     else
+%         tagFLAIR = tagFLAIR{ind};
+%         fn_tVOI = fullfile(casedir,fn_tVOI{ind});
+%         copyfile(fn_tVOI,casedir);
+%     end
+% else
+%     tagFLAIR = tagFLAIR{ind};
+% end
+
+% Find other files
+tag = {'FLAIR','FLAIR_post','T2w','nlCBV'};
+for i = 1:numel(tag)
+
 end
 
 % FLAIR
@@ -103,7 +162,7 @@ if ~isfile(fn_FLAIR)
     end
 end
 
-% T2w - high-res image for cross-timepoint registration and base geometry
+% T2w
 fn_T2w = fullfile(casedir,[caseID,'.T2w.nii.gz']);
 if ~isfile(fn_T2w)
     ind = find(strcmp(C.Tag,'T2w'),1);
@@ -117,7 +176,16 @@ if ~isfile(fn_T2w)
 end
 
 
-%% Perform within-timepoint registrations to T2w (affine)
+if isempty(p.fn_ref)
+    % Perform within-timepoint resampling to anatomical image (with tumor VOI)
+
+
+    transform_identity(fn_ref,fullfile(odir,fn{j}),nn_flag(j));
+
+else
+    % Perform longitudinal registration to baseline anatomical image
+end
+
 
 % DWI for ADC
 fn_reg = fullfile(p.regdir,[caseID,'.reg.ADC.nii.gz']);
@@ -343,5 +411,3 @@ function dipg_mtform(caseID,casedir,p,bl_chk)
             end
         end
     end
-
-function calc_fDM()

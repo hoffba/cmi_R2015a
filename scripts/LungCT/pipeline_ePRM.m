@@ -1,4 +1,4 @@
-function x = pipeline_ePRM(caseID,procdir,prm,voi,info,imgTag,fn_log)
+function pipeline_ePRM(caseID,procdir,prm,voi,info,imgTag,fn_log)
 % Inputs:
 %   caseID = label for case being processed
 %   procdir = case directory for processing
@@ -6,6 +6,12 @@ function x = pipeline_ePRM(caseID,procdir,prm,voi,info,imgTag,fn_log)
 %   voi = Exp segmentation
 %   info = 
 %   imgTag = flag to map results to 3D image space
+
+% Check OS - currently only set up for Windows
+if ~ispc
+    writeLog(fn_log,'ePRM analysis currently only set up for Windows workstations');
+    return;
+end
 
 % Check for Matlab version R2024b
 mver = version('-release');
@@ -32,12 +38,15 @@ if ~isfolder(savepath)
     mkdir(savepath);
 end
 
+% Write separate log for ePRM details
+log_ePRM = fullfile(savepath,[caseID,'_ePRM.log']);
+
 % Resize data
 voi = single(imresize3(logical(voi), imSizeNew, 'nearest'));
 img = single(imresize3(prm, imSizeNew, 'nearest'));
 
 % Save 
-finalCTAtable = cta_csv(img, voi, caseID, info, {'PRM'}, pSize, fn_log);
+finalCTAtable = cta_csv(img, voi, caseID, info, {'PRM'}, pSize, log_ePRM);
 
 % Load data used to make original Elastic Graph Model
 path_ePRM = fullfile(fileparts(which('cmi')),'scripts/LungCT/ePRM');
@@ -115,6 +124,7 @@ hf = figure('Position', [100, 100, 1200, 400]);
     grid(ha,'on');
 sgtitle(hf,'Comparison of Case PCA with VOX Model PCA (After Alignment)');
 saveas(hf, fullfile(savepath, 'pca_alignment_check.png'));
+close(hf);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup Enviroment
@@ -124,12 +134,12 @@ pyenv('Version', pypath, 'ExecutionMode', 'OutOfProcess');
 % Find the VOX file exactly
 fn_vox = fullfile(path_ePRM,'caseSelection_ID_Final300_random_Vonly_n40__VOX1');
 if ~isfile(fn_vox)
-    writeLog(fn_log,'ePRM - error: VOX file not found\n');
+    writeLog({fn_log,log_ePRM},'ePRM - error: VOX file not found\n');
 end
 % Set output path
 fn_results = fullfile(savepath, [caseID '_clintrajan_results.csv']);
-writeLog(fn_log,'Number of points in current case: %d\n', your_data_size);
-writeLog(fn_log,'Total points after adding reference data: %d\n', size(score, 1));
+writeLog(log_ePRM,'Number of points in current case: %d\n', your_data_size);
+writeLog(log_ePRM,'Total points after adding reference data: %d\n', size(score, 1));
 % Load the VOX file to get the pre-trained tree structure 
 tree_elpi = load_and_process_tree(score_case, fn_vox);
 % Data Partition - use full score but track only your points
@@ -212,13 +222,11 @@ if imgTag
     M1 = reshape(M,[32 32 32]);
     M1_idx = reshape(M_idx,[32 32 32]);
     % I put the rescaled data back to the original dimensions.
-    finalCTAmap = imresize3(M1, info.ImageSize, 'nearest');
-    finalIDXmap = imresize3(M1_idx, info.ImageSize, 'nearest');
+    finalCTAmap = imresize3(M1, info.d, 'nearest');
+    finalIDXmap = imresize3(M1_idx, info.d, 'nearest');
 
-    fov = info.PixelDimensions .* info.ImageSize;
-    orient = diag([-1 -1 1 1]) * info.Transform.T';
-    saveNIFTI(fullfile(savepath,[caseID,'.CTAMap.nii.gz']),finalCTAmap,{'CTAmap'},fov,orient);
-    saveNIFTI(fullfile(savepath,[caseID,'.IDXMap.nii.gz']),finalIDXmap,{'IDXmap'},fov,orient);
+    saveNIFTI(fullfile(savepath,[caseID,'.CTAMap.nii.gz']),finalCTAmap,{'CTAmap'},info.fov,info.orient);
+    saveNIFTI(fullfile(savepath,[caseID,'.IDXMap.nii.gz']),finalIDXmap,{'IDXmap'},info.fov,info.orient);
 end
 
 
@@ -290,7 +298,7 @@ for j = 1:size(img_rs,4)
                 BW = ismember(pat{ii,1},prm_Inc);
                 mask = pat_mask{ii,1}; mask(isnan(mask)) = 0;
                 for mf_i = 1:1 % set to only generate volume density
-                    p(1,count_PRM) = calcMF3D(BW,info.PixelDimensions,mf_i-1,logical(mask)); % topology of PRM
+                    p(1,count_PRM) = calcMF3D(BW,info.voxsz,mf_i-1,logical(mask)); % topology of PRM
                     prmStr = "Y_Z";
                     prmStr = strrep(prmStr,"Y",prm_class{prm_i});
                     prmStr = strrep(prmStr,"Z",prm_top{mf_i});
