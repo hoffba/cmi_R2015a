@@ -366,7 +366,7 @@ try
     end
 
     % Register I2E
-    if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm)
+    if img(1).flag && img(2).flag && (opts.reg || opts.prm || opts.tprm || opts.eprm)
         ins_reg = [];
         elxdir = fullfile(procdir,sprintf('elastix_%s',ID));
         if exist(opts.fn.reg,'file')
