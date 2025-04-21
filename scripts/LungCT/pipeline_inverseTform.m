@@ -9,10 +9,10 @@ function Mreg = pipeline_inverseTform(procdir,M,voxsz,orient)
 [~,ID] = fileparts(procdir);
 fn_ref = fullfile(procdir,[ID,'.exp.nii.gz']);
 fn_seg = fullfile(procdir,[ID,'.exp.label.nii.gz']);
-fn_hom = fullfile(procdir,[ID,'.ins.nii.gz']);
+% fn_hom = fullfile(procdir,[ID,'.ins.nii.gz']);
 path_elx = fullfile(procdir,['elastix_',ID]);
 
-if isfile(fn_ref) && isfile(fn_seg) && isfile(fn_hom) && isfolder(path_elx)
+if isfile(fn_ref) && isfile(fn_seg) && isfolder(path_elx)
 
     % Inverse transform
     fn_tfi = dir(fullfile(path_elx,'InverseTransformParameters.*.txt'));
