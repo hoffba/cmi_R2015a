@@ -51,18 +51,26 @@ classdef PRMclass < Mat3Dclass
             end
             self = self@Mat3Dclass(obj);
             % Find files containing PRM settings
-            self.prmdir = fullfile(fileparts(which('cmi')),'PRMdefs');
-            if ~isfolder(self.prmdir)
-                mkdir(self.prmdir);
-            end
-            pdefs = dir(fullfile(self.prmdir,'*PRMdef*.mat'));
-            pdefs = {pdefs(:).name};
-            idef = find(contains(pdefs,'RGB'),1);
-            if isempty(idef)
-                idef = 1;
-            end
-            self.loadPRMdefs(fullfile(self.prmdir,pdefs{idef}));
-            self.nprm = size(self.cmap,1);
+            % self.prmdir = fullfile(fileparts(which('cmi')),'PRMdefs');
+            % if ~isfolder(self.prmdir)
+            %     mkdir(self.prmdir);
+            % end
+            % pdefs = dir(fullfile(self.prmdir,'*PRMdef*.mat'));
+            % pdefs = {pdefs(:).name};
+            % idef = find(contains(pdefs,'RGB'),1);
+            % if isempty(idef)
+            %     idef = 1;
+            % end
+            % self.loadPRMdefs(fullfile(self.prmdir,pdefs{idef}));
+
+                self.setOpts('thresh',[2,3,1,-.55; 2,3,1,.55],...
+                             'prmmap',{[false false], 'ADC_-';...
+                                       [true  false], 'ADC_0';...
+                                       [true  true], 'ADC_+'},...
+                             'cutoff',[2,0.0001,3 ; 3,0.0001,3],...
+                             'cmap',flip(eye(3)),...
+                             'statchk',false);            
+                self.nprm = size(self.cmap,1);
                 tval = self.thresh(:,1:2);
                 tval = unique(tval(:));
             self.dvec = tval(:)';

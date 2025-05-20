@@ -510,7 +510,7 @@ end
             C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
             
             if ismember('CaseNumber',C.Properties.VariableNames)
-                C = sortrows(C,{'StudyDate','StudyID','PatientName','CaseNumber','SeriesNumber'});
+                C = sortrows(C,{'PatientName','StudyID','StudyDate','CaseNumber','SeriesNumber'});
                 [~,~,ugroups_ic] = unique(C.CaseNumber);        % Find unique CaseNumbers
                 ugroups_ic = [0;cumsum(diff(ugroups_ic)~=0)]+1; % Re-number case groups
                 C.CaseNumber = ugroups_ic;
@@ -519,7 +519,7 @@ end
                 % Remove cases with no identifiers
                 C(cellfun(@isempty,C.UMlabel),:) = [];
                 % Sort by identifiers
-                C = sortrows(C,{'StudyDate','StudyID','PatientName','SeriesNumber'});
+                C = sortrows(C,{'PatientName','StudyID','StudyDate','SeriesNumber'});
                 % Find case groupings
                 [~,ugroups_ia,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
             end

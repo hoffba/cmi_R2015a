@@ -1,4 +1,4 @@
-function fn = brainReg(procdir,ref,hom,warpflag)
+function [fn_reg,fn_tf] = brainReg(procdir,ref,hom,warpflag)
 % Inputs:
 %   procdir = Folder containing study data
 %   ref = Reference image (Ax MPR):
@@ -12,6 +12,7 @@ function fn = brainReg(procdir,ref,hom,warpflag)
 
 if ischar(ref)
     [img,label,fov,orient,info] = readNIFTI(ref);
+    img(img<0) = 0;
     ref = struct('img',img,'label',label,'fov',fov,'orient',orient,'name',ref,'info',info);
     % Find segmentation to load
     [path_seg,fn_seg] = fileparts(ref.name);
@@ -61,7 +62,7 @@ regObj.addElxStep('Affine','NumberOfResolutions',1,...
                            'SP_a',200,...
                            'NumberOfSpatialSamples',5000,...
                            'DefaultPixelValue',0,...
-                           'WriteResultImage','false');
+                           'WriteResultImage','true');
 if warpflag
     % Warping transform for longitudinal registrations
     fips = [max(round(8./regObj.cmiObj(1).img.voxsz),1),...
@@ -82,7 +83,7 @@ if warpflag
                          'FinalGridSpacingInVoxels',gsp(4:6),...
                          'TransformBendingEnergy',10,...
                          'DefaultPixelValue',0,...
-                         'WriteResultImage','false');
+                         'WriteResultImage','true');
 end
 
 if ~isfolder(odir)
@@ -94,4 +95,5 @@ regObj.setWait(true);
 [stat,cmdstr] = regObj.runElx(false);
 
 % Return name of registered image
-fn = fullfile(odir,[homname,'_R.nii']);
+fn_reg = fullfile(odir,[homname,'_R.nii']);
+fn_tf = fullfile(odir,sprintf('TransformParameters.%d.txt',warpflag));

@@ -1,6 +1,6 @@
 function T = addResultToTable(T,tT,varnames)
 % Add table result (tT) to table T
-
+try
     if nargin==3 && ~isempty(varnames)
         tT = tT(:,ismember(tT.Properties.VariableNames,varnames));
     end
@@ -43,3 +43,6 @@ function T = addResultToTable(T,tT,varnames)
             T.(vname)((nr0+1):end) = tT.(vname);
         end
     end
+catch err
+    disp('err')
+end

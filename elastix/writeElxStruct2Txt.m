@@ -22,6 +22,9 @@ if ~isempty(fname)
                 str = sprintf(' % .8f',tval);
             elseif ischar(tval)
                 str = [' "',tval,'"'];
+                if ismember('\',str)
+                    str = regexprep(str,'(?<=[^\\])\\(?=[^\\])','\\\\');
+                end
             elseif iscellstr(tval)
                 str = sprintf(' "%s"',tval{:});
             end

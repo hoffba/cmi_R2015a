@@ -164,8 +164,7 @@ end
 function missing_flag = checkRequiredPackages(python_path)
 
     % Check for required Python packages
-    required_packages = {'numpy', 'scipy', 'igraph', 'networkx', 'elpigraph',        'sklearn'};
-    install_name =      {'numpy', 'scipy', 'igraph', 'networkx', 'elpigraph-python', 'scikit-learn'};
+    required_packages =      {'numpy', 'scipy', 'igraph', 'networkx', 'elpigraph-python', 'scikit-learn'};
     np = numel(required_packages);
     missing_flag = false(1,np);
     
@@ -188,7 +187,7 @@ function missing_flag = checkRequiredPackages(python_path)
     for i = 1:np
         if missing_flag(i)
             if ispc
-                missing_flag(i) = system(sprintf('"%s" -m pip install %s',python_path,install_name{i}));
+                missing_flag(i) = system(sprintf('"%s" -m pip install %s',python_path,required_packages{i}));
             end
         end
     end
