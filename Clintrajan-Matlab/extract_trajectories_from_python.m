@@ -1,4 +1,4 @@
-function [all_trajectories, all_trajectories_edges] = extract_trajectories_from_python(tree_elpi, root_node)
+function [all_trajectories, all_trajectories_edges] = extract_trajectories_from_python(tree_elpi, procdir, root_node)
     
     
     % 1) Create Python script for trajectory extraction
@@ -59,14 +59,14 @@ function [all_trajectories, all_trajectories_edges] = extract_trajectories_from_
         'if __name__ == "__main__":\n',...
         '    import sys\n',...
         '    compute_trajectories(sys.argv[1], sys.argv[2])\n']);
-    script_file = 'temp_extract_traj.py';
+    script_file = fullfile(procdir,'temp_extract_traj.py');
     fid = fopen(script_file, 'w');
     fprintf(fid, '%s', python_script);
     fclose(fid);
     
     % 2) Prepare input MAT file for Python
-    input_file = 'temp_traj_input.mat';
-    output_file = 'temp_traj_output.mat';
+    input_file = fullfile(procdir,'temp_traj_input.mat');
+    output_file = fullfile(procdir,'temp_traj_output.mat');
     
     % If 'Edges' is in a cell, extract the numeric array
     if iscell(tree_elpi.Edges)
@@ -84,7 +84,7 @@ function [all_trajectories, all_trajectories_edges] = extract_trajectories_from_
     [status, commandOutput] = system(command);
     
     if status ~= 0
-        fprintf('Python script failed with error:\n%s\n', cmdout);
+        fprintf('Python script failed with error:\n%s\n', commandOutput);
         error('Python script execution failed');
     end
     

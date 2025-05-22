@@ -141,15 +141,15 @@ fn_results = fullfile(savepath, [caseID '_clintrajan_results.csv']);
 writeLog(log_ePRM,'Number of points in current case: %d\n', your_data_size);
 writeLog(log_ePRM,'Total points after adding reference data: %d\n', size(score, 1));
 % Load the VOX file to get the pre-trained tree structure 
-tree_elpi = load_and_process_tree(score_case, fn_vox);
+tree_elpi = load_and_process_tree(score_case, savepath, fn_vox);
 % Data Partition - use full score but track only your points
-[vec_labels_by_branches, ~] = partition_data_from_python(score_case, tree_elpi);
+[vec_labels_by_branches, ~] = partition_data_from_python(score_case, procdir, tree_elpi);
 % Extract Trajectories
-[all_trajectories, all_trajectories_edges] = extract_trajectories_from_python(tree_elpi, rootNode);
+[all_trajectories, all_trajectories_edges] = extract_trajectories_from_python(tree_elpi, procdir, rootNode);
 % Project data onto tree
-ProjStruct = project_on_tree_from_python(score_case, tree_elpi);
+ProjStruct = project_on_tree_from_python(score_case, procdir, tree_elpi);
 % Calculate pseudotime for all points
-PseudoTimeTraj = quantify_pseudotime_from_python(all_trajectories, all_trajectories_edges, ProjStruct);
+PseudoTimeTraj = quantify_pseudotime_from_python(procdir, all_trajectories, all_trajectories_edges, ProjStruct);
 % Save only your points using the modified function
 CTA = save_point_projections_in_table_yours(vec_labels_by_branches, PseudoTimeTraj, fn_results, your_data_size, finalCTAtable);
 % After calculating pseudotime

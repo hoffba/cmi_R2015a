@@ -1,10 +1,15 @@
-function Mreg = pipeline_inverseTform(procdir,M,voxsz,orient)
+function Mreg = pipeline_inverseTform(procdir,img,voxsz,orient,flag_nn)
 % Transform images from Ref space (Exp) to Homologous space (Ins)
 % Inputs:
 %   procdir = case processing directory
-%   M       = image matrix to transform
+%   img     = image matrix to transform
 %   voxsz   = voxel dimensions
 %   orient  = affine matrix defining Ref space
+
+Mreg = [];
+if nargin<5
+    flag_nn = true;
+end
 
 [~,ID] = fileparts(procdir);
 fn_ref = fullfile(procdir,[ID,'.exp.nii.gz']);
@@ -32,7 +37,7 @@ if isfile(fn_ref) && isfile(fn_seg) && isfolder(path_elx)
     
     if ~isempty(fn_tfi)
         fprintf('Transforming Ref->Hom ... ');
-        Mreg = transformImage(path_elx,fn_tfi,M,voxsz,orient);
+        Mreg = transformImage(fn_tfi,flag_nn,img,voxsz,orient);
         fprintf('done\n');
     end
 

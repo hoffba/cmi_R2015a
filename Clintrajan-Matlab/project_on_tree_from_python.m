@@ -1,4 +1,4 @@
-function ProjStruct = project_on_tree_from_python(X, tree_elpi)
+function ProjStruct = project_on_tree_from_python(X, procdir, tree_elpi)
     % Create Python script for projection
     python_path = update_python_paths();
     python_script = sprintf(['import numpy as np\n',...
@@ -61,14 +61,14 @@ function ProjStruct = project_on_tree_from_python(X, tree_elpi)
         '    import sys\n',...
         '    compute_projection(sys.argv[1], sys.argv[2])\n']);
     % Save Python script
-    script_file = 'temp_project.py';
+    script_file = fullfile(procdir,'temp_project.py');
     fid = fopen(script_file, 'w');
     fprintf(fid, '%s', python_script);
     fclose(fid);
     
     % Prepare input data
-    input_file = 'temp_proj_input.mat';
-    output_file = 'temp_proj_output.mat';
+    input_file = fullfile(procdir,'temp_proj_input.mat');
+    output_file = fullfile(procdir,'temp_proj_output.mat');
     
     % Handle Edges format from tree_elpi
     if iscell(tree_elpi.Edges)
@@ -87,7 +87,7 @@ function ProjStruct = project_on_tree_from_python(X, tree_elpi)
     [status, commandOutput] = system(command);
     
     if status ~= 0
-        fprintf('Python script failed with error:\n%s\n', cmdout);
+        fprintf('Python script failed with error:\n%s\n', commandOutput);
         error('Python script execution failed');
     end
     

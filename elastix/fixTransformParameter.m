@@ -15,9 +15,11 @@ while go
         if strcmp(full_tp,'NoInitialTransform')
             go = false;
         else
-            % Replace full path with filename
+            % Replace folder path
+            tp_folder = fileparts(fn);
             [~,tp,ext] = fileparts(full_tp);
-            str = regexprep(str,full_tp,[tp,ext]);
+            str = regexprep(str,regexprep(full_tp,'\\','\\\\'),...
+                                regexprep(fullfile(tp_folder,[tp,ext]),'\\','\\\\'));
             fid = fopen(fn,'w');
             fprintf(fid,'%s',str);
             fclose(fid);

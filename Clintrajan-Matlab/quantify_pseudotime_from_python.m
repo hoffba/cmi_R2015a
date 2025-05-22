@@ -1,4 +1,4 @@
-function PseudoTimeTraj = quantify_pseudotime_from_python(all_trajectories, all_trajectories_edges, ProjStruct)
+function PseudoTimeTraj = quantify_pseudotime_from_python(procdir, all_trajectories, all_trajectories_edges, ProjStruct)
     
     
     % 1) Build the Python script
@@ -74,7 +74,7 @@ function PseudoTimeTraj = quantify_pseudotime_from_python(all_trajectories, all_
         '    import sys\n',...
         '    compute_pseudotime(sys.argv[1], sys.argv[2])\n']);
    
-    script_file = 'temp_pseudotime.py';
+    script_file = fullfile(procdir,'temp_pseudotime.py');
     fid = fopen(script_file, 'w');
     fprintf(fid, '%s', python_script);
     fclose(fid);
@@ -99,8 +99,8 @@ function PseudoTimeTraj = quantify_pseudotime_from_python(all_trajectories, all_
     trajectories = traj_matrix;
     edges        = edge_matrix;
     Edges        = EdgesGraph;
-    input_file  = 'temp_pseudotime_input.mat';
-    output_file = 'temp_pseudotime_output.mat';
+    input_file  = fullfile(procdir,'temp_pseudotime_input.mat');
+    output_file = fullfile(procdir,'temp_pseudotime_output.mat');
     save(input_file, ...
          'trajectories', 'edges', ...
          'ProjectionValues', 'EdgeID', 'Edges', ...
@@ -112,7 +112,7 @@ function PseudoTimeTraj = quantify_pseudotime_from_python(all_trajectories, all_
     [status, commandOutput] = system(command);
     
     if status ~= 0
-        fprintf('Python script failed with error:\n%s\n', cmdout);
+        fprintf('Python script failed with error:\n%s\n', commandOutput);
         error('Python script execution failed');
     end
     

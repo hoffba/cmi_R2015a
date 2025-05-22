@@ -52,6 +52,9 @@ if ~isfolder(tdir)
     mkdir(tdir);
 end
 
+% Fix parameter files - make sure file paths are correct
+fixTransformParameter(fn_tf);
+
 % Generate Elastix call and run
 cmdstr = elx.sysCmd(tdir,'wait',true,'f',fn_ref,'m',fn_ref,segin{:});
 system(cmdstr);

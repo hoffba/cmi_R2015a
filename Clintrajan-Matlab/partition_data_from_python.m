@@ -1,4 +1,4 @@
-function [vec_labels_by_branches, partition_by_node] = partition_data_from_python(X, tree_elpi)
+function [vec_labels_by_branches, partition_by_node] = partition_data_from_python(X, procdir, tree_elpi)
     % Create Python script for partitioning
     python_path = update_python_paths();
     python_script = sprintf(['import numpy as np\n',...
@@ -156,14 +156,14 @@ function [vec_labels_by_branches, partition_by_node] = partition_data_from_pytho
         '    import sys\n',...
         '    compute_partitions(sys.argv[1], sys.argv[2])\n']);
     % Save script and execute
-    script_file = 'temp_partition_script.py';
+    script_file = fullfile(procdir,'temp_partition_script.py');
     fid = fopen(script_file, 'w');
     fprintf(fid, '%s', python_script);
     fclose(fid);
     
     % Prepare input data
-    input_file = 'temp_partition_input.mat';
-    output_file = 'temp_partition_output.mat';
+    input_file = fullfile(procdir,'temp_partition_input.mat');
+    output_file = fullfile(procdir,'temp_partition_output.mat');
     
     % Handle Edges format
     if iscell(tree_elpi.Edges)
@@ -182,7 +182,7 @@ function [vec_labels_by_branches, partition_by_node] = partition_data_from_pytho
     [status, commandOutput] = system(command);
     
     if status ~= 0
-        fprintf('Python script failed with error:\n%s\n', cmdout);
+        fprintf('Python script failed with error:\n%s\n', commandOutput);
         error('Python script execution failed');
     end
     

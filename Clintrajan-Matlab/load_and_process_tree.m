@@ -1,4 +1,4 @@
-function [tree_extended] = load_and_process_tree(X, vox_filepath)
+function [tree_extended] = load_and_process_tree(X,procdir,vox_filepath)
     % Create Python script for loading VOX and processing tree
     python_path = update_python_paths();
     python_script = sprintf([...
@@ -212,7 +212,6 @@ function [tree_extended] = load_and_process_tree(X, vox_filepath)
         '    import sys\n',...
         '    load_and_process(sys.argv[1], sys.argv[2], sys.argv[3])\n']);
     % Save Python script
-    procdir = fileparts(vox_filepath);
     script_file = fullfile(procdir,'temp_load_process.py');
     fid = fopen(script_file, 'w');
     fprintf(fid, '%s', python_script);
