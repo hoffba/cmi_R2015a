@@ -9,7 +9,7 @@ function [score_aligned, score_case_aligned, coeff_aligned, flip_report] = align
     num_components = min(size(score, 2), size(vox_pca, 2));
     
     % Sample size for analysis
-    sample_size = min(1000, min(size(score,1), size(vox_pca,1)));
+    sample_size = min(size(score,1), size(vox_pca,1));
     
     % Pre-compute all correlations and skewness values
     all_corr_matrix = zeros(num_components, num_components);
@@ -42,7 +42,7 @@ function [score_aligned, score_case_aligned, coeff_aligned, flip_report] = align
         should_flip = false;
         reason = '';
         
-        if sign_diff && skew_diff > 0.5
+        if sign_diff && skew_diff > 0.4
             should_flip = true;
             reason = 'Opposite significant skewness';
         end

@@ -503,7 +503,7 @@ try
         % Transform airway tree to EXP space
         if opts.airsim
             writeLog(fn_log,'Transforming airway simulation to EXP...\n')
-            airwaytree2exp(procdir);
+            % airwaytree2exp(procdir);
         end
 
         % PRM calculation

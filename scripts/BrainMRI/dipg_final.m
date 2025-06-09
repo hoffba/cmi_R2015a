@@ -45,7 +45,7 @@ function res = dipg_final(T)
             BLi = i;
         end
 
-        t = dipg_case_final(basedir,T(i,:),T(BLi,:),cmiobj);
+        t = dipg_case_final(basedir,T(i,:),T(BLi,:),cmiobj); 
         if isempty(t)
             
         else
@@ -57,6 +57,6 @@ function res = dipg_final(T)
     cmiobj.delete;
 
     % Write results to study folder
-    if ~isempty(T)
+    if ~isempty(res)
         writetable(res,fullfile(basedir,'DIPG.AllResults.xlsx'));
     end

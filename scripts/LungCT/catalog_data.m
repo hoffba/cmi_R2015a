@@ -1,4 +1,4 @@
-function T = catalog_data(path,gflag)
+function T = catalog_data(searchpath,gflag)
 
 if nargin<2
     gflag = false;
@@ -11,8 +11,8 @@ if gflag
 end
 
 % Search for DICOMs
-filtstr = {'1.*','*.1','*.dcm','','*.IMA'};
-[D,F] = dirtree(path,filtstr);
+filtstr = {'1.*','*.1','*.dcm','*.IMA'};
+[D,F] = dirtree(searchpath,filtstr);
 % Files to exclude (endsWith):
 exlstr = {'.bmp'};
 
@@ -20,7 +20,7 @@ if isempty(D)
     % Search for image files
     filtstr = {'mhd','nii','nii.gz'};
     for i = 1:numel(filtstr)
-        fn = dir(fullfile(path,'**',['*.',filtstr{i}]));
+        fn = dir(fullfile(searchpath,'**',['*.',filtstr{i}]));
         for j = 1:numel(fn)
             % Extract UMlabel and Date
             %   UMlabel becomes the first string before _
@@ -150,7 +150,7 @@ if ~isempty(T)
     [~,~,ugroups_ic] = unique(strcat(T.StudyID,T.PatientName,T.StudyDate));
     T.CaseNumber = ugroups_ic;
 
-    writetable(T,fullfile(path,'Data_Catalog.csv'));
+    writetable(T,fullfile(searchpath,'Data_Catalog.csv'));
 end
 
 if gflag && isvalid(hw)

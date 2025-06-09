@@ -7,6 +7,13 @@ function pipeline_ePRM(caseID,procdir,prm,voi,info,imgTag,fn_log)
 %   info = 
 %   imgTag = flag to map results to 3D image space
 
+if nargin<7
+    fn_log = '';
+end
+if nargin<6
+    imgTag = false;
+end
+
 % Check OS - currently only set up for Windows
 if ~ispc
     writeLog(fn_log,'ePRM analysis currently only set up for Windows workstations');
@@ -85,12 +92,14 @@ your_data_size = size(finalCTAtable, 1);
 % Load VOX PCA data
 vox_pca = readmatrix(fullfile(path_ePRM, 'model_pca_data.txt'));
 
-% Align PCA components
-[score_aligned, score_case_aligned, ~, ~] = align_pca_components(score, score_case, coeff, vox_pca);
-
-% Use aligned scores for subsequent analysis
-score = score_aligned;
-score_case = score_case_aligned(1:your_data_size, :);
+% ~~~~~~~ commented by Ali Namvar 20250605 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% % Align PCA components
+% [score_aligned, score_case_aligned, ~, ~] = align_pca_components(score, score_case, coeff, vox_pca);
+% 
+% % Use aligned scores for subsequent analysis
+% score = score_aligned;
+% score_case = score_case_aligned(1:your_data_size, :);
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 % Create visualization to compare with VOX model PCA after alignment
 hf = figure('Position', [100, 100, 1200, 400]);

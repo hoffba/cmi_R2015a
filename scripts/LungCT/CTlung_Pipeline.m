@@ -537,7 +537,7 @@ end
             if ischar(fn)
                 cat_path = fileparts(fn);
                 for ifn = 1:size(C,1)
-                    tpath = extractAfter(C.DataPath{ifn},cat_path);
+                    tpath = extractAfter(C.DataPath{ifn},cat_path(2:end));
                     C.DataPath{ifn} = fullfile(cat_path,tpath);
                 end
             end

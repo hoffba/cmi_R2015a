@@ -13,10 +13,13 @@ newp = genpath(pwd);
 newp = strsplit(newp,pathsep);
 
 % Remove .git folders:
-newp(contains(newp,'.git')) = [];
+newp(startsWith(newp,'.git')) = [];
 
 % Remove OLD folders:
 newp(contains(newp,'OLD')) = [];
+
+% Remove doc folders
+newp(startsWith(newp,'doc','IgnoreCase',true)) = [];
 
 % Remove directories already existing in the search path
 p = strsplit(path,pathsep);
