@@ -11,7 +11,7 @@ if gflag
 end
 
 % Search for DICOMs
-filtstr = {'1.*','*.1','*.dcm','*.IMA'};
+filtstr = {'1.*','*.1','*.dcm','*.IMA',''};
 [D,F] = dirtree(searchpath,filtstr);
 % Files to exclude (endsWith):
 exlstr = {'.bmp'};

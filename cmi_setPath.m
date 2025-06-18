@@ -13,7 +13,7 @@ newp = genpath(pwd);
 newp = strsplit(newp,pathsep);
 
 % Remove .git folders:
-newp(startsWith(newp,'.git')) = [];
+newp(contains(newp,'.git')) = [];
 
 % Remove OLD folders:
 newp(contains(newp,'OLD')) = [];

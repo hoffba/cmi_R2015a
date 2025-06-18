@@ -1,4 +1,4 @@
-function transform_identity(fn_ref,fn_hom,nn_flag)
+function fn_save = transform_identity(fn_ref,fn_hom,nn_flag)
 % Uses elastix to interpolate a homologous image to the geometry of a reference image
 % For use with correctly defined image geometry within an acquisition series,
 %       without movement between scans
@@ -61,3 +61,4 @@ system(str);
 movefile(fullfile(odir,'result.nii'),fn_save);
 gzip(fn_save);
 delete(fn_save);
+fn_save = [fn_save,'.gz'];

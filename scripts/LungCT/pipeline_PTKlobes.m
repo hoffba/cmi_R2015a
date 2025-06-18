@@ -15,6 +15,9 @@ try
           (1:lobes.ImageSize(3))+lobes.Origin(3)-1) = lobes.RawImage;
     label = flip(label,3);
 
+    % Cleanup
+    ptk_main.DeleteCacheForAllDatasets;
+
 catch err
     disp(getReport(err));
 end

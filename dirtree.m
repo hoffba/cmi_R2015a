@@ -4,10 +4,12 @@ function [D,F] = dirtree(tpath,filtstr)
 if ischar(filtstr)
     filtstr = {filtstr};
 end
-fn = [];
-for i = 1:numel(filtstr)
-    fn = [fn;dir(fullfile(tpath,['**',filesep,filtstr{i}]))]; %#ok<AGROW>
-end
+fn = dir(fullfile(tpath,'**'));
+fn([fn.isdir]) = [];
+fn(~endsWith({fn.name},filtstr)) = [];
+    % for i = 1:numel(filtstr)
+    %     fn = [fn;dir(fullfile(tpath,['**',filesep,filtstr{i}]))]; %#ok<AGROW>
+    % end
 
 % Remove directories
 fn([fn.isdir]) = [];

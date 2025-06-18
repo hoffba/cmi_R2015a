@@ -1,14 +1,47 @@
-function Mreg = transformImage(save_path,fn_tf,M,voxsz,orient)
+function Mreg = transformImage(fn_tf,flag_nn, M,voxsz,orient)
 
-d = size(M);
+procdir = fileparts(fn_tf);
 
-% Write image to file
-fn_temp = fullfile(save_path,'temp_image.nii');
-saveNIFTI(fn_temp,M,{'temp'},voxsz.*d,orient);
+if ischar(M) && isfile(M)
+    fn_flag = true;
+    fn_M = M;
+elseif isnumeric(M) && nargin==5
+    % Write image to file
+    fn_flag = false;
+    d = size(M);
+    fn_M = fullfile(procdir,'temp_image.nii');
+    saveNIFTI(fn_M,M,{'temp'},voxsz.*d,orient);
+else
+    error('Invalid inputs')
+end
+
+p = readTransformParam(fn_tf);
+p.ResultImageFormat = 'nii';
+% Write new TransformParameter files if NN is needed
+if flag_nn
+    p.ResampleInterpolator = 'FinalNearestNeighborInterpolator';
+    fn_tf = insertBefore(fn_tf,'.txt','.NN');
+end
+writeElxStruct2Txt(p,fn_tf);
 
 % Transformix command
-cmdstr = sprintf('transformix -in "%s" -out "%" -tp "%s"',fn_temp,save_path,fn_tf);
+cmdstr = sprintf('transformix -in "%s" -out "%s" -tp "%s"',fn_M,procdir,fn_tf);
 system(cmdstr);
 
-% Return transformed image
-[Mreg,~,fov,orient,info] = readNIFTI(fullfile());
+if fn_flag
+    % Zip result file
+    fn_result = fullfile(procdir,'result.nii');
+    gzip(fn_result);
+    delete(fn_result);
+    fn_result = [fn_result,'.gz'];
+    % Rename result file
+    [~,fn,ext] = fileparts(fn_M);
+    fn = insertAfter([fn,ext],'.','reg.');
+    Mreg = fullfile(procdir,fn);
+    movefile(fn_result,Mreg);
+else
+    % Return transformed image
+    Mreg = readNIFTI(fullfile(procdir,'result.nii'));
+    % Delete temp image file
+    delete(fn_M);
+end
