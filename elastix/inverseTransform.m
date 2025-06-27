@@ -61,24 +61,25 @@ cmdstr = elx.sysCmd(tdir,'wait',true,'f',fn_ref,'m',fn_ref,segin{:});
 system(cmdstr);
 
 % Prepare gometry variables
-d = info_hom.ImageSize([2 1 3]);
-voxsz = info_hom.PixelDimensions([2,1,3]);
+d = info_hom.ImageSize;
+voxsz = info_hom.PixelDimensions;
 orient = info_hom.Transform.T * diag([-1 -1 1 1]);
-orient = orient([2,1,3,4],[2,1,3,4])'/diag([voxsz,1]);
+orient = orient'/diag([voxsz,1]);
 orig = orient(1:3,4);
 orient = reshape(orient(1:3,1:3),1,[]);
 
 % Copy and rename TransformParameter files
-fn_save = fullfile(elxdir,'InverseTransformParameters.0.txt');
+fn_tfi = fullfile(elxdir,'InverseTransformParameters.0.txt');
 txt = fileread(fullfile(tdir,'TransformParameters.0.txt'));
 txt = regexprep(txt,'\(InitialTransformParametersFileName [^\)]*',...
     '(InitialTransformParametersFileName "NoInitialTransform"');
-writelines(txt,fn_save);
+writelines(txt,fn_tfi);
 
-fn_tfi = fn_save;
+fn_init = fn_tfi;
+fn_tfi = fullfile(elxdir,'InverseTransformParameters.1.txt');
 txt = fileread(fullfile(tdir,'TransformParameters.1.txt'));
 txt = regexprep(txt,'\(InitialTransformParametersFileName [^\)]*',...
-    ['\(InitialTransformParametersFileName "',regexprep(fn_tfi,'\\','\\\\'),'"']);
+    ['\(InitialTransformParametersFileName "',regexprep(fn_init,'\\','\\\\'),'"']);
 txt = regexprep(txt,'\(Size [^\)]*',...
     sprintf('(Size %f %f %f',d));
 txt = regexprep(txt,'\(Spacing [^\)]*',...
@@ -87,7 +88,7 @@ txt = regexprep(txt,'\(Origin [^\)]*',...
     sprintf('(Origin %f %f %f',orig));
 txt = regexprep(txt,'\(Direction [^\)]*',...
     sprintf('(Direction %f %f %f %f %f %f %f %f %f',orient));
-writelines(txt,fullfile(elxdir,'InverseTransformParameters.1.txt'));
+writelines(txt,fn_tfi);
 
 % Cleanup
 fn = dir(fullfile(tdir,'*'));

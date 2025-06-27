@@ -30,6 +30,7 @@ if isfile(fn_ref) && isfile(fn_seg) && isfolder(path_elx)
             fn_tfi = inverseTransform(fullfile(path_elx,fn_tf(end).name),fn_ref,fn_seg,info_hom);
         end
     else
+        % Loading previously generated inverse transform
         fprintf('InverseTransformParameters.*.txt files found.\n');
         fn_tfi = fullfile(path_elx,fn_tfi(end).name);
     end
