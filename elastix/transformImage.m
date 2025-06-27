@@ -35,8 +35,8 @@ if fn_flag
     delete(fn_result);
     fn_result = [fn_result,'.gz'];
     % Rename result file
-    [~,fn,ext] = fileparts(fn_M);
-    fn = insertAfter([fn,ext],'.','reg.');
+    fn = flip(extractBefore(flip(fn_M),filesep));
+    fn = insertBefore(fn,'.nii','.reg');
     Mreg = fullfile(procdir,fn);
     movefile(fn_result,Mreg);
 else

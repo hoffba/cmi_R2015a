@@ -1,9 +1,10 @@
-function fn_tfi = inverseTransform(fn_tf,fn_ref,fn_seg)
+function fn_tfi = inverseTransform(fn_tf,fn_ref,fn_seg,info_hom)
 % Generate inverse transform from registration
 % Inputs:
 %   fn_tf = file name of TransformParameters*.txt file defining forward reg
 %   fn_ref = file name of registration reference image (e.g. EXP)
 %   fn_seg = file name of segmentation associated with ref image
+%   info_hom = Nifti info of homologous space (e.g. INS)
 
 if nargin==3
     imsamp = 'RandomSparseMask';
@@ -59,6 +60,14 @@ fixTransformParameter(fn_tf);
 cmdstr = elx.sysCmd(tdir,'wait',true,'f',fn_ref,'m',fn_ref,segin{:});
 system(cmdstr);
 
+% Prepare gometry variables
+d = info_hom.ImageSize([2 1 3]);
+voxsz = info_hom.PixelDimensions([2,1,3]);
+orient = info_hom.Transform.T * diag([-1 -1 1 1]);
+orient = orient([2,1,3,4],[2,1,3,4])'/diag([voxsz,1]);
+orig = orient(1:3,4);
+orient = reshape(orient(1:3,1:3),1,[]);
+
 % Copy and rename TransformParameter files
 fn_save = fullfile(elxdir,'InverseTransformParameters.0.txt');
 txt = fileread(fullfile(tdir,'TransformParameters.0.txt'));
@@ -70,6 +79,14 @@ fn_tfi = fn_save;
 txt = fileread(fullfile(tdir,'TransformParameters.1.txt'));
 txt = regexprep(txt,'\(InitialTransformParametersFileName [^\)]*',...
     ['\(InitialTransformParametersFileName "',regexprep(fn_tfi,'\\','\\\\'),'"']);
+txt = regexprep(txt,'\(Size [^\)]*',...
+    sprintf('(Size %f %f %f',d));
+txt = regexprep(txt,'\(Spacing [^\)]*',...
+    sprintf('(Spacing %f %f %f',voxsz));
+txt = regexprep(txt,'\(Origin [^\)]*',...
+    sprintf('(Origin %f %f %f',orig));
+txt = regexprep(txt,'\(Direction [^\)]*',...
+    sprintf('(Direction %f %f %f %f %f %f %f %f %f',orient));
 writelines(txt,fullfile(elxdir,'InverseTransformParameters.1.txt'));
 
 % Cleanup

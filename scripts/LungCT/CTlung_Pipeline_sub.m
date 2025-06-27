@@ -7,6 +7,7 @@ import mlreportgen.dom.*;
 tt = tic;
 
 try
+
     % Determine file names
     [~,ID] = fileparts(procdir);
     opts.ID = ID;
@@ -153,6 +154,7 @@ try
                   {opts.fn.insMontage,...
                    fullfile(opts.save_path,'Ins_Montage',[ID,'_Ins_Montage.tif'])});
     end
+    clear ind
 
     % TotalSegmentator
     if opts.totalseg
@@ -354,15 +356,20 @@ try
 
     % Quantify unregistered CT scans
     if opts.unreg
-        writeLog(fn_log,'Quantifying unregistered statistics\n');
+        writeLog(fn_log,'Quantifying unregistered statistics ...');
         if img(1).flag
+            writeLog(fn_log,' Exp:');
             T = CTlung_Unreg('exp',img(1).mat,img(1).info.voxvol,img(1).label);
             res = addTableVarVal(res,T);
+            writeLog(fn_log,'done');
         end
         if img(2).flag
+            writeLog(fn_log,' Ins:');
             T = CTlung_Unreg('ins',img(2).mat,img(2).info.voxvol,img(2).label);
             res = addTableVarVal(res,T);
+            writeLog(fn_log,'done');
         end
+        writeLog(fn_log,'\n');
     end
 
     % Register I2E
@@ -514,7 +521,7 @@ try
                 prm10 = int8(readNIFTI(opts.fn.prm));
             else
                 writeLog(fn_log,'Calculating PRM...\n');
-                [prm10,~] = pipeline_PRM(img(1).mat,img(1).info,logical(img(1).label),ins_reg,...
+                [prm10,~] = pipeline_PRM(img(1).mat,logical(img(1).label),ins_reg,...
                     {opts.fn.prmScatter,fullfile(opts.save_path,'PRM_Scatter',[ID,'_PRM_Scatter.tif'])});
 
                 % Save PRM
@@ -640,4 +647,3 @@ res.Properties.RowNames = {};
 writeLog(fn_log,'Pipeline total time = %s\n',datetime([0,0,0,0,0,toc(tt)],'Format','HH:mm:ss'))
 
 
-    

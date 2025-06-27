@@ -91,7 +91,8 @@ function stat = write_sbatch(fname,jobname,fcn,varargin)
                         'echo -n "My job array ID is:  "\n',...
                         'env | grep ARRAY_TASK_ID\n\n',...
                         '#  Put your job commands after this line\n'])];
-    str = [str,sprintf(['matlab -nodisplay -r "cd(''%s'');','cmi_setPath;%s(1,''%s''); exit"\n\n'],GL_Matlab_path,r.fcn,r.inputs_fname)];
+    str = [str,sprintf(['matlab -nodisplay -r "setpref(''MATLAB'',''UpdateCheck'',''off'');'...
+        'cd(''%s'');cmi_setPath;%s(1,''%s''); exit"\n\n'],GL_Matlab_path,r.fcn,r.inputs_fname)];
     str = [str,sprintf('my_job_statistics $SLURM_JOB_ID\n')]; % Script for printing performance statistics 
                    
     fid = fopen(r.fname,'w');

@@ -1,10 +1,10 @@
-function Mreg = pipeline_inverseTform(procdir,img,voxsz,orient,flag_nn)
+function Mreg = pipeline_inverseTform(procdir,fn_img,info_hom,flag_nn)
 % Transform images from Ref space (Exp) to Homologous space (Ins)
 % Inputs:
-%   procdir = case processing directory
-%   img     = image matrix to transform
-%   voxsz   = voxel dimensions
-%   orient  = affine matrix defining Ref space
+%   procdir  = case processing directory
+%   fn_img   = image file to transform (Exp space)
+%   info_hom = image Nifti info (Ins space)
+%   flag_nn  = T/F flag for nearest neighbor
 
 Mreg = [];
 if nargin<5
@@ -14,7 +14,6 @@ end
 [~,ID] = fileparts(procdir);
 fn_ref = fullfile(procdir,[ID,'.exp.nii.gz']);
 fn_seg = fullfile(procdir,[ID,'.exp.label.nii.gz']);
-% fn_hom = fullfile(procdir,[ID,'.ins.nii.gz']);
 path_elx = fullfile(procdir,['elastix_',ID]);
 
 if isfile(fn_ref) && isfile(fn_seg) && isfolder(path_elx)
@@ -28,7 +27,7 @@ if isfile(fn_ref) && isfile(fn_seg) && isfolder(path_elx)
             fn_tfi = '';
         else
             fprintf('Generating inverse transform.\n');
-            fn_tfi = inverseTransform(fullfile(path_elx,fn_tf(end).name),fn_ref,fn_seg);
+            fn_tfi = inverseTransform(fullfile(path_elx,fn_tf(end).name),fn_ref,fn_seg,info_hom);
         end
     else
         fprintf('InverseTransformParameters.*.txt files found.\n');
@@ -37,7 +36,7 @@ if isfile(fn_ref) && isfile(fn_seg) && isfolder(path_elx)
     
     if ~isempty(fn_tfi)
         fprintf('Transforming Ref->Hom ... ');
-        Mreg = transformImage(fn_tfi,flag_nn,img,voxsz,orient);
+        Mreg = transformImage(fn_tfi,flag_nn,fn_img);
         fprintf('done\n');
     end
 
