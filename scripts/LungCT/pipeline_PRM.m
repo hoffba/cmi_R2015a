@@ -5,11 +5,13 @@ function [prm,info] = pipeline_PRM(exp,mask,insR,svname)
 nslc = size(exp,3);
 gapchk = nnz(squeeze(std(exp,0,[1,2]))) < nslc;
 if gapchk
+    % 2D filter
     for i = 1:nslc
         exp(:,:,i) = medfilt2(exp(:,:,i),[3 3]);
         insR(:,:,i) = medfilt2(insR(:,:,i),[3 3]);
     end
 else
+    % 3D filter
     exp = medfilt3(exp,[3 3 3]);
     insR = medfilt3(insR,[3 3 3]);
 end

@@ -21,6 +21,7 @@ opts = struct( ...
               'reg',            true    ,... % MODULE register Ins to Exp
               'scatnetEmph',    true    ,... % MODULE scatternet Emph map
               'prm',            true    ,... % MODULE PRM analysis
+              'itform',         false   ,... % MODULE inverse transform PRM to Ins space
               'eprm',           false   ,... % MODULE ePRM analysis
               'tprm',           false   ,... % MODULE tPRM analysis
               'dBlood',         true    ,... % MODULE generation of dBlood map

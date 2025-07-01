@@ -27,6 +27,7 @@ try
     opts.fn.scatnetAT_PEDS =    fullfile(procdir,[ID,'.scatnetAT_PEDS',fn_ext]);
     opts.fn.scatnetEmph =       fullfile(procdir,[ID,'.scatnetEmph',fn_ext]);
     opts.fn.reg =               fullfile(procdir,[ID,'.ins.reg',fn_ext]);
+    opts.fn.prmreg =            fullfile(procdir,[ID,'.prm.reg',fn_ext]);
     opts.fn.jac =               fullfile(procdir,[ID,'.jac',fn_ext]);
     opts.fn.scatnetEmphReg =    fullfile(procdir,[ID,'.scatnetEmphInsR',fn_ext]);
     opts.fn.dBlood =            fullfile(procdir,[ID,'.dblood',fn_ext]);
@@ -506,12 +507,6 @@ try
             T = addvars(T,{'WholeLung'},'Before',1,'NewVariableNames',{'ROI'});
             res = addTableVarVal(res,T);
         end
-        
-        % Transform airway tree to EXP space
-        if opts.airsim
-            writeLog(fn_log,'Transforming airway simulation to EXP...\n')
-            % airwaytree2exp(procdir);
-        end
 
         % PRM calculation
         prm10 = [];
@@ -535,6 +530,22 @@ try
             end
         end
         clear ins_reg;
+
+        % Inverse transform
+        if opts.itform
+            if isfile(opts.fn.prmreg)
+                writeLog(fn_log,'Invers Transform PRM - File found\n');
+            else
+                writeLog(fn_log,'Calculating inverse transform and transforming PRM to Ins space ...');
+                info_hom = niftiinfo(opts.fn.ins);
+                pipeline_inverseTform(procdir,opts.fn.prm,info_hom,true);
+                writeLog(fn_log,' done\n');
+            end
+
+            % old lines for old use
+            % writeLog(fn_log,'Transforming airway simulation to EXP...\n')
+            % airwaytree2exp(procdir);
+        end
 
         if ~isempty(prm10)
             % Tabulate 10-color PRM results

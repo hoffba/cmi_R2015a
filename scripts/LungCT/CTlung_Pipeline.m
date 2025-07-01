@@ -158,6 +158,7 @@ end
         h.jacmat =   uicheckbox(h.panel_reg,'Position',[gap, pan_posy(4), pan_w_, line_h],'Text','Jacobian Matrix','Value',opts.jacmat,'ValueChangedFcn',@setOpts,'Tag','jacmat');
         h.def =      uicheckbox(h.panel_reg,'Position',[gap, pan_posy(5), pan_w_, line_h],'Text','Deformation Fields','Value',opts.def,'ValueChangedFcn',@setOpts,'Tag','def');
         h.Tvoi =     uicheckbox(h.panel_reg,'Position',[gap, pan_posy(6), pan_w_, line_h],'Text','Transform VOI','Value',opts.Tvoi,'ValueChangedFcn',@setOpts,'Tag','Tvoi');
+        h.itform =   uicheckbox(h.panel_reg,'Position',[gap, pan_posy(7), pan_w_, line_h],'Text','Inverse Transform PRM','Value',opts.itform,'ValueChangedFcn',@setOpts,'Tag','itform');
 
     % Panel: Other Options
         panx = panx + gap + pan_w;
