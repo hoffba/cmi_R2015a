@@ -54,7 +54,7 @@ prm.setOpts('thresh',[ 2 1 0 -856 ;...
                             'Xmax',-250,'Ymax',-250,'show',1,'Nmax',5000),...
             'statchk',false);
 [labels,vals] = prm.calcPRM([exp,insR],1:2,2,{'Exp','Ins'},mask);
-prm = int8(img.prm.mat);
+prm = int8(prm.mat);
 
 %% Save scatterplot figure
 if nargin==5

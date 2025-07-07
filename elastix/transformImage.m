@@ -1,6 +1,7 @@
 function Mreg = transformImage(fn_tf,flag_nn, M,voxsz,orient)
 
 procdir = fileparts(fn_tf);
+fixTransformParameter(fn_tf);
 
 if ischar(M) && isfile(M)
     fn_flag = true;

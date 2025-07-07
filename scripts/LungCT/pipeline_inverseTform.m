@@ -38,6 +38,9 @@ if isfile(fn_ref) && isfile(fn_seg) && isfolder(path_elx)
     if ~isempty(fn_tfi)
         fprintf('Transforming Ref->Hom ... ');
         Mreg = transformImage(fn_tfi,flag_nn,fn_img);
+        if ~isempty(Mreg)
+            movefile(Mreg,procdir);
+        end
         fprintf('done\n');
     end
 

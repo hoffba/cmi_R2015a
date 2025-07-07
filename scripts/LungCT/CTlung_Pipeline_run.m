@@ -123,8 +123,9 @@ switch opts.cluster
         % Start queue for local processes:
         for i = 1:ncases
             fprintf('Starting processing for case #%d of %d: %s\n',i,ncases,cases(i).basename);
-            f(i) = parfeval(@(x,y,z,k,l)CTlung_Pipeline_local(x,y,z,k,l),0,...
-                cases(i).basename,cases(i).fname_exp,cases(i).fname_ins,cases(i).procdir,opts);
+            % f(i) = parfeval(@(x,y,z,k,l)CTlung_Pipeline_local(x,y,z,k,l),0,...
+            %     cases(i).basename,cases(i).fname_exp,cases(i).fname_ins,cases(i).procdir,opts);
+            f(i) = parfeval(@(x,y)CTlung_Pipeline_local(x,y),0,cases(i),opts);
         end
         % Flag processes as they complete
         for i = 1:ncases
@@ -153,5 +154,6 @@ switch opts.cluster
 end
 
 function res = pipeline_full(case_i,opts)
-CTlung_Pipeline_local(case_i.basename,case_i.fname_exp,case_i.fname_ins,case_i.procdir,opts);
+% CTlung_Pipeline_local(case_i.basename,case_i.fname_exp,case_i.fname_ins,case_i.procdir,opts);
+CTlung_Pipeline_local(case_i,opts);
 res = CTlung_Pipeline_sub(case_i.procdir,opts);

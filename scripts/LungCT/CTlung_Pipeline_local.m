@@ -1,10 +1,15 @@
-function CTlung_Pipeline_local(ID,expfname,insfname,procdir,opts)
+function CTlung_Pipeline_local(case_i,opts) %(ID,expfname,insfname,procdir,opts)
 % Local execution for YACTA segmentation and airways analysis
 % * procdir must be on Turbo for Great Lakes to have access to it
 
 t = tic;
 try
-    
+
+    ID = case_i.basename;
+    expfname = case_i.fname_exp;
+    insfname = case_i.fname_ins;
+    procdir = case_i.procdir;
+
     % Save data sources to table in processing directory for future reference
     T = table('Size',[2,2],'VariableTypes',{'cellstr','cellstr'},'VariableNames',{'Tag','DataPath'});
 

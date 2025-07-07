@@ -1,16 +1,32 @@
 function T = compile_pipeline_results(basedir)
 
-D = dir(fullfile(basedir,'batch*'));
-for i = 1:numel(D)
-    fn = fullfile(basedir,D(i).name,'Pipeline_Results.csv');
-    t = readtable(fn);
-    if i == 1
-        T = t;
-    else
-        T = addtotable(T,t);
-    end
-end
+T = [];
 
+try
+
+    vstr = {'ID','Exp_Source','Ins_Source','ROI'};
+
+    fn = dir(fullfile(basedir,'**','*_PipelineResults.csv'));
+    for i = 1:numel(fn)
+        t = readtable(fullfile(fn(i).folder,fn(i).name));
+
+        % Force certain variables to be cellstr
+        for j = 1:numel(vstr)
+            if ~iscellstr(t.(vstr{j}))
+                t.(vstr{j}) = repmat({''},size(t,1),1);
+            end
+        end
+
+        if i == 1
+            T = t;
+        else
+            T = addtotable(T,t);
+        end
+    end
+
+catch err
+    disp(getReport(err))
+end
 
 
 function T = addtotable(T,t)
