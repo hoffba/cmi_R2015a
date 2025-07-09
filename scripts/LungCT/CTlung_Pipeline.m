@@ -512,7 +512,7 @@ end
             
             if ismember('CaseNumber',C.Properties.VariableNames)
                 sortvars = {'PatientName','StudyID','StudyDate','CaseNumber','SeriesNumber'};
-                sortvars = sortvars(ismemeber(sortvars,C.Properties.VariableNames));
+                sortvars = sortvars(ismember(sortvars,C.Properties.VariableNames));
                 C = sortrows(C,sortvars);
                 [~,~,ugroups_ic] = unique(C.CaseNumber);        % Find unique CaseNumbers
                 ugroups_ic = [0;cumsum(diff(ugroups_ic)~=0)]+1; % Re-number case groups

@@ -541,10 +541,6 @@ try
                 pipeline_inverseTform(procdir,opts.fn.prm,info_hom,true);
                 writeLog(fn_log,' done\n');
             end
-
-            % old lines for old use
-            % writeLog(fn_log,'Transforming airway simulation to EXP...\n')
-            % airwaytree2exp(procdir);
         end
 
         if ~isempty(prm10)

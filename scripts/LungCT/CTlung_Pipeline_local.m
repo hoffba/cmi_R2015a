@@ -50,22 +50,41 @@ try
             orientchk = true;
             writeLog(fn_log,'   loading data ... ',fn{i,1});
             if isfolder(fn_in{i})
-                writeLog(fn_log,'from DICOM\n');
+                writeLog(fn_log,'from DICOM');
                 [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],'noprompt');
             elseif ~isempty(fn_in{i})
-                writeLog(fn_log,'from file\n')
+                writeLog(fn_log,'from file')
                 [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
             else
                 writeLog(fn_log,'image not loaded.\n');
             end
+            
         end
 
         img(i).flag = ~isempty(img(i).mat);
         if img(i).flag
-            % Set image info
+
             d = size(img(i).mat);
-            img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',fov./d,'natinfo',info);
-            img(i).info.voxvol = prod(img(i).info.voxsz);
+            voxsz = fov ./ d;
+
+            % check for resolution (memory problems at too high res)
+            scl = round(d(1:2)/512);
+            if any(scl>1)
+                writeLog(fn_log,' ... Downsampling from [%d %d %d] to [%d %d %d]',d,d./[scl 1]);
+                img(i).mat = imresize3(img(i).mat,'Scale',[1./scl,1]);
+                % Correct orientation matrix:
+                offset = orient * [(scl-1)/2 0 1]';
+                orient = orient * diag([scl 1 1]);
+                orient(:,4) = offset;
+                voxsz = voxsz .* [scl 1];
+                d = size(img(i).mat);
+                fov = d.*voxsz;
+            end
+            writeLog(fn_log,'\n');
+
+            % Set image info
+            img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info);
+            img(i).info.voxvol = prod(voxsz);
             img(i).info.name = img(i).info.label;
 
             % Check orientation using a bone threshold

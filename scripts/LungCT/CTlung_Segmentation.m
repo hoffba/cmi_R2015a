@@ -8,7 +8,7 @@ end
 
 % Switch string input method to corresponding numeric index:
 if ischar(method)
-    segmethod = {'segLungHuman','getRespiratoryOrgans','DL_Craig','YACTA','TotalSegmentator'};
+    segmethod = {'segLungHuman','getRespiratoryOrgans','DL_Craig','YACTA','TotalSegmentator','PTK'};
     method = find(strcmp(method,segmethod));
 end
 
@@ -24,16 +24,16 @@ if method==3 && ~gpuDeviceCount
 end
 
 switch method
-    case 1
+    case 1 % segLungHuman
         writeLog(logfn,'- Generating VOI from Step02_segLungHuman_cjg ...\n');
         seg = segLungHuman_cjg_bh(1,ct);
-    case 2
+    case 2 % getRespiratoryOrgans
         writeLog(logfn,'- Generating VOI from getRespiratoryOrgans ...\n');
         seg = getRespiratoryOrgans(ct);
-    case 3
+    case 3 % DL_Craig
         fprintf(logfn,'- Generating VOI from DL_lung_segmentation ...\n');
         seg = DL_lung_segmentation(ct);
-    case 4
+    case 4 % YACTA
         writeLog(logfn,'- Generating VOI from YACTA ...\n');
         ydir = fullfile(savepath,['yacta_',id]);
         if ~isfolder(ydir)
@@ -79,13 +79,17 @@ switch method
             seg(:,:,ind) = tseg;
         end
 
-    case 5
+    case 5 % TotalSegmentator
         writeLog(logfn,'- Generating VOI from TotalSegmentator ...\n');
         seg = TotalSegmentator(ct,info,id,savepath);
         if ischar(seg) % Failed to run
             writeLog(logfn,'  TotalSegmentator: %s\n',seg);
             seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
         end
+
+    case 6 % PTK
+        writeLog(logfn,'- Generating VOI from PTK ...\n');
+        [label,res] = pipeline_PTKlobes(fn);
 
     otherwise
 end
