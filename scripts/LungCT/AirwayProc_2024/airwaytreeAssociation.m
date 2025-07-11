@@ -1,5 +1,5 @@
 % Assigns quantitative values to distal nodes in the airway tree
-function [B,Blabel] = airwaytreeAssociation(B,Blabel,N,voxsz,M,M_label,seg,r,func_flag)
+function [B,Blabel] = airwaytreeAssociation3(B,Blabel,N,voxsz,M,M_label,seg,r,func_flag)
 % Inputs:
 %   B           = Branches matrix
 %   Blabel      = labels for columns in B
@@ -73,14 +73,14 @@ for i = 1:soCnts(1)
         B(i,j_out(i_mean)) = mean(tmpData(:,i_mean),1);
         B(i,j_out(i_pct)) = sum(logical(tmpData(:,i_pct)),1)/size(tmpData,1)*100;
     else
-        B(i,j_out) = zeros(1,nM); %% Boxes with no voxels are signed with zero
+        B(i,j_out) = NaN(1,nM); %% Keep missing data as NaN %% Boxes with no voxels are signed with zero
     end
 end
 
-%% 4. Replace terminal nodes assigned to zero with mean value over all terminal nodes
-indZ = B(:,j_out)==0;
-indNz = B(1:soCnts(1),1)~=0;
-B(indZ,:) = mean(B(indNz,:), 1) .* ones(1,nnz(indZ))';
+% %% 4. Replace terminal nodes assigned to zero with mean value over all terminal nodes
+% indZ = B(:,j_out)==0;
+% indNz = B(1:soCnts(1),1)~=0;
+% B(indZ,:) = mean(B(indNz,:), 1) .* ones(1,nnz(indZ))';
 
 %% 5. Calculate the value around other branches with higer so
 Nso = soCnts(1);
@@ -108,7 +108,7 @@ reChk = [1 0 0 0 0 0 0] .*ones(200,1);  %% Store the branches whose daughter bra
             if sum(Nn(:,1)) == 0 % if daughter nodes don't have value
                 B(i,j_out:end) = 0;
             else
-                B(i,j_out) = mean(tmpa((Nn(:,1)~=0),1),1);
+                B(i,j_out) = mean(tmpa,1,"omitnan");
             end
         else 
             reChk(k+1,1:3) = [B(i,2:3) i]; %% [prox.id, dist.id, rows] 
@@ -134,7 +134,7 @@ while a >0 %% whether there is NaN in reChk
             if var(B(tmpi,j_lobe)) == 0
                 B(reChk(i,3),j_lobe) = B(tmpi(1),j_lobe);
             end
-            B(reChk(i,3),j_out:end) = mean(B(tmpi,j_out:end),1);
+            B(reChk(i,3),j_out:end) = mean(B(tmpi,j_out:end),1,"omitnan");
             reChk(i,7) = 1;
         end
         
@@ -146,9 +146,3 @@ end
 
 %% Re-organize output values by branch ID to return
 B = sortrows(B,1);
-
-
-
-
-
-
