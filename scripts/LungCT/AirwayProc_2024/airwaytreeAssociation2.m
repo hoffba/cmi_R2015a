@@ -1,5 +1,5 @@
 % Assigns quantitative values to distal nodes in the airway tree
-function [B,Blabel] = airwaytreeAssociation(B,Blabel,N,voxsz,M,M_label,seg,r,func_flag)
+function [B,Blabel] = airwaytreeAssociation2(B,Blabel,N,voxsz,M,M_label,seg,r,func_flag)
 % Inputs:
 %   B           = Branches matrix
 %   Blabel      = labels for columns in B
@@ -31,7 +31,7 @@ edges = ( 1 : (max(B(:,j_so)))+1 ) -0.5;
 soCnts = histcounts(B(:,j_so),edges);
 soCnt = numel(soCnts);
 B = [sortrows(B,j_so),nan(nB,1)]; % arrange with lowest SO at top
-
+missing_data_flag = false(nB,1); % Track branches with missing data-Ali
 
 %% 3. Voxel Association (terminal airways only)
 
@@ -74,14 +74,16 @@ for i = 1:soCnts(1)
         B(i,j_out(i_pct)) = sum(logical(tmpData(:,i_pct)),1)/size(tmpData,1)*100;
     else
         B(i,j_out) = zeros(1,nM); %% Boxes with no voxels are signed with zero
+        missing_data_flag(i) = true; %% Flag this branch as having missing data-Ali
     end
 end
 
 %% 4. Replace terminal nodes assigned to zero with mean value over all terminal nodes
-indZ = B(:,j_out)==0;
-indNz = B(1:soCnts(1),1)~=0;
-B(indZ,:) = mean(B(indNz,:), 1) .* ones(1,nnz(indZ))';
-
+flagged_branches = missing_data_flag(1:soCnts(1));
+valid_branches = ~flagged_branches;
+if any(flagged_branches) && any(valid_branches)
+    B(flagged_branches,j_out) = repmat(mean(B(valid_branches,j_out), 1), sum(flagged_branches), 1);
+end
 %% 5. Calculate the value around other branches with higer so
 Nso = soCnts(1);
 for i = 2:soCnt  %% sort each row so as to make it easier to find mother branches
@@ -108,7 +110,7 @@ reChk = [1 0 0 0 0 0 0] .*ones(200,1);  %% Store the branches whose daughter bra
             if sum(Nn(:,1)) == 0 % if daughter nodes don't have value
                 B(i,j_out:end) = 0;
             else
-                B(i,j_out) = mean(tmpa((Nn(:,1)~=0),1),1);
+                B(i,j_out) = mean(tmpa,1);
             end
         else 
             reChk(k+1,1:3) = [B(i,2:3) i]; %% [prox.id, dist.id, rows] 
@@ -146,7 +148,6 @@ end
 
 %% Re-organize output values by branch ID to return
 B = sortrows(B,1);
-
 
 
 
