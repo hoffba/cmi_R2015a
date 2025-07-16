@@ -40,7 +40,7 @@ end
 
 % Check lobe IDs
 lobe = getLobeTags(L);
-lobe = lobe(cellfun(@(x)numel(x)==1,{lobe.val})); % Use singular regions
+lobe = lobe(cellfun(@(x)isscalar(x),{lobe.val})); % Use singular regions
 
 %% 1. the major airway centreline graph
 
@@ -257,6 +257,8 @@ close(hf);
 
 B2=B; t1=0.1; t2=0.4; flg=1;
 L_fix = 2; % addition to algorithm, a fixed minimum length (mm) for all branches
+% Initialize QC tracking
+qc_log = [];
 
 while flg % whole process loop
    
@@ -268,10 +270,24 @@ while flg % whole process loop
         if not(ismember(b(2),B2(:,1))) % test if terminal
             B_P = B2(B2(:,2)==b(1),:); % obtain parent branch
             L_P = B_P(7); % parent branch length
+            current_gen = gen_no(b(1:2), B2(:,1:2));
+            
             if b(7)<t1*L_P || b(7)<L_fix
+                % Log standard QC removal
+                qc_log = [qc_log; current_gen, b(3), b(7), 0]; % reason: 0 = standard QC
                 flg = 1; % put flag back up to continue trimming
                 elim(i) = 0; % mark for elimination
-            elseif b(7) <= t2*L_P
+            else
+                % Check for terminal branches in early generations (should not exist anatomically)
+                if current_gen >= 2 && current_gen <= 4
+                    % Log generation 2-4 removal
+                    qc_log = [qc_log; current_gen, b(3), b(7), 1]; % reason: 1 = generation 2-4
+                    % Any terminal branch in generations 2-4 is suspicious - remove it
+                    flg = 1;
+                    elim(i) = 0; % mark for elimination
+                end
+            end
+            if b(7) <= t2*L_P
                 % take action on assumption of 'truncated branch'
             end
         end
@@ -331,6 +347,16 @@ close(hf);
 
 lobe_ids = [lobe.val];
 save(fullfile(outD,[pID,'.tree_data.mat']),'B','N','lobe_ids','L_surfs','voxsz');
+
+% Save QC report
+if ~isempty(qc_log)
+    qc_table = array2table(qc_log, 'VariableNames', {'Generation', 'Radius_mm', 'Length_mm', 'Removal_Type'});
+    qc_table.Standard_QC = qc_table.Removal_Type == 0;
+    qc_table.Gen_2to4_Removal = qc_table.Removal_Type == 1;
+    writetable(qc_table, fullfile(outD, [pID, '_QC_report.csv']));
+    fprintf('QC Report: %d standard removals, %d gen 2-4 removals\n', ...
+        sum(qc_table.Standard_QC), sum(qc_table.Gen_2to4_Removal));
+end
 
 warning('on','MATLAB:triangulation:PtsNotInTriWarnId')
 

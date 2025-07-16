@@ -89,7 +89,11 @@ switch method
 
     case 6 % PTK
         writeLog(logfn,'- Generating VOI from PTK ...\n');
-        [label,res] = pipeline_PTKlobes(fn);
+        seg = pipeline_PTKlobes(fn);
+        if ischar(seg) % Failed to run
+            writeLog(logfn,'  PTK: %s\n',seg);
+            seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
+        end
 
     otherwise
 end

@@ -28,6 +28,9 @@ newp(ismember(newp,p)) = [];
 % Add to Matlab path
 addpath(newp{:});
 
+% Save path to user directory
+savepath(fullfile(userpath,'pathdef.m'));
+
 fprintf('\n\nAdded folders to Matlab search path:\n')
 fprintf('   %s\n',newp{:});
 fprintf('\n\n');

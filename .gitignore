@@ -1,2 +1,4 @@
 .DS_Store
 *.asv
+*.mexw64
+*.mexw64
