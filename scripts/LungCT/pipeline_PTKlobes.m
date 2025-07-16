@@ -1,7 +1,4 @@
-function [seg,res] = pipeline_PTKlobes(fn,fn_log)
-
-seg = [];
-res = [];
+function seg = pipeline_PTKlobes(fn,fn_log)
 
 try
 
