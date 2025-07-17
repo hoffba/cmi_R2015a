@@ -22,9 +22,15 @@ try
 
     % Initialize parameters and results struct
     fn_ext = '.nii.gz';
-    img = struct('flag',[false,false],'mat',{[],[]},'info',{[],[]},'label',{'',''},'sourcepath',{'Unknown','Unknown'});
-
     fn = fullfile(procdir,string(ID)+[".exp",".exp.label";".ins",".ins.label"]+fn_ext);
+    img = struct('flag',[false,false],...
+                 'fn',fn(:,1),...
+                 'fnlabel',fn(:,2),...
+                 'mat',{[],[]},...
+                 'info',{[],[]},...
+                 'label',{'',''},...
+                 'sourcepath',{'Unknown','Unknown'});
+
     fnflag = cellfun(@(x)exist(x,'file'),fn);
     if ~isempty(expfname) && ~isempty(insfname) && any(~fnflag(:,1))
         % If either image is missing, must redo all from DICOM
@@ -115,7 +121,7 @@ try
     img(1).info.name =  [ID,'_Exp'];
     img(2).info.name =  [ID,'_Ins'];
 
-    % Generate YACTA segmentations
+    % Generate lobe segmentations
     for i = 1:2
         if img(i).flag
             writeLog(fn_log,'%s : Segmentation ... ',tagstr{i});
@@ -124,7 +130,7 @@ try
             else
                 writeLog(fn_log,'generating new ...\n');
                 % 7/16/25 BAH changed from YACTA (4) to PTK (6)
-                seg = CTlung_Segmentation(6,img(i).mat,img(i).info,img(i).info.label,procdir,fn_log);
+                seg = CTlung_Segmentation(6,img(i),procdir,fn_log);
             end
 
             % Check for gapped data

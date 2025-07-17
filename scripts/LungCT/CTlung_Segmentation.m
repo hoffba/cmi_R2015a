@@ -1,5 +1,4 @@
-function seg = CTlung_Segmentation(method,ct,info,id,savepath,logfn)
-
+function seg = CTlung_Segmentation(method,img,savepath,logfn)
 seg = false;
 
 if nargin<6
@@ -26,31 +25,31 @@ end
 switch method
     case 1 % segLungHuman
         writeLog(logfn,'- Generating VOI from Step02_segLungHuman_cjg ...\n');
-        seg = segLungHuman_cjg_bh(1,ct);
+        seg = segLungHuman_cjg_bh(1,img.mat);
     case 2 % getRespiratoryOrgans
         writeLog(logfn,'- Generating VOI from getRespiratoryOrgans ...\n');
-        seg = getRespiratoryOrgans(ct);
+        seg = getRespiratoryOrgans(img.mat);
     case 3 % DL_Craig
         fprintf(logfn,'- Generating VOI from DL_lung_segmentation ...\n');
-        seg = DL_lung_segmentation(ct);
+        seg = DL_lung_segmentation(img.mat);
     case 4 % YACTA
         writeLog(logfn,'- Generating VOI from YACTA ...\n');
-        ydir = fullfile(savepath,['yacta_',id]);
+        ydir = fullfile(savepath,['yacta_',img.label]);
         if ~isfolder(ydir)
             mkdir(ydir);
         end
-        tname = fullfile(ydir,sprintf('%s.mhd',id));
+        tname = fullfile(ydir,sprintf('%s.mhd',img.label));
 
         % Check for gapped data. Remove gaps for YACTA processing
         gapchk = false;
-        orient = info.orient;
-        ind = find(any(ct>-1000,[1,2]));
-        if numel(ind)~=size(ct,3)
+        orient = img.info.orient;
+        ind = find(any(img.mat>-1000,[1,2]));
+        if numel(ind)~=size(img.mat,3)
             gapchk = true;
             orient = orient*diag([1,1,(ind(2)-ind(1)),1]);
         end
 
-        saveMHD(tname,ct(:,:,ind),id,info.fov,orient);
+        saveMHD(tname,img.mat(:,:,ind),img.label,img.info.fov,orient);
         yacta(tname,'wait');
 %         yacta(tname,'wait','airways','renderer','hide','exportlabels','yactascp');
 
@@ -68,31 +67,31 @@ switch method
                 writeLog(logfn,' Using R/L segmentation\n');
             else
                 writeLog(logfn,' FAILED\n');
-                seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
+                seg = CTlung_Segmentation(2,img,savepath,logfn);
             end
         end
 
         % Add gaps back into gapped segmentations
         if gapchk
             tseg = seg;
-            seg = zeros(size(ct));
+            seg = zeros(size(img.mat));
             seg(:,:,ind) = tseg;
         end
 
     case 5 % TotalSegmentator
         writeLog(logfn,'- Generating VOI from TotalSegmentator ...\n');
-        seg = TotalSegmentator(ct,info,id,savepath);
+        seg = TotalSegmentator(img.mat,img.info,img.label,savepath);
         if ischar(seg) % Failed to run
             writeLog(logfn,'  TotalSegmentator: %s\n',seg);
-            seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
+            seg = CTlung_Segmentation(2,img,savepath,logfn);
         end
 
     case 6 % PTK
         writeLog(logfn,'- Generating VOI from PTK ...\n');
-        seg = pipeline_PTKlobes(fn);
+        seg = pipeline_PTKlobes(img.fn);
         if ischar(seg) % Failed to run
             writeLog(logfn,'  PTK: %s\n',seg);
-            seg = CTlung_Segmentation(2,ct,info,id,savepath,logfn);
+            seg = CTlung_Segmentation(2,img,savepath,logfn);
         end
 
     otherwise
