@@ -1,7 +1,7 @@
 function seg = CTlung_Segmentation(method,img,savepath,logfn)
 seg = false;
 
-if nargin<6
+if nargin<4
     logfn = '';
 end
 
