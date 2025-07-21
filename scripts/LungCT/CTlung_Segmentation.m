@@ -88,7 +88,10 @@ switch method
 
     case 6 % PTK
         writeLog(logfn,'- Generating VOI from PTK ...\n');
-        seg = pipeline_PTKlobes(img.fn);
+        fn = fullfile(fileparts(img.fn),'PTKtemp.nii');
+        saveNIFTI(fn,img.mat,{'PTKtemp'},img.info.fov,img.info.orient);
+        seg = pipeline_PTKlobes(fn,logfn);
+        delete(fn);
         if ischar(seg) % Failed to run
             writeLog(logfn,'  PTK: %s\n',seg);
             seg = CTlung_Segmentation(2,img,savepath,logfn);
