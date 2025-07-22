@@ -57,7 +57,7 @@ try
             writeLog(fn_log,'   loading data ... ',fn{i,1});
             if isfolder(fn_in{i})
                 writeLog(fn_log,'from DICOM');
-                [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},[],'noprompt');
+                [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},'noprompt');
             elseif ~isempty(fn_in{i})
                 writeLog(fn_log,'from file')
                 [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
@@ -71,6 +71,12 @@ try
         if img(i).flag
 
             d = size(img(i).mat);
+            if numel(d)>3
+                img(i).mat = img(i).mat(:,:,:,1);
+                d(4) = [];
+                label(2:end) = [];
+                
+            end
             voxsz = fov ./ d;
 
             % check for resolution (memory problems at too high res)
