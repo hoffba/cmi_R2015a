@@ -537,11 +537,30 @@ end
             end
             
             % Fix DICOM location
+            % * DataPath needs to be fixed to be full path on this system
             if ischar(fn)
+                % Extract path to catalog file
                 cat_path = fileparts(fn);
+                % Find folder/file names in catalog folder
+                cat_path_fn = dir(cat_path);
+                cat_path_fn = {cat_path_fn(3:end).name}';
+                % Loop over DataPath entries
                 for ifn = 1:size(C,1)
-                    tpath = extractAfter(C.DataPath{ifn},cat_path(2:end));
-                    C.DataPath{ifn} = fullfile(cat_path,tpath);
+                    dp_temp = C.DataPath{ifn};
+                    if contains(dp_temp,cat_path)
+                        % DataPath is full path to file/folder, need to strip
+                        dp_temp = extractAfter(dp_temp,cat_path);
+                    else
+                        % Check if data has been moved
+                        fn_split = strsplit(dp_temp,{'/','\'});
+                        fn_ind = find(ismember(fn_split,cat_path_fn),1);
+                        if isempty(fn_ind)
+                            warning('Could not find data path: %s',dp_temp);
+                        elseif fn_ind ~= 1
+                            dp_temp = fullfile(fn_split{fn_ind:end});
+                        end
+                    end
+                    C.DataPath{ifn} = fullfile(cat_path,dp_temp);
                 end
             end
         

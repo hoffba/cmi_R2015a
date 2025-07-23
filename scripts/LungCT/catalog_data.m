@@ -44,7 +44,8 @@ if isempty(D)
             if ~isempty(nametok)
                 t.StudyDescription = {strjoin(nametok,'_')};
             end
-            t.DataPath = {fullfile(fn(j).folder,fn(j).name)};
+            temp_path = {fullfile(fn(j).folder,fn(j).name)};
+            t.DataPath = extractAfter(temp_path,searchpath);
             t.DataType = filtstr(i);
 
             % Try and find tags
