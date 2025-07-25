@@ -11,30 +11,19 @@ function [B,Blabel] = airwaytreeAssociation(B,Blabel,N,voxsz,M,M_label,seg,r,fun
 %   r           = radius of window
 %   func_flag   = (optional) 1=mean, 2=vol%
 
-% Find size of relevant inputs
-nM = size(M,4); % Number of input
-[nB,nBcol] = size(B);
-
-% Determine processing function
-func_str = {'mean','pct'};
-if nargin<9 || isempty(func_flag)
-    func_flag = 1;
-elseif ischar(func_flag)
-    func_flag = find(strcmpi(func_flag,func_str),1);
-    if isempty(func_flag)
-        error('Invalid func_flag. Must be 1 (mean) or 2 (vol%)');
-    end
-end
-if nM>1
-    if numel(func_flag)~=nM
-        func_flag = func_flag(1)*ones(1,nM);
-    end
-end
-
 % Find col indices for relevant values
 % ID = 1 ; N_Prox = 2 ; N_Dist = 3
 j_so = find(strcmp(Blabel,'Strahler'),1);
 j_lobe = find(strcmp(Blabel,'Lobe'),1);
+[nB,nBcol] = size(B);
+nM = size(M,4);
+if nargin<9
+    if islogical(M)
+        func_flag = 2*ones(1,nM);
+    else
+        func_flag = ones(1,nM);
+    end
+end
 
 %% 1. Find terminal branches(sorting by soc)
 
@@ -47,34 +36,13 @@ B = [sortrows(B,j_so),nan(nB,1)]; % arrange with lowest SO at top
 %% 3. Voxel Association (terminal airways only)
 
 % Determine output labels
-j_out = ones(1,nM);
-uval = cell(1,nM);
-V_label = cell(1,nM);
-for i = 1:nM
-    if func_flag(i) == 2 % pct
-        uval{i} = unique(M(:,:,:,i));
-        uval{i} = uval>0; % ignore 0 values as background
-        n_uval = numel(uval{i});
-        if n_uval > 20
-            warning('Number of unique values in input matrix (i=%d) exceeds 20. Changing to mean calculation.',i);
-            func_flag(i) = 1;
-        else
-            j_out(i) = n_uval;
-            V_label{i} = strcat(M_label{i},'_',arrayfun(@num2str,uval{i},'UniformOutput',false),'_pct');
-        end
-    end
-    if func_flag(i) == 1 % mean
-        V_label{i} = {[M_label{i},'_mean']};
-    end
-end
-j_out = cumsum(j_out);
-j_out = [1,j_out(1:end-1)];% Location of first column of each M vector output
-V_label = [V_label{:}];
-
-% Append outputs to B
-j_out = nBcol + j_out;
+j_out = nBcol + (1:nM);
+i_mean = func_flag==1;
+i_pct = func_flag==2;
+V_label = M_label;
+V_label(i_mean) = strcat(V_label(i_mean),'_mean');
+V_label(i_pct) = strcat(V_label(i_pct),'_pct');
 Blabel = [Blabel,V_label]; % append to Branches table
-B = [B,nan()]; % SHOULD NEW VALUES BE INITIALIZED TO 0 OR NAN?
 
 se = calcSe(voxsz,r); % n * 3 matrix, the distance between the nodes within the range and the central nodes(end of the terminal branch).
 broZ = round(N(:,2:4)./voxsz); %% Convert the coordinate into intergral
@@ -100,21 +68,19 @@ for i = 1:soCnts(1)
     end
     tmpData = tmpData(1:(num-1),:);
 
-    % Calculate
-    % Mean
-    B(i,j_out(func_flag==1)) = mean(tmpData(:,func_flag==1),1,'omitnan');
-    % Pct
-    for j = find(func_flag==2)
-        for k = 1:numel(uval{j})
-            B(i,j_out(j)+k-1) = nnz(tmpData(:,j)==uval{j}(k))/nnz(~isnan(tmpData(:,j)))*100;
-        end
+    % Calculate 
+    if ~isnan(tmpData)
+        B(i,j_out(i_mean)) = mean(tmpData(:,i_mean),1);
+        B(i,j_out(i_pct)) = sum(logical(tmpData(:,i_pct)),1)/size(tmpData,1)*100;
+    else
+        B(i,j_out) = zeros(1,nM); %% Boxes with no voxels are signed with zero
     end
 end
 
-% %% 4. Replace terminal nodes assigned to zero with mean value over all terminal nodes
-% indZ = B(:,j_out)==0;
-% indNz = B(1:soCnts(1),1)~=0;
-% B(indZ,:) = mean(B(indNz,:), 1) .* ones(1,nnz(indZ))';
+%% 4. Replace terminal nodes assigned to zero with mean value over all terminal nodes
+indZ = B(:,j_out)==0;
+indNz = B(1:soCnts(1),1)~=0;
+B(indZ,:) = mean(B(indNz,:), 1) .* ones(1,nnz(indZ))';
 
 %% 5. Calculate the value around other branches with higer so
 Nso = soCnts(1);
@@ -142,7 +108,7 @@ reChk = [1 0 0 0 0 0 0] .*ones(200,1);  %% Store the branches whose daughter bra
             if sum(Nn(:,1)) == 0 % if daughter nodes don't have value
                 B(i,j_out:end) = 0;
             else
-                B(i,j_out) = mean(tmpa,1,"omitnan");
+                B(i,j_out) = mean(tmpa((Nn(:,1)~=0),1),1);
             end
         else 
             reChk(k+1,1:3) = [B(i,2:3) i]; %% [prox.id, dist.id, rows] 
@@ -168,7 +134,7 @@ while a >0 %% whether there is NaN in reChk
             if var(B(tmpi,j_lobe)) == 0
                 B(reChk(i,3),j_lobe) = B(tmpi(1),j_lobe);
             end
-            B(reChk(i,3),j_out:end) = mean(B(tmpi,j_out:end),1,"omitnan");
+            B(reChk(i,3),j_out:end) = mean(B(tmpi,j_out:end),1);
             reChk(i,7) = 1;
         end
         
@@ -180,6 +146,7 @@ end
 
 %% Re-organize output values by branch ID to return
 B = sortrows(B,1);
+
 
 
 
