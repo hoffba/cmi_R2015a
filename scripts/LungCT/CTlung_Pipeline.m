@@ -137,7 +137,7 @@ end
         uibutton(h.panel_modules,'Position',[button_w+2*gap, pan_posy(1), button_w, line_h],'Text','Clear All','ButtonPushedFcn',@selectAll,'Tag','clear');
         h.mod.unreg =          uicheckbox(h.panel_modules,'Position',[gap, pan_posy(2),  pan_w_, line_h],'Text','Unreg','Value',opts.unreg,'ValueChangedFcn',@setOpts,'Tag','unreg');
         h.mod.totalseg =       uicheckbox(h.panel_modules,'Position',[gap, pan_posy(3),  pan_w_, line_h],'Text','TotalSegmentator','Value',opts.totalseg,'ValueChangedFcn',@setOpts,'Tag','totalseg');
-        h.mod.airway =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(4),  pan_w_, line_h],'Text','YACTA Airways','Value',opts.airway,'ValueChangedFcn',@setOpts,'Tag','airway');
+        h.mod.yacta =          uicheckbox(h.panel_modules,'Position',[gap, pan_posy(4),  pan_w_, line_h],'Text','YACTA Airways','Value',opts.yacta,'ValueChangedFcn',@setOpts,'Tag','airway');
         h.mod.airsim =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(5), pan_w_, line_h],'Text','Airways Simulation','Value',opts.airsim,'ValueChangedFcn',@setOpts,'Tag','airsim');
         h.mod.scatnetAT =      uicheckbox(h.panel_modules,'Position',[gap, pan_posy(6),  pan_w_, line_h],'Text','ScatNet-AT','Value',opts.scatnetAT,'ValueChangedFcn',@setOpts,'Tag','scatnetAT');
         h.mod.scatnetAT_PEDS = uicheckbox(h.panel_modules,'Position',[gap, pan_posy(7),  pan_w_, line_h],'Text','ScatNet-AT-Peds','Value',opts.scatnetAT_PEDS,'ValueChangedFcn',@setOpts,'Tag','scatnetAT_PEDS');

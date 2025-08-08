@@ -83,79 +83,60 @@ try
         end
     end
 
-    % Load images
+    % Load Image(s) and Segmentation(s)
+    ie_str = {'EXP','INS'};
     img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
-    if exist(opts.fn.exp,'file')
-        writeLog(fn_log,'Reading EXP image ...\n');
-        [img(1).mat,label,fov,orient,info] = cmi_load(1,[],opts.fn.exp);
-        d = size(img(1).mat);
-        voxsz = fov./d;
-        img(1).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
-            'voxvol',prod(voxsz),'name',label);
-        img(1).flag = true;
-    end
-    if exist(opts.fn.ins,'file')
-        writeLog(fn_log,'Reading INS image ...\n');
-        [img(2).mat,label,fov,orient,info] = cmi_load(1,[],opts.fn.ins);
-        d = size(img(2).mat);
-        voxsz = fov./d;
-        img(2).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
-            'voxvol',prod(voxsz),'name',label);
-        img(2).flag = true;
-    end
+    for i = 1:2
+        % Load image
+        fn_temp = opts.fn.(lower(ie_str{i}));
+        if exist(fn_temp,'file')
+            writeLog(fn_log,'Reading %s image ...\n',ie_str{i});
+            [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_temp);
+            d = size(img(i).mat);
+            voxsz = fov./d;
+            img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
+                'voxvol',prod(voxsz),'name',label);
+            img(i).flag = true;
 
-    % Load segmentations
-    if img(1).flag
-        if exist(opts.fn.exp_seg,'file')
-            img(1).label = cmi_load(1,[],opts.fn.exp_seg);
-        else
-            img(1).flag = false;
-        end
-    end
-    if img(2).flag
-        if exist(opts.fn.ins_seg,'file')
-            img(2).label = cmi_load(1,[],opts.fn.ins_seg);
-        else
-            img(2).flag = false;
-        end
-    end
+            % Load/generate segmentations
+            fn_temp = opts.fn.([lower(ie_str{i}),'_seg']);
+            if img(i).flag
+                if exist(fn_temp,'file')
+                    writeLog(fn_log,'Reading %s segmentation from file ...\n',ie_str{i});
+                    seg = cmi_load(1,[],fn_temp);
+                else
+                    writeLog(fn_log,'Generating %s segmentation using PTK ...\n',ie_str{i});
+                    seg = CTlung_Segmentation(6,img(i),procdir,fn_log);
+                end
+                if isempty(seg) || ischar(seg)
+                    img(i).flag = false;
+                else
+                    img(i).label = seg;
+                end
+            end
 
-    % QC segmentation
-    if img(1).flag
-        writeLog(fn_log,'Generating EXP montage...\n');
-        ind = find(std(single(img(1).mat),1,[1 2])~=0)';
-        Ni = numel(ind);
-        QCns = min(QC_nslice,Ni);
-        if Ni == img(1).info.d(3)
-            QCpad = round(img(1).info.d(3)/QC_nslice);
-            img(1).QCind = round(linspace(0,img(1).info.d(3)-QCpad,QCns)+ceil(QCpad/2));
-        else
-            img(1).QCind = ind(round(linspace(1,Ni,QCns)));
+            % QC segmentation
+            if img(i).flag
+                writeLog(fn_log,'Generating %s montage...\n',ie_str{i});
+                ind = find(std(single(img(i).mat),1,[1 2])~=0)';
+                Ni = numel(ind);
+                QCns = min(QC_nslice,Ni);
+                if Ni == img(i).info.d(3)
+                    QCpad = round(img(i).info.d(3)/QC_nslice);
+                    img(i).QCind = round(linspace(0,img(i).info.d(3)-QCpad,QCns)+ceil(QCpad/2));
+                else
+                    img(i).QCind = ind(round(linspace(1,Ni,QCns)));
+                end
+                QCmontage('seg',img(i).mat(:,:,img(i).QCind),...
+                          logical(img(i).label(:,:,img(i).QCind)),...
+                          img(i).info.voxsz,...
+                          {opts.fn.expMontage,...
+                           fullfile(opts.save_path,[ie_str{i},'_Montage'],[ID,'_',ie_str{i},'_Montage.tif'])});
+                clear ind
+            end
+
         end
-        QCmontage('seg',img(1).mat(:,:,img(1).QCind),...
-                  logical(img(1).label(:,:,img(1).QCind)),...
-                  img(1).info.voxsz,...
-                  {opts.fn.expMontage,...
-                   fullfile(opts.save_path,'Exp_Montage',[ID,'_Exp_Montage.tif'])});
     end
-    if img(2).flag
-        writeLog(fn_log,'Generating INSP montage...\n');
-        ind = find(std(single(img(2).mat),1,[1 2])~=0)';
-        Ni = numel(ind);
-        QCns = min(QC_nslice,Ni);
-        if Ni == img(2).info.d(3)
-            QCpad = round(img(2).info.d(3)/QC_nslice);
-            img(2).QCind = round(linspace(0,img(2).info.d(3)-QCpad,QCns)+ceil(QCpad/2));
-        else
-            img(2).QCind = ind(round(linspace(1,Ni,QCns)));
-        end
-        QCmontage('seg',img(2).mat(:,:,img(2).QCind),...
-                  logical(img(2).label(:,:,img(2).QCind)),...
-                  img(2).info.voxsz,...
-                  {opts.fn.insMontage,...
-                   fullfile(opts.save_path,'Ins_Montage',[ID,'_Ins_Montage.tif'])});
-    end
-    clear ind
 
     % TotalSegmentator
     if opts.totalseg
@@ -170,7 +151,7 @@ try
     end
 
     % YACTA Airways
-    if opts.airway
+    if opts.yacta
         if img(2).flag
             ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
             writeLog(fn_log,'YACTA directory: %s\n',ydir);

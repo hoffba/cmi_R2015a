@@ -13,7 +13,7 @@ opts = struct( ...
               ...
               'unreg',          true    ,... % MODULE unregistered stats for Exp/Ins
               'totalseg',       false   ,... % MODULE TotalSegmentator
-              'airway',         true    ,... % MODULE airways results from YACTA
+              'yacta' ,         false   ,... % MODULE airways and segmentation from YACTA
               'airsim',         false   ,... % MODULE simulated airways (Alex Bell 2024)
               'scatnetAT',      true    ,... % MODULE scatternet air trapping
               'scatnetAT_PEDS', false   ,... % MODULE scatternet air trapping for pediatrics
