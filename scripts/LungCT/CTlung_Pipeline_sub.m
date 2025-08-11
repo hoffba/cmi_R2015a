@@ -533,12 +533,7 @@ try
             res = addTableVarVal(res,T);
 
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
-            prmtranslate = {'Norm', 'fSAD', 'Emph', 'PD',       'NS';...
-                            [1,2],  3,      [4,5],  [8,9,10],   6    };
-            prm5 = int8(zeros(size(prm10)));
-            for i = 1:size(prmtranslate,2)
-                prm5(ismember(prm10,prmtranslate{2,i})) = i;
-            end
+            prm5 = prm_convert10to5(prm10);
 
             % QC PRM
             writeLog(fn_log,'Generating PRM Montage ...\n');
