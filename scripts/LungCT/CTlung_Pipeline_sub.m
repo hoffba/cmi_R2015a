@@ -112,6 +112,7 @@ try
                     img(i).flag = false;
                 else
                     img(i).label = seg;
+                    saveNIFTI(fn_temp,seg,label,fov,orient)
                 end
             end
 
