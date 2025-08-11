@@ -127,6 +127,7 @@ try
     img(1).info.name =  [ID,'_Exp'];
     img(2).info.name =  [ID,'_Ins'];
 
+    seg = [];
     for i = 1:2
 
         if opts.yacta && img(i).flag
