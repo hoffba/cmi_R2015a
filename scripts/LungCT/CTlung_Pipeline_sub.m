@@ -85,7 +85,7 @@ try
 
     % Load Image(s) and Segmentation(s)
     ie_str = {'EXP','INS'};
-    img = struct('flag',{false,false},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
+    img = struct('flag',{false,false},'fn',{opts.fn.exp,opts.fn.ins},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
     for i = 1:2
         % Load image
         fn_temp = opts.fn.(lower(ie_str{i}));
