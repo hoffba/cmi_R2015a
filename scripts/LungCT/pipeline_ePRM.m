@@ -21,10 +21,8 @@ if ~ispc
 end
 
 % Check for Matlab version R2024b
-mver = version('-release');
-v_year = str2double(mver(1:4));
-if v_year<2024 || mver(5)<'b'
-    writeLog(fn_log,'ePRM requires Matlab version 2024b or later. Current version: %s',mver);
+if isMATLABReleaseOlderThan('R2024b')
+    writeLog(fn_log,'ePRM requires Matlab version 2024b or later. Current version: %s',version('-release'));
     return;
 end
 

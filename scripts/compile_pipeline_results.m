@@ -1,4 +1,4 @@
-function T = compile_pipeline_results(basedir)
+function T = compile_pipeline_results(fn)
 
 T = [];
 
@@ -6,14 +6,19 @@ try
 
     vstr = {'ID','Exp_Source','Ins_Source','ROI'};
 
-    fn = dir(fullfile(basedir,'**','*_PipelineResults.csv'));
+    % fn = dir(fullfile(basedir,'**','*_Results.csv'));
     for i = 1:numel(fn)
-        t = readtable(fullfile(fn(i).folder,fn(i).name));
+        fname = fullfile(fn(i).folder,fn(i).name);
+
+        opts = detectImportOptions(fname);
+        t = readtable(fname,opts);
 
         % Force certain variables to be cellstr
         for j = 1:numel(vstr)
-            if ~iscellstr(t.(vstr{j}))
-                t.(vstr{j}) = repmat({''},size(t,1),1);
+            if ismember(vstr,t.Properties.VariableNames)
+                if ~iscellstr(t.(vstr{j}))
+                    t.(vstr{j}) = repmat({''},size(t,1),1);
+                end
             end
         end
 
