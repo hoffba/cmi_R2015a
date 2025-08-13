@@ -33,9 +33,10 @@ if nargin~=2
 
     % Generate Tier2 system call:
     fname_inputs = checkTurboPath(fname_inputs);
-    cmd_str = ['ml MATLAB/R2023a ; '...
-               'nohup matlab -nosplash -nodesktop -r "cd(''/nfs/turbo/umms-cgalban/GreatLakes/cmi_R2015a'');cmi_setPath;'...
-                                     'Tier2_run(1,''',fname_inputs,''');exit"'];
+    cmd_str = ['ml MATLAB/R2025a ; '...
+               'nohup matlab -nosplash -nodesktop '...
+               '-r "cd(''/nfs/corexfs/galban-xfs/'');p=cmi_pathdef;addpath(p{:});'...
+               'Tier2_run(1,''',fname_inputs,''');exit"'];
 
     % Copy command to run on Tier2 server terminal
     clipboard('copy',cmd_str);
@@ -103,6 +104,7 @@ else
             fprintf('Starting batch job %u\n',i);
             job{i} = batch(c,str2func(p.function_string),1,temp_inputs);
         end
+        fprintf('All jobs started. Waiting for completion');
         
         % Initialize table for statistics:
         T = table;
