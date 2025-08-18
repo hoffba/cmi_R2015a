@@ -136,7 +136,6 @@ try
                 writeLog(fn_log,'file found: %s\n',fn{i,2});
             else
                 writeLog(fn_log,'generating new ...\n');
-                % 7/16/25 BAH changed from YACTA (4) to PTK (6)
                 seg = CTlung_Segmentation(4,img(i),procdir,fn_log);
             end
         end

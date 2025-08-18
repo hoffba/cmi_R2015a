@@ -11,11 +11,6 @@ if ischar(method)
     method = find(strcmp(method,segmethod));
 end
 
-if method==4 && (nargin<5 || ~ischar(savepath) || ~isfolder(savepath))
-    warning('YACTA must have a valid input path for saving results. Trying DL instead.');
-    method = 3;
-end
-
 % Check for GPU (required if method==3)
 if method==3 && ~gpuDeviceCount
     warning('DL_lung_segmentation was selected, but no GPU is available. Reverting to getRespiratoryOrgans method.');
@@ -90,8 +85,11 @@ switch method
         writeLog(logfn,'- Generating VOI from PTK ...\n');
         fn = fullfile(fileparts(img.fn),'PTKtemp.nii');
         saveNIFTI(fn,img.mat,{'PTKtemp'},img.info.fov,img.info.orient);
+
+        % Try segmentation
         seg = pipeline_PTKlobes(fn,logfn);
         delete(fn);
+
         if ischar(seg) % Failed to run
             writeLog(logfn,'  PTK: %s\n',seg);
             seg = CTlung_Segmentation(2,img,savepath,logfn);
