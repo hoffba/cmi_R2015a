@@ -41,73 +41,77 @@ try
     tagstr = {'Exp','Ins'};
     fn_in = {expfname,insfname};
     for i = 1:2
-        orientchk = false;
-        % CT from origin files
-        writeLog(fn_log,'%s : CT ... ',tagstr{i});
-        img(i).sourcepath = fn_in{i};
-        if fnflag(i,1)
-            writeLog(fn_log,'file found: %s\n',fn{i,1});
-            if ~fnflag(i,2)
-                % Need to load image for segmentation
-                writeLog(fn_log,'   Loading for segmentation.\n');
-                [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn{i,1});
-            end
-        else
-            orientchk = true;
-            writeLog(fn_log,'   loading data ... ',fn{i,1});
-            if isfolder(fn_in{i})
-                writeLog(fn_log,'from DICOM');
-                [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},'noprompt');
-            elseif ~isempty(fn_in{i})
-                writeLog(fn_log,'from file')
-                [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
+        if ~isempty(fn_in{i})
+
+            orientchk = false;
+            % CT from origin files
+            writeLog(fn_log,'%s : CT ... ',tagstr{i});
+            img(i).sourcepath = fn_in{i};
+            if fnflag(i,1)
+                writeLog(fn_log,'file found: %s\n',fn{i,1});
+                if ~fnflag(i,2)
+                    % Need to load image for segmentation
+                    writeLog(fn_log,'   Loading for segmentation.\n');
+                    [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn{i,1});
+                end
             else
-                writeLog(fn_log,'image not loaded.\n');
-            end
-            
-        end
-
-        img(i).flag = ~isempty(img(i).mat);
-        if img(i).flag
-
-            d = size(img(i).mat);
-            if numel(d)>3
-                img(i).mat = img(i).mat(:,:,:,1);
-                d(4) = [];
-                label(2:end) = [];
+                orientchk = true;
+                writeLog(fn_log,'   loading data ... ',fn{i,1});
+                if isfolder(fn_in{i})
+                    writeLog(fn_log,'from DICOM');
+                    [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},'noprompt');
+                elseif ~isempty(fn_in{i})
+                    writeLog(fn_log,'from file')
+                    [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
+                else
+                    writeLog(fn_log,'image not loaded.\n');
+                end
                 
             end
-            voxsz = fov ./ d;
-
-            % check for resolution (memory problems at too high res)
-            scl = round(d(1:2)/512);
-            if any(scl>1)
-                writeLog(fn_log,' ... Downsampling from [%d %d %d] to [%d %d %d]',d,d./[scl 1]);
-                img(i).mat = imresize3(img(i).mat,'Scale',[1./scl,1]);
-                % Correct orientation matrix:
-                offset = orient * [(scl-1)/2 0 1]';
-                orient = orient * diag([scl 1 1]);
-                orient(:,4) = offset;
-                voxsz = voxsz .* [scl 1];
+    
+            img(i).flag = ~isempty(img(i).mat);
+            if img(i).flag
+    
                 d = size(img(i).mat);
-                fov = d.*voxsz;
+                if numel(d)>3
+                    img(i).mat = img(i).mat(:,:,:,1);
+                    d(4) = [];
+                    label(2:end) = [];
+                    
+                end
+                voxsz = fov ./ d;
+    
+                % check for resolution (memory problems at too high res)
+                scl = round(d(1:2)/512);
+                if any(scl>1)
+                    writeLog(fn_log,' ... Downsampling from [%d %d %d] to [%d %d %d]',d,d./[scl 1]);
+                    img(i).mat = imresize3(img(i).mat,'Scale',[1./scl,1]);
+                    % Correct orientation matrix:
+                    offset = orient * [(scl-1)/2 0 1]';
+                    orient = orient * diag([scl 1 1]);
+                    orient(:,4) = offset;
+                    voxsz = voxsz .* [scl 1];
+                    d = size(img(i).mat);
+                    fov = d.*voxsz;
+                end
+                writeLog(fn_log,'\n');
+    
+                % Set image info
+                img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info);
+                img(i).info.voxvol = prod(voxsz);
+                img(i).info.name = img(i).info.label;
+    
+                % Check orientation using a bone threshold
+                if orientchk && opts.orient_check && check_CTlung_orientation(img(i).mat,img(i).info.voxsz)
+                    writeLog(fn_log,'Permuting %s\n',tagstr{i});
+                    img(i).mat = permute(img(i).mat,[2,1,3]);
+                    img(i).info.voxsz = img(i).info.voxsz([2,1,3]);
+                    img(i).info.fov = img(i).info.fov([2,1,3]);
+                    img(i).info.d = img(i).info.d([2,1,3]);
+                    img(i).info.orient = img(i).info.orient([2,1,3,4],[2,1,3,4]);
+                end
             end
-            writeLog(fn_log,'\n');
 
-            % Set image info
-            img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info);
-            img(i).info.voxvol = prod(voxsz);
-            img(i).info.name = img(i).info.label;
-
-            % Check orientation using a bone threshold
-            if orientchk && opts.orient_check && check_CTlung_orientation(img(i).mat,img(i).info.voxsz)
-                writeLog(fn_log,'Permuting %s\n',tagstr{i});
-                img(i).mat = permute(img(i).mat,[2,1,3]);
-                img(i).info.voxsz = img(i).info.voxsz([2,1,3]);
-                img(i).info.fov = img(i).info.fov([2,1,3]);
-                img(i).info.d = img(i).info.d([2,1,3]);
-                img(i).info.orient = img(i).info.orient([2,1,3,4],[2,1,3,4]);
-            end
         end
     end
 
