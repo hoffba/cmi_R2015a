@@ -65,6 +65,11 @@ if ind
 else
     % All DICOMs are in single directory
     fname(~cellfun(@isdicom,fullfile(fpath,fname))) = [];
+
+    % Files to exclude:
+    exclude_fn = {'tdf'};
+    fname(ismember(fname,exclude_fn)) = [];
+
     nf = length(fname);
 end
 
@@ -308,7 +313,7 @@ for ifn = 1:nf
         else
             val(3) = ifn;
         end
-        dcmdata(j).SlicePos(k,:) = val;
+        dcmdata(j).SlicePos(k,:) = val(:)';
         
         % Read slice data from file:
         ySlope = 1;

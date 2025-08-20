@@ -84,7 +84,7 @@ try
     end
 
     % Load Image(s) and Segmentation(s)
-    ie_str = {'EXP','INS'};
+    ie_str = {'Exp','Ins'};
     img = struct('flag',{false,false},...
                  'fn',{opts.fn.exp,opts.fn.ins},...
                  'mat',{[],[]},...
@@ -160,7 +160,7 @@ try
     % YACTA Airways
     if opts.yacta
         if img(2).flag
-            ydir = fullfile(procdir,['yacta_',ID,'_INS']);
+            ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
             writeLog(fn_log,'YACTA directory: %s\n',ydir);
             airway_res = readYACTAairways(ydir);
             if isempty(airway_res)
