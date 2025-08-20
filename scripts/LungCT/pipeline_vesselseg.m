@@ -28,7 +28,10 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     ID = info.name;
     %% Check save directory
     writeLog(fn_log,'   Saving to folder: %s\n',save_path);
-    if ~isfolder(save_path)
+    if isfolder(save_path)
+        % Don't re-run if analysis has already been run
+        return;
+    else
         mkdir(save_path);
     end
     
@@ -154,6 +157,9 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     t = tic;
     T = lobeLoop(seg_re,@(mask,binvessels,csa)vesselStats(mask,binvessels,csa),bin_vessels,csa_map);
     writetable(T,fullfile(save_path,[ID,'_vesselMetrics.csv']));
+
+    
+
     writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
     
     writeLog(fn_log,'TOTAL vessel processing time: %s\n',duration(0,0,toc(tt)));

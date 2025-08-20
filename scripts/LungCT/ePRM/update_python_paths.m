@@ -1,4 +1,4 @@
-function python_path = update_python_paths(update_mode)
+function pypath = update_python_paths(x)
     % UPDATE_PYTHON_PATHS Find, store, and retrieve Python path for Clintrajan
     %
     % Usage:
@@ -7,63 +7,80 @@ function python_path = update_python_paths(update_mode)
     %   
     % Returns the Python path to use with Clintrajan functions
     
-    % Default is to only update if needed
-    if nargin < 1
-        update_mode = false;
+    pypath = '';
+    newpath = false;
+    force_flag = false;
+
+    % Parse inputs
+    if nargin
+        if ischar(x)
+            if isfile(x)
+                pypath = x;
+                newpath = true;
+            else
+                error('Python path does not exist: %s\n',x);
+            end
+        elseif islogical(x)
+            force_flag = x;
+        end
     end
-    
-    % If we're not in update mode, try to get existing path first
-    if ~update_mode && ispref('Clintrajan', 'PythonPath')
-        python_path = getpref('Clintrajan', 'PythonPath');
-        
-        % Verify the path still exists
-        if exist(python_path, 'file')
-            % Path exists, return it
-            return;
+
+    % Check for existing python path
+    if isempty(pypath) && ispref('Clintrajan','PythonPath')
+        pypath = getpref('Clintrajan','PythonPath');
+        if ~isfile(pypath)
+            fprintf('\nStored Python path no longer exists: %s\n', pypath);
+            force_flag = true;
+        end
+    end
+
+    % User input to select python installation path
+    if isempty(pypath) || force_flag
+
+        newpath = true;
+
+        % Find Python installations (local function)
+        python_paths = findPythonInstallationsInternal();
+
+        if isempty(python_paths)
+            fprintf('\nNo Python installations found automatically.\n');
+            custom_path = input('Please enter your Python executable path manually: ', 's');
+            if ~isempty(custom_path) && exist(custom_path, 'file')
+                pypath = custom_path;
+            else
+                error('Valid Python path is required to continue.');
+            end
         else
-            fprintf('\nStored Python path no longer exists: %s\n', python_path);
-            % Continue to update section
+            % Display found Python installations
+            n = numel(python_paths);
+            fprintf('\nFound %d Python installation(s):\n',n);
+            for i = 1:n
+                fprintf('[%d] %s\n', i, python_paths{i});
+            end
+            
+            % Let user choose which Python to use
+            choice = input(sprintf('\nSelect Python installation [1-%d]: ', length(python_paths)));
+            if isempty(choice) || choice < 1 || choice > n
+                error('Invalid selection.');
+            end
+            pypath = python_paths{choice};
         end
+
     end
     
-    % Find Python installations (built-in function)
-    python_paths = findPythonInstallationsInternal();
+    if newpath
+        % Check required packages
+        flag = checkRequiredPackages(pypath);
+        
+        % SAVE THE PYTHON PATH FOR FUTURE USE
+        setpref('Clintrajan', 'PythonPath', pypath);
+        fprintf('\nPython path saved: %s\n', pypath);
     
-    if isempty(python_paths)
-        fprintf('\nNo Python installations found automatically.\n');
-        custom_path = input('Please enter your Python executable path manually: ', 's');
-        if ~isempty(custom_path) && exist(custom_path, 'file')
-            python_path = custom_path;
+        if flag
+            fprintf('')
         else
-            error('Valid Python path is required to continue.');
+            fprintf('You can now run the Clintrajan MATLAB functions with your selected Python.\n');
         end
-    else
-        % Display found Python installations
-        fprintf('\nFound %d Python installation(s):\n', length(python_paths));
-        for i = 1:length(python_paths)
-            fprintf('[%d] %s\n', i, python_paths{i});
-        end
-        
-        % Let user choose which Python to use
-        choice = input(sprintf('\nSelect Python installation [1-%d]: ', length(python_paths)));
-        if isempty(choice) || choice < 1 || choice > length(python_paths)
-            error('Invalid selection.');
-        end
-        
-        python_path = python_paths{choice};
-    end
-    
-    % Check required packages
-    flag = checkRequiredPackages(python_path);
-    
-    % SAVE THE PYTHON PATH FOR FUTURE USE
-    setpref('Clintrajan', 'PythonPath', python_path);
-    fprintf('\nPython path saved: %s\n', python_path);
-    
-    if flag
-        fprintf('')
-    else
-        fprintf('You can now run the Clintrajan MATLAB functions with your selected Python.\n');
     end
 end
 
@@ -76,7 +93,7 @@ function python_paths = findPythonInstallationsInternal()
         % Try system Python first
         [status, ~] = system('where python');
         if status == 0
-            [status, result] = system('where python');
+            [~, result] = system('where python');
             paths = strsplit(strtrim(result), '\n');
             for i = 1:length(paths)
                 if ~isempty(paths{i}) && exist(paths{i}, 'file')
@@ -88,11 +105,13 @@ function python_paths = findPythonInstallationsInternal()
         % Check common locations
         [~,userpath] = system('echo %USERPROFILE%'); userpath = strtrim(userpath);
         potential_paths = {
-            'C:\Python*\python.exe',
-            'C:\Program Files\Python*\python.exe',
-            'C:\ProgramData\Anaconda*\python.exe',
-            fullfile(userpath,'AppData\Local\Programs\Python\Python*\python.exe'),
-            fullfile(userpath,'Anaconda*\python.exe'),
+            'C:\Python*\python.exe';
+            'C:\Program Files\Python*\python.exe';
+            'C:\ProgramData\Anaconda*\python.exe';
+            fullfile(userpath,'AppData\Local\Programs\Python\Python*\python.exe');
+            fullfile(userpath,'AppData\Local\anaconda*\python.exe');
+            fullfile(userpath,'AppData\Local\miniconda*\python.exe');
+            fullfile(userpath,'Anaconda*\python.exe');
             fullfile(userpath,'.conda\envs\*\python.exe')
         };
         
@@ -122,12 +141,12 @@ function python_paths = findPythonInstallationsInternal()
         % Check Homebrew and Anaconda common locations on macOS
         if ismac
             potential_paths = {
-                '/usr/bin/python*',
-                '/usr/local/bin/python*',
-                '/opt/homebrew/bin/python*',
-                '/opt/anaconda*/bin/python',
-                '/opt/miniconda*/bin/python',
-                fullfile(getenv('HOME'), 'anaconda*/bin/python'),
+                '/usr/bin/python*';
+                '/usr/local/bin/python*';
+                '/opt/homebrew/bin/python*';
+                '/opt/anaconda*/bin/python';
+                '/opt/miniconda*/bin/python';
+                fullfile(getenv('HOME'), 'anaconda*/bin/python');
                 fullfile(getenv('HOME'), 'miniconda*/bin/python')
             };
             
@@ -164,7 +183,8 @@ end
 function missing_flag = checkRequiredPackages(python_path)
 
     % Check for required Python packages
-    required_packages =      {'numpy', 'scipy', 'igraph', 'networkx', 'elpigraph-python', 'scikit-learn'};
+    required_packages = {'numpy', 'scipy', 'igraph', 'networkx', 'elpigraph',        'sklearn'};
+    install_name =      {'numpy', 'scipy', 'igraph', 'networkx', 'elpigraph-python', 'scikit-learn'};
     np = numel(required_packages);
     missing_flag = false(1,np);
     
@@ -187,38 +207,11 @@ function missing_flag = checkRequiredPackages(python_path)
     for i = 1:np
         if missing_flag(i)
             if ispc
-                missing_flag(i) = system(sprintf('"%s" -m pip install %s',python_path,required_packages{i}));
+                missing_flag(i) = system(sprintf('"%s" -m pip install %s',python_path,install_name{i}));
             end
         end
     end
 
     missing_flag = any(missing_flag);
 
-    % % Report missing packages
-    % if ~isempty(missing_packages)
-    %     fprintf('\nWARNING: The following required Python packages are missing:\n');
-    %     for i = 1:length(missing_packages)
-    %         fprintf('  - %s\n', missing_packages{i});
-    %     end
-    % 
-    %     fprintf('\nTo install missing packages, run these commands:\n');
-    %     for i = 1:length(missing_packages)
-    %         package = missing_packages{i};
-    %         install_name = package;
-    % 
-    %         % Handle special package names
-    %         if strcmp(package, 'sklearn')
-    %             install_name = 'scikit-learn';
-    %         elseif strcmp(package, 'elpigraph')
-    %             install_name = 'elpigraph-python';
-    %         end
-    % 
-    %         fprintf('  %s -m pip install %s\n', python_path, install_name);
-    %     end
-    % 
-    %     has_packages = false;
-    % else
-    %     fprintf('All required packages are installed.\n');
-    %     has_packages = true;
-    % end
 end

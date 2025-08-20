@@ -2,6 +2,7 @@ function CTlung_Pipeline_local(case_i,opts) %(ID,expfname,insfname,procdir,opts)
 % Local execution for YACTA segmentation and airways analysis
 % * procdir must be on Turbo for Great Lakes to have access to it
 
+fn_log = [];
 t = tic;
 try
 
@@ -28,7 +29,6 @@ try
                  'fnlabel',cellstr(fn(:,2)'),...
                  'mat',{[],[]},...
                  'info',{[],[]},...
-                 'label',{'',''},...
                  'sourcepath',{'Unknown','Unknown'});
 
     fnflag = cellfun(@(x)exist(x,'file'),fn);
@@ -126,10 +126,10 @@ try
     T.DataPath(1) = {img(1).sourcepath};
     T.Tag(2) = {'Ins'};
     T.DataPath(2) = {img(2).sourcepath};
-    img(1).info.label = [ID,'_Exp'];
-    img(2).info.label = [ID,'_Ins'];
-    img(1).info.name =  [ID,'_Exp'];
-    img(2).info.name =  [ID,'_Ins'];
+    img(1).label = [ID,'_Exp'];
+    img(2).label = [ID,'_Ins'];
+    img(1).name =  [ID,'_Exp'];
+    img(2).name =  [ID,'_Ins'];
 
     seg = [];
     for i = 1:2
@@ -195,11 +195,11 @@ try
 
         % Save image:
         if ~fnflag(i,1)
-            saveNIFTI(fn{i,1},img(i).mat,img(i).info.label,img(i).info.fov,img(i).info.orient);
+            saveNIFTI(fn{i,1},img(i).mat,img(i).label,img(i).info.fov,img(i).info.orient);
         end
         % Save segmentation
         if ~fnflag(i,2) && numel(seg)>1
-            saveNIFTI(fn{i,2},seg,img(i).info.label,img(i).info.fov,img(i).info.orient);
+            saveNIFTI(fn{i,2},seg,img(i).label,img(i).info.fov,img(i).info.orient);
         end
 
     end

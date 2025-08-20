@@ -85,7 +85,12 @@ try
 
     % Load Image(s) and Segmentation(s)
     ie_str = {'EXP','INS'};
-    img = struct('flag',{false,false},'fn',{opts.fn.exp,opts.fn.ins},'mat',{[],[]},'info',{[],[]},'label',{[],[]},'QCind',{[],[]});
+    img = struct('flag',{false,false},...
+                 'fn',{opts.fn.exp,opts.fn.ins},...
+                 'mat',{[],[]},...
+                 'info',{[],[]},...
+                 'label',{[],[]},...
+                 'QCind',{[],[]});
     for i = 1:2
         % Load image
         fn_temp = opts.fn.(lower(ie_str{i}));
@@ -96,6 +101,7 @@ try
             voxsz = fov./d;
             img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
                 'voxvol',prod(voxsz),'name',label);
+            img(i).label = [ID,'_',ie_str{i}];
             img(i).flag = true;
 
             % Load/generate segmentations
@@ -154,7 +160,7 @@ try
     % YACTA Airways
     if opts.yacta
         if img(2).flag
-            ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
+            ydir = fullfile(procdir,['yacta_',ID,'_INS']);
             writeLog(fn_log,'YACTA directory: %s\n',ydir);
             airway_res = readYACTAairways(ydir);
             if isempty(airway_res)
@@ -248,7 +254,7 @@ try
         if isfile(opts.fn.ins_seg)
             if ~isfile(opts.fn.airways)
                 % Find airways map from YACTA and save into procdir
-                ydir = fullfile(procdir,['yacta_',ID,'_Ins']);
+                ydir = fullfile(procdir,['yacta_',ID,'_INS']);
                 fn = dir(fullfile(ydir,'*_tbt_lobes_*.mhd'));
                 if isempty(fn)
                     writeLog(fn_log,'Airways map not found\n');
@@ -331,7 +337,9 @@ try
         if opts.vessel && img(2).flag
             writeLog(fn_log,'Vessel analysis ...\n');
             T = pipeline_vesselseg( img(2).mat , img(2).label , img(2).info , procdir, opts, fn_log);
-            res = addTableVarVal(res,T);
+            if ~isempty(T)
+                res = addTableVarVal(res,T);
+            end
         end
     catch err
         writeLog(fn_log,'Vessel Analysis FAILED:\n%s\n',getReport(err));
