@@ -24,6 +24,11 @@ try
     % Initialize parameters and results struct
     fn_ext = '.nii.gz';
     fn = fullfile(procdir,string(ID)+[".exp",".exp.label";".ins",".ins.label"]+fn_ext);
+    fnflag = isfile(fn);        % Check if image and segmenation files already exist
+    tagstr = {'Exp','Ins'};
+    fn_in = {expfname,insfname};
+    ei_chk = ~any(cellfun(@isempty,fn_in)) && any(~fnflag(:,1));
+    gap_chk = ~fnflag(:,1) & ei_chk;
     img = struct('flag',{false,false},...
                  'fn',cellstr(fn(:,1)'),...
                  'fnlabel',cellstr(fn(:,2)'),...
@@ -31,18 +36,14 @@ try
                  'info',{[],[]},...
                  'sourcepath',{'Unknown','Unknown'});
 
-    fnflag = cellfun(@(x)exist(x,'file'),fn);
     if ~isempty(expfname) && ~isempty(insfname) && any(~fnflag(:,1))
         % If either image is missing, must redo all from DICOM
         fnflag(:) = false;
     end
 
     % Load CT data
-    tagstr = {'Exp','Ins'};
-    fn_in = {expfname,insfname};
-    ei_chk = ~cellfun(@isempty,fn_in);
     for i = 1:2
-        if ei_chk(i)
+        if ei_chk || ~fnflag(i,2)
 
             orientchk = false;
             % CT from origin files
@@ -61,6 +62,8 @@ try
                 if isfolder(fn_in{i})
                     writeLog(fn_log,'from DICOM');
                     [img(i).mat,label,fov,orient,info] = readDICOM(fn_in{i},'noprompt');
+                    gap_chk(i) = all(isfield(info.meta,{'SlcThk','SlicePos'})) ...
+                        && (diff(info.meta.SlicePos(1:2,3)) - info.meta.SlcThk) > 0.0001;
                 elseif ~isempty(fn_in{i})
                     writeLog(fn_log,'from file')
                     [img(i).mat,label,fov,orient,info] = cmi_load(1,[],fn_in{i});
@@ -117,8 +120,7 @@ try
     end
 
     % Check for Exp/Ins
-    if any(~fnflag(:,1)) && img(1).flag && img(2).flag ...
-            && check_CTlung_EIswap(img(1).mat,img(1).info.voxvol,img(2).mat,img(2).info.voxvol)
+    if ei_chk && all(img.flag) && check_CTlung_EIswap(img(1).mat,img(1).info.voxvol,img(2).mat,img(2).info.voxvol)
         %   ** Need to double-check in case of mislabel
         writeLog(fn_log,'Swapping INS/EXP due to lung volume\n');
         img = img([2,1]);
@@ -135,9 +137,9 @@ try
     seg = [];
     for i = 1:2
 
-        if ei_chk(i)
+        if img(i).flag
 
-            if opts.yacta && img(i).flag
+            if opts.yacta
                 writeLog(fn_log,'%s : YACTA ... ',tagstr{i});
                 if fnflag(i,2)
                     writeLog(fn_log,'file found: %s\n',fn{i,2});
@@ -148,8 +150,7 @@ try
             end
     
             % Check for gapped data
-            if strcmp(img(i).info.natinfo.format,'DICOM') && all(isfield(img(i).info.natinfo.meta,{'SlcThk','SlicePos'})) ...
-                    && (diff(img(i).info.natinfo.meta.SlicePos(1:2,3)) - img(i).info.natinfo.meta.SlcThk) > 0.0001
+            if gap_chk(i)
                 oimg = img(i).mat;
                 fillval = min(img(i).mat,[],'all');
                 slcloc = img(i).info.natinfo.meta.SlicePos;

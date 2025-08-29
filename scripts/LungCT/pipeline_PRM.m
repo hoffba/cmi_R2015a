@@ -20,10 +20,6 @@ else
     insR = medfilt3(insR,[3 3 3]);
 end
 
-%% Extract values of interest
-exp = exp(mask);
-insR = insR(mask);
-
 %% Erode mask based on image values
 if erode_flag
     emask = exp<-250 & insR<-250;
@@ -34,6 +30,10 @@ if erode_flag
     end
     mask = imerode(emask,SE) & mask;
 end
+
+%% Extract values of interest
+exp = exp(mask);
+insR = insR(mask);
 
 %% Generate PRM:
 prm = PRMclass();
@@ -69,13 +69,15 @@ prm.setOpts('thresh',[ 2 1 0 -856 ;...
                             'Xmax',-250,'Ymax',-250,'show',1,'Nmax',5000),...
             'statchk',false);
 [labels,vals] = prm.calcPRM([exp,insR],1:2,2,{'Exp','Ins'},mask);
-prm = int8(prm.mat);
 
 %% Save scatterplot figure
-if nargin==5
-    pipeline_save_fig(img.prm.hfscatter,svname);
+if nargin==4
+    pipeline_save_fig(prm.hfscatter,svname);
 end
 
 %% Add results to info:
 info.regions = labels;
 info.pct = vals*100;
+
+% Return PRM
+prm = int8(prm.mat);

@@ -108,7 +108,8 @@ try
             % Load/generate segmentations
             fn_temp = opts.fn.([lower(ie_str{i}),'_seg']);
             if img(i).flag
-                if exist(fn_temp,'file')
+                segchk = exist(fn_temp,'file');
+                if segchk
                     writeLog(fn_log,'Reading %s segmentation from file ...\n',ie_str{i});
                     seg = cmi_load(1,[],fn_temp);
                 else
@@ -119,7 +120,9 @@ try
                     img(i).flag = false;
                 else
                     img(i).label = seg;
-                    saveNIFTI(fn_temp,seg,label,fov,orient)
+                    if ~segchk
+                        saveNIFTI(fn_temp,seg,label,fov,orient);
+                    end
                 end
             end
 
