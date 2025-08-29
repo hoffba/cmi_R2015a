@@ -26,13 +26,13 @@ insR = insR(mask);
 
 %% Erode mask based on image values
 if erode_flag
-    mask = exp<-250 & insR<-250;
+    emask = exp<-250 & insR<-250;
     if gapchk
         SE = strel('disk',2);
     else
         SE = strel('sphere',2);
     end
-    mask = imerode(mask,SE);
+    mask = imerode(emask,SE) & mask;
 end
 
 %% Generate PRM:
