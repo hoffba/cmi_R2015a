@@ -31,6 +31,7 @@ try
     opts.fn.jac =               fullfile(procdir,[ID,'.jac',fn_ext]);
     opts.fn.scatnetEmphReg =    fullfile(procdir,[ID,'.scatnetEmphInsR',fn_ext]);
     opts.fn.dBlood =            fullfile(procdir,[ID,'.dblood',fn_ext]);
+    opts.fn.prmerode_seg =      fullfile(procdir,[ID,'.prmerode.label',fn_ext]);
     opts.fn.prm =               fullfile(procdir,[ID,'.prm',fn_ext]);
     opts.fn.tprm = fullfile(procdir, string(ID) + ".tprm." + prmlabel(1:4) + "." + mflabel' + string(fn_ext));
     % ~~ QC figure files ~~
@@ -85,12 +86,13 @@ try
 
     % Load Image(s) and Segmentation(s)
     ie_str = {'Exp','Ins'};
-    img = struct('flag',{false,false},...
-                 'fn',{opts.fn.exp,opts.fn.ins},...
-                 'mat',{[],[]},...
-                 'info',{[],[]},...
-                 'label',{[],[]},...
-                 'QCind',{[],[]});
+    img = struct('flag',{false,false},...           % Flag if img data is available
+                 'fn',{opts.fn.exp,opts.fn.ins},... % File name for Exp/Ins
+                 'mat',{[],[]},...                  % Image matrix
+                 'info',{[],[]},...                 % Image info
+                 'label',{[],[]},...                % Segmentation
+                 'elabel',{[],[]},...               % Eroded segmentation
+                 'QCind',{[],[]});                  % Slice indices for QC montages
     for i = 1:2
         % Load image
         fn_temp = opts.fn.(lower(ie_str{i}));
@@ -101,7 +103,6 @@ try
             voxsz = fov./d;
             img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info,...
                 'voxvol',prod(voxsz),'name',label);
-            img(i).label = [ID,'_',ie_str{i}];
             img(i).flag = true;
 
             % Load/generate segmentations
@@ -507,7 +508,8 @@ try
             else
                 writeLog(fn_log,'Calculating PRM...\n');
                 [prm10,~] = pipeline_PRM(img(1).mat,logical(img(1).label),ins_reg,...
-                    {opts.fn.prmScatter,fullfile(opts.save_path,'PRM_Scatter',[ID,'_PRM_Scatter.tif'])});
+                    {opts.fn.prmScatter,fullfile(opts.save_path,'PRM_Scatter',[ID,'_PRM_Scatter.tif'])},...
+                    opts.prmerode);
 
                 % Save PRM
                 writeLog(fn_log,'Saving PRM as NIFTI ... ');
@@ -567,7 +569,8 @@ try
             if opts.eprm
                 writeLog(fn_log,'Generating ePRM ... ')
                 t = tic;
-                pipeline_ePRM(ID,procdir,prm10,img.label,img.info,true,fn_log)
+                T = pipeline_ePRM(ID,procdir,prm10,seg,img.info,true,fn_log);
+                res = addTableVarVal(res,T);
                 writeLog(fn_log,'%s\n',duration(0,0,toc(t)));
             end
             clear prm10

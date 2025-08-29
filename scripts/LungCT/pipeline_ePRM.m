@@ -1,4 +1,4 @@
-function pipeline_ePRM(caseID,procdir,prm,voi,info,imgTag,fn_log)
+function res = pipeline_ePRM(caseID,procdir,prm,voi,info,imgTag,fn_log)
 % Inputs:
 %   caseID = label for case being processed
 %   procdir = case directory for processing
@@ -6,6 +6,8 @@ function pipeline_ePRM(caseID,procdir,prm,voi,info,imgTag,fn_log)
 %   voi = Exp segmentation
 %   info = 
 %   imgTag = flag to map results to 3D image space
+
+res = [];
 
 if nargin<7
     fn_log = '';
@@ -236,10 +238,33 @@ if imgTag
     saveNIFTI(fullfile(savepath,[caseID,'.IDXMap.nii.gz']),finalIDXmap,{'IDXmap'},info.fov,info.orient);
 end
 
+%% Generate ePRM statistics
 
+    values = 1:5;
+    nval = numel(values);
 
+    % segment ID
+    SegID = floor(mod(idxSeg/100,10)); % Find seg label in hundred position
 
+    % pseudo-time ID by factors of 10%
+    PTID = round(floor(mod(idxSeg,100)),0); % remove seg label in hundred position
 
+    % Count occurrences using histcounts
+    counts = histcounts(SegID, [values, max(values)+1])/numel(SegID);
+
+    % Loop through each value in 'values'
+    mean_PTID = nan(nval,1);
+    for i = 1:nval
+        mean_PTID(i) = mean(PTID(SegID == values(i)));
+    end
+
+    % Create a table with specific column names
+    res = table(caseID, 'WholeLung', ...
+                counts(1),    counts(2),    counts(3),    counts(4),    counts(5),...
+                mean_PTID(1), mean_PTID(2), mean_PTID(3), mean_PTID(4), mean_PTID(5),...
+                'VariableNames', {'FileName', 'ROI', ...
+                                  'Tier0', 'Tier1', 'Tier2', 'Tier3', 'TierOp',...
+                                  'Tier0-p', 'Tier1-p', 'Tier2-p', 'Tier3-p', 'TierOp-p'});
 
 
 function finalCTAtable = cta_csv(img_rs, mask_rs, caseID, info, strMod, pSizeNew, fn_log)
@@ -375,3 +400,6 @@ if mod(nrows,ysize) ~= 0 || mod(ncols,xsize) ~= 0 || mod(npanes, zsize) ~= 0
 end
 patches = mat2cell( data, ysize * ones(1, nrows/ysize), xsize * ones(1, ncols/xsize), zsize * ones(1, npanes / zsize) );
 P=cat(4,patches{:});
+
+
+function res = ePRMstats()

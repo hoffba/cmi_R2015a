@@ -138,18 +138,18 @@ end
         h.mod.unreg =          uicheckbox(h.panel_modules,'Position',[gap, pan_posy(2),  pan_w_, line_h],'Text','Unreg','Value',opts.unreg,'ValueChangedFcn',@setOpts,'Tag','unreg');
         h.mod.totalseg =       uicheckbox(h.panel_modules,'Position',[gap, pan_posy(3),  pan_w_, line_h],'Text','TotalSegmentator','Value',opts.totalseg,'ValueChangedFcn',@setOpts,'Tag','totalseg');
         h.mod.yacta =          uicheckbox(h.panel_modules,'Position',[gap, pan_posy(4),  pan_w_, line_h],'Text','YACTA Airways','Value',opts.yacta,'ValueChangedFcn',@setOpts,'Tag','yacta');
-        h.mod.airsim =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(5), pan_w_, line_h],'Text','Airways Simulation','Value',opts.airsim,'ValueChangedFcn',@setOpts,'Tag','airsim');
+        h.mod.airsim =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(5),  pan_w_, line_h],'Text','Airways Simulation','Value',opts.airsim,'ValueChangedFcn',@setOpts,'Tag','airsim');
         h.mod.scatnetAT =      uicheckbox(h.panel_modules,'Position',[gap, pan_posy(6),  pan_w_, line_h],'Text','ScatNet-AT','Value',opts.scatnetAT,'ValueChangedFcn',@setOpts,'Tag','scatnetAT');
         h.mod.scatnetAT_PEDS = uicheckbox(h.panel_modules,'Position',[gap, pan_posy(7),  pan_w_, line_h],'Text','ScatNet-AT-Peds','Value',opts.scatnetAT_PEDS,'ValueChangedFcn',@setOpts,'Tag','scatnetAT_PEDS');
         h.mod.vessel =         uicheckbox(h.panel_modules,'Position',[gap, pan_posy(8),  pan_w_, line_h],'Text','Vessels','Value',opts.vessel,'ValueChangedFcn',@setOpts,'Tag','vessel');
         h.mod.reg =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(9),  pan_w_, line_h],'Text','Registration','Value',opts.reg,'ValueChangedFcn',@setOpts,'Tag','reg');
-        h.mod.scatnetEmph =    uicheckbox(h.panel_modules,'Position',[gap, pan_posy(10),  pan_w_, line_h],'Text','ScatNet-Emph','Value',opts.scatnetEmph,'ValueChangedFcn',@setOpts,'Tag','scatnetEmph');
+        h.mod.scatnetEmph =    uicheckbox(h.panel_modules,'Position',[gap, pan_posy(10), pan_w_, line_h],'Text','ScatNet-Emph','Value',opts.scatnetEmph,'ValueChangedFcn',@setOpts,'Tag','scatnetEmph');
         h.mod.saa =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(11), pan_w_, line_h],'Text','SAA','Value',opts.saa,'ValueChangedFcn',@setOpts,'Tag','saa');
         h.mod.prm =            uicheckbox(h.panel_modules,'Position',[gap, pan_posy(12), pan_w_, line_h],'Text','PRM','Value',opts.prm,'ValueChangedFcn',@setOpts,'Tag','prm');
         h.mod.eprm =           uicheckbox(h.panel_modules,'Position',[gap, pan_posy(13), pan_w_, line_h],'Text','ePRM','Value',opts.eprm,'ValueChangedFcn',@setOpts,'Tag','eprm');
         h.mod.tprm =           uicheckbox(h.panel_modules,'Position',[gap, pan_posy(14), pan_w_, line_h],'Text','tPRM','Value',opts.tprm,'ValueChangedFcn',@setOpts,'Tag','tprm');
 
-    % Panel: Registration Options
+    % Panel: Processing Options
         panx = panx + gap + pan_w;
         h.panel_reg = uipanel(h.tab_opts,'Position',[panx, pany, pan_w, pan_h],'Title','Reg Options','FontWeight','bold');
         h.dBlood =   uicheckbox(h.panel_reg,'Position',[gap, pan_posy(1), pan_w_, line_h],'Text','Blood density change','Value',opts.dBlood,'ValueChangedFcn',@setOpts,'Tag','dBlood');
@@ -159,6 +159,7 @@ end
         h.def =      uicheckbox(h.panel_reg,'Position',[gap, pan_posy(5), pan_w_, line_h],'Text','Deformation Fields','Value',opts.def,'ValueChangedFcn',@setOpts,'Tag','def');
         h.Tvoi =     uicheckbox(h.panel_reg,'Position',[gap, pan_posy(6), pan_w_, line_h],'Text','Transform VOI','Value',opts.Tvoi,'ValueChangedFcn',@setOpts,'Tag','Tvoi');
         h.itform =   uicheckbox(h.panel_reg,'Position',[gap, pan_posy(7), pan_w_, line_h],'Text','Inverse Transform PRM','Value',opts.itform,'ValueChangedFcn',@setOpts,'Tag','itform');
+        h.prmerode = uicheckbox(h.panel_reg,'Position',[gap, pan_posy(8), pan_w_, line_h],'Text','Erode PRM VOI (2vox)','Value',opts.prmerode,'ValueChangedFcn',@setOpts,'Tag','prmerode');
 
     % Panel: Other Options
         panx = panx + gap + pan_w;

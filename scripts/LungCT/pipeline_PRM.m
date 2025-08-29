@@ -1,4 +1,8 @@
-function [prm,info] = pipeline_PRM(exp,mask,insR,svname)
+function [prm,info] = pipeline_PRM(exp,mask,insR,svname,erode_flag)
+
+if nargin<5
+    erode_flag = false;
+end
 
 %% Filter images - median
 % Check for gapped EXP data
@@ -19,6 +23,17 @@ end
 %% Extract values of interest
 exp = exp(mask);
 insR = insR(mask);
+
+%% Erode mask based on image values
+if erode_flag
+    mask = exp<-250 & insR<-250;
+    if gapchk
+        SE = strel('disk',2);
+    else
+        SE = strel('sphere',2);
+    end
+    mask = imerode(mask,SE);
+end
 
 %% Generate PRM:
 prm = PRMclass();

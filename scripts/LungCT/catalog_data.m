@@ -102,6 +102,7 @@ else
         if dcm_flag
             info = dicominfo(fname,'UseDictionaryVR',true);
             % if all(isfield(info,{'StudyDate','SeriesNumber','AccessionNumber','AcquisitionNumber'}))
+            if isfield(info,'Modality')
                 [t,vname] = getDICOMvars(info.Modality);
                 t.DataPath = D(i);
                 t.DataType = {'DICOM'};
@@ -139,7 +140,7 @@ else
                 t.UMlabel = regexprep(t.UMlabel,' ','_');
 
                 T = addTableRow(T,t);
-            % end
+            end
         end
     end
 end
