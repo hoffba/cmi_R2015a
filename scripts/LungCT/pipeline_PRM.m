@@ -1,35 +1,12 @@
-function [prm,info] = pipeline_PRM(exp,mask,insR,svname,erode_flag)
+function [prm,info] = pipeline_PRM(exp,mask,insR,svname,gapchk)
 
 if nargin<5
-    erode_flag = false;
+    gapchk = false(1,2);
 end
 
 %% Filter images - median
-% Check for gapped EXP data
-nslc = size(exp,3);
-gapchk = nnz(squeeze(std(exp,0,[1,2]))) < nslc;
-if gapchk
-    % 2D filter
-    for i = 1:nslc
-        exp(:,:,i) = medfilt2(exp(:,:,i),[3 3]);
-        insR(:,:,i) = medfilt2(insR(:,:,i),[3 3]);
-    end
-else
-    % 3D filter
-    exp = medfilt3(exp,[3 3 3]);
-    insR = medfilt3(insR,[3 3 3]);
-end
-
-%% Erode mask based on image values
-if erode_flag
-    emask = exp<-250 & insR<-250;
-    if gapchk
-        SE = strel('disk',2);
-    else
-        SE = strel('sphere',2);
-    end
-    mask = imerode(emask,SE) & mask;
-end
+exp = prm_filt(exp,gapchk(1));
+insR = prm_filt(insR,gapchk(2));
 
 %% Extract values of interest
 exp = exp(mask);
@@ -81,3 +58,13 @@ info.pct = vals*100;
 
 % Return PRM
 prm = int8(prm.mat);
+
+
+function img = prm_filt(img,gapchk)
+if gapchk
+    for i = 1:size(img,3)
+        img(:,:,i) = medfilt2(img(:,:,i),[3 3]);
+    end
+else
+    img = medfilt3(img,[3 3 3]);
+end
