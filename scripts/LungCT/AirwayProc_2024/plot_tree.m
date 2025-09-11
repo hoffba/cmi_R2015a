@@ -1,33 +1,28 @@
-function plot_tree(ha,B,Blbl,N,Bind,val_name,L_surfs)
+function ha = plot_tree(ha,B,N,C,L_surfs,val_name)
 % Inputs:
 %   ha          = handle to axes for plotting (if empty a new figure and axes are created)
 %   B           = Branches matrix
-%   Blbl        = cellstr of labels for columns in B
 %   N           = Nodes matrix
 %   plotflag    = string describing how to plot
 %   Bind        = 1) index for column of B to color the plot
 %                 2) values to plot on branches B
 %   val_name    = string to title the plot
 
-nB = size(B,1);
-cTag = find(strcmp(Blbl,'Tag'));
-if ~isempty(cTag)
-    nsub = max(B(:,cTag));
+if nargin<6
+    val_name = '';
+end
+if nargin<5
+    L_surfs = [];
+end
+if nargin<4
+    C = [];
 end
 
-% % Parse inputs
-% p = inputParser();
-% addParameter(p,'Lobes',[],@(x)validateattributes(x,'cell',{}));
-% addParameter(p,'BranchColor','k',@(x)validateattributes(x,{'numeric'},{'size',[nB,1]}));
-% addParameter(p,'Subtree',[],@(x)validateattributes(x,{'numeric'},{'positive','integer','<=',nsub}));
-% addParameter(p,'Label','',@(x)validateattributes(x,{'string','char'},{}));
-
-
-
+nB = size(B,1);
 
 % Prep figure / axes
 if isempty(ha)
-    hf = figure('Name','Final Visual'); ha = axes(hf);
+    hf = figure('Name','Airway Tree'); ha = axes(hf);
 end
 hold(ha,'on');
 grid(ha,'on');
@@ -40,18 +35,25 @@ for i = 1:length(L_surfs)
 end
 
 % Normalize values to [0 1] scale
-if numel(Bind)==1
-    Bmin = min(min(B(:,Bind)),0);
-    Bval = (B(:,Bind) - Bmin)/(max(B(:,Bind)) - Bmin);
-else
+C_flag = length(C)==nB;
+if C_flag
+    C = (C-min(C)) / (max(C)-min(C));
 end
 
+if isempty(C)
+    c = [0 0 0];
+else
+    c = C;
+end
 for i = 1:nB
     
-    n = [ N(N(:,1)==B(i,1),2:4);
-          N(N(:,1)==B(i,2),2:4) ];
+    n = [ N(N(:,1)==B(i,2),2:4);
+          N(N(:,1)==B(i,3),2:4) ];
     
-    plot3(ha,n(:,1),n(:,2),n(:,3),'-','LineWidth',1,'Color',[Bval(i) 0 1-Bval(i)]);
+    if C_flag
+        c = [C(i) 0 1-C(i)];
+    end
+    plot3(ha,n(:,1),n(:,2),n(:,3),'-','LineWidth',1,'Color',c);
 
     plot3(ha,n(2,1),n(2,2),n(2,3),'blacko','MarkerFaceColor','black','MarkerSize',1);
 end

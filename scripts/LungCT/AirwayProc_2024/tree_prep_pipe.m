@@ -1,6 +1,6 @@
-function [B,N,L_surfs] = tree_prep_pipe(pID,fn_seg,fn_airways,outD,voxsz)
+function [B,N,L_surfs] = tree_prep_pipe(caseID,fn_seg,fn_airways,outD,voxsz)
 % Inputs:
-%      pID          Case ID
+%      caseID       Case ID
 %      fn_seg       Lobe segmentation
 %      fn_airways   Airways map
 %      outD         Case directory for saving results
@@ -13,7 +13,9 @@ function [B,N,L_surfs] = tree_prep_pipe(pID,fn_seg,fn_airways,outD,voxsz)
 warning('off','MATLAB:triangulation:PtsNotInTriWarnId')
 viewdir = [1,0,0];
 
-%% 0. load data (ariways and lobes)
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% 0. load data (ariways and lobes)
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 % Lobe Segmentation
 if ischar(fn_seg) && isfile(fn_seg)
@@ -25,10 +27,10 @@ dim = size(L);
 
 % Airways
 if ischar(fn_airways) && isfile(fn_airways)
-    [A,~,fov,~,~] = readNIFTI(fn_airways);
+    [A,~,fov,~,~] = logical(readNIFTI(fn_airways));
     voxsz = fov./size(A,1:3);
 elseif nargin==5
-    A = fn_airways;
+    A = logical(fn_airways);
 else
     error('Invalid inputs\n');
 end
@@ -42,87 +44,98 @@ end
 lobe = getLobeTags(L);
 lobe = lobe(cellfun(@(x)isscalar(x),{lobe.val})); % Use singular regions
 
-%% 1. the major airway centreline graph
-
+% Airway mask
 A = logical(A);
 [A_D,A_D_idx] = bwdist(~A,'euclidean'); % to use for radii approximation
 
-A_vox = im2coords3Dbin(A);
-A_cl = bwskel(A);
-A_cl_vox = get_M(A_cl,A_D,A_D);
-A_cl_vox = A_cl_vox(:,1:4);
+% File names for saved data:
+fn_realtree = fullfile(outD,'RealTree.mat');
+if isfile(fn_realtree)
+    p = load(fn_realtree);
+    B = p.B;
+    N = p.N;
+    clear p;
+    nN = size(N,1);
+    % nB = size(B,1);
+else
 
-hf = figure('Name','Centreline Voxels'); ha = axes(hf);
-plot3(ha,A_cl_vox(:,1),A_cl_vox(:,2),A_cl_vox(:,3),'.');
-axis(ha,'equal');
-view(ha,viewdir);
-saveas(hf,fullfile(outD,[pID,'.cl_vox.fig']));
-close(hf)
-
-[~,node,link] = Skel2Graph3D(A_cl,0);
-
-hf = figure('Name','Centreline Graph'); ha = axes(hf);
-plot_graph(ha,node,link)
-A_bound = boundary(A_vox,1); % N.B. not really tight enough, but low priority
-A_tri = triangulation(A_bound,A_vox);
-trisurf(A_tri,'FaceColor','black','FaceAlpha',0.1,'EdgeColor','none');
-grid(ha,'on');
-axis(ha,'equal');
-view(ha,viewdir);
-saveas(hf,fullfile(outD,[pID,'.cl_graph.fig']));
-close(hf);
-
-
-%% 2. formatting data into branches and nodes, more familiar structures
-%
-% Initialize branches output (B)
-nB = size(link,2);
-B = zeros(nB,3); % [Node1, Node2, Radius]
-B(:,1) = [link.n1]';
-B(:,2) = [link.n2]';
-
-% Initialize nodes output (N)
-nN = numel(node);
-N = [ (1:nN); node.comx; node.comy; node.comz ]';
-
-% N_ids = unique(B(:,1:2));
-% N = zeros(max(N_ids),4);
-% for i = 1:numel(N_ids)
-%     N_id = N_ids(i);
-%     N(N_id,1) = N_id;
-%     N(N_id,2) = node(1,N_id).comx;
-%     N(N_id,3) = node(1,N_id).comy;
-%     N(N_id,4) = node(1,N_id).comz;
-% end
-
-
-%% 3. graph link radii assignment
-
-% Calculate branch radii
-d2 = @(v1,v2) sqrt(sum((v1-v2).^2,2));
-for i = 1:nB
-    brc = link(i);
-    pnts = brc.point;
-    len = length(pnts);
+    % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    % ~~ major airway centreline graph
+    % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
-    c = (len+1)/2;
-    lim = round([c-len/4 c+len/4]);
-    pnts = pnts(lim(1):lim(2));
+    A_vox = im2coords3Dbin(A);
+    A_cl = bwskel(A);
+    A_cl_vox = get_M(A_cl,A_D,A_D);
+    A_cl_vox = A_cl_vox(:,1:4);
     
-    tmp = zeros(1,length(pnts));
+    hf = figure('Name','Centreline Voxels'); ha = axes(hf);
+    plot3(ha,A_cl_vox(:,1),A_cl_vox(:,2),A_cl_vox(:,3),'.');
+    axis(ha,'equal');
+    view(ha,viewdir);
+    saveas(hf,fullfile(outD,[caseID,'.cl_vox.fig']));
+    close(hf)
     
-    for j = 1:length(tmp)
-        [x,y,z] = ind2sub(dim,pnts(j));
-        CLpnt = voxsz.*[x,y,z]; % point on centreline
-        ind = A_D_idx(x,y,z);
-        [x,y,z] = ind2sub(dim,ind);
-        NRpnt = voxsz.*[x,y,z]; % nearest point from bwdist
-        tmp(j) = d2(CLpnt,NRpnt);                   % Euclidean distance in mm between points
+    [~,node,link] = Skel2Graph3D(A_cl,0);
+    
+    hf = figure('Name','Centreline Graph'); ha = axes(hf);
+    plot_graph(ha,node,link)
+    A_bound = boundary(A_vox,1); % N.B. not really tight enough, but low priority
+    A_tri = triangulation(A_bound,A_vox);
+    trisurf(A_tri,'FaceColor','black','FaceAlpha',0.1,'EdgeColor','none');
+    grid(ha,'on');
+    axis(ha,'equal');
+    view(ha,viewdir);
+    saveas(hf,fullfile(outD,[caseID,'.cl_graph.fig']));
+    close(hf);
+    
+    % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    % 2. formatting data into branches and nodes, more familiar structures
+    % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    % Initialize branches output (B)
+    nB = size(link,2);
+    B = zeros(nB,3); % [Node1, Node2, Radius]
+    B(:,1) = [link.n1]';
+    B(:,2) = [link.n2]';
+    
+    % Initialize nodes output (N)
+    nN = numel(node);
+    N = [ (1:nN); node.comx; node.comy; node.comz ]';
+
+    % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    % 3. graph link radii assignment
+    % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    % Calculate branch radii
+    d2 = @(v1,v2) sqrt(sum((v1-v2).^2,2));
+    for i = 1:nB
+        brc = link(i);
+        pnts = brc.point;
+        len = length(pnts);
+        
+        c = (len+1)/2;
+        lim = round([c-len/4 c+len/4]);
+        pnts = pnts(lim(1):lim(2));
+        
+        tmp = zeros(1,length(pnts));
+        
+        for j = 1:length(tmp)
+            [x,y,z] = ind2sub(dim,pnts(j));
+            CLpnt = voxsz.*[x,y,z]; % point on centreline
+            ind = A_D_idx(x,y,z);
+            [x,y,z] = ind2sub(dim,ind);
+            NRpnt = voxsz.*[x,y,z]; % nearest point from bwdist
+            tmp(j) = d2(CLpnt,NRpnt);                   % Euclidean distance in mm between points
+        end
+        
+        B(i,3) = mean(tmp); % approximate radius in mm from mean of sampled midpoints
     end
     
-    B(i,3) = mean(tmp); % approximate radius in mm from mean of sampled midpoints
-end
+    % Save centerline data
+    B_label = {'ID','N_Prox','N_Dist','Radius'};
+    save(fn_realtree,'N','B','B_label')
 
+end
 
 %% 4. tree orientation
 
@@ -157,7 +170,7 @@ for i = 1:size(B2,1)
         continue
     end
 end
-saveas(hf,fullfile(outD,[pID,'.oriented_tree.fig']));
+saveas(hf,fullfile(outD,[caseID,'.oriented_tree.fig']));
 close(hf);
 
 B2 = flip(B2,1); % place root at top, tree is now oriented
@@ -206,7 +219,7 @@ hf = figure; t = tiledlayout(hf,1,3);
 for i = 4:6
     plot_tree(nexttile(t),B,B_label{i},N,i,'Raw Tree Orders',L_surfs);
 end
-saveas(hf,fullfile(outD,[pID,'.raw_tree_orders.fig']));
+saveas(hf,fullfile(outD,[caseID,'.raw_tree_orders.fig']));
 close(hf);
 
 hf = figure; t = tiledlayout(hf,1,3);
@@ -217,7 +230,7 @@ for i = 4:6
     h.BinWidth = 1;
     title(ha,T{i-3})
 end
-saveas(hf,fullfile(outD,[pID,'.raw_tree_hists.fig']));
+saveas(hf,fullfile(outD,[caseID,'.raw_tree_hists.fig']));
 close(hf);
 
 %% convert nodes to mm and calculate branch lengths
@@ -239,7 +252,7 @@ ha = nexttile(t);
 histogram(ha,B(:,7));
 title(ha,'Lengths')
 xlabel(ha,'airway length (mm)')
-saveas(hf,fullfile(outD,[pID,'.pre_QC_lengths_and_radii.fig']));
+saveas(hf,fullfile(outD,[caseID,'.pre_QC_lengths_and_radii.fig']));
 close(hf);
 
 %% branch QC algorithm
@@ -336,7 +349,7 @@ plot_tree(ha,B,B_label,N,4,'Final Visual',L_surfs);
 for i = 1:nl
     trisurf(L_surfs{i},'FaceColor','b','FaceAlpha',0.05,'EdgeColor','none');
 end
-saveas(hf,fullfile(outD,[pID,'.final_visual.fig']));
+saveas(hf,fullfile(outD,[caseID,'.final_visual.fig']));
 close(hf);
 
 
@@ -346,14 +359,14 @@ close(hf);
 % typically z dim is different to x and y dims which themselves match
 
 lobe_ids = [lobe.val];
-save(fullfile(outD,[pID,'.tree_data.mat']),'B','N','lobe_ids','L_surfs','voxsz');
+save(fullfile(outD,[caseID,'.tree_data.mat']),'B','N','lobe_ids','L_surfs','voxsz');
 
 % Save QC report
 if ~isempty(qc_log)
     qc_table = array2table(qc_log, 'VariableNames', {'Generation', 'Radius_mm', 'Length_mm', 'Removal_Type'});
     qc_table.Standard_QC = qc_table.Removal_Type == 0;
     qc_table.Gen_2to4_Removal = qc_table.Removal_Type == 1;
-    writetable(qc_table, fullfile(outD, [pID, '_QC_report.csv']));
+    writetable(qc_table, fullfile(outD, [caseID, '_QC_report.csv']));
     fprintf('QC Report: %d standard removals, %d gen 2-4 removals\n', ...
         sum(qc_table.Standard_QC), sum(qc_table.Gen_2to4_Removal));
 end

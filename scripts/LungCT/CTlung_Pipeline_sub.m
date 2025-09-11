@@ -267,7 +267,8 @@ try
                 end
             end
 
-            if isfile(opts.fn.airways)
+            fn_airsim = fullfile(procdir,[ID,'.AirwayProc'],[ID,'_AirwayTreeSim.mat']);
+            if isfile(opts.fn.airways) && ~isfile(fn_airsim)
                 % Run airway simulation
                 writeLog(fn_log,'Performing airways simulation\n');
                 airway_processing(ID,img(2).label,opts.fn.airways,img(2).info.voxsz,procdir);
