@@ -48,7 +48,7 @@ prm.setOpts('thresh',[ 2 1 0 -856 ;...
 [labels,vals] = prm.calcPRM([exp,insR],1:2,2,{'Exp','Ins'},mask);
 
 %% Save scatterplot figure
-if nargin==4
+if nargin>3
     pipeline_save_fig(prm.hfscatter,svname);
 end
 

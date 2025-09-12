@@ -107,7 +107,6 @@ else
     % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     % Calculate branch radii
-    d2 = @(v1,v2) sqrt(sum((v1-v2).^2,2));
     for i = 1:nB
         brc = link(i);
         pnts = brc.point;
@@ -125,14 +124,14 @@ else
             ind = A_D_idx(x,y,z);
             [x,y,z] = ind2sub(dim,ind);
             NRpnt = voxsz.*[x,y,z]; % nearest point from bwdist
-            tmp(j) = d2(CLpnt,NRpnt);                   % Euclidean distance in mm between points
+            tmp(j) = sqrt(sum((CLpnt-NRpnt).^2,2));                   % Euclidean distance in mm between points
         end
         
         B(i,3) = mean(tmp); % approximate radius in mm from mean of sampled midpoints
     end
     
     % Save centerline data
-    B_label = {'ID','N_Prox','N_Dist','Radius'};
+    B_label = {'N_Prox','N_Dist','Radius'};
     save(fn_realtree,'N','B','B_label')
 
 end
@@ -149,7 +148,7 @@ B = [B(idT,:) ; B(1:idT-1,:) ; B(idT+1:end,:)]; % place root first in B
 
 % 3. check root is oriented proximal to distal
 if nnz(B(:,1:2)==B(1,2))==1 % check if external node is 'distal' here
-    B(1,1:2) = [B(1,2) B(1,1)]; % transpose if required
+    B(1,1:2) = B(1,[2,1]); % transpose if required
 end
 
 % 4. orient tree relative to root branch
@@ -160,9 +159,8 @@ B2 = TR.Edges.EndNodes;
 hf = figure; ha = axes(hf); view(viewdir); hold(ha,"on");
 for i = 1:size(B2,1)
     try
-        pnt = [N(B2(i,1),2) N(B2(i,1),3) N(B2(i,1),4)];
-        vec = [N(B2(i,2),2)-N(B2(i,1),2) N(B2(i,2),3)-N(B2(i,1),3) ...
-               N(B2(i,2),4)-N(B2(i,1),4)];
+        pnt = N(B2(i,1),2:4);
+        vec = diff(N(B2(i,1:2),2:4),1);
         quiver3(ha,pnt(1),pnt(2),pnt(3),vec(1),vec(2),vec(3),'b-',...
             'LineWidth',2,'MaxHeadSize',0.5);
     catch err
@@ -173,7 +171,9 @@ end
 saveas(hf,fullfile(outD,[caseID,'.oriented_tree.fig']));
 close(hf);
 
-B2 = flip(B2,1); % place root at top, tree is now oriented
+if B2(1)~=B(1)
+    B2 = flip(B2,1); % place root at top, tree is now oriented
+end
 
 % 5. include radii from B in oriented tree
 % Flip nodes if needed
@@ -214,10 +214,13 @@ for i = 1:nB
     B(i,4) = gen_no(B(i,1:2),B(:,1:2));
 end
 
+% Convert node locations to mm
+N(:,2:4) = N(:,2:4).*voxsz;
+
 B_label = {'Node1','Node2','Radius','Generation','Strahler','Horsfield'};
 hf = figure; t = tiledlayout(hf,1,3);
 for i = 4:6
-    plot_tree(nexttile(t),B,B_label{i},N,i,'Raw Tree Orders',L_surfs);
+    plot_tree(nexttile(t),B,N,B(:,i),L_surfs,B_label{i});
 end
 saveas(hf,fullfile(outD,[caseID,'.raw_tree_orders.fig']));
 close(hf);
@@ -233,15 +236,11 @@ end
 saveas(hf,fullfile(outD,[caseID,'.raw_tree_hists.fig']));
 close(hf);
 
-%% convert nodes to mm and calculate branch lengths
-%
+%% calculate branch lengths
 % 0. add branch lengths to end (7) of B
-%
-% first converting NOD to mm
-N(:,2:4) = N(:,2:4).*voxsz;
 
 % now branch length assignment using d2 metric
-B(:,7) = d2( N(B(:,1),2:4) , N(B(:,2),2:4) );
+B(:,7) = sqrt(sum( (N(B(:,1),2:4) - N(B(:,2),2:4)).^2,2));
 
 hf = figure; t = tiledlayout(hf,1,2);
 ha = nexttile(t);
@@ -345,7 +344,8 @@ end
 %% final visual check
 %
 hf = figure('Name','Final Visual'); ha = axes(hf);
-plot_tree(ha,B,B_label,N,4,'Final Visual',L_surfs);
+plot_tree(ha,B,N,B(:,4),L_surfs,B_label{4});
+% plot_tree(ha,B,B_label,N,4,'Final Visual',L_surfs);
 for i = 1:nl
     trisurf(L_surfs{i},'FaceColor','b','FaceAlpha',0.05,'EdgeColor','none');
 end
@@ -378,6 +378,6 @@ function y = gen_no(b,B) % given branch b from B, output generation no.
     if b(1,1) == B(1,1) % root, define as generation 1
         y = 1;
     else % recursion using parent branch
-        b = B( B(:,2)==b(1,1) ,:);
-        y = 1 + gen_no(b,B);
+        newb = B( B(:,2)==b(1,1) ,:);
+        y = 1 + gen_no(newb,B);
     end

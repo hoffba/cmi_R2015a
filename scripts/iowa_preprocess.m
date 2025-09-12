@@ -49,16 +49,10 @@ for i = 1:N
         N = readtable(fn_N);
         N = [N.Node,N.X+1,N.Y+1,N.Z+1];
         N_idx = sub2ind(d,N(:,2),N(:,3),N(:,4));
-        % nN = size(N,1);
 
         % Prep skeleton for radius calculations
-        % [~,A_D_idx] = bwdist(~A,'euclidean'); % to use for radii approximation
         skel = logical(readNIFTI(fn_CL));
         [~, skel_D_idx] = bwdist(skel);
-        % skel_linear_indices = find(skel);
-        % num_skel_points = length(skel_linear_indices);
-        % linear_to_node_id = zeros(d);
-        % linear_to_node_id(skel_linear_indices) = 1:num_skel_points;
 
         % Quick graph of skeleton
         [~,node,link] = Skel2Graph3D(skel,0);

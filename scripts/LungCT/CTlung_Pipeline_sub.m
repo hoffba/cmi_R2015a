@@ -414,7 +414,6 @@ try
                         img(1).info.voxsz,...
                         {opts.fn.regMontage,...
                          fullfile(opts.save_path,'InsReg_Montage',[ID,'_InsReg_Montage.tif'])});
-        img(2) = [];
 
         % Jacobian analysis
         opts.fn.jac = fullfile(procdir,sprintf('%s.jac%s',res.ID{1},fn_ext));
@@ -451,7 +450,7 @@ try
                 end
             end
             if ~isempty(jac)
-                T = CTlung_LobeStats(prmlabel,'Jac',{'mean','var'},[],jac);
+                T = CTlung_LobeStats(img(1).label,'Jac',{'mean','var'},[],jac);
                 res = addTableVarVal(res,T);
             end
         end
@@ -503,15 +502,15 @@ try
         end
 
         % Erode mask based on image values
-        prmlabel = img(1).label;
+        seg_prm = img.label;
         if opts.prmerode
-            emask = exp<-250 & insR<-250;
-            if gapchk
+            emask = img(1).mat<-250 & ins_reg<-250;
+            if img(1).info.gapchk
                 SE = strel('disk',2);
             else
                 SE = strel('sphere',2);
             end
-            prmlabel(~imerode(emask,SE)) = 0;
+            seg_prm(~imerode(emask,SE)) = 0;
         end
 
         % PRM calculation
@@ -522,13 +521,13 @@ try
                 prm10 = int8(readNIFTI(opts.fn.prm));
             else
                 writeLog(fn_log,'Calculating PRM...\n');
-                [prm10,~] = pipeline_PRM(img(1).mat,logical(prmlabel),ins_reg,...
+                [prm10,~] = pipeline_PRM(img(1).mat,logical(seg_prm),ins_reg,...
                     {opts.fn.prmScatter,fullfile(opts.save_path,'PRM_Scatter',[ID,'_PRM_Scatter.tif'])},...
-                    [img.gapchk]);
+                    [img(1).info.gapchk,img(2).info.gapchk]);
 
                 % Save PRM
                 writeLog(fn_log,'Saving PRM as NIFTI ... ');
-                stat = cmi_save(0,prm10,{'PRM'},img.info.fov,img.info.orient,opts.fn.prm);
+                stat = cmi_save(0,prm10,{'PRM'},img(1).info.fov,img(1).info.orient,opts.fn.prm);
                 if stat
                     writeLog(fn_log,'  PRM saved\n');
                 else
@@ -537,6 +536,7 @@ try
             end
         end
         clear ins_reg;
+        img(2) = []; % Clear INS image because it's no longer needed
 
         % Inverse transform
         if opts.itform
@@ -553,8 +553,7 @@ try
         if ~isempty(prm10)
             % Tabulate 10-color PRM results
             writeLog(fn_log,'Tabulating 10-color PRM results...\n');
-            T = CTlung_LobeStats(prmlabel,'PRM','pct',categorical(prm10,1:10,string(1:10)));
-            % T = lobeLoop(prmlabel,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm10,1);
+            T = CTlung_LobeStats(seg_prm,'PRM','pct',categorical(prm10,1:10,string(1:10)));
             res = addTableVarVal(res,T);
 
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
@@ -570,8 +569,7 @@ try
 
             % Tabulate 5-color PRM results
             writeLog(fn_log,'Tabulating 5-color PRM results...\n');
-            % T = lobeLoop(prmlabel,@(mask,prm,flag)tabulatePRM(mask,prm,flag),prm5,0);
-            T = CTlung_LobeStats(prmlabel,'PRM','pct',categorical(prm5,1:5,string(prmlabel)));
+            T = CTlung_LobeStats(seg_prm,'PRM','pct',categorical(prm5,1:5,string(prmlabel)));
             res = addTableVarVal(res,T);
 
             % Generate PRM Report
@@ -584,7 +582,7 @@ try
             if opts.eprm
                 writeLog(fn_log,'Generating ePRM ... ')
                 t = tic;
-                T = pipeline_ePRM(ID,procdir,prm10,prmlabel,img.info,true,fn_log);
+                T = pipeline_ePRM(ID,procdir,prm10,seg_prm,img.info,true,fn_log);
                 res = addTableVarVal(res,T);
                 writeLog(fn_log,'%s\n',duration(0,0,toc(t)));
             end
@@ -604,7 +602,7 @@ try
                         'n',10*ones(1,3),...
                         'gridsp',5,...
                         'voxsz',img.info.voxsz,...
-                        'mask',logical(prmlabel),...
+                        'mask',logical(seg_prm),...
                         'prog',0);
                 else
                     writeLog(fn_log,'Loading tPRM from files ...\n');
@@ -626,7 +624,7 @@ try
                             cmi_save(0,single(tprm),{char(str)},img.info.fov,img.info.orient,opts.fn.tprm{imf,iprm});
                         end
                         writeLog(fn_log,'Tabulating means\n');
-                        T = CTlung_LobeStats(prmlabel, "tPRM_" + str, 'mean', [], tprm);
+                        T = CTlung_LobeStats(seg_prm, "tPRM_" + str, 'mean', [], tprm);
                         res = addTableVarVal(res,T);
                     end
                 end
