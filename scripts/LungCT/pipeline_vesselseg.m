@@ -25,20 +25,19 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     writeLog(fn_log,'Vessel Segmentation Version: %s\n',ver);
 
-    ID = info.name;
+    ID = extractBefore(info.name,'.');
     %% Check save directory
     writeLog(fn_log,'   Saving to folder: %s\n',save_path);
-    if isfolder(save_path)
+    fn_resamp = fullfile(save_path,sprintf('%s.ins.resamp.nii.gz',ID));
+    if isfile(fn_resamp)
         % Don't re-run if analysis has already been run
-        return;
-    else
-        mkdir(save_path);
+        % return;
     end
     
     %% Find and load INSP CT file:
     writeLog(fn_log,'  Resampling CT image ...\n');
     [ct,info_re] = vessel_resamp(ct,info,[],0.625*ones(1,3),'linear');
-    saveNIFTI(fullfile(save_path,sprintf('%s.ins.resamp.nii.gz',ID)),ct,'ins.resamp',info_re.fov,info_re.orient);
+    saveNIFTI(fn_resamp,ct,'ins.resamp',info_re.fov,info_re.orient);
    
     %% Resample segmentation map:
     writeLog(fn_log,'  Resampling SEGMENTATION image ...\n');

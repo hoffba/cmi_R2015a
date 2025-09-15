@@ -1,31 +1,44 @@
-function T = compile_pipeline_results(fn)
+function T = compile_pipeline_results(fn,varnames)
 
 T = [];
 
 try
 
-    vstr = {'ID','Exp_Source','Ins_Source','ROI'};
+    string_vars = {'ID','Exp_Source','Ins_Source','ROI'};
+
+    % Initialize table with requested variables
+    uvars = {};
+    if nargin>1
+        uvars = unique([string_vars,varnames],'stable');
+        T = table('Size',[0,numel(uvars)],...
+            'VariableTypes',[repmat({'cellstr'},1,4),repmat({'double'},1,numel(uvars)-4)],...
+            'VariableNames',uvars);
+    end
 
     % fn = dir(fullfile(basedir,'**','*_Results.csv'));
-    for i = 1:numel(fn)
+    nf = numel(fn);
+    for i = 1:nf
+
         fname = fullfile(fn(i).folder,fn(i).name);
+
+        fprintf('(%d of %d) : %s\n',i,nf,fname)
 
         opts = detectImportOptions(fname);
         t = readtable(fname,opts);
 
         % Force certain variables to be cellstr
-        for j = 1:numel(vstr)
-            if ismember(vstr,t.Properties.VariableNames)
-                if ~iscellstr(t.(vstr{j}))
-                    t.(vstr{j}) = repmat({''},size(t,1),1);
+        for j = 1:numel(string_vars)
+            if ismember(string_vars,t.Properties.VariableNames)
+                if ~iscellstr(t.(string_vars{j}))
+                    t.(string_vars{j}) = repmat({''},size(t,1),1);
                 end
             end
         end
 
-        if i == 1
+        if ~istable(T)
             T = t;
         else
-            T = addtotable(T,t);
+            T = addtotable(T,t,uvars);
         end
     end
 
@@ -34,13 +47,14 @@ catch err
 end
 
 
-function T = addtotable(T,t)
+function T = addtotable(T,t,uvars)
 
     nT = size(T,1);
     nt = size(t,1);
     ind_add = nT + (1:nt);
     vT = T.Properties.VariableNames;
     vt = t.Properties.VariableNames;
+    vt = vt(ismember(vt,uvars));
 
     % Add missing variables to T
     % ind = find(~ismember(vt,vT));
