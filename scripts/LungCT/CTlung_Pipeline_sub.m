@@ -467,7 +467,7 @@ try
                     SNemph = ScatterNet_Seg('EMPH',ins_reg,logical(img(1).label));
                     cmi_save(0,SNemph,'ScatNet',img(1).info.fov,img(1).info.orient,opts.fn.scatnetEmphReg);
                 end
-                T = CTlung_LobeStats(img.label,'scatnetEmphReg','pct',SNemph);
+                T = CTlung_LobeStats(img(1).label,'scatnetEmphReg','pct',SNemph);
                 res = addTableVarVal(res,T);
                 clear SNemph
             end
@@ -487,7 +487,7 @@ try
                 cmi_save(0,dBlood,{'dBlood'},img(1).info.fov,img(1).info.orient,opts.fn.dBlood);
             end
             if ~isempty(dBlood)
-                T = CTlung_LobeStats(img.label,'dBlood',{'mean','var'},[],dBlood);
+                T = CTlung_LobeStats(img(1).label,'dBlood',{'mean','var'},[],dBlood);
                 res = addTableVarVal(res,T);
             end
         end
@@ -502,7 +502,7 @@ try
         end
 
         % Erode mask based on image values
-        seg_prm = img.label;
+        seg_prm = img(1).label;
         if opts.prmerode
             emask = img(1).mat<-250 & ins_reg<-250;
             if img(1).info.gapchk
@@ -561,9 +561,9 @@ try
 
             % QC PRM
             writeLog(fn_log,'Generating PRM Montage ...\n');
-            QCmontage('prm',img.mat(:,:,img(1).QCind),...
+            QCmontage('prm',img(1).mat(:,:,img(1).QCind),...
                             double(prm5(:,:,img(1).QCind)),...
-                            img.info.voxsz,...
+                            img(1).info.voxsz,...
                             {opts.fn.prmMontage,...
                              fullfile(opts.save_path,'PRM_Montage',[ID,'_PRM_Montage.tif'])});
 
@@ -582,7 +582,7 @@ try
             if opts.eprm
                 writeLog(fn_log,'Generating ePRM ... ')
                 t = tic;
-                T = pipeline_ePRM(ID,procdir,prm10,seg_prm,img.info,true,fn_log);
+                T = pipeline_ePRM(ID,procdir,prm10,seg_prm,img(1).info,true,fn_log);
                 res = addTableVarVal(res,T);
                 writeLog(fn_log,'%s\n',duration(0,0,toc(t)));
             end
@@ -601,7 +601,7 @@ try
                         'tmode','==',...
                         'n',10*ones(1,3),...
                         'gridsp',5,...
-                        'voxsz',img.info.voxsz,...
+                        'voxsz',img(1).info.voxsz,...
                         'mask',logical(seg_prm),...
                         'prog',0);
                 else
@@ -621,7 +621,7 @@ try
                             writeLog(fn_log,'interpolating ... ');
                             tprm = grid2img(p.MF(iprm,imf,:),p.ind,p.mask,3,1);
                             writeLog(fn_log,'Saving NIFTI ... ');
-                            cmi_save(0,single(tprm),{char(str)},img.info.fov,img.info.orient,opts.fn.tprm{imf,iprm});
+                            cmi_save(0,single(tprm),{char(str)},img(1).info.fov,img(1).info.orient,opts.fn.tprm{imf,iprm});
                         end
                         writeLog(fn_log,'Tabulating means\n');
                         T = CTlung_LobeStats(seg_prm, "tPRM_" + str, 'mean', [], tprm);
