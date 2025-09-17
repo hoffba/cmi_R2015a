@@ -26,37 +26,40 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     writeLog(fn_log,'Vessel Segmentation Version: %s\n',ver);
 
     ID = extractBefore(info.name,'.');
-    %% Check save directory
-    writeLog(fn_log,'   Saving to folder: %s\n',save_path);
+
+    %% Image resampling
     fn_resamp = fullfile(save_path,sprintf('%s.ins.resamp.nii.gz',ID));
     if isfile(fn_resamp)
-        % Don't re-run if analysis has already been run
-        % return;
+        % Load from file
+        writeLog(fn_log,'  Loading resampled image from file ...\n');
+        [ct,~,fov,orient,~] = readNIFTI(fn_resamp);
+        info_re = struct('fov',fov,'orient',orient,'tag','');
+    else
+        writeLog(fn_log,'  Resampling CT image ...\n');
+        [ct,info_re] = vessel_resamp(ct,info,[],0.625*ones(1,3),'linear');
+        saveNIFTI(fn_resamp,ct,'ins.resamp',info_re.fov,info_re.orient);
     end
-    
-    %% Find and load INSP CT file:
-    writeLog(fn_log,'  Resampling CT image ...\n');
-    [ct,info_re] = vessel_resamp(ct,info,[],0.625*ones(1,3),'linear');
-    saveNIFTI(fn_resamp,ct,'ins.resamp',info_re.fov,info_re.orient);
-   
-    %% Resample segmentation map:
+       
+    %% Resample segmentation map
     writeLog(fn_log,'  Resampling SEGMENTATION image ...\n');
     seg_re = vessel_resamp(single(seg),info,[],0.625*ones(1,3),'nearest');
-    
-    %% Validate size of loaded data:
+
+    % Validate size of loaded data:
     if ~all(size(ct)==size(seg_re))
         writeLog(fn_log,'Warning :: INS and SEGMENTATION images must be the same size.');
         return;
     end
-    
-    %% Save eroded lobe map:
+
+    %% Resample and erode segmentation map:    
     info_re.tag = 'vessel.erodedLobes';
-    lobeval = unique(seg(seg~=0));
-    fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
-    if isfile(fname)
-        writeLog(fn_log,'Loading eroded lobe map from file ...\n');
-        eroded_lobes = readNIFTI(fname);
-    else
+    fn_erodedseg = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
+    if isfile(fn_erodedseg)
+        writeLog(fn_log,'  Reading eroded lobes from file ...\n')
+        eroded_lobes = readNIFTI(fn_erodedseg);
+    else     
+
+        % Save eroded lobe map:
+        lobeval = unique(seg(seg~=0));
         writeLog(fn_log,'Eroding lobe map ... ');
         t = tic;
         se = strel('sphere',5);
@@ -64,8 +67,9 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
         for i = 1:numel(lobeval)
                 eroded_lobes(imerode(seg_re == lobeval(i),se)) = lobeval(i);
         end
-        saveNIFTI(fname,int8(eroded_lobes),info_re.tag,info_re.fov,info_re.orient);
+        saveNIFTI(fn_erodedseg,int8(eroded_lobes),info_re.tag,info_re.fov,info_re.orient);
         writeLog(fn_log,'done (%s)\n',duration(0,0,toc(t)));
+
     end
     eroded_lobes = eroded_lobes > 0;
     
