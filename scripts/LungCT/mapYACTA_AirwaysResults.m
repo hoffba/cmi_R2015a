@@ -5,11 +5,14 @@ function mapYACTA_AirwaysResults(ID,ydir,fn_airways)
 %       fn_airways = path to airways file
 
 % Read airways
+fprintf('Reading airways: %s\n',fn_airways);
 [A,label,fov,orient,info,fnameOut] = cmi_load(1,[],fn_airways);
 d = size(A);
 
 % Read YACTA results
-R = readMHD(fullfile(ydir,'AirwayResults.mhd'));
+fn_results = fullfile(ydir,'AirwayResults.mhd');
+fprintf('Reading YACTA results: %s\n',fn_results)
+R = readMHD(fn_results);
 [dR(1),dR(2),dR(3),nv] = size(R);
 
 % Check for validity of input dimensions
@@ -18,6 +21,7 @@ if ~all(d==dR)
 end
 
 % Generate airways surface triangulation
+fprintf('Triangulating airway surface\n')
 voxsz = fov./d;
 [X,Y,Z] = meshgrid( (1:d(2)) * voxsz(2),...
                     (1:d(1)) * voxsz(1),...
@@ -43,6 +47,7 @@ set(ha,'XColor','none','YColor','none','ZColor','none',...
 view(ha,0,0);
 
 % Find face colors
+fprintf('Finding face colors\n')
 nF = length(ht.Faces);
 C = nan(nF,nv);
 for i = 1:nF
@@ -60,6 +65,7 @@ else
 end
 map = jet(128);
 colormap(hf,map);
+colorbar
 for i = 1:nv
     nC = C(:,i);
     mxC = max(nC);
@@ -70,5 +76,7 @@ for i = 1:nv
     clim(ha,[0,mxC]);
     ht.FaceVertexCData = squeeze(ind2rgb(uint8(nC),map));
     title(label(i));
-    print(hf,fullfile(ydir,[ID,'_',matlab.lang.makeValidName(label(i))]),"-dtiff");
+    saveas(hf,fullfile(ydir,strcat(ID,'_',matlab.lang.makeValidName(label(i)),'.tif')));
 end
+
+delete(hf);
