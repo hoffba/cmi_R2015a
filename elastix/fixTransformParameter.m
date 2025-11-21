@@ -2,7 +2,7 @@ function fixTransformParameter(fn)
 
 go = true;
 while go
-    if ischar(fn) && endsWith(fn,'.txt') && exist(fn,'file')
+    if (ischar(fn) || isstring(fn)) && endsWith(fn,'.txt') && exist(fn,'file')
         % Read TP file:
         fid  = fopen(fn,'r');
         str = fread(fid,'*char')';
