@@ -28,7 +28,6 @@ voxsz = fov./d;
                     (1:d(3)) * voxsz(3));
 [faces, vertices] = isosurface(X,Y,Z,logical(A),0.5);
 TR = triangulation(faces, vertices);
-save(fullfile(ydir,'Triangulation.mat'),'TR');
 clear faces vertices
 
 % find coordinates to resuts skeleton
@@ -57,6 +56,9 @@ for i = 1:nF
     [~,ind] = min(sk_d);
     C(i,:) = squeeze(R(sky(ind),skx(ind),skz(ind),:))';
 end
+
+% Save triangulation and face colors
+save(fullfile(ydir,'Triangulation.mat'),'TR','C');
 
 % Loop over results vectors
 if nv==4
