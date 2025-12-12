@@ -28,6 +28,7 @@ voxsz = fov./d;
                     (1:d(3)) * voxsz(3));
 [faces, vertices] = isosurface(X,Y,Z,logical(A),0.5);
 TR = triangulation(faces, vertices);
+save(fullfile(ydir,'Triangulation.mat'),'TR');
 clear faces vertices
 
 % find coordinates to resuts skeleton

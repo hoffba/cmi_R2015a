@@ -147,11 +147,7 @@ end
 
 if ~isempty(T)
     % Sort data, and determine groupings
-    T = sortrows(T,{'StudyID','PatientName','StudyDate','SeriesNumber'});
-    % Find case groupings
-    [~,~,ugroups_ic] = unique(strcat(T.StudyID,T.PatientName,T.StudyDate));
-    T.CaseNumber = ugroups_ic;
-
+    T = sortrows(T,{'PatientName','StudyID','StudyDate','SeriesNumber'});
     writetable(T,fullfile(searchpath,'Data_Catalog.csv'));
 end
 
