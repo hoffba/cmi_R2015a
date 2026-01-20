@@ -13,7 +13,7 @@ opts = struct( ...
               ...
               'unreg',          true    ,... % MODULE unregistered stats for Exp/Ins
               'totalseg',       false   ,... % MODULE TotalSegmentator
-              'yacta' ,         false   ,... % MODULE airways and segmentation from YACTA
+              'yacta' ,         true    ,... % MODULE airways and segmentation from YACTA
               'airsim',         false   ,... % MODULE simulated airways (Alex Bell 2024)
               'scatnetAT',      true    ,... % MODULE scatternet air trapping
               'scatnetAT_PEDS', false   ,... % MODULE scatternet air trapping for pediatrics
@@ -22,10 +22,10 @@ opts = struct( ...
               'scatnetEmph',    true    ,... % MODULE scatternet Emph map
               'prm',            true    ,... % MODULE PRM analysis
               'itform',         false   ,... % MODULE inverse transform PRM to Ins space
-              'eprm',           false   ,... % MODULE ePRM analysis
+              'eprm',           true    ,... % MODULE ePRM analysis
               'tprm',           false   ,... % MODULE tPRM analysis
               'dBlood',         true    ,... % MODULE generation of dBlood map
-              'saa',            false   ,... % MODULE Stratified Axial Analysis
+              'saa',            true    ,... % MODULE Stratified Axial Analysis
               ...
               'quickreg',       false   ,... % OPTION to skip last step in registration for speed
               'orient_check',   true    ,... % OPTION to auto-correct image orientation

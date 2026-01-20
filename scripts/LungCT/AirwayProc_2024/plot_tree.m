@@ -24,6 +24,7 @@ nB = size(B,1);
 if isempty(ha)
     hf = figure('Name','Airway Tree'); ha = axes(hf);
 end
+axis(ha,'equal');
 hold(ha,'on');
 grid(ha,'on');
 view(ha,[1,0,0]);
@@ -57,3 +58,13 @@ for i = 1:nB
 
     plot3(ha,n(2,1),n(2,2),n(2,3),'blacko','MarkerFaceColor','black','MarkerSize',1);
 end
+
+% Set plot limits
+cmin = []; cmax = [];
+for i = 1:numel(L_surfs)
+    cmin = min([cmin;L_surfs{i}.Points],[],1);
+    cmax = max([cmax;L_surfs{i}.Points],[],1);
+end
+xlim(ha,[cmin(1),cmax(1)]);
+ylim(ha,[cmin(2),cmax(2)]);
+zlim(ha,[cmin(3),cmax(3)]);

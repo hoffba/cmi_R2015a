@@ -271,7 +271,11 @@ try
             if isfile(opts.fn.airways) && ~isfile(fn_airsim)
                 % Run airway simulation
                 writeLog(fn_log,'Performing airways simulation\n');
-                airway_processing(ID,img(2).label,opts.fn.airways,img(2).info.voxsz,procdir);
+                try
+                    airway_processing(ID,img(2).label,opts.fn.airways,img(2).info.voxsz,procdir);
+                catch err
+                    writeLog(fn_log,'airway_processing FAILED:\n%s\n',getReport(err));
+                end
             end
         end
     end
@@ -541,7 +545,7 @@ try
         % Inverse transform
         if opts.itform
             if isfile(opts.fn.prmreg)
-                writeLog(fn_log,'Invers Transform PRM - File found\n');
+                writeLog(fn_log,'Inverse Transform PRM - File found\n');
             else
                 writeLog(fn_log,'Calculating inverse transform and transforming PRM to Ins space ...');
                 info_hom = niftiinfo(opts.fn.ins);
@@ -551,10 +555,10 @@ try
         end
 
         if ~isempty(prm10)
-            % Tabulate 10-color PRM results
-            writeLog(fn_log,'Tabulating 10-color PRM results...\n');
-            T = CTlung_LobeStats(seg_prm,'PRM','pct',categorical(prm10,1:10,string(1:10)));
-            res = addTableVarVal(res,T);
+            % % Tabulate 10-color PRM results
+            % writeLog(fn_log,'Tabulating 10-color PRM results...\n');
+            % T = CTlung_LobeStats(seg_prm,'PRM','pct',categorical(prm10,1:10,string(1:10)));
+            % res = addTableVarVal(res,T);
 
             % map full PRM values (1:10) to (norm,fsad,emph,pd,ns)
             prm5 = prm_convert10to5(prm10);

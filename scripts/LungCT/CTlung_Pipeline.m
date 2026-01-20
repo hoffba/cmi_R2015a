@@ -511,22 +511,22 @@ end
             % Remove spaces from UMlabel
             C.UMlabel = cellfun(@(x)regexprep(x,' ','_'),C.UMlabel,'UniformOutput',false);
             
-            if ismember('CaseNumber',C.Properties.VariableNames)
-                sortvars = {'PatientName','StudyID','StudyDate','CaseNumber','SeriesNumber'};
-                sortvars = sortvars(ismember(sortvars,C.Properties.VariableNames));
-                C = sortrows(C,sortvars);
-                [~,~,ugroups_ic] = unique(C.CaseNumber);        % Find unique CaseNumbers
-                ugroups_ic = [0;cumsum(diff(ugroups_ic)~=0)]+1; % Re-number case groups
-                C.CaseNumber = ugroups_ic;
-                [~,ugroups_ia] = unique(ugroups_ic);            % Find new case group locations
-            else
+            % if ismember('CaseNumber',C.Properties.VariableNames)
+            %     sortvars = {'PatientName','StudyID','StudyDate','CaseNumber','SeriesNumber'};
+            %     sortvars = sortvars(ismember(sortvars,C.Properties.VariableNames));
+            %     C = sortrows(C,sortvars);
+            %     [~,~,ugroups_ic] = unique(C.CaseNumber);        % Find unique CaseNumbers
+            %     ugroups_ic = [0;cumsum(diff(ugroups_ic)~=0)]+1; % Re-number case groups
+            %     C.CaseNumber = ugroups_ic;
+            %     [~,ugroups_ia] = unique(ugroups_ic);            % Find new case group locations
+            % else
                 % Remove cases with no identifiers
                 C(cellfun(@isempty,C.UMlabel),:) = [];
                 % Sort by identifiers
-                C = sortrows(C,{'PatientName','StudyID','StudyDate','SeriesNumber'});
+                C = sortrows(C,{'UMlabel','StudyDate','SeriesNumber'});
                 % Find case groupings
-                [~,ugroups_ia,ugroups_ic] = unique(strcat(C.StudyDate,C.StudyID,C.PatientName));
-            end
+                [~,ugroups_ia,ugroups_ic] = unique(strcat(C.UMlabel,C.StudyDate));
+            % end
             ngroups = numel(ugroups_ia);
 
             % Initialize group info
