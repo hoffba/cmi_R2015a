@@ -1,4 +1,4 @@
-function [Branches,Nodes,lower_branches,lower_nodes,num_real_branches] = CreateConductingZone(Branches, Nodes, lobe_TRI, file_directory)  % add by Ali namvar - added num_real_branches output
+function [Branches,Nodes,lower_branches,lower_nodes] = CreateConductingZone(Branches, Nodes, lobe_TRI, file_directory)
 %% CREATECONDUCTINGZONE(BRANCHES, NODES, LOBE_TRI) grows out an airway tree
 % within the input lobe boundaries, using the given seeding airway tree.
 % This is based off an algorithm presented in detail in Bordas et al.
@@ -20,10 +20,9 @@ function [Branches,Nodes,lower_branches,lower_nodes,num_real_branches] = CreateC
 % Nodes: Full node structure [ID, x, y, z]
 % lower_branches: Terminal branch indices of the COMBINED tree
 % lower_nodes: Terminal node IDs of the COMBINED tree
-% num_real_branches: Number of REAL branches (for tagging - branches 1:num_real are real)
 %
 % Written by Brody Foy, July 2020
-% Modified: Added num_real_branches output for proper tag assignment
+% Ali Namvar, 2026-02-17 - Removed num_real_branches output, protected real terminal nodes from merge
 
     newBranches = Branches; 
     options.minBranchLength = 1;
@@ -34,7 +33,7 @@ function [Branches,Nodes,lower_branches,lower_nodes,num_real_branches] = CreateC
     %% Remove Nodes that aren't in the branch structure
     branch_nodelist = unique([Branches(:,1); Branches(:,2)]); 
     
-    % add by Ali namvar - Use ismember instead of direct indexing to handle non-sequential IDs
+    % Ali Namvar, 2026-02-17 - ismember instead of direct row indexing
     [~, node_rows] = ismember(branch_nodelist, Nodes(:,1));
     node_rows = node_rows(node_rows > 0);
     Nodes = Nodes(node_rows,:); 
@@ -107,11 +106,6 @@ function [Branches,Nodes,lower_branches,lower_nodes,num_real_branches] = CreateC
         end
     end
     
-    %% add by Ali namvar - Store the number of real branches BEFORE simulation starts
-    % This is CRITICAL for proper tagging later
-    num_real_branches_before_sim = size(Branches, 1);
-    fprintf('Number of real branches before simulation: %d\n', num_real_branches_before_sim);
-    
     %% Initialize a new Branch and new node structure
     newBranches = Branches; 
     newNodes = Nodes; 
@@ -167,35 +161,30 @@ function [Branches,Nodes,lower_branches,lower_nodes,num_real_branches] = CreateC
                                                     Lobe, outside_idx, orig_lower_branches); 
     
     %% Convert the newBranch structure to the desired format (four column style)
-    parentBranches = orig_lower_branches; 
     Branches = [(1:size(newBranches,1))', newBranches]; 
     Nodes = newNodes; 
     
+    %% Ali Namvar, 2026-02-18 - Save real terminal distal node xyz before cleanup
+    parentBranches = orig_lower_branches;
+    protected_nodes = Branches(parentBranches, 3);
+    parent_dist_xyz = Nodes(protected_nodes, 2:4);
+    
     %% Clean up any branches that are really just split into two
-    [Branches, Nodes, Lobe] = RemoveOneNodeBranches(Branches, Nodes, Lobe); 
+    [Branches, Nodes, Lobe] = RemoveOneNodeBranches(Branches, Nodes, Lobe, protected_nodes); 
     
-    %% FIX: Recalculate num_real_branches after cleanup
-    % Real branches are the first num_real_branches_before_sim branches
-    % But some may have been removed during cleanup, so we need to track this
-    % The safest way: real branches are those with ID <= num_real_branches_before_sim
-    % BUT branch IDs are renumbered in RemoveOneNodeBranches
-    % So we need a different approach: count branches that existed before simulation
+    %% Ali Namvar, 2026-02-18 - Recover parentBranches after renumbering using xyz match
+    parentBranches = [];
+    for i = 1:size(parent_dist_xyz,1)
+        node_match = find(ismember(Nodes(:,2:4), parent_dist_xyz(i,:), 'rows'));
+        if ~isempty(node_match)
+            br_match = find(Branches(:,3) == Nodes(node_match(1),1), 1);
+            if ~isempty(br_match)
+                parentBranches = [parentBranches; br_match];
+            end
+        end
+    end 
     
-    % After all cleanup, real branches should still be at the beginning
-    % We track by checking which branches have proximal nodes that existed in original tree
-    % Actually, the cleanest approach: track the mapping through cleanup
-    
-    % For now, use a heuristic: real branches are those where BOTH nodes
-    % have IDs <= max_original_node_id
-    % This works because simulated nodes are added with higher IDs
-    
-    % Better approach: just use the stored count, adjusted for any removals
-    % The RemoveOneNodeBranches only merges branches, doesn't change the real/sim boundary much
-    
-    % add by Ali namvar - Recalculate num_real_branches after cleanup
-    num_real_branches = min(num_real_branches_before_sim, size(Branches,1));
-    
-    %% Calculate terminal branches of the new structure (COMBINED tree)
+    %% Calculate terminal branches of the new structure
     lower_branches = zeros(round(1/2*size(Branches,1)),1);
     lower_nodes = lower_branches;
     counter = 1; 
@@ -226,8 +215,6 @@ function [Branches,Nodes,lower_branches,lower_nodes,num_real_branches] = CreateC
         end
     end
     
-    fprintf('Final tree: %d total branches, %d real branches\n', size(Branches,1), num_real_branches);
-    
     %% Save output files to the given directory
     if ~exist(file_directory, 'dir')
         mkdir(file_directory);
@@ -240,7 +227,6 @@ function [Branches,Nodes,lower_branches,lower_nodes,num_real_branches] = CreateC
     save([file_directory, '/Gen.mat'], 'Gen');
     save([file_directory, '/Horsfield.mat'], 'Horsfield');
     save([file_directory, '/Lobe.mat'], 'Lobe'); 
-    save([file_directory, '/num_real_branches.mat'], 'num_real_branches');  % add by Ali namvar
     
     %% Return resulting branches
     Branches = [Branches,Gen,Strahler,Horsfield,Lobe];
@@ -255,6 +241,11 @@ function [Branches, Nodes, Lobe] = GrowAirwayTree(Branches, Nodes, voxel_xyz,...
     
     normalPlane = cross(curProxNode(:) - curDistalNode(:), ...
                                 curCentroid(:) - curDistalNode(:)); 
+    % Ali Namvar, 2026-02-17 - Fallback for collinear case (zero cross product)
+    if norm(normalPlane) < 1e-10
+        [~,~,V] = svd(voxel_xyz - mean(voxel_xyz), 'econ');
+        normalPlane = V(:,end);
+    end
     node_splits = NaN(size(voxel_xyz,1),1); 
     for i = 1:size(voxel_xyz,1)
         cur_xyz = voxel_xyz(i,:); 
@@ -344,8 +335,18 @@ function Branches = AssignRadii(Branches, parent_branch, reduction_factor, Horsf
     end
 end
 
-function [Branches, Nodes, Lobe] = RemoveOneNodeBranches(Branches, Nodes, Lobe)
+% Ali Namvar, 2026-02-17 - Added protected_nodes to prevent merging real terminal junctions
+function [Branches, Nodes, Lobe] = RemoveOneNodeBranches(Branches, Nodes, Lobe, protected_nodes)
+    if nargin < 4
+        protected_nodes = [];
+    end
+    
     for i = 2:size(Nodes,1)
+        % Ali Namvar, 2026-02-17 - Skip real terminal junction nodes
+        if ismember(Nodes(i,1), protected_nodes)
+            continue;
+        end
+        
         idx = find(Branches(:,2) == Nodes(i,1));
         if length(idx) == 1
             proxBranch = find(Branches(:,3) == Nodes(i,1)); 
@@ -363,12 +364,12 @@ function [Branches, Nodes, Lobe] = RemoveOneNodeBranches(Branches, Nodes, Lobe)
     newBranches = Branches;         
     branch_nodelist = unique([Branches(:,2); Branches(:,3)]); 
     
-    % add by Ali namvar - Find the rows in Nodes that contain these node IDs using ismember
+    % Ali Namvar, 2026-02-17 - ismember for proper node extraction
     [~, node_rows] = ismember(branch_nodelist, Nodes(:,1));
     node_rows = node_rows(node_rows > 0);
     Nodes = Nodes(node_rows,:); 
     
-    % add by Ali namvar - Create proper node ID to row mapping
+    % Ali Namvar, 2026-02-17 - Map-based renumbering instead of collision-risk loop
     old_node_ids = Nodes(:,1);
     new_node_ids = (1:size(Nodes,1))';
     
@@ -423,7 +424,7 @@ function [Branches, Nodes, Lobe, parent_branches] = RemoveBranches(Branches, Nod
     Branches = newBranches;
     Lobe = Lobe(new_branch_idx); 
     
-    % add by Ali namvar - Use proper node ID mapping instead of direct indexing
+    % Ali Namvar, 2026-02-17 - Map-based renumbering instead of collision-risk loop
     old_node_ids = newNodes(:,1);
     new_node_ids = (1:size(newNodes,1))';
     

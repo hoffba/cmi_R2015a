@@ -1,5 +1,5 @@
 % airway_processing.m
-function [B,N,lobe_surf] = airway_processing(pID,seg,A,voxsz,procdir)
+function [B,N,L_surfs] = airway_processing(pID,seg,A,voxsz,procdir)
 %% function airway_processing(pID,ins,seg,A,voxsz,img,fcn,procdir)
 %   Inputs: pID =       string ID of subject/case (base filename)
 %           seg =       inspiratory lung segmentation
@@ -15,6 +15,8 @@ function [B,N,lobe_surf] = airway_processing(pID,seg,A,voxsz,procdir)
 %      <0 = Real terminal branch (negative index = terminal ID)
 %      >0 = Simulated branch (positive value = which terminal it belongs to)
 
+viewdir = [1,0,0];
+
 if ischar(seg)
     seg = cmi_load(1,[],seg);
 end
@@ -22,123 +24,233 @@ if ischar(A)
     A = cmi_load(1,[],A);
 end
 
+% Check that inputs are the same size
+dim = size(seg,1:3);
+if ~all(size(A,1:3) == dim)
+    error('All input dimensions must match.')
+end
+fov = dim.*voxsz;
+
 %% Create folder for outputs
 outD = fullfile(procdir,[pID,'.AirwayProc']);
 if ~isfolder(outD)
     mkdir(outD);
 end
 
-%% Prep tree
+%% Define file names
+fn = struct('real',       fullfile(outD,[pID,'.RealTree.mat'])     ,...
+            'sim',        fullfile(outD,[pID,'.SimTree.mat'])      ,...
+            'lobe',       fullfile(outD,[pID,'.LobeSurf.mat'])     ,...
+            'centerline', fullfile(outD,[pID,'.Centerline.nii.gz']));
+qc = struct('cl_vox',     fullfile(outD,[pID,'cl_vox.tif'])        ,...
+            'cl_graph',   fullfile(outD,[pID,'cl_graph.tif'])      );
+
+%% Process lobes (for QC figure surface rendering)
+if isfile(fn.lobe)
+    fprintf('Reading lobe surfaces from file\n');
+    p = load(fn.lobe);
+    L_surfs = p.L_surfs;
+    % lobe_ids = p.lobe_ids;
+else
+    fprintf('Generating lobe surfaces ... ');
+    t = tic;
+    [L_surfs,lobe_ids] = getLobeSurfs(seg,voxsz);
+    save(fn.lobe,'lobe_ids','L_surfs','voxsz');
+    t = toc(t);
+    fprintf('done (%d:%02d)\n',floor(t/60),rem(t,60));
+end
+
+%% Skeletonize the airways
+if isfile(fn.centerline)
+    fprintf('Reading centerline from file: %s\n',fn.centerline);
+    CL = readNIFTI(fn.centerline);
+    CL = logical(CL);
+else
+    fprintf('Finding centerline from airways segmentation ... ');
+    t = tic;
+    CL = findCenterline(logical(A));
+    saveNIFTI(fn.centerline,CL,{'Centerline'},fov,eye(4))
+    t = toc(t);
+    fprintf('done (%d:%02d)\n',floor(t/60),rem(t,60));
+end
+
+%% QC figure shows centerline
+[xx,yy,zz] = ind2sub(dim,find(CL));
+A_cl_vox = [xx,yy,zz] .* voxsz;
+hf = figure('Name','Centreline Voxels'); ha = axes(hf);
+plot3(ha,A_cl_vox(:,1),A_cl_vox(:,2),A_cl_vox(:,3),'.');
+axis(ha,'equal');
+view(ha,viewdir);
+saveas(hf,qc.cl_vox);
+close(hf)
+
+%% Convert skeleton to nodes and branches
+if isfile(fn.real)
+    fprintf('Reading airway tree from file: %s\n',fn.real)
+    p = load(fn.real);
+    B = p.B;            % Branches described by Node IDs
+    N = p.N;            % Node positions in image-xyz (mm)
+    points = p.points;  % Branch centerline point indices (not including end nodes)
+else
+    fprintf('Generating airway tree ... ');
+    t = tic;
+    [B,N,points] = skel2tree(CL,voxsz);
+    save(fn_real,'B','N','points');
+    t = toc(t);
+    fprintf('done (%d:%02d)\n',floor(t/60),rem(t,60));
+end
+
+%% QC figure shows tree in airway rendering
+% Generate airway surface
+A_surf = getLobeSurfs(A,voxsz);
+% Generate figure
+hf = figure('Name','Centreline Graph'); ha = axes(hf);
+plot_tree(ha,B,N,[],A_surf);
+saveas(hf,fullfile(outD,[pID,'.cl_graph.fig']));
+close(hf);
+
+%% QC rearrange and fix tree errors
+
+% Remove branches with 0 length
+ind = B(:,1)==B(:,2);
+if nnz(ind)
+    fprintf('Removing %d branches with zero length.\n',nnz(ind));
+    B(ind,:) = [];
+end
+
+% Place tracheal branch first in the list
+%  * slices go from 0 (bottom) to N (top) of lungs
+Nroot = N(find(N(:,4)==max(N(:,4)),1),1);
+Bi = find(any(B(:,1:2)==Nroot,2),1);
+B = [B(Bi,:);B(1:Bi-1,:);B(Bi+1:end,:)];
+if B(1,1)~=Nroot
+    B(1,:) = B(1,[2,1]);
+end
+
+% Orient tree branches to be proximal-distal
+fprintf('Orienting branches starting at trachea ... ');
 t = tic;
-[B,N,lobe_surf] = tree_prep_pipe(pID,seg,A,outD,voxsz);
-t = round(toc(t));
-fprintf('Tree prep = %d:%02d\n',floor(t/60),rem(t,60));
-% B ~ [Node1, Node2, Radius, Generation, Strahler, Horsfield, Length]
+G = graph(B(:,1),B(:,2));
+TR = shortestpathtree(G,B(1,1));
+B = TR.Edges.EndNodes;
+t = toc(t);
+fprintf('done (%d:%02d)\n',floor(t/60),rem(t,60));
+
+% Combine branches that don't split
+[uval, ~, ind] = unique(B(:));          % 1. Find the unique values and their positions
+counts = histcounts(ind, 1:max(ind)+1); % 2. Count the occurrences of each unique value
+midnode = uval(counts == 2);            % 3. Find values that appeared exactly twice
+ncombine = numel(midnode);
+if ncombine
+    fprintf('Combining limbs that do not branch (%d) ...',ncombine);
+    t = tic;
+    for i = 1:ncombine
+        B_prox = find(B(:,2)==midnode(i),1);
+        B_dist = find(B(:,1)==midnode(i),1);
+        B(B_prox,2) = B(B_dist,2);
+        Ni = round(N(midnode,2:4)./voxsz);
+        points{B_prox} = [points{B_prox} , sub2ind(dim,Ni(1),Ni(2),Ni(3)) , points{B_dist}];
+        B(B_dist,:) = [];
+    end
+    t = toc(t);
+    fprintf('done (%d:%02d)\n',floor(t/60),rem(t,60));
+end
+
+nB = size(B,1);
+
+%% QC figure shows quiver of branch directions
+hf = figure; ha = axes(hf); view(viewdir); hold(ha,"on");
+for i = 1:nB
+    try
+        pnt = N(B(i,1),2:4);
+        vec = N(B(i,2),2:4) - N(B(i,1),2:4);
+        quiver3(ha,pnt(1),pnt(2),pnt(3),vec(1),vec(2),vec(3),'b-','LineWidth',2,'MaxHeadSize',0.5);
+    catch err
+        disp(getReport(err))
+        continue
+    end
+end
+saveas(hf,fullfile(outD,[pID,'.oriented_tree.fig']));
+close(hf);
+
+
+%% Calculate branch values
+% Mean Radius
+
+% Find voxels just outside airways for radius calculation
+fprintf('Calculating mean branch radii ...\n')
+A_border_point = find(imdilate(A,strel('sphere',1)) & ~A);
+[rr,cc,ss] = ind2sub(dim,A_border_point);
+A_border_point = [rr,cc,ss] .* voxsz;
+R = nan(nB,1);
+for i = 1:nB
+    path_points = points{i};
+    np = numel(path_points);
+    if np % Can't calculate if there are no points
+        % Use points with margin away from end nodes
+        c = (np+1)/2;
+        lim = round([c-np/4 c+np/4]);
+        mean_points = path_points(lim(1):lim(2));
+        [rr,cc,ss] = ind2sub(dim,mean_points');
+    
+        % Find distance to nearest airway border
+        [~,dist] = dsearchn(A_border_point,[rr,cc,ss] .* voxsz);
+        R(i) = mean(dist); % approximate radius in mm from mean of sampled midpoints
+    end
+end
+
+% Horsfield Order
+H = calc_ho(B);
+% Strahler Order
+S = calc_so(B);
+% Generation
+G = calc_gen(B);
+
+% Concatenate into Branch matrix
+B = [B,R,H,S,G];
+
+
+%% Ali Namvar, 2026-02-17 - Save real terminal distal node xyz before simulation
+real_term_idx = findTerminalBranches(B);
+Nr_term_xyz = N(B(real_term_idx, 2), 2:4);
+fprintf('Real terminal branches before simulation: %d\n', nnz(real_term_idx));
 
 %% Simulation
 t = tic;
-[Bsim,Nsim,~,~,num_real_branches] = CreateConductingZone( B(:,1:3), N, lobe_surf , outD );  % add by Ali namvar - get num_real_branches
+[Bsim,Nsim,~,~] = CreateConductingZone( B(:,1:3), N, L_surfs , outD );  % Ali Namvar, 2026-02-17 - removed num_real_branches output
 t = round(toc(t));
 fprintf('Simulation = %d:%02d\n',floor(t/60),rem(t,60));
 % Bsim ~ [ID, Node1, Node2, Radius, Gen, Strahler, Horsfield, Lobe]
-% num_real_branches = number of real (CT-extracted) branches
 
-%% add by Ali namvar - Tag branches based on real/simulated status using index-based approach
+%% Ali Namvar, 2026-02-17 - Tag branches using xyz coordinate matching
 t = tic;
 nB = size(Bsim, 1);
 tag = zeros(nB, 1);
 
+% Step 1: Find real terminal nodes in post-simulation tree by xyz matching
+Ns_term = Nsim(ismember(Nsim(:,2:4), Nr_term_xyz, 'rows'), 1);
+
+if isempty(Ns_term)
+    warning('No real terminal nodes found by xyz matching - all tags will be 0');
+end
+
+% Step 2: Find branches whose distal node is a real terminal node
+Br_term = find(ismember(Bsim(:,3), Ns_term));
+nterm = numel(Br_term);
+
 fprintf('\nTagging branches...\n');
 fprintf('  Total branches: %d\n', nB);
-fprintf('  Real branches (1:%d): %d\n', num_real_branches, num_real_branches);
-fprintf('  Simulated branches (%d:%d): %d\n', num_real_branches+1, nB, nB - num_real_branches);
+fprintf('  Real terminals matched by xyz: %d / %d\n', nterm, length(real_term_idx));
 
-%% add by Ali namvar - Step 1: Identify real terminal branches
-% Real terminals are real branches that have at least one SIMULATED daughter
-% (meaning they are the roots of simulated subtrees)
-real_terminals = [];
-real_nonterminals = [];
+% Step 3: Tag real terminals with negative numbers
+tag(Br_term) = -(1:nterm);
 
-for i = 1:num_real_branches
-    dist_node = Bsim(i, 3);  % distal node of this real branch
-    
-    % Find all daughters (branches whose proximal node = this distal node)
-    daughters = find(Bsim(:, 2) == dist_node);
-    
-    if isempty(daughters)
-        % No daughters at all - this is a terminal that had no simulation
-        % (possibly outside lobe boundaries or other reason)
-        real_terminals = [real_terminals; i];
-    else
-        % Check if any daughters are simulated
-        sim_daughters = daughters(daughters > num_real_branches);
-        real_daughters = daughters(daughters <= num_real_branches);
-        
-        if ~isempty(sim_daughters)
-            % Has simulated daughters - this is a real terminal
-            real_terminals = [real_terminals; i];
-        else
-            % Only has real daughters - this is a real non-terminal
-            real_nonterminals = [real_nonterminals; i];
-        end
-    end
-end
-
-fprintf('  Real terminals (roots of simulated trees): %d\n', length(real_terminals));
-fprintf('  Real non-terminals: %d\n', length(real_nonterminals));
-
-%% add by Ali namvar - Step 2: Tag real terminals with negative numbers
-for i = 1:length(real_terminals)
-    tag(real_terminals(i)) = -i;
-end
-
-% Real non-terminals keep tag = 0
-
-%% add by Ali namvar - Step 3: Tag simulated branches with positive numbers
-% Each simulated branch gets tagged with the index of its real terminal root
-
-% Build a mapping: for each simulated branch, find which real terminal it belongs to
-% We do this by tracing back through parents
-
-for i = (num_real_branches + 1):nB
-    % This is a simulated branch
-    % Trace back through parents until we find a real branch
-    current = i;
-    max_iterations = nB;  % Safety limit
-    iter = 0;
-    
-    while current > num_real_branches && iter < max_iterations
-        prox_node = Bsim(current, 2);  % proximal node of current branch
-        
-        % Find parent branch (whose distal node = this proximal node)
-        parent = find(Bsim(:, 3) == prox_node, 1);
-        
-        if isempty(parent)
-            % No parent found - orphan branch (shouldn't happen)
-            warning('Orphan simulated branch found: %d', i);
-            break;
-        end
-        
-        current = parent;
-        iter = iter + 1;
-    end
-    
-    if current <= num_real_branches
-        % Found the real branch that this simulated branch descends from
-        % Find which terminal index this corresponds to
-        term_idx = find(real_terminals == current);
-        if ~isempty(term_idx)
-            tag(i) = term_idx;  % positive = which terminal it belongs to
-        else
-            % The real branch is not in our terminal list - shouldn't happen
-            % but handle gracefully
-            warning('Simulated branch %d traces to real branch %d which is not a terminal', i, current);
-            tag(i) = 999999;  % Flag as problematic
-        end
-    else
-        % Couldn't trace back to a real branch
-        warning('Could not trace simulated branch %d to real root', i);
-        tag(i) = 999998;  % Flag as problematic
+% Step 4: Tag simulated descendants with positive numbers
+for i = 1:nterm
+    Bnext = ismember(Bsim(:,2), Bsim(Br_term(i),3));
+    while nnz(Bnext)
+        tag(Bnext) = i;
+        Bnext = ismember(Bsim(:,2), Bsim(Bnext,3));
     end
 end
 
@@ -146,35 +258,16 @@ end
 n_real_nonterminal = sum(tag == 0);
 n_real_terminal = sum(tag < 0);
 n_simulated = sum(tag > 0);
-n_problematic = sum(tag >= 999998);
 
 fprintf('\nTag validation:\n');
 fprintf('  Tag = 0 (real non-terminal): %d\n', n_real_nonterminal);
 fprintf('  Tag < 0 (real terminal): %d\n', n_real_terminal);
 fprintf('  Tag > 0 (simulated): %d\n', n_simulated);
+fprintf('  Unmatched terminals: %d\n', length(real_term_idx) - nterm);
 
-if n_problematic > 0
-    warning('%d branches have problematic tags (could not trace to root)', n_problematic);
-end
-
-% Sanity checks
-expected_real_nonterminal = length(real_nonterminals);
-expected_real_terminal = length(real_terminals);
-expected_simulated = nB - num_real_branches;
-
-if n_real_nonterminal ~= expected_real_nonterminal
-    warning('Real non-terminal count mismatch: got %d, expected %d', ...
-        n_real_nonterminal, expected_real_nonterminal);
-end
-
-if n_real_terminal ~= expected_real_terminal
-    warning('Real terminal count mismatch: got %d, expected %d', ...
-        n_real_terminal, expected_real_terminal);
-end
-
-if n_simulated ~= expected_simulated
-    warning('Simulated count mismatch: got %d, expected %d', ...
-        n_simulated, expected_simulated);
+if nterm < length(real_term_idx)
+    warning('%d real terminals could not be matched in post-simulation tree', ...
+        length(real_term_idx) - nterm);
 end
 
 t = round(toc(t));
@@ -188,15 +281,14 @@ N = Nsim;
 B_label = {'ID','N_Prox','N_Dist','Radius','Gen','Strahler','Horsfield','Lobe','Tag'};
 dims = size(seg);
 
-%% add by Ali namvar - Save tag statistics
+% Ali Namvar, 2026-02-17 - Updated tag_stats, removed num_real_branches
 tag_stats.total_branches = nB;
-tag_stats.num_real_branches = num_real_branches;
 tag_stats.real_nonterminal = n_real_nonterminal;
 tag_stats.real_terminal = n_real_terminal;
 tag_stats.simulated = n_simulated;
-tag_stats.real_terminal_indices = real_terminals;
+tag_stats.real_terminal_indices = Br_term;
 
-save(fullfile(outD,[pID,'_AirwayTreeSim.mat']),'dims','voxsz','B','N','B_label','lobe_surf','tag_stats','num_real_branches');
+save(fullfile(outD,[pID,'_AirwayTreeSim.mat']),'dims','voxsz','B','N','B_label','L_surfs','tag_stats');
 
 fprintf('\nSaved airway tree to: %s\n', fullfile(outD,[pID,'_AirwayTreeSim.mat']));
-fprintf('Final tree: %d branches (%d real, %d simulated)\n', nB, num_real_branches, nB-num_real_branches);
+fprintf('Final tree: %d branches (%d real, %d simulated)\n', nB, n_real_nonterminal + n_real_terminal, n_simulated);

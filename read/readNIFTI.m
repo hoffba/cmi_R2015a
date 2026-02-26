@@ -18,9 +18,9 @@ if nargin==2 && ~isempty(d) && ~all(d(1:3)==dims)
     img = []; label = {}; fov = []; orient = []; info = []; return;
 end
 img = double(niftiread(info));
-img = permute(img,[2,1,3]);
+img = permute(img,[2,1,3,5,4]);
 
-label = {extractBefore(Nfile,'.nii')};
+label = Nfile;
 d4 = size(img,4);
 if d4>1
     label = strcat(label,'_',cellfun(@num2str,num2cell(1:d4),'UniformOutput',false));

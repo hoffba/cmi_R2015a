@@ -60,11 +60,13 @@ for i = 1:nB
 end
 
 % Set plot limits
-cmin = []; cmax = [];
-for i = 1:numel(L_surfs)
-    cmin = min([cmin;L_surfs{i}.Points],[],1);
-    cmax = max([cmax;L_surfs{i}.Points],[],1);
+if ~isempty(L_surfs)
+    cmin = []; cmax = [];
+    for i = 1:numel(L_surfs)
+        cmin = min([cmin;L_surfs{i}.Points],[],1);
+        cmax = max([cmax;L_surfs{i}.Points],[],1);
+    end
+    xlim(ha,[cmin(1),cmax(1)]);
+    ylim(ha,[cmin(2),cmax(2)]);
+    zlim(ha,[cmin(3),cmax(3)]);
 end
-xlim(ha,[cmin(1),cmax(1)]);
-ylim(ha,[cmin(2),cmax(2)]);
-zlim(ha,[cmin(3),cmax(3)]);
