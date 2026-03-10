@@ -94,7 +94,7 @@ if ~isempty(fullname)
         fnameOut(end-2:end) = [];
     end
     nf = length(fullname);
-    alabel = cell(1,nf);
+    label = cell(1,nf);
     ok = 1;
     for i = 1:nf
         if ok
@@ -149,7 +149,7 @@ if ~isempty(fullname)
                 tlabel = tlabel(sel);
             end
             if ok && dt(1)>0
-                alabel{i} = tlabel;
+                label{i} = tlabel;
                 if i==1 % first image loaded initializes the image data
                     img = timg;
                     fov = tfov;
@@ -167,10 +167,6 @@ if ~isempty(fullname)
             end
         end
     end
-    label = [alabel{:}];
-    % if ~isempty(fov)
-    %     fov = fov([2,1,3]); % change to matlab coordinates: [y,x,z]
-    % end
 end
 if (imgflag == 0)
     img = logical(img);
