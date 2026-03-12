@@ -9,10 +9,9 @@ Ralpha = abs(L2)./abs(L3);              % 1 -> plate;   0 -> line
 Rbeta = abs(L1)./sqrt(abs(L2.*L3));     % 1 -> blob;    0 -> line
 Ralpha(isnan(Ralpha)) = 0;
 Rbeta(isnan(Rbeta)) = 0;
+d = size(im,1:3);
 S = sqrt(L1.^2 + L2.^2 + L3.^2);     
-V =  ( ones(size(im,1),size(im,2),size(im,3)) - exp(-(Ralpha.^2)/(2*alpha^2)) ) .*...
-        exp(-(Rbeta.^2)/(2*beta^2)).*...
-        ( ones(size(im,1),size(im,2),size(im,3)) - exp(-(S.^2)/(2*c^2)) );
+V =  ( 1 - exp(-(Ralpha.^2)/(2*alpha^2)) ) .* exp(-(Rbeta.^2)/(2*beta^2)) .*  ( 1 - exp(-(S.^2)/(2*c^2)) );
 %% TODO     half the value of the maximum Hessian norm has proven to work
 %% If |lambda2 > 0| or |lambda2 < 0|  => Vo = 0
     if(wb)

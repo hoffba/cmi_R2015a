@@ -11,7 +11,7 @@ L123(:,:,:,1) = abs(L1);
 L123(:,:,:,2) = abs(L2); 
 L123(:,:,:,3) = abs(L3);
 %[L123,idx] = sort(L123,4,'descend');
-[L123,idx] = sort(L123,4);
+[~,idx] = sort(L123,4);
 
 L1s = L1; 
 L2s = L2;

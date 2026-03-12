@@ -35,7 +35,7 @@ function T = TensorForOrientedQuadratureFilters3D(qi,angles)
 %       0.1 - 02/21/2020 First implementation
 
 %% Tensor
-T = zeros(size(qi,1),size(qi,2),size(qi,3),9);
+T = single(zeros(size(qi,1),size(qi,2),size(qi,3),9));
 for i=1:size(angles,1)
    nnT = kron(angles(i,:),angles(i,:)');
    %nnTI = (nnT-1/(4-1).*I); %alpha = 1/(m-1) where m = size of T
