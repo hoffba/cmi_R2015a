@@ -20,8 +20,8 @@ end
 img = double(niftiread(info));
 img = permute(img,[2,1,3,5,4]);
 
-label = Nfile;
+label = {Nfile};
 d4 = size(img,4);
 if d4>1
-    label = strcat(label,'_',cellfun(@num2str,num2cell(1:d4),'UniformOutput',false));
+    label = strcat(label{1},'_',cellfun(@num2str,num2cell(1:d4),'UniformOutput',false));
 end

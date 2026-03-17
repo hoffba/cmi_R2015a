@@ -167,6 +167,7 @@ if ~isempty(fullname)
             end
         end
     end
+    label = [label{:}];
 end
 if (imgflag == 0)
     img = logical(img);
