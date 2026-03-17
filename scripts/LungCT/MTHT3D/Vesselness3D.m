@@ -12,8 +12,8 @@ Rbeta(isnan(Rbeta)) = 0;
 d = size(im,1:3);
 S = sqrt(L1.^2 + L2.^2 + L3.^2);     
 V =  ( 1 - exp(-(Ralpha.^2)/(2*alpha^2)) ) .* exp(-(Rbeta.^2)/(2*beta^2)) .*  ( 1 - exp(-(S.^2)/(2*c^2)) );
-%% TODO     half the value of the maximum Hessian norm has proven to work
-%% If |lambda2 > 0| or |lambda2 < 0|  => Vo = 0
+% TODO     half the value of the maximum Hessian norm has proven to work
+% If |lambda2 > 0| or |lambda2 < 0|  => Vo = 0
     if(wb)
         mask = L1>=0 | L2>=0 | L3>=0;
         V(mask) = 0;      

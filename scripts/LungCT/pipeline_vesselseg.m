@@ -85,7 +85,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     else
         writeLog(fn_log,'Calculating enhanced vessel maps ... \n');
         t = tic;
-        vessels = single(vesselSeg_subj_boxes(ct, segBW));
+        vessels = single(vesselSeg_subj(ct, segBW));
         vessels(isnan(vessels)) = 0;
         saveNIFTI(fname,vessels,info_re.tag,info_re.fov,info_re.orient);
         writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
@@ -102,6 +102,8 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
         t = tic;
         perLaa = nnz(ct(segBW) < -950) / nnz(segBW);
         bin_vessels = binarizeVessels(vessels,eroded_lobes,perLaa);
+        % save MIP to file for QC
+        imwrite(flip(squeeze(max(bin_vessels,[],1))'),fullfile(save_path,[ID,'.binVessel.MIP.tif']));
         saveNIFTI(fname,int8(vessels),info_re.tag,info_re.fov,info_re.orient);
         writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
     end
