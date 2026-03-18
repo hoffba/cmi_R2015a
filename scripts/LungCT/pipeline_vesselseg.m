@@ -4,7 +4,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
 % t = vesselSeg_BH( fname_ins , fname_seg , save_path )
 % t = vesselSeg_BH( ins , seg , info , save_path )
 
-    ver = 'pipeline_vesselSeg BH-20240617';
+    ver = 'pipeline_vesselSeg BH-20260318';
 
     T = [];
     tt = tic;
