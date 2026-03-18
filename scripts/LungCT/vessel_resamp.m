@@ -9,6 +9,7 @@ function [I,info] = vessel_resamp(I,info,d_new,voxsz_new,interpm)
 
         dclass = class(I);
         if ~ismember(dclass,{'single','double'})
+            % Temporarily convert to single
             I = single(I);
         end
 
@@ -26,6 +27,7 @@ function [I,info] = vessel_resamp(I,info,d_new,voxsz_new,interpm)
         
         I = cast(I,dclass);
 
+        info.orient(1:3,4) = info.orient(1:3,4) + (voxsz_new - info.voxsz)'/2;
         info.voxsz = voxsz_new;
         info.d = size(I);
     end

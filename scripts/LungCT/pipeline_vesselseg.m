@@ -50,7 +50,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
         return;
     end
 
-    %% Resample and erode segmentation map:    
+    %% Save eroded segmentation map:    
     info_re.tag = 'vessel.erodedLobes';
     fn_erodedseg = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
     if isfile(fn_erodedseg)
@@ -92,7 +92,7 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     end
 
     %% Binarize vessels:
-    info_re.tag = 'vessel.binVessel';
+    info_re.tag = 'vessel.iso.binVessel';
     fname = fullfile(save_path,sprintf('%s.%s.nii.gz',ID,info_re.tag));
     if isfile(fname)
         writeLog(fn_log,'Reading binary vessel map from file ...\n');
@@ -104,8 +104,12 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
         bin_vessels = binarizeVessels(vessels,eroded_lobes,perLaa);
         % save MIP to file for QC
         imwrite(flip(squeeze(max(bin_vessels,[],1))'),fullfile(save_path,[ID,'.binVessel.MIP.tif']));
+        % Save iso-space binVessels
         saveNIFTI(fname,int8(vessels),info_re.tag,info_re.fov,info_re.orient);
         writeLog(fn_log,'done (%s)\n\n',duration(0,0,toc(t)));
+        % Save original-space binVessels
+        V = vessel_resamp(bin_vessels,info_re,info.d,info.voxsz,'nearest');
+        saveNIFTI(fullfile(save_path,[ID,'.vessel.binVessel.nii.gz']),int8(V),[ID,'.binVessel'],info.fov,info.orient);
     end
     
     %% Generate CSA maps
@@ -169,4 +173,3 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
     
     writeLog(fn_log,'TOTAL vessel processing time: %s\n',duration(0,0,toc(tt)));
     
-
