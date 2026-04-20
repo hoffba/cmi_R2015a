@@ -163,7 +163,7 @@ for ifn = 1:nf
             elseif isa(tinfo.Private_DiffusionBValue,'uint8')
                 diffN = str2double(char(tinfo.Private_DiffusionBValue'));
             end
-        elseif isfield(tinfo,'B_value') && (length(tinfo.B_value)==1)
+        elseif isfield(tinfo,'B_value') && (isscalar(tinfo.B_value))
             diffN = tinfo.B_value;
         elseif isfield(tinfo,'SlopInt_6_9') && ~isempty(tinfo.SlopInt_6_9)
             if isa(tinfo.SlopInt_6_9,'uint8')
@@ -190,13 +190,13 @@ for ifn = 1:nf
         elseif isfield(tinfo,'DiffusionGradientDirection') && (length(tinfo.DiffusionGradientDirection)==3)
             diffD = tinfo.DiffusionGradientDirection;
         elseif all(isfield(tinfo,{'DiffusionDirectionX','DiffusionDirectionY','DiffusionDirectionZ'}))
-            if ~isempty(tinfo.DiffusionDirectionX) && (numel(tinfo.DiffusionDirectionX)==1)
+            if ~isempty(tinfo.DiffusionDirectionX) && (isscalar(tinfo.DiffusionDirectionX))
                 diffD(1) = tinfo.DiffusionDirectionX;
             end
-            if ~isempty(tinfo.DiffusionDirectionY) && (numel(tinfo.DiffusionDirectionY)==1)
+            if ~isempty(tinfo.DiffusionDirectionY) && (isscalar(tinfo.DiffusionDirectionY))
                 diffD(2) = tinfo.DiffusionDirectionY;
             end
-            if ~isempty(tinfo.DiffusionDirectionZ) && (numel(tinfo.DiffusionDirectionZ)==1)
+            if ~isempty(tinfo.DiffusionDirectionZ) && (isscalar(tinfo.DiffusionDirectionZ))
                 diffD(3) = tinfo.DiffusionDirectionZ;
             end
         end
@@ -263,7 +263,7 @@ for ifn = 1:nf
             end
             dcmdata(j).StudyDescription = val;
             
-            if isfield(tinfo,'DiffusionBValue') && (length(tinfo.DiffusionBValue)==1)
+            if isfield(tinfo,'DiffusionBValue') && (isscalar(tinfo.DiffusionBValue))
                 val = ['b',num2str(tinfo.DiffusionBValue)];
             elseif isfield(tinfo,'SeriesDescription') && ~isempty(tinfo.SeriesDescription)
                 val = tinfo.SeriesDescription;
@@ -470,7 +470,7 @@ if ~isempty(dcmdata)
         gflag = length(uS); % Number of slices per image section
         oimg = dcmdata.img;
         oloc = dcmdata.SlicePos;
-    elseif (length(uN)==1) && ismember(uN,1:2)
+    elseif (isscalar(uN)) && ismember(uN,1:2)
         % 1: Case for single-slice gapped CT data
         % 2: Case for 2-slice gapped CT data
         gflag = numel(uS);

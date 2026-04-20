@@ -86,19 +86,19 @@ try
                 voxsz = fov ./ d;
     
                 % check for resolution (memory problems at too high res)
-                scl = round(d(1:2)/512);
-                if any(scl>1)
-                    writeLog(fn_log,' ... Downsampling from [%d %d %d] to [%d %d %d]',d,d./[scl 1]);
-                    img(i).mat = imresize3(img(i).mat,'Scale',[1./scl,1]);
-                    % Correct orientation matrix:
-                    offset = orient * [(scl-1)/2 0 1]';
-                    orient = orient * diag([scl 1 1]);
-                    orient(:,4) = offset;
-                    voxsz = voxsz .* [scl 1];
-                    d = size(img(i).mat);
-                    fov = d.*voxsz;
-                end
-                writeLog(fn_log,'\n');
+                % scl = round(d(1:2)/512);
+                % if any(scl>1)
+                %     writeLog(fn_log,' ... Downsampling from [%d %d %d] to [%d %d %d]',d,d./[scl 1]);
+                %     img(i).mat = imresize3(img(i).mat,'Scale',[1./scl,1]);
+                %     % Correct orientation matrix:
+                %     offset = orient * [(scl-1)/2 0 1]';
+                %     orient = orient * diag([scl 1 1]);
+                %     orient(:,4) = offset;
+                %     voxsz = voxsz .* [scl 1];
+                %     d = size(img(i).mat);
+                %     fov = d.*voxsz;
+                % end
+                % writeLog(fn_log,'\n');
     
                 % Set image info
                 img(i).info = struct('label',label,'fov',fov,'orient',orient,'d',d,'voxsz',voxsz,'natinfo',info);
@@ -157,17 +157,31 @@ try
                 % Determine gaps:
                 dxyz = sqrt(sum(diff(slcloc,1).^2,2));
                 d = img(i).info.d;
-                if numel(unique(diff(slcloc(:,3)))) == 2
-                    dnew = floor((dxyz(1)+dxyz(2))/dxyz(1));
-                    dz = abs(dxyz(1)+dxyz(2))/dnew;
-                    d(3) = d(3)*dnew/2;
-                    ind = round(dnew/2):dnew:d(3);
-                    ind = [ind;ind+1];
-                else % Single-slice
+                slcstep = diff(slcloc(:,3));
+                slcd = unique(slcstep);
+                % slcd_counts = accumarray(ic,1);
+                Nslcd = numel(slcd);
+                if Nslcd==1 
+                % Single-slice
                     dnew = floor(dxyz(1)/img(i).info.natinfo.meta.SlcThk);
                     dz = abs(dxyz(1))/dnew;
                     d(3) = d(3)*dnew;
                     ind = round(dnew/2):dnew:d(3);
+                elseif Nslcd==2
+                % Slice clusters
+                    N_cluster = find(slcstep==slcd(2),1); % # of slices per cluster
+                    N_slice = numel(slcloc);
+                    if round(N_slice/N_cluster)==(N_slice/N_cluster) % Make sure it divides evenly
+                        dnew = floor(sum(dxyz(1:N_cluster))/dxyz(1));
+                        dz = abs(dxyz(1)+dxyz(2))/dnew;
+                        d(3) = d(3)*dnew/2;
+                        ind = round(dnew/2):dnew:d(3);
+                        ind = reshape(ind + (0:N_cluster-1)',1,[]);
+                    else
+                        error('Incompatible slice locations.')
+                    end
+                else
+                    error('Incompatible slice locations.')
                 end
                 
                 disp(['Inserting image gaps. Image slices are now: ',num2str(ind(:)')])
