@@ -3,6 +3,11 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
 % Inputs: subj_dir = directory containing all subject data
 % t = vesselSeg_BH( fname_ins , fname_seg , save_path )
 % t = vesselSeg_BH( ins , seg , info , save_path )
+% ** info is a struct requiring the fields:
+%               name = string name of the dataset
+%               d    = dimensions of the image
+%               voxsz = voxsz spatial dimensions
+%               orient = orientation tensor of the image
 
     ver = 'pipeline_vesselSeg BH-20260318';
 
@@ -33,7 +38,8 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
         % Load from file
         writeLog(fn_log,'  Loading resampled image from file ...\n');
         [ct,~,fov,orient,~] = readNIFTI(fn_resamp);
-        info_re = struct('fov',fov,'orient',orient,'tag','');
+        d = size(ct);
+        info_re = struct('fov',fov,'orient',orient,'tag','','voxsz',fov./d,'d',d);
     else
         writeLog(fn_log,'  Resampling CT image ...\n');
         [ct,info_re] = vessel_resamp(ct,info,[],0.625*ones(1,3),'linear');

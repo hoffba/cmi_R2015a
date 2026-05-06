@@ -1,6 +1,6 @@
 function [img,label,fov,orient,info] = readMHD(varargin)
 % Reads .mhd and associated .raw files into the cmi program
-img = []; label = {}; fov = []; orient = []; info = [];
+img = []; label = {}; fov = []; orient = [];
 
 % Read info from .mhd file
 fname = varargin{1};
@@ -15,16 +15,13 @@ if exist(fullfile(path,[bname,'.raw']),'file')
 elseif exist(fullfile(path,[bname,'.zraw']),'file')
     rawfname = fullfile(path,[bname,'.zraw']);
 end
+
+% Read MHD metadata
+info = readMHDinfo(fullfile(path,[bname,'.mhd']));
+
+% Return desired image info for CMI program
 hchk = false;
-fid = fopen(fullfile(path,[bname,'.mhd']),'rb');
-if fid>2
-%     emin = nan; emax = nan;
-    hstr = strtrim(strsplit(fread(fid,inf,'*char')',{'\n','='}));
-    fclose(fid);
-    
-    hstr(cellfun(@isempty,hstr)) = [];
-    istart = find(strcmp(hstr,'ObjectType'),1);
-    info = struct(hstr{istart:end});
+if isstruct(info)
     flds = fieldnames(info);
     for i = 1:length(flds)
         orig_val = info.(flds{i});
@@ -114,8 +111,6 @@ if fid>2
             Etype = 'uint32';
     end
     hchk = true;
-else
-    disp('File was not read, sonny');
 end
 
 % Read in the .raw file
@@ -136,14 +131,14 @@ elseif hchk && exist(rawfname,'file')
         else
             img = fread(fid,inf,Etype);
         end
+        fclose(fid);
         if numel(img)~=prod([d,nv])
             img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
         end
         img = permute(reshape(img,[nv,d]),[2,3,4,1]);
         fov = d.*voxsz;
-        fclose(fid);
     else
-        disp('File could not be read correctly. Heartbreaker.');
+        disp('File could not be read correctly: %s',rawfname);
     end
 end
 
