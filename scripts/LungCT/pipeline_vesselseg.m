@@ -9,10 +9,19 @@ function [T,ver] = pipeline_vesselseg(ct,seg,info,save_path,opts_in,fn_log)
 %               voxsz = voxsz spatial dimensions
 %               orient = orientation tensor of the image
 
-    ver = 'pipeline_vesselSeg BH-20260318';
+    ver = 'pipeline_vesselSeg BH-20260507';
 
     T = [];
     tt = tic;
+
+    %% Parse inputs
+    if ischar(ct) || isstring(ct)
+        [ct,label,fov,orient,~] = cmi_load(1,[],ct);
+        info = struct('name',label,'d',size(ct),'voxsz',fov./size(ct),'orient',orient,'fov',fov);
+    end
+    if ischar(seg) || isstring(seg)
+        seg = cmi_load(1,[],seg);
+    end
 
     %% Initialize options
     opts = struct('frangi',false,...
