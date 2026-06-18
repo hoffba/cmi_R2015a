@@ -13,8 +13,6 @@ end
 % Search for DICOMs
 filtstr = {'1.*','*.1','*.dcm','*.IMA',''};
 [D,F] = dirtree(searchpath,filtstr);
-% Files to exclude (endsWith):
-exlstr = {'.bmp'};
 
 if isempty(D)
     % Search for image files
@@ -86,9 +84,9 @@ else
             waitbar(i/ND,hw,sprintf('Cataloging; %d / %d',i,ND));
         end
         % Exclude files with extension:
-        for j = 1:numel(exlstr)
-            F{i}(endsWith(F{i},exlstr{j})) = [];
-        end
+        % for j = 1:numel(exlstr)
+        %     F{i}(endsWith(F{i},exlstr{j})) = [];
+        % end
 
         dcm_flag = false;
         if ~isempty(F{i})
@@ -157,8 +155,7 @@ end
 
 function [t,vnames] = getDICOMvars(modstr)
 %       Catalog value             Value class
-vnames = {'CaseNumber',             'uint16';...
-          'Tag',                    'cellstr';...
+vnames = {'Tag',                    'cellstr';...
           'UMlabel',                'cellstr';...
           'PatientName',            'cellstr';...
           'StudyDate',              'cellstr';...
