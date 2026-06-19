@@ -3,7 +3,7 @@ function Mreg = transformImage(fn_tf,flag_nn, M,voxsz,orient)
 procdir = fileparts(fn_tf);
 fixTransformParameter(fn_tf);
 
-if ischar(M) && isfile(M)
+if (ischar(M) || isstring(M)) && isfile(M)
     fn_flag = true;
     fn_M = M;
 elseif isnumeric(M) && nargin==5
@@ -36,7 +36,7 @@ if fn_flag
     delete(fn_result);
     fn_result = [fn_result,'.gz'];
     % Rename result file
-    fn = flip(extractBefore(flip(fn_M),filesep));
+    fn = reverse(extractBefore(reverse(fn_M),filesep));
     fn = insertBefore(fn,'.nii','.reg');
     Mreg = fullfile(procdir,fn);
     movefile(fn_result,Mreg);

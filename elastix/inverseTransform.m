@@ -65,8 +65,8 @@ d = info_hom.ImageSize;
 voxsz = info_hom.PixelDimensions;
 orient = info_hom.Transform.T * diag([-1 -1 1 1]);
 orient = orient'/diag([voxsz,1]);
-orig = orient(1:3,4);
-orient = reshape(orient(1:3,1:3),1,[]);
+orig = orient([2,1,3],4);
+orient = reshape(orient([2,1,3],[2,1,3]),1,[]);
 
 % Copy and rename TransformParameter files
 fn_tfi = fullfile(elxdir,'InverseTransformParameters.0.txt');

@@ -5,15 +5,18 @@ if ischar(filtstr)
     filtstr = {filtstr};
 end
 fn = dir(fullfile(tpath,'**'));
-fn([fn.isdir]) = [];
-fn(~endsWith({fn.name},filtstr)) = [];
-    % for i = 1:numel(filtstr)
-    %     fn = [fn;dir(fullfile(tpath,['**',filesep,filtstr{i}]))]; %#ok<AGROW>
-    % end
 
 % Remove directories
 fn([fn.isdir]) = [];
 
+% Remove files not matching filtstr
+ind = endsWith({fn.name},filtstr);
+if ismember(filtstr,'')
+    ind = ind | ~contains({fn.name},'.');
+end
+fn(~ind) = [];
+
+% Return directory (D) and filename (F) cell arrays
 [D,~,ic] = unique({fn.folder}');
 ndir = numel(D);
 F = cell(ndir,1);
