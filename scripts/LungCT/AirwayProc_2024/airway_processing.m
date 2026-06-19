@@ -95,7 +95,7 @@ else
     fprintf('Generating airway tree ... ');
     t = tic;
     [B,N,points] = skel2tree(CL,voxsz);
-    save(fn_real,'B','N','points');
+    save(fn.real,'B','N','points');
     t = toc(t);
     fprintf('done (%d:%02d)\n',floor(t/60),rem(t,60));
 end
@@ -145,10 +145,12 @@ if ncombine
     fprintf('Combining limbs that do not branch (%d) ...',ncombine);
     t = tic;
     for i = 1:ncombine
-        B_prox = find(B(:,2)==midnode(i),1);
-        B_dist = find(B(:,1)==midnode(i),1);
+        B_prox = find(B(:,2)==midnode(i),1); % Proximal branch
+        B_dist = find(B(:,1)==midnode(i),1); % Distal branch
+
+        % Combine branches into proximal branch
         B(B_prox,2) = B(B_dist,2);
-        Ni = round(N(midnode,2:4)./voxsz);
+        Ni = N(midnode(i),2:4)./voxsz;
         points{B_prox} = [points{B_prox} , sub2ind(dim,Ni(1),Ni(2),Ni(3)) , points{B_dist}];
         B(B_dist,:) = [];
     end

@@ -505,18 +505,6 @@ try
             res = addTableVarVal(res,T);
         end
 
-        % Erode mask based on image values
-        seg_prm = img(1).label;
-        if opts.prmerode
-            emask = img(1).mat<-250 & ins_reg<-250;
-            if img(1).info.gapchk
-                SE = strel('disk',2);
-            else
-                SE = strel('sphere',2);
-            end
-            seg_prm(~imerode(emask,SE)) = 0;
-        end
-
         % PRM calculation
         prm10 = [];
         if opts.prm
@@ -525,7 +513,7 @@ try
                 prm10 = int8(readNIFTI(opts.fn.prm));
             else
                 writeLog(fn_log,'Calculating PRM...\n');
-                [prm10,~] = pipeline_PRM(img(1).mat,logical(seg_prm),ins_reg,...
+                [prm10,~] = pipeline_PRM(img(1).mat,logical(img(1).label),ins_reg,...
                     {opts.fn.prmScatter,fullfile(opts.save_path,'PRM_Scatter',[ID,'_PRM_Scatter.tif'])},...
                     [img(1).info.gapchk,img(2).info.gapchk]);
 
@@ -573,7 +561,7 @@ try
 
             % Tabulate 5-color PRM results
             writeLog(fn_log,'Tabulating 5-color PRM results...\n');
-            T = CTlung_LobeStats(seg_prm,'PRM','pct',categorical(prm5,1:5,string(prmlabel)));
+            T = CTlung_LobeStats(img(1).label,'PRM','pct',categorical(prm5,1:5,string(prmlabel)));
             res = addTableVarVal(res,T);
 
             % Generate PRM Report
@@ -581,16 +569,6 @@ try
             if isempty(D)
                 writeLog(fn_log,'PRM Report FAILED\n');
             end
-
-            % ePRM
-            if opts.eprm
-                writeLog(fn_log,'Generating ePRM ... ')
-                t = tic;
-                T = pipeline_ePRM(ID,procdir,prm10,seg_prm,img(1).info,true,fn_log);
-                res = addTableVarVal(res,T);
-                writeLog(fn_log,'%s\n',duration(0,0,toc(t)));
-            end
-            clear prm10
 
             % Calculate tPRM
             if opts.tprm
@@ -611,7 +589,6 @@ try
                 else
                     writeLog(fn_log,'Loading tPRM from files ...\n');
                 end
-                clear prm5;
 
                 % Analyze tPRM means
                 for iprm = 1:4
@@ -634,6 +611,38 @@ try
                 end
                 writeLog(fn_log,'... tPRM complete (%s)\n',datetime([0,0,0,0,0,toc(t)],'Format','HH:mm:ss'));
             end
+
+            % Erode PRM for ePRM
+            if opts.prmerode || opts.eprm
+                emask = false(img.info.d);
+                if img(1).info.gapchk
+                    SE = strel('disk',2);
+                else
+                    SE = strel('sphere',2);
+                end
+                emask(imerode(logical(img(1).label),SE)) = true;
+
+                % Tabulate PRM results for eroded VOI
+                if opts.prmerode
+                    writeLog(fn_log,'Tabulating 5-color PRM results...\n');
+                    prm5(~emask) = 0;
+                    T = CTlung_LobeStats(img(1).label,'PRM_eroded','pct',categorical(prm5,1:5,string(prmlabel)));
+                    res = addTableVarVal(res,T);
+                end
+    
+                % ePRM
+                if opts.eprm
+                    writeLog(fn_log,'Generating ePRM ... ')
+                    t = tic;
+                    % Always erode PRM for ePRM
+                    prm10(~emask) = 0;
+                    T = pipeline_ePRM(ID,procdir,prm10,emask,img(1).info,true,fn_log);
+                    res = addTableVarVal(res,T);
+                    writeLog(fn_log,'%s\n',duration(0,0,toc(t)));
+                end
+            end
+            clear prm10 prm5
+
         end
     end
 
