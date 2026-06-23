@@ -1,149 +1,62 @@
 function [img,label,fov,orient,info] = readMHD(varargin)
 % Reads .mhd and associated .raw files into the cmi program
-img = []; label = {}; fov = []; orient = [];
+img = [];
 
 % Read info from .mhd file
-fname = varargin{1};
+fname = char(varargin{1});
 if nargin==2
     origD = varargin{2};
 else
     origD = [];
 end
-[path,bname,~] = fileparts(fname);
-if exist(fullfile(path,[bname,'.raw']),'file')
-    rawfname = fullfile(path,[bname,'.raw']);
-elseif exist(fullfile(path,[bname,'.zraw']),'file')
-    rawfname = fullfile(path,[bname,'.zraw']);
-end
 
 % Read MHD metadata
-info = readMHDinfo(fullfile(path,[bname,'.mhd']));
+info = readMHDinfo(fname);
+label = info.label;
 
-% Return desired image info for CMI program
-hchk = false;
-if isstruct(info)
-    flds = fieldnames(info);
-    for i = 1:length(flds)
-        orig_val = info.(flds{i});
-        if strcmp(orig_val,'True')
-            val = true;
-        elseif strcmp(orig_val,'False')
-            val = false;
-        else
-            val = str2num(orig_val);
-            if isempty(val)
-                val = orig_val;
-            end
-        end
-        info.(flds{i}) = val;
-    end
-
-    d = info.DimSize;
-    voxsz = ones(1,3);
-    if isfield(info,'ElementSpacing')
-        voxsz = info.ElementSpacing;
-    end
-    if isfield(info,'ElementNumberOfChannels')
-        nv = info.ElementNumberOfChannels;
-    else
-        nv = 1;
-    end
-    pos = zeros(1,3);
-    if isfield(info,'Position')
-        pos = info.Position;
-    elseif isfield(info,'Offset')
-        pos = info.Offset;
-    end
-    T = eye(3);
-    if isfield(info,'TransformMatrix')
-        T = reshape(info.TransformMatrix,3,3)';
-    end
-    orient = [T*diag(voxsz),pos';0 0 0 1];
-    Etype = info.ElementType;
-
-    if ~exist(rawfname,'file')
-        rawfname = info.ElementDataFile;
-    end
-
-    if isfield(info,'Labels')
-        label = regexp(info.Labels,'\"(.*?)\"','tokens');
-        label = [label{:}]';
-    else
-        if nv>1
-            label = strcat(bname,cellfun(@num2str,num2cell(1:nv)',...
-                                         'UniformOutput',false))';
-        else
-            label = {bname};
-        end
-    end
-
-    info.format = 'mhd';
-    
-    if isfield(info,'CompressedData')
-        zp = info.CompressedData;
-    else
-        zp = false;
-    end
-%     ind = find(strcmp('ElementMin',hstr),1);
-%     if ~isempty(ind)
-%         emin = str2double(hstr{ind+1});
-%     end
-%     ind = find(strcmp('ElementMax',hstr),1);
-%     if ~isempty(ind)
-%         emax = str2double(hstr{ind+1});
-%     end
-    switch lower(Etype(5:end))
-        case 'double'
-            Etype = 'double';
-        case 'float'
-            Etype = 'single';
-        case 'char'
-            Etype = 'int8';
-        case 'uchar'
-            Etype = 'uint8';
-        case 'short'
-            Etype = 'int16';
-        case 'ushort'
-            Etype = 'uint16';
-        case 'int'
-            Etype = 'int32';
-        case 'uint'
-            Etype = 'uint32';
-    end
-    hchk = true;
+[path,bname,~] = fileparts(fname);
+if isfile(fullfile(path,[bname,'.raw']))
+    rawfname = fullfile(path,[bname,'.raw']);
+elseif isfile(fullfile(path,[bname,'.zraw']))
+    rawfname = fullfile(path,[bname,'.zraw']);
+elseif isfield(info.native_info,'ElementDataFile')
+    rawfname = info.native_info.ElementDataFile;
 end
 
+% Image needs permutation to align with MiTAP geometry
+perm = [2,1,3];
+d_out = info.d(perm);
+
 % Read in the .raw file
-if ~isempty(origD) && ((length(origD)~=length(d)) || ~all(origD==d([2,1,3])))
-    warning('Dimensions do not match: current[%u %u %u] ~= new[%u %u %u]',origD,d([2,1,3]));
-elseif hchk && exist(rawfname,'file')
+if ~isempty(origD) && ((length(origD)~=length(info.d)) || ~all(origD==d_out))
+    warning('Dimensions do not match: current[%u %u %u] ~= new[%u %u %u]',origD,d_out);
+elseif exist(rawfname,'file')
     fid = fopen(rawfname, 'r');
     if fid>2
         % Check if zipped:
-        if zp
+        if isfield(info.native_info,'CompressedData') && info.native_info.CompressedData
             img = fread(fid,inf,'uchar=>uint8');
             import com.mathworks.mlwidgets.io.InterruptibleStreamCopier
             b = java.util.zip.InflaterInputStream(java.io.ByteArrayInputStream(img));
             isc = InterruptibleStreamCopier.getInterruptibleStreamCopier;
             c = java.io.ByteArrayOutputStream;
             isc.copyStream(b,c);
-            img = double(typecast(c.toByteArray,Etype));
+            img = double(typecast(c.toByteArray,info.Etype));
         else
-            img = fread(fid,inf,Etype);
+            img = fread(fid,inf,info.Etype);
         end
         fclose(fid);
-        if numel(img)~=prod([d,nv])
-            img(prod([d,nv])) = 0; % in case file is incomplete we can see what's there
+        if numel(img)~=prod([info.d,info.nv])
+            img(prod([info.d,info.nv])) = 0; % in case file is incomplete we can see what's there
         end
-        img = permute(reshape(img,[nv,d]),[2,3,4,1]);
-        fov = d.*voxsz;
+        img = permute(reshape(img,[info.nv,info.d]),[2,3,4,1]);
     else
         disp('File could not be read correctly: %s',rawfname);
     end
 end
 
-perm = [2,1,3,4];
-img = permute(img,perm);
-fov = fov(perm(1:3));
-orient = orient(perm,perm);
+img = permute(img,[perm,4]);
+fov = info.fov(perm);
+orient = info.orient([perm,4],[perm,4]);
+info = info.native_info;
 
