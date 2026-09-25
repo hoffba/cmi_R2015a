@@ -36,7 +36,8 @@ if nargin~=2
     cmd_str = ['ml MATLAB/R2025a ; '...
                'nohup matlab -nosplash -nodesktop '...
                '-r "cd(''/nfs/corexfs/galban-xfs/'');p=cmi_pathdef;addpath(p{:});'...
-               'Tier2_run(1,''',fname_inputs,''');exit"'];
+               'Tier2_PTKsetup;'...
+               'Tier2_run(1,''',fname_inputs,''');exit" >/dev/null 2>&1 &'];
 
     % Copy command to run on Tier2 server terminal
     clipboard('copy',cmd_str);
@@ -57,8 +58,7 @@ else
     
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~
 % ~~~~ TIER2 EXECUTION ~~~~~
-% ~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
+
         % In Tier2, load file containing relevant inputs to the processing function
         %   and start processing jobs 
 

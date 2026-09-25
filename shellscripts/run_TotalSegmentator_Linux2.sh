@@ -21,14 +21,14 @@ if [ $# == 2 ]; then
 	exec "$SHELL"
 
 	# First make sure python is set up to run TotalSegmentator
-	CONDALIST=$(conda env list)
-	if [[ $CONDALIST == *"TSenv"* ]]; then
+	ENVPATH="/nfs/turbo/umms-cgalban/PyEnvironments/TSenv"
+	if test -d $ENVPATH; then
 		echo ... TSenv found
-		conda activate TSenv
+		conda activate $ENVPATH
 	else
 		echo ... Creating TSenv
-		conda create -y -n TSenv
-		conda activate TSenv
+		conda create -y -p $ENVPATH
+		conda activate $ENVPATH
 		conda install -y pytorch torchvision
 		pip install totalsegmentator
 		pip install cupy-cuda11x cucim

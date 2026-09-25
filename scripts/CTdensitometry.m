@@ -1,4 +1,4 @@
-function T = CTlung_Unreg(tag,img,voxvol,label)
+function T = CTdensitometry(tag,img,voxvol,label)
 
 T = [];
 

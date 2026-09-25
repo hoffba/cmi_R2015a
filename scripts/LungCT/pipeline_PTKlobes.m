@@ -4,6 +4,9 @@ try
 
     % Initialize 
     ptk_main = PTKMain(CoreReporting([],false,fn_log));
+    ptk_main.Recompile;
+
+    % Run segmentation
     dataset = ptk_main.Load(fn);
     lobes = dataset.GetResult('PTKLobes');
     seg = uint8(zeros(lobes.OriginalImageSize));

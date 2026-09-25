@@ -4,10 +4,11 @@ function S = imageMeta(fpath)
 if ischar(fpath)
     if isfolder(fpath)
         % DICOM
+        info = readDICOMinfo(fpath);
     elseif isfile(fpath)
         % Image file
         if endsWith(fpath,'.nii.gz')
-            info = niftiinfo(fpath);
+            info = readNIFTIinfo(fpath);
         elseif endsWith(fpath,'.mhd')
             info = readMHDinfo(fpath);
         else

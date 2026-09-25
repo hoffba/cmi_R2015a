@@ -127,6 +127,16 @@ try
         T.Children(1).Children(i).Style = [T.Children(1).Children(i).Style,{BackgroundColor('#cfcfcf')}];
     end
     append(dp,T);
+
+    % INS/EXP volumes
+    moveToNextHole(dp);
+    if ismember('Exp_Vol',res.Properties.VariableNames)
+        append(dp,sprintf('%.2f',res.Exp_Vol(1)))
+    end
+    moveToNextHole(dp);
+    if ismember('Ins_Vol',res.Properties.VariableNames)
+        append(dp,sprintf('%.2f',res.Ins_Vol(1)))
+    end
     
     append(D,dp);
 

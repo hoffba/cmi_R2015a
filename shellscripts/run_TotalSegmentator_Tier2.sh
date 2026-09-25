@@ -3,22 +3,10 @@
 # 	1: Image filename
 # 	2: Saved segmentation filename
 if [ $# == 2 ]; then
+	echo ... Starting TS shell script
 
-	HOSTNAME=$(hostname)
-	if [[ $HOSTNAME == "galban-ap-ps1a"* ]]; then
-		echo ... Starting TS shell script on galban-ap-ps1a
-		ml python-anaconda3/2023-04
-	elif [[ $HOSTNAME == *".arc-ts."* ]]; then
-		echo ... Starting TS shell script on Great Lakes
-		ml python3.10-anaconda/2023.03
-	else
-		echo ... Unrecognized $HOSTNAME
-		exit 1
-	fi
-		
-	# Restart the shell
+	module load python3.10-anaconda/2023.03
 	conda init bash
-	exec "$SHELL"
 
 	# First make sure python is set up to run TotalSegmentator
 	CONDALIST=$(conda env list)
@@ -27,9 +15,9 @@ if [ $# == 2 ]; then
 		conda activate TSenv
 	else
 		echo ... Creating TSenv
-		conda create -y -n TSenv
+		conda create -n TSenv
 		conda activate TSenv
-		conda install -y pytorch torchvision
+		conda install pytorch torchvision
 		pip install totalsegmentator
 		pip install cupy-cuda11x cucim
 	fi

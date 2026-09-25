@@ -4,14 +4,14 @@ T = [];
 
 try
 
-    string_vars = {'ID','Exp_Source','Ins_Source','ROI'};
+    string_vars = {'foldername','ID','Exp_Source','Ins_Source','ROI'};
 
     % Initialize table with requested variables
     uvars = {};
     if nargin>1
         uvars = unique([string_vars,varnames],'stable');
         T = table('Size',[0,numel(uvars)],...
-            'VariableTypes',[repmat({'cellstr'},1,4),repmat({'double'},1,numel(uvars)-4)],...
+            'VariableTypes',[repmat({'cellstr'},1,5),repmat({'double'},1,numel(uvars)-5)],...
             'VariableNames',uvars);
     end
 
@@ -25,7 +25,13 @@ try
 
         opts = detectImportOptions(fname);
         t = readtable(fname,opts);
-
+        if ~ismember('foldername',t.Properties.VariableNames)
+            foldername = fileparts(fn(i).folder);
+            [~,foldername] = fileparts(foldername);
+            foldername = repmat({foldername},size(t,1),1);
+            t = addvars(t,foldername,'Before',1);
+        end
+        
         % Force certain variables to be cellstr
         for j = 1:numel(string_vars)
             if ismember(string_vars,t.Properties.VariableNames)
@@ -54,7 +60,9 @@ function T = addtotable(T,t,uvars)
     ind_add = nT + (1:nt);
     vT = T.Properties.VariableNames;
     vt = t.Properties.VariableNames;
-    vt = vt(ismember(vt,uvars));
+    if ~isempty(uvars)
+        vt = vt(ismember(vt,uvars));
+    end
 
     % Add missing variables to T
     % ind = find(~ismember(vt,vT));
